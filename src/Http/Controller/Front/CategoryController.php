@@ -62,9 +62,13 @@ final class CategoryController
         $series = $this->series->findPublishedInCategory($category->id);
         $selected = $this->selectedSeries($request, $category->id, $locale);
 
-        $page = self::page($request->query('page'));
         $total = $this->artworks->countPublishedInCategory($category->id, $selected?->id);
         $pages = max(1, (int) ceil($total / self::PAR_PAGE));
+
+        // La page vient de l'URL : elle est bornee AUX PAGES QUI EXISTENT.
+        // Sans cela, « ?page=99999999999999999999 » deborde l'entier et produit
+        // un OFFSET que MySQL refuse.
+        $page = min(self::page($request->query('page')), $pages);
 
         $artworks = $this->artworks->findPublishedInCategory(
             $category->id,
@@ -192,7 +196,13 @@ final class CategoryController
 
     private static function page(?string $value): int
     {
-        return $value !== null && ctype_digit($value) && (int) $value >= 1 ? (int) $value : 1;
+        // Six chiffres au plus : au-dela, la valeur deborde l'entier et ne
+        // correspond de toute facon a aucune page reelle.
+        if ($value === null || !ctype_digit($value) || strlen($value) > 6) {
+            return 1;
+        }
+
+        return max(1, (int) $value);
     }
 
     private static function plainText(?string $html): ?string

@@ -23,8 +23,14 @@ final class Media
     /**
      * Formats, DU PLUS EFFICACE AU REPLI. L'ordre compte : <picture> retient la
      * premiere source que le navigateur comprend.
+     *
+     * AVIF est absent volontairement : la GD du conteneur php:8.2-apache n'a pas
+     * le support AVIF, et annoncer une source qu'aucun fichier n'accompagne
+     * afficherait une image cassee chez tout navigateur qui comprend le format.
+     * Il rejoindra cette liste au lot 2, avec le pipeline d'images et libavif
+     * dans l'image Docker.
      */
-    public const FORMATS = ['avif', 'webp', 'jpg'];
+    public const FORMATS = ['webp', 'jpg'];
 
     /**
      * @param Translations<MediaTranslation> $translations
