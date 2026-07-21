@@ -28,10 +28,12 @@ final class Locale implements MiddlewareInterface
     public const COOKIE_NAME = CookieFactory::PREFIX . 'locale';
     public const ATTRIBUTE = 'locale';
 
-    public function __construct(
-        private readonly Config $config,
-        private readonly CookieFactory $cookies,
-    ) {
+    /**
+     * Ce middleware ne fait que LIRE le cookie ct_locale. Sa pose appartient au
+     * selecteur de langue, qui arrive au lot 5.
+     */
+    public function __construct(private readonly Config $config)
+    {
     }
 
     public function process(Request $request, ?RouteMatch $match, callable $next): Response

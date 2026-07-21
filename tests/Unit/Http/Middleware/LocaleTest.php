@@ -53,10 +53,7 @@ final class LocaleTest extends TestCase
             cookies: $cookies,
         );
 
-        $middleware = new Locale(
-            $config,
-            new CookieFactory('/cedric-taldu', true, new FrozenClock('2026-07-21 09:30:00')),
-        );
+        $middleware = new Locale($config);
 
         return $middleware->process(
             $requete,
