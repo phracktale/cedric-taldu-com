@@ -1,11 +1,14 @@
-# Environnement local et preprod Thor.
+# Environnement local ET preprod Thor.
 #
-# Ports repris de 09-environnements §2 et verifies libres dans
-# HOMELAB/_INFRA_DEVOPS/homelab-desk/docs/infra/port-routing-table.md
-# (releve du 2026-07-11) : 18110 est Eneria, 18120 est libre.
+# Un seul fichier pour les deux : tout ce qui differe vient du `.env` du
+# repertoire, que Docker Compose interpole ici et que PHP relit ensuite. Une
+# seule source de verite par environnement, et aucun secret dans le depot.
 #
-# Le code est monte, comme pour ENERIA : un `git pull` sur Thor suffit a
-# deployer, sans reconstruction d'image.
+# Sans `.env`, les valeurs par defaut ci-dessous donnent un environnement de
+# developpement complet : `docker compose up -d` suffit.
+#
+# Ports repris de 09-environnements §2, verifies libres sur Thor le 2026-07-21
+# (18110 et 18111 sont Eneria, 28080 et 28081 sont pris, 18120 est libre).
 
 services:
   app:
@@ -13,34 +16,36 @@ services:
       context: .
       dockerfile: docker/php/Dockerfile
     container_name: cedric_taldu_app
+    restart: unless-stopped
     ports:
-      - "18120:80"
+      - "${APP_PORT:-18120}:80"
     volumes:
+      # Code monte, comme pour ENERIA : un `git pull` deploie, sans
+      # reconstruction d'image.
       - ./:/var/www/html:cached
     environment:
-      APP_ENV: dev
-      APP_DEBUG: "1"
-      APP_URL: http://localhost:18120/cedric-taldu
-      APP_BASE_PATH: /cedric-taldu
-      APP_DEFAULT_LOCALE: fr
-      APP_LOCALES: fr,en
-      # Vide en local : aucun proxy devant Apache. Sur Thor, Heimdall.
-      TRUSTED_PROXIES: ""
+      APP_ENV: ${APP_ENV:-dev}
+      APP_DEBUG: ${APP_DEBUG:-1}
+      APP_URL: ${APP_URL:-http://localhost:18120/cedric-taldu}
+      APP_BASE_PATH: ${APP_BASE_PATH:-/cedric-taldu}
+      APP_DEFAULT_LOCALE: ${APP_DEFAULT_LOCALE:-fr}
+      APP_LOCALES: ${APP_LOCALES:-fr,en}
+      # Vide en local, ou aucun proxy n'est devant Apache.
+      # Sur Thor : 192.168.1.195, l'adresse de Heimdall.
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
       DB_HOST: db
       DB_PORT: "3306"
-      DB_NAME: cedrictaldu
-      DB_USER: cedrictaldu
-      DB_PASSWORD: cedrictaldu
-      # Compte dedie aux migrations, cree par docker/mysql/init : il a les
-      # droits de schema sur les deux bases du site et sur rien d'autre.
-      # Jamais root (06-securite §1).
-      DB_MIGRATION_USER: cedrictaldu_migrate
-      DB_MIGRATION_PASSWORD: migration
-      DB_TEST_NAME: cedrictaldu_test
-      # Depuis le conteneur, la base de test est sur le meme hote MySQL.
+      DB_NAME: ${DB_NAME:-cedrictaldu}
+      DB_USER: ${DB_USER:-cedrictaldu}
+      DB_PASSWORD: ${DB_PASSWORD:-cedrictaldu}
+      # Compte dedie aux migrations, distinct de l'applicatif et jamais root
+      # (06-securite §1).
+      DB_MIGRATION_USER: ${DB_MIGRATION_USER:-cedrictaldu_migrate}
+      DB_MIGRATION_PASSWORD: ${DB_MIGRATION_PASSWORD:-migration}
+      DB_TEST_NAME: ${DB_TEST_NAME:-cedrictaldu_test}
       DB_TEST_HOST: db
       DB_TEST_PORT: "3306"
-      SECURITY_PEPPER: developpement-uniquement-remplacer-en-preprod-et-en-prod
+      SECURITY_PEPPER: ${SECURITY_PEPPER:-developpement-uniquement-a-remplacer-hors-local}
     depends_on:
       db:
         condition: service_healthy
@@ -50,20 +55,26 @@ services:
   db:
     image: mysql:8
     container_name: cedric_taldu_db
+    restart: unless-stopped
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     ports:
-      # LAN uniquement sur Thor ; en local, l'hote seul.
-      - "127.0.0.1:13306:3306"
+      # Jamais expose a Internet : l'hote en local, le LAN sur Thor.
+      - "${DB_BIND:-127.0.0.1}:${DB_PORT_HOST:-13306}:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: racine
-      MYSQL_DATABASE: cedrictaldu
-      MYSQL_USER: cedrictaldu
-      MYSQL_PASSWORD: cedrictaldu
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-racine}
+      MYSQL_DATABASE: ${DB_NAME:-cedrictaldu}
+      MYSQL_USER: ${DB_USER:-cedrictaldu}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-cedrictaldu}
+      # Lus par le script d'initialisation, qui cree le compte de migration et
+      # restreint le compte applicatif.
+      DB_TEST_NAME: ${DB_TEST_NAME:-cedrictaldu_test}
+      DB_MIGRATION_USER: ${DB_MIGRATION_USER:-cedrictaldu_migrate}
+      DB_MIGRATION_PASSWORD: ${DB_MIGRATION_PASSWORD:-migration}
     volumes:
       - dbdata:/var/lib/mysql
       - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-pracine"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${DB_ROOT_PASSWORD:-racine}"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -72,14 +83,16 @@ services:
     # 09-environnements §7 : hors production, aucun e-mail ne sort du reseau.
     image: mailhog/mailhog
     container_name: cedric_taldu_mailhog
+    restart: unless-stopped
     ports:
-      - "8027:8025"
+      - "${MAILHOG_BIND:-0.0.0.0}:${MAILHOG_PORT:-8027}:8025"
 
   phpmyadmin:
     image: phpmyadmin:5
     container_name: cedric_taldu_pma
+    restart: unless-stopped
     ports:
-      - "127.0.0.1:28083:80"
+      - "${PMA_BIND:-127.0.0.1}:${PMA_PORT:-28083}:80"
     environment:
       PMA_HOST: db
       UPLOAD_LIMIT: 64M
