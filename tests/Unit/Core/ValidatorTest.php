@@ -230,7 +230,10 @@ final class ValidatorTest extends TestCase
         // seule facon d'accepter un identifiant SQL dynamique (06-securite §1).
         $this->expectException(ValidationFailed::class);
 
-        (new Validator())->validate(['tri' => 'position; DROP TABLE artworks'], ['tri' => Rule::among(['position', 'recent'])]);
+        (new Validator())->validate(
+            ['tri' => 'position; DROP TABLE artworks'],
+            ['tri' => Rule::among(['position', 'recent'])],
+        );
     }
 
     // ------------------------------------------------------------- messages

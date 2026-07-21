@@ -16,6 +16,20 @@
 
     <rule ref="PSR12"/>
 
+    <!--
+        PSR-12 impose des noms de méthode en camelCase. tests/CLAUDE.md impose
+        que « le nom du test soit une phrase française qui décrit la règle
+        métier » : test_une_oeuvre_vendue_ne_peut_pas_etre_ajoutee_au_panier().
+
+        Les deux règles s'excluent. Le protocole de test fait autorité sur le
+        nommage des tests, parce que ces noms sont lus comme une spécification
+        exécutable — c'est ce que la sortie de PHPUnit donne à lire au client.
+        L'exception est strictement limitée à tests/.
+    -->
+    <rule ref="PSR1.Methods.CamelCapsMethodName">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+
     <!-- Les gabarits sont du PHP natif melange a du HTML : la regle qui interdit
          le code apres la balise fermante n'y a pas de sens. -->
     <rule ref="PSR2.Files.ClosingTag">

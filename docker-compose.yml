@@ -31,9 +31,15 @@ services:
       DB_NAME: cedrictaldu
       DB_USER: cedrictaldu
       DB_PASSWORD: cedrictaldu
-      DB_MIGRATION_USER: root
-      DB_MIGRATION_PASSWORD: racine
+      # Compte dedie aux migrations, cree par docker/mysql/init : il a les
+      # droits de schema sur les deux bases du site et sur rien d'autre.
+      # Jamais root (06-securite §1).
+      DB_MIGRATION_USER: cedrictaldu_migrate
+      DB_MIGRATION_PASSWORD: migration
       DB_TEST_NAME: cedrictaldu_test
+      # Depuis le conteneur, la base de test est sur le meme hote MySQL.
+      DB_TEST_HOST: db
+      DB_TEST_PORT: "3306"
       SECURITY_PEPPER: developpement-uniquement-remplacer-en-preprod-et-en-prod
     depends_on:
       db:

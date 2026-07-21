@@ -94,8 +94,11 @@ final class MigratorTest extends DatabaseTestCase
 
     public function test_les_migrations_sont_appliquees_dans_l_ordre_des_noms(): void
     {
+        // La seconde migration porte une cle etrangere vers la premiere : si
+        // l'ordre n'etait pas respecte, MySQL refuserait de la creer.
         $repertoire = $this->repertoireTemporaire([
-            '0002_seconde.sql' => 'CREATE TABLE seconde (id INT PRIMARY KEY, ref INT, CONSTRAINT fk_s FOREIGN KEY (ref) REFERENCES premiere(id));',
+            '0002_seconde.sql' => 'CREATE TABLE seconde (id INT PRIMARY KEY, ref INT,'
+                . ' CONSTRAINT fk_s FOREIGN KEY (ref) REFERENCES premiere(id));',
             '0001_premiere.sql' => 'CREATE TABLE premiere (id INT PRIMARY KEY);',
         ]);
 

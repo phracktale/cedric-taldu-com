@@ -121,7 +121,10 @@ final class SecurityHeadersTest extends TestCase
     {
         $this->traiter(recue: $requete);
 
-        $this->assertMatchesRegularExpression('/^[0-9a-f]{32}$/', (string) $requete?->attribute(SecurityHeaders::NONCE_ATTRIBUTE));
+        $this->assertMatchesRegularExpression(
+            '/^[0-9a-f]{32}$/',
+            (string) $requete?->attribute(SecurityHeaders::NONCE_ATTRIBUTE)
+        );
     }
 
     // ------------------------------------------------------- autres en-têtes

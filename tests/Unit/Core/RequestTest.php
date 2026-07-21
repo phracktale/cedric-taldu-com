@@ -349,7 +349,11 @@ final class RequestTest extends TestCase
 
         $requete = Request::fromServer(
             $this->config(),
-            ['REQUEST_METHOD' => 'POST', 'REQUEST_URI' => '/cedric-taldu/webhooks/stripe', 'REMOTE_ADDR' => '203.0.113.7'],
+            [
+                'REQUEST_METHOD' => 'POST',
+                'REQUEST_URI' => '/cedric-taldu/webhooks/stripe',
+                'REMOTE_ADDR' => '203.0.113.7',
+            ],
             body: $corps,
         );
 

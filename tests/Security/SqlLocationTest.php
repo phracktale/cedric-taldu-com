@@ -27,7 +27,8 @@ final class SqlLocationTest extends TestCase
         'src/Core/Migrator.php',
     ];
 
-    private const SQL_KEYWORDS = '/\b(SELECT\s|INSERT\s+INTO|UPDATE\s+\w|DELETE\s+FROM|CREATE\s+TABLE|DROP\s+TABLE|ALTER\s+TABLE|TRUNCATE\s)/i';
+    private const SQL_KEYWORDS = '/\b(SELECT\s|INSERT\s+INTO|UPDATE\s+\w|DELETE\s+FROM'
+        . '|CREATE\s+TABLE|DROP\s+TABLE|ALTER\s+TABLE|TRUNCATE\s)/i';
 
     public function test_aucun_sql_hors_des_depots(): void
     {
@@ -87,7 +88,10 @@ final class SqlLocationTest extends TestCase
         foreach ($this->sources() as $chemin => $source) {
             // Une chaine SQL suivie d'un « . » et d'une variable sur la meme
             // ligne : concatenation d'une valeur dans la requete.
-            if (preg_match_all('/["\'][^"\']*(?:SELECT |INSERT INTO|UPDATE |DELETE FROM)[^"\']*["\']\s*\.\s*\$/i', $source, $trouves) >= 1) {
+            $motif = '/["\'][^"\']*(?:SELECT |INSERT INTO|UPDATE |DELETE FROM)'
+                . '[^"\']*["\']\s*\.\s*\$/i';
+
+            if (preg_match_all($motif, $source, $trouves) >= 1) {
                 foreach ($trouves[0] as $trouve) {
                     $fautes[] = $chemin . ' — ' . trim($trouve);
                 }

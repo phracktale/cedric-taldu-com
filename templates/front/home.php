@@ -17,4 +17,8 @@ $autreLangue = $locale === 'fr' ? 'en' : 'fr';
 ?>
 <h1>Bonjour</h1>
 <p>Cédric Taldu — artiste plasticien, Amiens.</p>
-<p><a href="<?= attr($url->route('home', ['locale' => $autreLangue])) ?>"><?= e($autreLangue === 'en' ? 'English' : 'Français') ?></a></p>
+<p>
+<a href="<?= attr($url->route('home', ['locale' => $autreLangue])) ?>"><?=
+    e($autreLangue === 'en' ? 'English' : 'Français')
+?></a>
+</p>
