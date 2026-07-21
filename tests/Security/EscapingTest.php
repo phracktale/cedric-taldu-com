@@ -35,12 +35,21 @@ final class EscapingTest extends TestCase
      *
      * money() ne calcule rien et ne produit que des chiffres, un separateur et
      * un symbole monetaire : aucune donnee d'utilisateur n'y transite.
+     *
+     * richText() est le seul cas ou du HTML sort tel quel. Il correspond a la
+     * regle de 06-securite §2 : le HTML riche est assaini A L'ECRITURE et c'est
+     * la version assainie qui est stockee, donc la lecture ne fait plus
+     * qu'afficher. La contrepartie est que l'assainisseur porte seul la
+     * responsabilite — d'ou HtmlSanitizerTest, et d'ou XssTest qui rejoue des
+     * charges a travers le VRAI formulaire d'administration jusqu'a la page
+     * publique.
      */
     private const ALLOWED = [
         '/^e\(/',
         '/^attr\(/',
         '/^jsonAttr\(/',
         '/^money\(/',
+        '/^richText\(/',
         '/^\$content$/',
         '/^\$partial\(/',
     ];
