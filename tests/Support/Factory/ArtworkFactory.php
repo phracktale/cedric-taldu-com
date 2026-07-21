@@ -29,9 +29,21 @@ final class ArtworkFactory extends Factory
     private ?int $seriesId = null;
     private ?int $primaryMediaId = null;
     private ?string $publishedAt = null;
+    private ?string $reference = null;
 
     /** @var array<string, array{slug: string, title: string, description: string|null, detail: string|null}> */
     private array $translations = [];
+
+    /**
+     * Reference d'atelier imposee, pour eprouver la contrainte d'unicite. Par
+     * defaut la fabrique en engendre une distincte a chaque appel.
+     */
+    public function withReference(string $reference): self
+    {
+        $this->reference = $reference;
+
+        return $this;
+    }
 
     public function status(ArtworkStatus $status): self
     {
@@ -176,7 +188,7 @@ final class ArtworkFactory extends Factory
             [
                 'category' => $categoryId,
                 'series' => $this->seriesId,
-                'reference' => 'CT-TEST-' . str_pad((string) $n, 4, '0', STR_PAD_LEFT),
+                'reference' => $this->reference ?? ('CT-TEST-' . str_pad((string) $n, 4, '0', STR_PAD_LEFT)),
                 'year' => $this->year,
                 'technique' => $this->technique,
                 'width' => $this->widthMm,
