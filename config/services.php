@@ -38,6 +38,7 @@ use App\Core\View;
 use App\Domain\Admin\SessionPolicy;
 use App\Http\Controller\Admin\AccountController;
 use App\Http\Controller\Admin\AuthController;
+use App\Http\Controller\Admin\ArtworkController as AdminArtworkController;
 use App\Http\Controller\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Admin\MediaController;
@@ -48,6 +49,7 @@ use App\Http\Middleware\AuthGuard;
 use App\Http\Middleware\CsrfGuard;
 use App\Http\Middleware\Locale;
 use App\Http\Middleware\SecurityHeaders;
+use App\Repository\Admin\ArtworkAdminRepository;
 use App\Repository\Admin\CategoryAdminRepository;
 use App\Repository\Admin\DashboardRepository;
 use App\Repository\Admin\MediaAdminRepository;
@@ -67,6 +69,7 @@ use App\Service\Auth\BackupCodes;
 use App\Service\Auth\PasswordHasher;
 use App\Service\Auth\Totp;
 use App\Service\Content\HtmlSanitizer;
+use App\Service\Content\PreviewToken;
 use App\Service\Content\TranslationInput;
 use App\Service\I18n\UrlGenerator;
 use App\Service\Media\ImageProcessor;
@@ -192,6 +195,10 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         SeriesAdminRepository::class,
         static fn (Container $c): SeriesAdminRepository => new SeriesAdminRepository($c->get(PDO::class)),
     );
+    $container->set(
+        ArtworkAdminRepository::class,
+        static fn (Container $c): ArtworkAdminRepository => new ArtworkAdminRepository($c->get(PDO::class)),
+    );
 
     // --- Contenu riche ------------------------------------------------------
     //
@@ -200,6 +207,10 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
     // dans chaque controleur — ou l'oubli serait invisible.
 
     $container->set(HtmlSanitizer::class, static fn (): HtmlSanitizer => new HtmlSanitizer());
+    $container->set(PreviewToken::class, static fn (Container $c): PreviewToken => new PreviewToken(
+        $config->securityPepper,
+        $c->get(ClockInterface::class),
+    ));
     $container->set(
         TranslationInput::class,
         static fn (Container $c): TranslationInput => new TranslationInput($c->get(HtmlSanitizer::class)),
@@ -316,6 +327,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(CategoryRepository::class),
         $c->get(MediaRepository::class),
         $c->get(UrlGenerator::class),
+        $c->get(PreviewToken::class),
     ));
 
     // --- Controleurs d'administration --------------------------------------
@@ -340,6 +352,19 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(RandomInterface::class),
         $config,
     ));
+
+    $container->set(
+        AdminArtworkController::class,
+        static fn (Container $c): AdminArtworkController => new AdminArtworkController(
+            $c->get(AdminChrome::class),
+            $c->get(ArtworkAdminRepository::class),
+            $c->get(CategoryAdminRepository::class),
+            $c->get(SeriesAdminRepository::class),
+            $c->get(TranslationInput::class),
+            $c->get(PreviewToken::class),
+            $c->get(UrlGenerator::class),
+        ),
+    );
 
     $container->set(
         AdminCategoryController::class,

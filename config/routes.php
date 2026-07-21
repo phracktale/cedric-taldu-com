@@ -19,6 +19,7 @@ declare(strict_types=1);
 
 use App\Core\Route;
 use App\Http\Controller\Admin\AccountController;
+use App\Http\Controller\Admin\ArtworkController as AdminArtworkController;
 use App\Http\Controller\Admin\AuthController;
 use App\Http\Controller\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controller\Admin\DashboardController;
@@ -74,6 +75,16 @@ return [
     new Route('admin.category.delete', 'POST', '/admin/rubriques/{id}/suppression', [AdminCategoryController::class, 'delete'], requirements: $id),
     new Route('admin.series.store', 'POST', '/admin/rubriques/{id}/series', [AdminCategoryController::class, 'storeSeries'], requirements: $id),
     new Route('admin.series.delete', 'POST', '/admin/rubriques/{id}/series/{serie}/suppression', [AdminCategoryController::class, 'deleteSeries'], requirements: $idEtSerie),
+
+    // Œuvres
+    new Route('admin.artwork.index', 'GET', '/admin/oeuvres', [AdminArtworkController::class, 'index']),
+    new Route('admin.artwork.create', 'GET', '/admin/oeuvres/nouvelle', [AdminArtworkController::class, 'create']),
+    new Route('admin.artwork.store', 'POST', '/admin/oeuvres', [AdminArtworkController::class, 'store']),
+    new Route('admin.artwork.edit', 'GET', '/admin/oeuvres/{id}', [AdminArtworkController::class, 'edit'], requirements: $id),
+    new Route('admin.artwork.update', 'POST', '/admin/oeuvres/{id}', [AdminArtworkController::class, 'update'], requirements: $id),
+    new Route('admin.artwork.publish', 'POST', '/admin/oeuvres/{id}/publication', [AdminArtworkController::class, 'togglePublication'], requirements: $id),
+    new Route('admin.artwork.move', 'POST', '/admin/oeuvres/{id}/position', [AdminArtworkController::class, 'move'], requirements: $id),
+    new Route('admin.artwork.delete', 'POST', '/admin/oeuvres/{id}/suppression', [AdminArtworkController::class, 'delete'], requirements: $id),
 
     // Mediatheque
     new Route('admin.media.index', 'GET', '/admin/medias', [MediaController::class, 'index']),
