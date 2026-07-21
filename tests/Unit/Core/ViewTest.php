@@ -80,6 +80,32 @@ final class ViewTest extends TestCase
         $this->assertStringContainsString('<span class="dispo">Disponible</span>', $html);
     }
 
+    public function test_un_gabarit_compose_un_partiel(): void
+    {
+        // L'en-tete, le pied de page et la vignette d'œuvre sont employes par
+        // toutes les pages : les faire rendre par le controleur et les passer
+        // en donnee obligerait chaque controleur a connaitre la mise en page.
+        $html = $this->vue()->render('avec-partiel-compose', ['etat' => 'Disponible']);
+
+        $this->assertStringContainsString('<main><span class="dispo">Disponible</span>', $html);
+    }
+
+    public function test_un_partiel_recoit_les_donnees_qu_on_lui_passe_et_pas_celles_du_parent(): void
+    {
+        // Un partiel qui hériterait de tout le contexte du parent rendrait
+        // impossible de savoir ce dont il dépend.
+        $html = $this->vue()->render('avec-partiel-compose', ['etat' => 'Vendue']);
+
+        $this->assertStringContainsString('Vendue', $html);
+    }
+
+    public function test_un_partiel_inexistant_leve_une_exception(): void
+    {
+        $this->expectException(TemplateNotFound::class);
+
+        $this->vue()->render('avec-partiel-absent');
+    }
+
     public function test_un_gabarit_s_insere_dans_une_mise_en_page(): void
     {
         // La mise en page recoit le contenu deja rendu dans $content, variable

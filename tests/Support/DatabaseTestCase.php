@@ -88,6 +88,11 @@ abstract class DatabaseTestCase extends TestCase
      * la classe doit savoir se reconstruire apres lui, quel que soit l'ordre
      * d'execution.
      */
+    public static function ensureSchemaFor(PDO $pdo): void
+    {
+        self::ensureSchema($pdo);
+    }
+
     protected static function ensureSchema(PDO $pdo): void
     {
         $statement = $pdo->query("SHOW TABLES LIKE 'artworks'");

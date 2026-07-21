@@ -30,6 +30,13 @@ abstract class FunctionalTestCase extends TestCase
     protected ArraySession $session;
     protected Container $container;
 
+    /**
+     * Les pages lisent la base : un test fonctionnel a donc besoin d'une
+     * connexion, et des memes garanties d'isolement que les tests
+     * d'integration — une transaction annulee en tearDown.
+     */
+    protected \PDO $pdo;
+
     /** @var array<string, string> */
     private array $env = [];
 
@@ -43,6 +50,17 @@ abstract class FunctionalTestCase extends TestCase
     {
         $this->logger = new RecordingLogger();
         $this->session = new ArraySession();
+
+        $this->pdo = DatabaseTestCase::connect();
+        DatabaseTestCase::ensureSchemaFor($this->pdo);
+        $this->pdo->beginTransaction();
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->pdo->inTransaction()) {
+            $this->pdo->rollBack();
+        }
     }
 
     /**
@@ -134,6 +152,9 @@ abstract class FunctionalTestCase extends TestCase
         $this->container = $build($config, $request, $this->rootPath());
         $this->container->instance(LoggerInterface::class, $this->logger);
         $this->container->instance(SessionInterface::class, $this->session);
+        // La MEME connexion que les fixtures du test : sans cela, la page ne
+        // verrait rien de ce que le test vient d'inserer dans sa transaction.
+        $this->container->instance(\PDO::class, $this->pdo);
 
         if ($this->routes !== null) {
             $this->container->instance(\App\Core\Router::class, new \App\Core\Router($this->routes));

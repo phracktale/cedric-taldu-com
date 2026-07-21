@@ -79,6 +79,20 @@ final class MediaTest extends TestCase
         );
     }
 
+    public function test_la_largeur_de_repli_vise_mille_vingt_quatre_pixels(): void
+    {
+        // Largeur du <img src> : celle que reçoit un navigateur qui ne comprend
+        // ni srcset ni sizes. 1024 px est le compromis — lisible sur un écran
+        // ordinaire sans imposer le fichier de 2400.
+        $this->assertSame(1024, $this->media()->defaultWidth());
+    }
+
+    public function test_la_largeur_de_repli_ne_depasse_pas_l_original(): void
+    {
+        $this->assertSame(640, $this->media(largeur: 800)->defaultWidth());
+        $this->assertSame(320, $this->media(largeur: 200)->defaultWidth());
+    }
+
     public function test_le_rapport_d_aspect_evite_le_decalage_de_mise_en_page(): void
     {
         $this->assertSame('2400 / 3200', $this->media()->aspectRatio());

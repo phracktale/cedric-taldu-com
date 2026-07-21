@@ -207,6 +207,41 @@ final class UrlGeneratorTest extends TestCase
         $this->assertSame($generateur->asset('css/site.css'), $generateur->asset('css/site.css'));
     }
 
+    public function test_un_derive_d_image_porte_le_prefixe(): void
+    {
+        // Les dérivés de public/media/ sont ENGENDRÉS à l'upload : contrairement
+        // aux assets, leur existence ne peut pas être vérifiée au moment où le
+        // lien est produit.
+        $this->assertSame(
+            '/cedric-taldu/media/articulation-1024.avif',
+            $this->generateur()->media('articulation-1024.avif')
+        );
+    }
+
+    #[DataProvider('nomsDeDerivesMalveillants')]
+    public function test_un_nom_de_derive_malforme_est_refuse(string $nom): void
+    {
+        // Le nom vient de la base, pas du client — mais il finit dans une URL,
+        // et un nom malformé y produirait une injection d'attribut.
+        $this->expectException(AssetNotFound::class);
+
+        $this->generateur()->media($nom);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function nomsDeDerivesMalveillants(): iterable
+    {
+        yield 'remontée' => ['../../../.env'];
+        yield 'sous-dossier' => ['a/b.avif'];
+        yield 'guillemet' => ['a".avif'];
+        yield 'espace' => ['a b.avif'];
+        yield 'sans extension' => ['articulation-1024'];
+        yield 'extension inattendue' => ['articulation-1024.php'];
+        yield 'vide' => [''];
+    }
+
     public function test_un_asset_absent_est_une_erreur_bruyante(): void
     {
         // Un lien vers un fichier inexistant se voit en production sous la forme

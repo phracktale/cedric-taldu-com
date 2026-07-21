@@ -84,8 +84,25 @@ final class HttpsTest extends FunctionalTestCase
     {
         // 02-front-public §7 et 06-securite §9 : aucune origine tierce hors
         // Stripe sur les pages de paiement. Les polices sont auto-hebergees.
+        //
+        // Seules les ressources CHARGEES comptent : le canonique et les
+        // hreflang sont des URL absolues vers notre propre domaine, que le
+        // navigateur n'appelle pas.
         $corps = $this->get('/cedric-taldu/fr/')->body;
 
-        $this->assertSame(0, preg_match_all('#(?:href|src)="https?://#i', $corps));
+        preg_match_all(
+            '#<(?:link[^>]*\brel="(?:stylesheet|preload|icon)"[^>]*\bhref'
+            . '|script[^>]*\bsrc|img[^>]*\bsrc|source[^>]*\bsrcset)="([^"]+)"#i',
+            $corps,
+            $trouves
+        );
+
+        foreach ($trouves[1] as $ressource) {
+            $this->assertStringStartsWith(
+                '/',
+                $ressource,
+                'Ressource chargée depuis une origine tierce : ' . $ressource
+            );
+        }
     }
 }

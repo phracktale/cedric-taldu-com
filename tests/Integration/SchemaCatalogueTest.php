@@ -30,7 +30,8 @@ final class SchemaCatalogueTest extends DatabaseTestCase
      */
     public static function tablesDuCatalogue(): iterable
     {
-        foreach ([
+        foreach (
+            [
             'media',
             'media_translations',
             'categories',
@@ -40,7 +41,8 @@ final class SchemaCatalogueTest extends DatabaseTestCase
             'artworks',
             'artwork_translations',
             'artwork_media',
-        ] as $table) {
+            ] as $table
+        ) {
             yield $table => [$table];
         }
     }
