@@ -1,0 +1,133 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Support;
+
+use App\Core\Config;
+use App\Core\Container;
+use App\Core\Env;
+use App\Core\Kernel;
+use App\Core\LoggerInterface;
+use App\Core\Request;
+use App\Core\Response;
+use App\Core\SessionInterface;
+use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\ArraySession;
+use Tests\Support\Doubles\RecordingLogger;
+
+/**
+ * Base des tests fonctionnels.
+ *
+ * Un test fonctionnel traverse Kernel::handle(Request) et rend une Response.
+ * Aucun serveur HTTP n'est demarre, aucune requete reseau n'est emise
+ * (tests/CLAUDE.md) : c'est la meme chaine de middlewares et le meme routeur
+ * qu'en production, avec la session et le journal doubles.
+ */
+abstract class FunctionalTestCase extends TestCase
+{
+    protected RecordingLogger $logger;
+    protected ArraySession $session;
+    protected Container $container;
+
+    /** @var array<string, string> */
+    private array $env = [];
+
+    protected function setUp(): void
+    {
+        $this->logger = new RecordingLogger();
+        $this->session = new ArraySession();
+    }
+
+    /**
+     * Surcharge de l'environnement, a appeler AVANT la premiere requete.
+     *
+     * @param array<string, string> $values
+     */
+    protected function withEnv(array $values): void
+    {
+        $this->env = [...$this->env, ...$values];
+    }
+
+    protected function config(): Config
+    {
+        return Config::fromEnv(Env::fromArray([
+            'APP_ENV' => 'preprod',
+            'APP_DEBUG' => '0',
+            'APP_URL' => 'https://customer.phracktale.com/cedric-taldu',
+            'APP_BASE_PATH' => '/cedric-taldu',
+            'APP_DEFAULT_LOCALE' => 'fr',
+            'APP_LOCALES' => 'fr,en',
+            'TRUSTED_PROXIES' => '',
+            'SECURITY_PEPPER' => str_repeat('a', 64),
+            ...$this->env,
+        ]));
+    }
+
+    protected function rootPath(): string
+    {
+        return dirname(__DIR__, 2);
+    }
+
+    /**
+     * @param array<string, mixed>  $server
+     * @param array<string, string> $query
+     * @param array<string, string> $post
+     * @param array<string, string> $cookies
+     */
+    protected function requete(
+        string $method,
+        string $uri,
+        array $server = [],
+        array $query = [],
+        array $post = [],
+        array $cookies = [],
+        ?string $body = null,
+    ): Response {
+        $config = $this->config();
+
+        $request = Request::fromServer(
+            $config,
+            [
+                'REQUEST_METHOD' => $method,
+                'REQUEST_URI' => $uri,
+                'REMOTE_ADDR' => '203.0.113.7',
+                ...$server,
+            ],
+            query: $query,
+            post: $post,
+            cookies: $cookies,
+            body: $body,
+        );
+
+        /** @var callable(Config, Request, string): Container $build */
+        $build = require $this->rootPath() . '/config/services.php';
+
+        $this->container = $build($config, $request, $this->rootPath());
+        $this->container->instance(LoggerInterface::class, $this->logger);
+        $this->container->instance(SessionInterface::class, $this->session);
+
+        $kernel = $this->container->get(Kernel::class);
+        self::assertInstanceOf(Kernel::class, $kernel);
+
+        return $kernel->handle($request);
+    }
+
+    /**
+     * @param array<string, mixed>  $server
+     * @param array<string, string> $cookies
+     */
+    protected function get(string $uri, array $server = [], array $cookies = []): Response
+    {
+        return $this->requete('GET', $uri, server: $server, cookies: $cookies);
+    }
+
+    /**
+     * @param array<string, string> $post
+     * @param array<string, mixed>  $server
+     */
+    protected function post(string $uri, array $post = [], array $server = []): Response
+    {
+        return $this->requete('POST', $uri, server: $server, post: $post);
+    }
+}

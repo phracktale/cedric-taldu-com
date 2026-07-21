@@ -147,6 +147,27 @@ final class CsrfGuardTest extends TestCase
         $this->assertSame('traité', $this->traiter('POST', exempte: true)->body);
     }
 
+    public function test_une_requete_qui_ne_correspond_a_aucune_route_n_est_pas_jugee_sur_le_csrf(): void
+    {
+        // Aucun controleur ne s'executera : le noyau relancera la 404 ou la 405.
+        // Repondre 419 ici masquerait le vrai statut sans rien proteger, et
+        // rendrait indiscernable « methode interdite » de « jeton expire ».
+        $requete = Request::fromServer($this->config(), [
+            'REQUEST_METHOD' => 'POST',
+            'REQUEST_URI' => '/cedric-taldu/fr/',
+            'REMOTE_ADDR' => '203.0.113.7',
+        ]);
+
+        $reponse = (new CsrfGuard($this->csrf, $this->journal))->process(
+            $requete,
+            null,
+            static fn (Request $r): Response => Response::html('traité')
+        );
+
+        $this->assertSame('traité', $reponse->body);
+        $this->assertSame([], $this->journal->entries);
+    }
+
     public function test_une_methode_delete_est_protegee_comme_un_post(): void
     {
         $this->expectException(CsrfTokenMismatch::class);
