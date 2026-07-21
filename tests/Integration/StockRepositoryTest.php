@@ -306,7 +306,6 @@ final class StockRepositoryTest extends DatabaseTestCase
 
         $this->assertTrue($premier, 'Le premier acheteur doit emporter l’œuvre.');
         $this->assertFalse($second, 'Le second doit echouer, et non ecraser la vente.');
-
     }
 
     public function test_deux_decrements_simultanes_ne_rendent_jamais_le_stock_negatif(): void
@@ -328,7 +327,6 @@ final class StockRepositoryTest extends DatabaseTestCase
         $this->assertTrue($premier);
         $this->assertFalse($second, 'Le second decrement doit echouer, pas passer le stock a -1.');
         $this->assertSame(1, $this->stock($variant));
-
     }
 
     public function test_deux_attributions_simultanees_n_epuisent_pas_l_edition_deux_fois(): void
@@ -349,7 +347,6 @@ final class StockRepositoryTest extends DatabaseTestCase
         $this->assertSame([30], $premier);
         $this->assertNull($second, 'Le second doit repartir sans numero, pas recevoir le 31e.');
         $this->assertSame(30, $this->vendus($product));
-
     }
 
     // ------------------------------------------------------------- assistance
