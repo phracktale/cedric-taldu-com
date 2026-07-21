@@ -40,7 +40,7 @@ final class ShippingZone
             $sorted,
             static fn (WeightBracket $a, WeightBracket $b): int => $a->maxWeightGrams <=> $b->maxWeightGrams,
         );
-        $this->brackets = array_values($sorted);
+        $this->brackets = $sorted;
     }
 
     public function covers(string $countryCode): bool

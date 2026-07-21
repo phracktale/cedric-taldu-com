@@ -166,6 +166,11 @@ final class Money
             throw InvalidMoney::allocationWithoutShares();
         }
 
+        // Un variadique peut recevoir des cles de chaine — `allocate(...['a' => 1])`
+        // est legal depuis PHP 8.1 — et les parts doivent rester alignees sur
+        // l'ordre des lignes de la commande.
+        $weights = array_values($weights);
+
         $total = 0;
 
         foreach ($weights as $weight) {
@@ -178,28 +183,37 @@ final class Money
 
         // Toutes les lignes a zero : aucune proportion n'a de sens, mais le
         // montant doit rester attache a une ligne pour ne pas disparaitre.
-        if ($total === 0) {
-            $shares = array_fill(0, count($weights), 0);
-            $shares[0] = $this->cents;
-
-            return array_map(static fn (int $cents): self => new self($cents, self::CURRENCY), $shares);
-        }
-
-        $shares = [];
+        // Le reste entier va alors a la premiere part, comme a poids egaux.
+        $floors = [];
         $distributed = 0;
 
         foreach ($weights as $weight) {
-            $share = intdiv($this->cents * $weight, $total);
-            $shares[] = $share;
+            $share = $total === 0 ? 0 : intdiv($this->cents * $weight, $total);
+            $floors[] = $share;
             $distributed += $share;
         }
 
-        $shares[self::indexOfLargest($weights)] += $this->cents - $distributed;
+        $remainderIndex = self::indexOfLargest($weights);
+        $remainder = $this->cents - $distributed;
 
-        return array_map(static fn (int $cents): self => new self($cents, self::CURRENCY), $shares);
+        $shares = [];
+
+        foreach ($floors as $index => $share) {
+            $shares[] = new self(
+                $index === $remainderIndex ? $share + $remainder : $share,
+                self::CURRENCY,
+            );
+        }
+
+        return $shares;
     }
 
     /**
+     * Indice du poids le plus eleve ; le premier en cas d'egalite.
+     *
+     * A poids egaux il faut une regle deterministe, sinon deux calculs du meme
+     * panier peuvent differer.
+     *
      * @param non-empty-list<int> $weights
      */
     private static function indexOfLargest(array $weights): int
