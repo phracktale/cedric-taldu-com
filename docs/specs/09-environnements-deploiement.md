@@ -4,7 +4,7 @@
 
 | Env | Machine | URL | Serveur | Base |
 |---|---|---|---|---|
-| **local** | Poste Windows **ou** Linux (homelab) | `http://localhost:18120/cedric-taldu` | Docker `php:8.2-apache` | MySQL 8 en conteneur |
+| **local** | Poste Windows **ou** Linux (homelab) | `http://localhost:8000/cedric-taldu` | **Serveur web interne de PHP** (`composer serve`) — aucun Docker en local | Base de test de Thor, atteinte en LAN |
 | **preprod** | **Thor** `192.168.1.36`, Docker | `https://customer.phracktale.com/cedric-taldu` | Docker `php:8.2-apache`, TLS terminé par Heimdall | MySQL 8 en conteneur |
 | **prod** | o2switch / OVH mutualisé `@decision` | `https://cedrictaldu.com` | Apache + `.htaccess`, PHP 8.2 | MySQL mutualisé |
 
@@ -86,7 +86,16 @@ location /cedric-taldu/ {
 
 ## 5. Développement local
 
-Le développement se fait indifféremment sous **Windows** et sous **Linux (homelab)**.
+Le développement se fait indifféremment sous **Windows** et sous **Linux (homelab)**,
+**sans Docker en local** : Docker est réservé à Thor. Le site tourne avec le serveur
+web interne de PHP (`composer serve`, routeur `bin/router.php` qui reproduit le peu de
+réécriture des `.htaccess`), et les tests d'intégration s'adressent à la base
+`cedrictaldu_test` de Thor par le LAN.
+
+Deux comptes MySQL dédiés au développement y sont créés, reflet exact de la séparation
+de production (06-securite §1) : `cedrictaldu_dev` a les droits de schéma pour les
+migrations, `cedrictaldu_dev_app` n'a que SELECT, INSERT, UPDATE, DELETE. Ni l'un ni
+l'autre n'a le moindre droit sur la base de préproduction.
 Contraintes qui en découlent, toutes vérifiables :
 
 - Fins de ligne **LF** partout : `.gitattributes` avec `* text=auto eol=lf` et
