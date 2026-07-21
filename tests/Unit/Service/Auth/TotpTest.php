@@ -131,6 +131,64 @@ final class TotpTest extends TestCase
         $this->assertFalse($this->totp->verify('pas-du-base32-!', '081804', $this->instant(1111111109)));
     }
 
+    // ---------------------------------------------------------- anti-rejeu
+
+    public function test_le_compteur_accepte_est_rendu_pour_etre_memorise(): void
+    {
+        // RFC 6238 §5.2 : le verificateur NE DOIT PAS accepter deux fois le meme
+        // code. Il faut donc savoir lequel vient d'etre accepte : c'est le
+        // numero de fenetre, et non le code, qui est conserve — aucun secret
+        // supplementaire ne se retrouve en base.
+        $compteur = $this->totp->accept(self::SECRET_RFC, '081804', $this->instant(1111111109), null);
+
+        $this->assertSame(intdiv(1111111109, 30), $compteur);
+    }
+
+    public function test_le_meme_compteur_ne_peut_pas_etre_accepte_deux_fois(): void
+    {
+        $premier = $this->totp->accept(self::SECRET_RFC, '081804', $this->instant(1111111109), null);
+        $this->assertNotNull($premier);
+
+        $second = $this->totp->accept(self::SECRET_RFC, '081804', $this->instant(1111111109), $premier);
+
+        $this->assertNull($second);
+    }
+
+    public function test_un_code_plus_ancien_que_le_dernier_accepte_est_refuse(): void
+    {
+        // La tolerance d'un pas regarde en arriere : sans cette borne, le code
+        // de la fenetre precedente resterait rejouable apres celui de la
+        // fenetre courante.
+        $courant = intdiv(1111111140, 30);
+
+        $this->assertNull(
+            $this->totp->accept(self::SECRET_RFC, '081804', $this->instant(1111111140), $courant),
+        );
+    }
+
+    public function test_le_code_de_la_fenetre_suivante_reste_acceptable(): void
+    {
+        // Exactement une periode plus tard. Ajouter « trente et une secondes »
+        // franchirait DEUX frontieres de fenetre selon l'endroit ou l'on part :
+        // les fenetres sont alignees sur l'epoque, pas sur l'instant de depart.
+        $precedent = intdiv(1111111109, Totp::PERIOD);
+        $suivant = $this->instant(1111111109 + Totp::PERIOD);
+
+        $compteur = $this->totp->accept(
+            self::SECRET_RFC,
+            $this->totp->code(self::SECRET_RFC, $suivant),
+            $suivant,
+            $precedent,
+        );
+
+        $this->assertSame($precedent + 1, $compteur);
+    }
+
+    public function test_un_code_faux_ne_rend_aucun_compteur(): void
+    {
+        $this->assertNull($this->totp->accept(self::SECRET_RFC, '000000', $this->instant(1111111109), null));
+    }
+
     // ------------------------------------------------------------- enrolement
 
     public function test_le_secret_engendre_fait_trente_deux_caracteres_de_base32(): void
