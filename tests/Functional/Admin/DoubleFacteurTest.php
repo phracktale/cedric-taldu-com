@@ -123,6 +123,82 @@ final class DoubleFacteurTest extends AdminTestCase
         $this->assertNotNull($ligne['locked_until']);
     }
 
+    public function test_un_compte_verrouille_ne_peut_plus_valider_son_second_facteur(): void
+    {
+        // Le test precedent verifiait que le verrou est ECRIT. Celui-ci verifie
+        // qu'il est LU — ce qui n'est pas la meme chose, et manquait.
+        //
+        // Sans cette lecture, le second facteur reste un espace de six chiffres
+        // a essayer sans limite : le verrouillage ne ferme que l'etape du mot de
+        // passe, et l'etat intermediaire deja ouvert continue d'accepter des
+        // codes pendant toute sa duree de vie.
+        $this->compteAvec2fa();
+        $this->seConnecter('artiste@example.test');
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->postAvecJeton(self::DEUXIEME_FACTEUR, ['code' => '000000']);
+        }
+
+        // Le BON code, desormais : c'est le compte qui est ferme, pas la
+        // tentative qui est comptee.
+        $reponse = $this->postAvecJeton(self::DEUXIEME_FACTEUR, ['code' => $this->codeValide()]);
+
+        $this->assertSame(422, $reponse->status);
+        $this->assertFalse($this->session->has(AdminSession::USER_ID));
+    }
+
+    public function test_le_compte_se_rouvre_apres_le_quart_d_heure_de_verrouillage(): void
+    {
+        $this->compteAvec2fa();
+        $this->seConnecter('artiste@example.test');
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->postAvecJeton(self::DEUXIEME_FACTEUR, ['code' => '000000']);
+        }
+
+        // Le verrou tombe, mais l'etat intermediaire a expire lui aussi : on
+        // repasse par le mot de passe, ce qui est le comportement attendu.
+        $this->horloge->advance('+16 minutes');
+        $this->seConnecter('artiste@example.test');
+
+        $this->assertSame(
+            302,
+            $this->postAvecJeton(self::DEUXIEME_FACTEUR, ['code' => $this->codeValide()])->status,
+        );
+    }
+
+    public function test_les_echecs_s_additionnent_entre_sessions_intermediaires(): void
+    {
+        // Le cœur de l'attaque que le verrou seul ne fermait pas : l'etape du
+        // mot de passe autorise dix sessions intermediaires par adresse AVANT le
+        // moindre echec. Ouvertes d'avance puis martelees en parallele — sessions
+        // distinctes, donc aucune contention —, elles multiplieraient les essais
+        // si le compteur etait porte par la session.
+        //
+        // Il est porte par le COMPTE, et le compte est relu a chaque tentative :
+        // cinq echecs le ferment, quelle que soit la session par laquelle ils
+        // arrivent. Une session ouverte AVANT le verrouillage ne le contourne
+        // donc pas.
+        $this->compteAvec2fa();
+
+        // Cinq echecs repartis sur cinq sessions distinctes.
+        for ($i = 0; $i < 5; $i++) {
+            $this->session->clear();
+            $this->seConnecter('artiste@example.test');
+            $this->postAvecJeton(self::DEUXIEME_FACTEUR, ['code' => '000000']);
+        }
+
+        // Depuis une autre adresse, avec le BON mot de passe : la sixieme
+        // session intermediaire ne s'ouvre meme pas. Le verrou etant porte par
+        // le compte, il ferme les deux etapes a la fois.
+        $this->session->clear();
+        $connexion = $this->seConnecter('artiste@example.test', server: ['REMOTE_ADDR' => '198.51.100.4']);
+
+        $this->assertSame(422, $connexion->status);
+        $this->assertFalse($this->session->has(AdminSession::PENDING_USER_ID));
+        $this->assertFalse($this->session->has(AdminSession::USER_ID));
+    }
+
     public function test_un_code_deja_employe_ne_resservira_pas_dans_la_meme_fenetre(): void
     {
         // Rejeu : le code reste mathematiquement valide pendant trente secondes,
