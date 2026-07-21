@@ -67,6 +67,25 @@ final class Media
     }
 
     /**
+     * Largeur du « src » de repli : celle que recoit un navigateur qui ne
+     * comprend ni srcset ni sizes. 1024 px est le compromis — lisible sur un
+     * ecran ordinaire sans imposer le fichier de 2400.
+     */
+    public function defaultWidth(): int
+    {
+        $widths = $this->availableWidths();
+        $preferred = 1024;
+
+        foreach (array_reverse($widths) as $width) {
+            if ($width <= $preferred) {
+                return $width;
+            }
+        }
+
+        return $widths[0];
+    }
+
+    /**
      * Attribut srcset pour un format donne.
      */
     public function srcset(string $format): string

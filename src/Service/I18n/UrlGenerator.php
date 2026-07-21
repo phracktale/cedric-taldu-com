@@ -71,6 +71,23 @@ final class UrlGenerator
     }
 
     /**
+     * URL d'un derive d'image de public/media/.
+     *
+     * Distincte d'asset() : les derives sont ENGENDRES a l'upload, donc leur
+     * existence ne peut pas etre verifiee au moment ou le lien est produit, et
+     * ils portent deja une empreinte dans leur nom de base. Le nom est
+     * neanmoins controle : il finit dans un attribut HTML.
+     */
+    public function media(string $filename): string
+    {
+        if (preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*\.(avif|webp|jpg|jpeg|png)$/D', $filename) !== 1) {
+            throw AssetNotFound::forPath($filename);
+        }
+
+        return $this->basePath . '/media/' . $filename;
+    }
+
+    /**
      * @param array<string, string|int> $parameters
      */
     private function pathFor(string $name, array $parameters): string
