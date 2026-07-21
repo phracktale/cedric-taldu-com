@@ -21,12 +21,28 @@ préproduction. Tu attaques le lot 3 — Boutique et paiement.
 Puis parcours le code existant : src/Core/, src/Domain/, src/Repository/,
 src/Service/, src/Http/, templates/, tests/Support/.
 
+## Commence par poser les questions
+
+Cinq `@decision` sont devenus bloquants et sont listés en tête de
+docs/REPRISE-LOT-3.md : TVA des tirages rehaussés, grille tarifaire de port,
+délai de rétractation, numérotation des tirages, régime de TVA au démarrage.
+
+Tu ne peux pas écrire `VatPolicy` ni `ShippingCalculator` sans eux, et le régime
+de TVA initial est **définitif** pour toutes les commandes de la période
+(01-modele §7.7). Pose ces questions AVANT d'ouvrir la branche, avec ta
+recommandation et son motif pour chacune.
+
 ## Ce que tu construis
 
 Le **lot 3 — Boutique et paiement**, tel que défini dans docs/specs/08-lots.md.
 Rien de plus. Critère de fin : un achat d'original et un achat de reproduction
 aboutissent en mode test Stripe, avec décrément de stock, e-mails et
 impossibilité de double vente prouvée par test.
+
+C'est le lot où `vendor/` redevient suivi : `stripe/stripe-php` et
+`phpmailer/phpmailer` arrivent, et `composer install` n'est pas garanti sur
+l'hébergement mutualisé. Liste blanche, sans les dépendances de développement,
+commité avec `composer.lock` (CLAUDE.md, « Pièges connus »).
 
 ## Comment tu travailles
 
@@ -37,8 +53,20 @@ intégration de la persistance, puis fonctionnel du parcours, puis sécurité.
 Branche `feature/lot-3-boutique-paiement`. Jamais de commit direct sur `main`.
 Commits en français, `test(...)` AVANT le `feat(...)` correspondant.
 
+**Un test qui vérifie qu'une valeur est ÉCRITE ne vérifie pas que la règle est
+APPLIQUÉE.** Le lot 2 a livré une faille de force brute sur le second facteur
+pour cette exact raison : le compteur de verrouillage était écrit à chaque échec
+et jamais relu, et le test se contentait de constater l'écriture. Ce lot manipule
+du stock et de l'argent — la question à se poser sur chaque invariant est « qui
+le LIT ? ».
+
 **Déploiement.** À la fin du lot, tu fusionnes dans `main`, tu pousses, et tu
 déploies sur Thor. Tu ne déploies pas en cours de lot.
+
+Déployer ne suffit pas : **vérifie en conditions réelles**. Le lot 2 a été
+déclaré terminé alors que le back-office était inutilisable en préproduction,
+faute d'avoir tenté une vraie connexion après le déploiement. La procédure et sa
+vérification sont dans docs/REPRISE-LOT-3.md §Déploiement.
 
 Quand une spec est ambiguë ou qu'un point `@decision` te bloque, tu t'arrêtes et
 tu poses la question, avec ta recommandation et son motif.
@@ -75,7 +103,7 @@ Ils le sont devenus.
 
 ```bash
 composer serve   # http://localhost:8000/cedric-taldu — limites d'upload relevées à 25 Mo
-composer test    # 1319 tests, ~55 s
+composer test    # 1320 tests, ~60 s
 composer stan    # PHPStan niveau 8, sans baseline
 composer lint    # php -l récursif + PSR-12 (longueur de ligne non bloquante)
 
@@ -98,6 +126,51 @@ usage. À améliorer : une base locale distincte.
 **Nouveauté du lot 2** : `DatabaseTestCase` force un passage du migrateur au
 démarrage du processus de test. Une migration nouvellement ajoutée est donc
 appliquée sans intervention — avant, il fallait détruire la base à la main.
+
+### Déploiement
+
+```bash
+ssh phracktale@thor
+cd /home/phracktale/apps/cedric-taldu
+git pull origin main
+docker compose build app                     # si docker/ a changé — voir ci-dessous
+docker compose up -d --force-recreate app
+docker compose exec -T app php bin/migrate.php
+docker compose exec -T app php bin/seed.php --demo --force   # préprod seulement
+```
+
+**`docker compose build` n'est plus facultatif quand `docker/` change.** L'image
+porte désormais un point d'entrée (`docker/php/entrypoint.sh`) sans lequel le
+conteneur ne peut rien écrire. Un `git pull` seul mettrait le code à jour en
+laissant tourner l'ancienne image.
+
+Le vhost Heimdall (`location /cedric-taldu/`) est **déjà posé**, et Heimdall
+**retire** le préfixe avant de transmettre (`proxy_pass …:18120/`) : le conteneur
+reçoit `/fr/` alors que `APP_BASE_PATH` vaut `/cedric-taldu`. Deux tests de
+`BasePathTest` verrouillent cette topologie.
+
+**Vérification après déploiement** — la session doit persister, sinon rien ne
+marche en back-office :
+
+```bash
+URL=https://customer.phracktale.com/cedric-taldu
+curl -sS -c jar -o p1 "$URL/admin/connexion"
+curl -sS -b jar -o p2 "$URL/admin/connexion"
+grep -oE 'value="[a-f0-9]{64}"' p1 p2   # deux valeurs IDENTIQUES = session OK
+```
+
+### Comptes d'administration
+
+Un compte existe en préproduction (`phracktale@gmail.com`, rôle `admin`). Pour en
+créer un autre :
+
+```bash
+docker compose exec -T app php bin/create-admin.php \
+    --email=<adresse> --nom="<nom affiché>" [--role=admin|editor]
+```
+
+Le mot de passe est engendré et **affiché une seule fois** : il n'est stocké
+qu'en empreinte Argon2id. La 2FA s'active ensuite depuis `/admin/compte/2fa`.
 
 ---
 
@@ -148,14 +221,19 @@ médiathèque, compte. Gabarit `layouts/admin.php`, `public/assets/css/admin.css
 `public/assets/js/admin.js` (onglets de langue, confirmation d'abandon,
 proposition de slug — **toutes des améliorations**, la page marche sans).
 
-### Tests — 1319, tous verts
+### Tests — 1320, tous verts
 
-| Suite | Nombre approx. |
-| --- | --- |
-| `unit` | 624 |
-| `integration` | 175 |
-| `functional` | 160 |
-| `security` | 360 |
+| Suite | Nombre | Durée |
+| --- | --- | --- |
+| `unit` | 619 | ~2 s |
+| `integration` | 152 | ~5 s |
+| `functional` | 152 | ~15 s |
+| `security` | 397 | ~35 s |
+
+La suite est passée de 10 s à ~60 s : Argon2id coûte 130 ms par hachage, et
+`UploadTest` fait travailler GD pour de vrai. `UserFactory` mémorise déjà
+l'empreinte du mot de passe par défaut pour tout le processus — sans quoi la
+suite dépasserait les deux minutes.
 
 Nouveaux fichiers de sécurité : `AuthTest`, `CsrfTest`, `UploadTest`.
 `XssTest` rejoue désormais ses charges **à travers le vrai formulaire
