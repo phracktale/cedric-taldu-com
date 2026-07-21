@@ -1,0 +1,61 @@
+# Racine web du site. Tout ce qui n'est pas un fichier existant est envoye au
+# controleur frontal.
+#
+# 06-securite §10 : listing desactive, signature masquee, aucun fichier de
+# service accessible.
+
+Options -Indexes -MultiViews +FollowSymLinks
+ServerSignature Off
+
+DirectoryIndex index.php
+
+# --- Reecriture -------------------------------------------------------------
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Sous un prefixe de chemin, RewriteBase doit rester relatif : le prefixe
+    # est ajoute par le proxy et lu par l'application via X-Forwarded-Prefix.
+    # Rien n'est ecrit en dur ici (09-environnements §3).
+
+    # HTTPS force en production. En preprod, TLS est termine par Heimdall :
+    # X-Forwarded-Proto vaut alors https et la condition n'est pas remplie.
+    RewriteCond %{HTTPS} !=on
+    RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+    RewriteCond %{HTTP_HOST} !^localhost [NC]
+    RewriteCond %{HTTP_HOST} !^127\.0\.0\.1 [NC]
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Les fichiers et repertoires qui existent sont servis tels quels.
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# --- Fichiers jamais servis --------------------------------------------------
+
+<FilesMatch "(?i)(^\.|\.(env|ini|log|sql|sh|bak|swp|dist|lock|md|yml|yaml)$|composer\.(json|lock))">
+    Require all denied
+</FilesMatch>
+
+# --- Types et en-tetes statiques ---------------------------------------------
+
+<IfModule mod_headers.c>
+    # 06-securite §5.8 : nosniff sur les fichiers servis, y compris les derives
+    # d'images de public/media/.
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Les assets portent une empreinte de contenu dans leur URL : ils peuvent
+    # etre mis en cache sans limite, un changement produit une nouvelle URL.
+    <FilesMatch "\.(css|js|woff2|avif|webp|jpg|jpeg|png|svg|ico)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+</IfModule>
+
+<IfModule mod_mime.c>
+    AddType font/woff2 .woff2
+    AddType image/avif .avif
+    AddType image/webp .webp
+</IfModule>
