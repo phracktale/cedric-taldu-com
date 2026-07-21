@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Core;
 
+use App\Core\Exception\SessionUnavailable;
+
 /**
  * Session PHP native, configuree strictement.
  *
@@ -120,11 +122,40 @@ final class PhpSession implements SessionInterface
             return;
         }
 
-        if (!is_dir($this->savePath)) {
-            mkdir($this->savePath, 0o770, true);
-        }
+        $this->assertUsableSavePath();
 
         session_start(self::options($this->basePath, $this->secure, $this->savePath));
         $this->started = true;
+    }
+
+    /**
+     * Refuse de demarrer sur un stockage inutilisable.
+     *
+     * Sans ce controle, PHP se contente d'une alerte et repart d'une session
+     * NEUVE a chaque requete : le jeton CSRF change entre l'affichage du
+     * formulaire et son envoi, et l'utilisateur ne voit qu'un « 419 Formulaire
+     * expiré » qui n'a rien a voir avec le CSRF.
+     *
+     * C'est exactement ce qui s'est produit en preproduction le 2026-07-21 :
+     * storage/ est monte depuis l'hote, ce qui masque le chown de l'image, et le
+     * conteneur ne pouvait plus rien y ecrire. Une session absente doit
+     * s'annoncer comme telle.
+     */
+    private function assertUsableSavePath(): void
+    {
+        // Teste AVANT le mkdir : tenter de creer un repertoire la ou un fichier
+        // existe deja n'emet qu'une alerte « File exists » et rend false, ce qui
+        // ferait remonter un motif faux.
+        if (file_exists($this->savePath) && !is_dir($this->savePath)) {
+            throw SessionUnavailable::forPath($this->savePath, 'un fichier occupe ce chemin');
+        }
+
+        if (!is_dir($this->savePath) && !mkdir($this->savePath, 0o770, true) && !is_dir($this->savePath)) {
+            throw SessionUnavailable::forPath($this->savePath, 'répertoire absent et impossible à créer');
+        }
+
+        if (!is_writable($this->savePath)) {
+            throw SessionUnavailable::forPath($this->savePath, 'répertoire non inscriptible');
+        }
     }
 }

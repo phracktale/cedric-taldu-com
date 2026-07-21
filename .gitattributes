@@ -33,3 +33,7 @@ Dockerfile   text eol=lf
 # Fichiers exclus des archives et des diffs bruités
 maquette/**  linguist-documentation
 vendor/**    linguist-vendored
+
+# Le point d entree du conteneur doit rester executable et en LF.
+*.sh text eol=lf
+docker/php/entrypoint.sh text eol=lf

@@ -41,3 +41,14 @@ WORKDIR /var/www/html
 RUN mkdir -p storage/cache storage/logs storage/sessions storage/uploads public/media \
     && chown -R www-data:www-data storage public/media \
     && chmod -R 770 storage
+
+# Ce chown ne suffit PAS a lui seul : docker-compose.yml monte tout le depot sur
+# /var/www/html, et le montage masque l'arborescence de l'image. Le point
+# d'entree rejoue donc l'operation au demarrage, sur les fichiers reellement
+# montes — voir docker/php/entrypoint.sh, qui explique le defaut rencontre en
+# preproduction le 2026-07-21.
+COPY docker/php/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["apache2-foreground"]
