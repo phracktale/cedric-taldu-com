@@ -36,7 +36,7 @@
         "sort-packages": true
     },
     "scripts": {
-        "serve": "php -S localhost:8000 -t public bin/router.php",
+        "serve": "php -d upload_max_filesize=25M -d post_max_size=32M -S localhost:8000 -t public bin/router.php",
         "test": "phpunit",
         "lint": [
             "@lint:syntax",
@@ -48,7 +48,7 @@
         "stan": "phpstan analyse --memory-limit=512M"
     },
     "scripts-descriptions": {
-        "serve": "Serveur web interne de PHP sur http://localhost:8000 (developpement local)",
+        "serve": "Serveur web interne de PHP sur http://localhost:8000 (developpement local). Les limites de televersement sont relevees a 25 Mo, comme dans le conteneur : le php.ini d'un poste vaut souvent 2 Mo, et l'upload echouerait en silence",
         "test": "Suite complete PHPUnit (unit, integration, functional, security)",
         "lint": "php -l recursif puis PHP_CodeSniffer PSR-12",
         "stan": "PHPStan niveau 8 sur src/, sans baseline"

@@ -123,6 +123,25 @@ final class AuthController
             return RedirectResponse::to($request->basePath . '/admin/connexion');
         }
 
+        // Le verrou est ECRIT par registerFailure() a chaque code faux — encore
+        // faut-il le LIRE. Sans cette ligne, il ne fermait que l'etape du mot de
+        // passe : l'etat intermediaire deja ouvert continuait d'accepter des
+        // codes, et l'etape du mot de passe autorisant dix sessions
+        // intermediaires par adresse AVANT le moindre echec, un attaquant en
+        // ouvrait dix d'avance puis les martelait en parallele. Six chiffres et
+        // trois fenetres acceptees font une chance sur trois cent mille par
+        // essai : c'est le NOMBRE d'essais, et lui seul, qui tient le second
+        // facteur.
+        //
+        // Le compte etant RELU a chaque tentative, ce controle vaut pour toutes
+        // les sessions intermediaires a la fois : cinq echecs au total ferment
+        // le compte, quelle que soit la session par laquelle ils arrivent. Une
+        // limitation de debit supplementaire serait morte — elle mordrait a dix
+        // essais, le verrou ferme a cinq.
+        if ($user->isLocked($this->chrome->now())) {
+            return $this->twoFactorPage($request, 'Code incorrect.', 422);
+        }
+
         $code = trim($request->input('code') ?? '');
 
         // Le code TOTP d'abord, le code de secours ensuite : le second n'est
