@@ -118,6 +118,12 @@ php bin/create-admin.php                # crée un compte administrateur
   cookies portent `path=/cedric-taldu` et un nom préfixé (`ct_session`, `ct_cart`).
 - **Dev Windows + Linux** : la casse des noms de fichiers est significative sur Thor et en
   prod. Fins de ligne LF imposées par `.gitattributes`.
+- **AVIF est écarté, sur mesure** (décision du 2026-07-21, lot 2). Un dérivé AVIF de
+  2400 px coûte **10,9 s** sur une image bruitée réaliste, contre 1,2 s en WebP et 0,06 s
+  en JPEG : les cinq largeurs de `Media::WIDTHS` demandent ~19 s, au-delà de ce qu'un
+  mutualisé accorde à une requête. `libavif` est compilé dans l'image Docker, mais
+  `Media::FORMATS` reste `['webp','jpg']`. AVIF revient au **lot 6**, avec la génération
+  différée que sa lenteur impose de toute façon.
 - **`vendor/` n'est pas suivi tant qu'il ne contient que l'outillage de développement**
   (décision du 2026-07-21, lot 0). PHPUnit, PHPStan et PHP_CodeSniffer pèsent 49 Mo et
   n'ont rien à faire sur un hébergement mutualisé. Il n'existe à ce stade aucune
