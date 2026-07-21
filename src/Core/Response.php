@@ -21,17 +21,24 @@ final class Response
     /** Statuts dont la RFC 9110 interdit le corps. */
     private const BODYLESS_STATUSES = [204, 304];
 
+    /** @var list<Cookie> */
+    public readonly array $cookies;
+
     /**
      * @param array<string, string> $headers cles en minuscules
+     * @param list<Cookie>          $cookies
      */
     public function __construct(
         public readonly string $body = '',
         public readonly int $status = 200,
         public readonly array $headers = [],
+        array $cookies = [],
     ) {
         if ($status < 100 || $status > 599) {
             throw InvalidResponse::forStatus($status);
         }
+
+        $this->cookies = $cookies;
     }
 
     public static function html(string $body, int $status = 200): self
@@ -48,17 +55,32 @@ final class Response
         return new self($this->body, $this->status, [
             ...$this->headers,
             strtolower(trim($name)) => $value,
-        ]);
+        ], $this->cookies);
+    }
+
+    /**
+     * Un cookie du meme nom remplace le precedent : deux Set-Cookie concurrents
+     * laisseraient le navigateur choisir, ce qui n'est jamais ce qu'on veut.
+     */
+    public function withCookie(Cookie $cookie): self
+    {
+        $cookies = array_values(array_filter(
+            $this->cookies,
+            static fn (Cookie $existing): bool => $existing->name !== $cookie->name,
+        ));
+        $cookies[] = $cookie;
+
+        return new self($this->body, $this->status, $this->headers, $cookies);
     }
 
     public function withStatus(int $status): self
     {
-        return new self($this->body, $status, $this->headers);
+        return new self($this->body, $status, $this->headers, $this->cookies);
     }
 
     public function withBody(string $body): self
     {
-        return new self($body, $this->status, $this->headers);
+        return new self($body, $this->status, $this->headers, $this->cookies);
     }
 
     public function header(string $name): ?string
@@ -77,6 +99,10 @@ final class Response
 
             foreach ($this->headers as $name => $value) {
                 header($name . ': ' . $value, true);
+            }
+
+            foreach ($this->cookies as $cookie) {
+                header('Set-Cookie: ' . $cookie->toHeaderValue(), false);
             }
         }
 
