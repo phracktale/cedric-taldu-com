@@ -122,4 +122,29 @@ final class ErrorLeakTest extends FunctionalTestCase
     {
         $this->assertStringContainsString('name="robots" content="noindex"', $this->reponseEnProduction()->body);
     }
+
+    public function test_l_amorcage_lui_meme_est_couvert_par_un_filet(): void
+    {
+        // Regression : un chemin de traversee est refuse par Request AVANT que
+        // le noyau n'existe. Sans le try/catch de public/index.php, PHP
+        // repondait 200 avec la trace complete et les chemins serveur — un
+        // defaut invisible pour les tests fonctionnels, qui entrent tous par
+        // Kernel::handle().
+        $amorcage = (string) file_get_contents(dirname(__DIR__, 2) . '/public/index.php');
+
+        $this->assertStringContainsString('try {', $amorcage);
+        $this->assertStringContainsString('catch (Throwable', $amorcage);
+        $this->assertStringContainsString('FailSafeResponse::for(', $amorcage);
+        $this->assertStringContainsString('Request::fromGlobals', $amorcage);
+
+        // La construction de la requete doit se trouver DANS le bloc protege.
+        $this->assertLessThan(
+            strpos($amorcage, 'catch (Throwable') ?: PHP_INT_MAX,
+            strpos($amorcage, 'Request::fromGlobals') ?: 0,
+        );
+        $this->assertGreaterThan(
+            strpos($amorcage, 'try {') ?: PHP_INT_MAX,
+            strpos($amorcage, 'Request::fromGlobals') ?: 0,
+        );
+    }
 }
