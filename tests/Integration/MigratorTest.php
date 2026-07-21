@@ -8,10 +8,10 @@ use App\Core\Exception\MigrationFailed;
 use App\Core\Migrator;
 use PDO;
 use PDOException;
-use Tests\Support\DatabaseTestCase;
+use Tests\Support\SchemaTestCase;
 use Tests\Support\Doubles\FrozenClock;
 
-final class MigratorTest extends DatabaseTestCase
+final class MigratorTest extends SchemaTestCase
 {
     private const MIGRATIONS = __DIR__ . '/../../migrations';
 
