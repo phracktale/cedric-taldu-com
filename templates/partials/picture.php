@@ -50,7 +50,6 @@ $srcset = static function (Media $media, string $format) use ($url): string {
 <div class="dessin"<?php if ($media instanceof Media) : ?> style="aspect-ratio: <?= attr($media->aspectRatio()) ?>"<?php endif; ?>>
 <?php if ($media instanceof Media) : ?>
   <picture>
-    <source type="image/avif" srcset="<?= attr($srcset($media, 'avif')) ?>" sizes="<?= attr($sizes) ?>">
     <source type="image/webp" srcset="<?= attr($srcset($media, 'webp')) ?>" sizes="<?= attr($sizes) ?>">
     <img
       src="<?= attr($url->media($media->derivativeFilename($media->defaultWidth(), 'jpg'))) ?>"
