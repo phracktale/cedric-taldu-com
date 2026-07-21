@@ -88,6 +88,49 @@ final class Totp
     }
 
     /**
+     * Verifie un code ET rend le numero de fenetre accepte, ou null.
+     *
+     * RFC 6238 §5.2 : « The verifier MUST NOT accept the second attempt of the
+     * OTP after the successful validation has been issued for the first OTP. »
+     * Un code reste valide trente secondes, et la tolerance d'un pas porte cette
+     * fenetre a une minute et demie : sans memoire, un code observe par-dessus
+     * l'epaule resservirait pendant tout ce temps.
+     *
+     * C'est le NUMERO DE FENETRE qui est conserve, jamais le code : aucun secret
+     * supplementaire ne se retrouve en base, et la comparaison se resume a un
+     * « strictement superieur au dernier accepte ».
+     *
+     * @param  int|null $lastCounter derniere fenetre acceptee pour ce compte
+     * @return int|null fenetre a memoriser, ou null si le code est refuse
+     */
+    public function accept(string $secret, string $code, DateTimeImmutable $now, ?int $lastCounter): ?int
+    {
+        if (preg_match('/^[0-9]{' . self::DIGITS . '}$/D', $code) !== 1 || Base32::decode($secret) === null) {
+            return null;
+        }
+
+        $current = intdiv($now->getTimestamp(), self::PERIOD);
+        $accepted = null;
+
+        // La boucle va du plus ancien au plus recent et ne s'interrompt pas :
+        // sortir des la premiere correspondance laisserait mesurer quelle
+        // fenetre a repondu, donc la derive d'horloge du serveur.
+        for ($offset = -self::WINDOW; $offset <= self::WINDOW; $offset++) {
+            $counter = $current + $offset;
+
+            if ($lastCounter !== null && $counter <= $lastCounter) {
+                continue;
+            }
+
+            if (hash_equals($this->codeForCounter($secret, $counter), $code)) {
+                $accepted = $counter;
+            }
+        }
+
+        return $accepted;
+    }
+
+    /**
      * URI otpauth:// a encoder en QR code.
      *
      * Tous les composants sont encodes : le libelle finit dans une URL, et un

@@ -18,6 +18,9 @@
 declare(strict_types=1);
 
 use App\Core\Route;
+use App\Http\Controller\Admin\AccountController;
+use App\Http\Controller\Admin\AuthController;
+use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Front\ArtworkController;
 use App\Http\Controller\Front\CategoryController;
 use App\Http\Controller\Front\HomeController;
@@ -36,4 +39,23 @@ return [
     // Fiche œuvre
     new Route('artwork.show', 'GET', '/fr/oeuvre/{slug}', [ArtworkController::class, 'show'], locale: 'fr', requirements: $slug),
     new Route('artwork.show', 'GET', '/en/artwork/{slug}', [ArtworkController::class, 'show'], locale: 'en', requirements: $slug),
+
+    // ----------------------------------------------------------- back-office
+    //
+    // Non localise : l'interface d'administration est en francais seulement
+    // (04-back-office, en-tete). Toute route sous /admin est FERMEE par defaut ;
+    // `guest: true` ouvre la connexion, et rien d'autre. AuthTest parcourt cette
+    // table et verifie qu'aucune autre ne l'est.
+
+    new Route('admin.login', 'GET', '/admin/connexion', [AuthController::class, 'showLogin'], guest: true),
+    new Route('admin.login.submit', 'POST', '/admin/connexion', [AuthController::class, 'login'], guest: true),
+    new Route('admin.2fa', 'GET', '/admin/connexion/2fa', [AuthController::class, 'showTwoFactor'], guest: true),
+    new Route('admin.2fa.submit', 'POST', '/admin/connexion/2fa', [AuthController::class, 'verifyTwoFactor'], guest: true),
+    new Route('admin.logout', 'POST', '/admin/deconnexion', [AuthController::class, 'logout'], guest: true),
+
+    new Route('admin.dashboard', 'GET', '/admin', [DashboardController::class, 'show']),
+
+    new Route('admin.account.2fa', 'GET', '/admin/compte/2fa', [AccountController::class, 'showTwoFactor']),
+    new Route('admin.account.2fa.enable', 'POST', '/admin/compte/2fa', [AccountController::class, 'enableTwoFactor']),
+    new Route('admin.account.2fa.disable', 'POST', '/admin/compte/2fa/retrait', [AccountController::class, 'disableTwoFactor']),
 ];

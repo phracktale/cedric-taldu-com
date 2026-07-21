@@ -20,7 +20,7 @@ use PDO;
 final class UserRepository
 {
     private const SELECT = <<<'SQL'
-        SELECT id, email, password_hash, display_name, role, totp_secret,
+        SELECT id, email, password_hash, display_name, role, totp_secret, totp_last_counter,
                failed_attempts, locked_until, last_login_at
         FROM users
         SQL;
@@ -96,11 +96,33 @@ final class UserRepository
      */
     public function updateTotpSecret(int $id, ?string $secret): void
     {
+        // Le compteur anti-rejeu repart avec le secret : un nouveau secret n'a
+        // pas d'historique, et le garder interdirait les premieres fenetres.
         $statement = $this->pdo->prepare(
-            'UPDATE users SET totp_secret = :secret, updated_at = NOW() WHERE id = :id'
+            'UPDATE users SET totp_secret = :secret, totp_last_counter = NULL, updated_at = NOW() WHERE id = :id'
         );
 
         $statement->execute(['secret' => $secret, 'id' => $id]);
+    }
+
+    /**
+     * Memorise la fenetre TOTP qui vient d'etre acceptee (RFC 6238 §5.2).
+     *
+     * La condition sur l'ancienne valeur rend l'ecriture monotone : deux
+     * requetes simultanees ne peuvent pas faire RECULER le compteur, ce qui
+     * rouvrirait une fenetre deja consommee.
+     */
+    public function updateTotpCounter(int $id, int $counter): void
+    {
+        $statement = $this->pdo->prepare(
+            'UPDATE users
+                SET totp_last_counter = :counter, updated_at = NOW()
+              WHERE id = :id AND (totp_last_counter IS NULL OR totp_last_counter < :floor)'
+        );
+
+        // Le meme nom de parametre ne peut pas etre lie deux fois hors emulation
+        // des preparations : d'ou :counter et :floor.
+        $statement->execute(['counter' => $counter, 'id' => $id, 'floor' => $counter]);
     }
 
     public function create(string $email, string $passwordHash, string $displayName, Role $role, DateTimeImmutable $now): int
@@ -209,6 +231,7 @@ final class UserRepository
             failedAttempts: (int) $row['failed_attempts'],
             lockedUntil: self::toDate($row['locked_until']),
             lastLoginAt: self::toDate($row['last_login_at']),
+            totpLastCounter: $row['totp_last_counter'] === null ? null : (int) $row['totp_last_counter'],
         );
     }
 

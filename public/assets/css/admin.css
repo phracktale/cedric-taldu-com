@@ -1,0 +1,274 @@
+/* =========================================================================
+   cedrictaldu.com — back-office
+   -------------------------------------------------------------------------
+   04-back-office §12 : « Interface sobre reprenant la charte du site, en une
+   seule feuille de style. »
+
+   Les jetons de couleur et les polices sont ceux des maquettes, repris ici
+   plutôt qu'importés : le back-office ne doit pas charger la feuille du site
+   public, dix fois plus lourde et pleine de règles de vitrine dont un outil de
+   travail n'a que faire. La duplication porte sur huit variables et deux
+   @font-face — elle coûte moins cher qu'un couplage.
+
+   Aucune image de fond, aucune animation : ce qui compte ici est la densité
+   d'information et la lisibilité des formulaires longs.
+
+   Chemins de polices RELATIFS : le site tourne sous /cedric-taldu en
+   préproduction et à la racine en production (09-environnements §3.4).
+   ========================================================================= */
+
+@font-face {
+  font-family: 'Marcellus';
+  src: url('../fonts/Marcellus-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Jost';
+  src: url('../fonts/Jost-VariableFont_wght.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --papier: #FAF9F6;
+  --papier-chaud: #F1EEE8;
+  --mur: #E7E3DB;
+  --encre: #161513;
+  --encre-70: #4A4843;
+  --encre-40: #8C8983;
+  --filet: #D8D4CB;
+  --alerte: #8C2F1F;
+  --max: 1180px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body.admin {
+  background: var(--papier-chaud);
+  color: var(--encre);
+  font-family: 'Jost', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-weight: 300;
+  line-height: 1.6;
+  font-size: 16px;
+}
+
+h1, h2, h3 { font-family: 'Marcellus', Georgia, serif; font-weight: 400; line-height: 1.25; }
+h1 { font-size: 1.7rem; margin-bottom: 1.5rem; }
+h2 { font-size: 1.25rem; margin-bottom: 1rem; }
+
+a { color: var(--encre); text-decoration-color: var(--encre-40); text-underline-offset: 3px; }
+a:hover { text-decoration-color: var(--encre); }
+
+/* Le focus visible n'est jamais retiré : le back-office doit être utilisable
+   entièrement au clavier (04-back-office §12). */
+:focus-visible { outline: 2px solid var(--encre); outline-offset: 2px; }
+
+.skip-link {
+  position: absolute; left: -9999px;
+  background: var(--encre); color: var(--papier); padding: .6rem 1rem;
+}
+.skip-link:focus { left: 1rem; top: 1rem; z-index: 10; }
+
+.bandeau-env {
+  background: var(--encre); color: var(--papier);
+  text-align: center; font-size: .78rem; letter-spacing: .12em;
+  text-transform: uppercase; padding: .35rem;
+}
+
+/* ------------------------------------------------------------------ entête */
+
+.admin-entete {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 2rem;
+  background: var(--papier); border-bottom: 1px solid var(--filet);
+  padding: .9rem clamp(1rem, 4vw, 2.5rem);
+}
+
+.admin-marque { font-family: 'Marcellus', Georgia, serif; font-size: 1.05rem; }
+.admin-marque a { text-decoration: none; }
+.admin-marque span {
+  display: block; font-family: 'Jost', sans-serif; font-size: .7rem;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--encre-40);
+}
+
+.admin-nav { flex: 1 1 auto; }
+.admin-nav ul { display: flex; flex-wrap: wrap; gap: 1.4rem; list-style: none; }
+.admin-nav a { text-decoration: none; font-size: .95rem; padding-bottom: .2rem; }
+.admin-nav a[aria-current='page'] { border-bottom: 2px solid var(--encre); }
+
+.admin-compte { display: flex; align-items: center; gap: .8rem; font-size: .85rem; }
+.admin-role {
+  color: var(--encre-40); font-size: .7rem;
+  letter-spacing: .1em; text-transform: uppercase;
+}
+
+.lien-bouton {
+  background: none; border: 0; padding: 0; cursor: pointer;
+  font: inherit; color: var(--encre-70); text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ----------------------------------------------------------------- contenu */
+
+.admin-contenu { padding: clamp(1.5rem, 5vw, 3rem) clamp(1rem, 4vw, 2.5rem); }
+.admin-page { max-width: var(--max); margin: 0 auto; }
+.admin-page--etroite { max-width: 42rem; }
+
+.aide { color: var(--encre-70); max-width: 62ch; margin-bottom: 1.2rem; }
+.aide--attention {
+  background: var(--papier); border-left: 3px solid var(--alerte);
+  padding: .9rem 1.1rem; max-width: none;
+}
+
+.erreur {
+  background: var(--papier); border-left: 3px solid var(--alerte);
+  color: var(--alerte); padding: .8rem 1rem; margin-bottom: 1.2rem;
+}
+
+.succes {
+  background: var(--papier); border-left: 3px solid var(--encre);
+  padding: .8rem 1rem; margin-bottom: 1.2rem;
+}
+
+/* -------------------------------------------------------------- connexion */
+
+.admin-connexion {
+  max-width: 24rem; margin: clamp(2rem, 10vh, 6rem) auto;
+  background: var(--papier); border: 1px solid var(--filet);
+  padding: clamp(1.5rem, 5vw, 2.5rem);
+}
+
+/* ------------------------------------------------------------ formulaires */
+
+.formulaire .champ { margin-bottom: 1.1rem; }
+.formulaire label {
+  display: block; font-size: .78rem; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--encre-70); margin-bottom: .35rem;
+}
+
+.formulaire input[type='text'],
+.formulaire input[type='email'],
+.formulaire input[type='password'],
+.formulaire input[type='number'],
+.formulaire input[type='url'],
+.formulaire input[type='file'],
+.formulaire select,
+.formulaire textarea {
+  width: 100%; padding: .55rem .7rem; font: inherit;
+  background: var(--papier); color: var(--encre);
+  border: 1px solid var(--filet);
+}
+
+.formulaire textarea { min-height: 9rem; resize: vertical; line-height: 1.55; }
+.formulaire input:focus, .formulaire select:focus, .formulaire textarea:focus {
+  border-color: var(--encre);
+}
+
+.champ-inline { display: flex; align-items: center; gap: .5rem; }
+.champ-inline label { text-transform: none; letter-spacing: 0; margin: 0; font-size: .95rem; }
+
+.champ-aide { font-size: .8rem; color: var(--encre-40); margin-top: .3rem; }
+.champ-erreur { font-size: .82rem; color: var(--alerte); margin-top: .3rem; }
+
+.grille-champs { display: grid; gap: 0 1.2rem; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
+
+fieldset { border: 1px solid var(--filet); padding: 1.2rem; margin-bottom: 1.5rem; background: var(--papier); }
+legend {
+  font-size: .78rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--encre-70); padding: 0 .5rem;
+}
+
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; margin-top: 1.2rem; }
+
+.bouton {
+  display: inline-block; background: var(--encre); color: var(--papier);
+  border: 1px solid var(--encre); padding: .55rem 1.4rem;
+  font: inherit; font-size: .9rem; letter-spacing: .04em;
+  cursor: pointer; text-decoration: none;
+}
+.bouton:hover { background: var(--encre-70); border-color: var(--encre-70); }
+.bouton--secondaire { background: none; color: var(--encre); }
+.bouton--secondaire:hover { background: var(--mur); }
+.bouton--danger { background: var(--alerte); border-color: var(--alerte); }
+.bouton--danger:hover { background: #6f2518; border-color: #6f2518; }
+
+/* ---------------------------------------------------------------- tableaux */
+
+.tableau { width: 100%; border-collapse: collapse; background: var(--papier); font-size: .92rem; }
+.tableau th, .tableau td { text-align: left; padding: .6rem .8rem; border-bottom: 1px solid var(--filet); }
+.tableau th {
+  font-weight: 500; font-size: .74rem; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--encre-70);
+}
+.tableau tbody tr:hover { background: var(--mur); }
+.tableau .colonne-actions { text-align: right; white-space: nowrap; }
+
+.pastille {
+  display: inline-block; font-size: .72rem; letter-spacing: .08em;
+  text-transform: uppercase; padding: .15rem .5rem; border: 1px solid var(--filet);
+}
+.pastille--publie { border-color: var(--encre); }
+.pastille--brouillon { color: var(--encre-40); }
+
+/* ------------------------------------------------------------------ cartes */
+
+.cartes {
+  display: grid; gap: 1rem; margin-bottom: 2.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+}
+.carte { background: var(--papier); border: 1px solid var(--filet); padding: 1.2rem; }
+.carte-nombre { font-family: 'Marcellus', Georgia, serif; font-size: 2.2rem; line-height: 1; }
+.carte-libelle { letter-spacing: .1em; text-transform: uppercase; font-size: .78rem; color: var(--encre-70); }
+.carte-detail { font-size: .85rem; color: var(--encre-40); margin: .4rem 0 .8rem; }
+
+/* --------------------------------------------------------- double facteur */
+
+.secret { background: var(--papier); border: 1px solid var(--filet); padding: 1rem; margin-bottom: 1.2rem; }
+.secret-libelle {
+  display: block; font-size: .72rem; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--encre-70); margin-bottom: .3rem;
+}
+.secret code, .codes-de-secours code { font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace; }
+.secret code { font-size: 1.1rem; letter-spacing: .08em; }
+
+.codes-de-secours {
+  display: grid; gap: .5rem; list-style: none; margin-bottom: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+.codes-de-secours li { background: var(--papier); border: 1px solid var(--filet); padding: .5rem .8rem; text-align: center; }
+
+/* ------------------------------------------------------------- médiathèque */
+
+.grille-medias {
+  display: grid; gap: 1rem; list-style: none;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+}
+.vignette-media { background: var(--papier); border: 1px solid var(--filet); padding: .5rem; }
+.vignette-media img { display: block; width: 100%; height: 9rem; object-fit: cover; background: var(--mur); }
+.vignette-media figcaption { font-size: .78rem; color: var(--encre-70); margin-top: .4rem; word-break: break-word; }
+
+/* --------------------------------------------------------------- onglets */
+
+.onglets { display: flex; gap: .3rem; border-bottom: 1px solid var(--filet); margin-bottom: 1.2rem; }
+.onglets button {
+  font: inherit; font-size: .9rem; background: none; border: 1px solid transparent;
+  border-bottom: 0; padding: .45rem 1rem; cursor: pointer; color: var(--encre-70);
+}
+.onglets button[aria-selected='true'] {
+  background: var(--papier); border-color: var(--filet); color: var(--encre);
+  margin-bottom: -1px; padding-bottom: calc(.45rem + 1px);
+}
+
+/* Sans JavaScript, les panneaux sont tous visibles : la traduction anglaise
+   reste saisissable (04-back-office §12). Le module admin.js masque les
+   panneaux inactifs seulement une fois qu'il a pris la main. */
+.panneau-langue + .panneau-langue { margin-top: 1.5rem; }
+.onglets-actifs .panneau-langue[hidden] { display: none; }
+
+@media (max-width: 700px) {
+  .admin-entete { flex-direction: column; align-items: flex-start; }
+  .tableau { font-size: .85rem; }
+}

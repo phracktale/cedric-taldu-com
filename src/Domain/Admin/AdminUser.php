@@ -35,6 +35,11 @@ final class AdminUser
         public readonly int $failedAttempts,
         public readonly ?DateTimeImmutable $lockedUntil,
         public readonly ?DateTimeImmutable $lastLoginAt,
+        /**
+         * Derniere fenetre TOTP acceptee (RFC 6238 §5.2, migration 0004).
+         * Nullable et en fin de liste : un compte sans 2FA n'en a jamais eu.
+         */
+        public readonly ?int $totpLastCounter = null,
     ) {
     }
 
@@ -124,6 +129,7 @@ final class AdminUser
             failedAttempts: $failedAttempts ?? $this->failedAttempts,
             lockedUntil: $lockedUntil === false ? $this->lockedUntil : $lockedUntil,
             lastLoginAt: $lastLoginAt === false ? $this->lastLoginAt : $lastLoginAt,
+            totpLastCounter: $this->totpLastCounter,
         );
     }
 }

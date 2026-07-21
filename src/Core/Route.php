@@ -34,6 +34,9 @@ final class Route
     /**
      * @param array{0: class-string, 1: string} $handler controleur et methode
      * @param array<string, string> $requirements expression reguliere par parametre
+     * @param bool $guest route d'administration ouverte sans session : la
+     *        connexion elle-meme, et rien d'autre. AuthTest parcourt la table et
+     *        exige qu'une route sous /admin non marquee ainsi soit fermee.
      */
     public function __construct(
         public readonly string $name,
@@ -43,9 +46,21 @@ final class Route
         public readonly ?string $locale = null,
         public readonly array $requirements = [],
         public readonly bool $csrfExempt = false,
+        public readonly bool $guest = false,
     ) {
         $this->method = strtoupper($method);
         $this->handler = $handler;
+    }
+
+    /**
+     * La route appartient-elle au back-office ?
+     *
+     * Comparaison sur une frontiere de segment : « /administration » commence
+     * bien par « /admin » sans etre sous ce prefixe.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->path === '/admin' || str_starts_with($this->path, '/admin/');
     }
 
     /**

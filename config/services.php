@@ -33,19 +33,37 @@ use App\Core\Router;
 use App\Core\SecureRandom;
 use App\Core\SessionInterface;
 use App\Core\SystemClock;
+use App\Core\Validator;
 use App\Core\View;
+use App\Domain\Admin\SessionPolicy;
+use App\Http\Controller\Admin\AccountController;
+use App\Http\Controller\Admin\AuthController;
+use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Front\ArtworkController;
 use App\Http\Controller\Front\CategoryController;
 use App\Http\Controller\Front\HomeController;
+use App\Http\Middleware\AuthGuard;
 use App\Http\Middleware\CsrfGuard;
 use App\Http\Middleware\Locale;
 use App\Http\Middleware\SecurityHeaders;
+use App\Repository\Admin\DashboardRepository;
 use App\Repository\ArtworkRepository;
+use App\Repository\AuditLogRepository;
 use App\Repository\CategoryRepository;
 use App\Repository\MediaRepository;
+use App\Repository\RateLimitRepository;
 use App\Repository\SeriesRepository;
 use App\Repository\SettingRepository;
+use App\Repository\UserRepository;
+use App\Service\Auth\AdminSession;
+use App\Service\Auth\AuditTrail;
+use App\Service\Auth\Authenticator;
+use App\Service\Auth\BackupCodes;
+use App\Service\Auth\PasswordHasher;
+use App\Service\Auth\Totp;
 use App\Service\I18n\UrlGenerator;
+use App\Service\Spam\RateLimiter;
+use App\Service\View\AdminChrome;
 use App\Service\View\Chrome;
 
 return static function (Config $config, Request $request, string $rootPath, ?Env $env = null): Container {
@@ -136,12 +154,84 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         SettingRepository::class,
         static fn (Container $c): SettingRepository => new SettingRepository($c->get(PDO::class)),
     );
+    $container->set(
+        UserRepository::class,
+        static fn (Container $c): UserRepository => new UserRepository($c->get(PDO::class)),
+    );
+    $container->set(
+        AuditLogRepository::class,
+        static fn (Container $c): AuditLogRepository => new AuditLogRepository($c->get(PDO::class)),
+    );
+    $container->set(
+        RateLimitRepository::class,
+        static fn (Container $c): RateLimitRepository => new RateLimitRepository($c->get(PDO::class)),
+    );
+    $container->set(
+        DashboardRepository::class,
+        static fn (Container $c): DashboardRepository => new DashboardRepository($c->get(PDO::class)),
+    );
+
+    // --- Authentification --------------------------------------------------
+    //
+    // Le poivre de .env sert a TROIS usages distincts, chacun avec son propre
+    // prefixe de domaine : empreinte de session, empreinte d'IP, empreinte des
+    // codes de secours. Le prefixe evite qu'une valeur calculee pour l'un ne
+    // soit valable pour l'autre.
+
+    $container->set(Validator::class, static fn (): Validator => new Validator());
+    $container->set(PasswordHasher::class, static fn (): PasswordHasher => new PasswordHasher());
+    $container->set(Totp::class, static fn (): Totp => new Totp());
+
+    $container->set(
+        SessionPolicy::class,
+        static fn (): SessionPolicy => new SessionPolicy($config->securityPepper),
+    );
+    $container->set(
+        BackupCodes::class,
+        static fn (): BackupCodes => new BackupCodes($config->securityPepper),
+    );
+
+    $container->set(AuditTrail::class, static fn (Container $c): AuditTrail => new AuditTrail(
+        $c->get(AuditLogRepository::class),
+        $c->get(ClockInterface::class),
+        $config->securityPepper,
+    ));
+
+    $container->set(RateLimiter::class, static fn (Container $c): RateLimiter => new RateLimiter(
+        $c->get(RateLimitRepository::class),
+        $c->get(ClockInterface::class),
+        $config->securityPepper,
+    ));
+
+    $container->set(AdminSession::class, static fn (Container $c): AdminSession => new AdminSession(
+        $c->get(SessionInterface::class),
+        $c->get(UserRepository::class),
+        $c->get(SessionPolicy::class),
+        $c->get(ClockInterface::class),
+        $c->get(Csrf::class),
+    ));
+
+    $container->set(Authenticator::class, static fn (Container $c): Authenticator => new Authenticator(
+        $c->get(UserRepository::class),
+        $c->get(PasswordHasher::class),
+        $c->get(AuditTrail::class),
+        $c->get(ClockInterface::class),
+    ));
 
     // --- Presentation ------------------------------------------------------
 
     $container->set(Chrome::class, static fn (Container $c): Chrome => new Chrome(
         $c->get(CategoryRepository::class),
         $config,
+        $c->get(ClockInterface::class),
+    ));
+
+    $container->set(AdminChrome::class, static fn (Container $c): AdminChrome => new AdminChrome(
+        $c->get(View::class),
+        $config,
+        $c->get(Csrf::class),
+        $c->get(AdminSession::class),
+        $c->get(AuditTrail::class),
         $c->get(ClockInterface::class),
     ));
 
@@ -175,18 +265,50 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(UrlGenerator::class),
     ));
 
+    // --- Controleurs d'administration --------------------------------------
+
+    $container->set(AuthController::class, static fn (Container $c): AuthController => new AuthController(
+        $c->get(AdminChrome::class),
+        $c->get(AdminSession::class),
+        $c->get(Authenticator::class),
+        $c->get(UserRepository::class),
+        $c->get(Validator::class),
+        $c->get(RateLimiter::class),
+        $c->get(Totp::class),
+        $c->get(BackupCodes::class),
+    ));
+
+    $container->set(AccountController::class, static fn (Container $c): AccountController => new AccountController(
+        $c->get(AdminChrome::class),
+        $c->get(AdminSession::class),
+        $c->get(UserRepository::class),
+        $c->get(Totp::class),
+        $c->get(BackupCodes::class),
+        $c->get(RandomInterface::class),
+        $config,
+    ));
+
+    $container->set(DashboardController::class, static fn (Container $c): DashboardController => new DashboardController(
+        $c->get(AdminChrome::class),
+        $c->get(DashboardRepository::class),
+        $c->get(AuditLogRepository::class),
+    ));
+
     // --- Noyau ------------------------------------------------------------
 
     $container->set(Kernel::class, static fn (Container $c): Kernel => new Kernel(
         $c->get(Router::class),
         $c,
         $c->get(ErrorResponder::class),
-        // Ordre impose par ARCHITECTURE §3. Maintenance, RateLimit et AuthGuard
-        // s'inserent ici quand la fonctionnalite qui les justifie arrive.
+        // Ordre impose par ARCHITECTURE §3. Maintenance et RateLimit s'inserent
+        // ici quand la fonctionnalite qui les justifie arrive ; la limitation de
+        // debit de la connexion est appliquee par le controleur, sa limite etant
+        // propre a l'action (06-securite §6.3).
         [
             new SecurityHeaders($config, $c->get(RandomInterface::class)),
             new Locale($config),
             new CsrfGuard($c->get(Csrf::class), $c->get(LoggerInterface::class)),
+            new AuthGuard($c->get(AdminSession::class), $c->get(LoggerInterface::class)),
         ],
     ));
 
