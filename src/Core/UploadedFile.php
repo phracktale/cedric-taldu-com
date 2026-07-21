@@ -63,7 +63,11 @@ final class UploadedFile
         if (!is_array($entry['tmp_name'] ?? null)) {
             $single = self::fromPhpUpload($entry);
 
-            return $single === null ? [] : [$single];
+            // Un champ laisse vide est une ABSENCE, pas un fichier a refuser :
+            // l'appelant verifie « y a-t-il un fichier ? » et non « ce fichier
+            // est-il present ? ». Un depassement de upload_max_filesize, lui,
+            // porte un autre code et survit a ce filtre — il doit etre signale.
+            return $single === null || $single->isMissing() ? [] : [$single];
         }
 
         $files = [];

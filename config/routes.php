@@ -21,11 +21,13 @@ use App\Core\Route;
 use App\Http\Controller\Admin\AccountController;
 use App\Http\Controller\Admin\AuthController;
 use App\Http\Controller\Admin\DashboardController;
+use App\Http\Controller\Admin\MediaController;
 use App\Http\Controller\Front\ArtworkController;
 use App\Http\Controller\Front\CategoryController;
 use App\Http\Controller\Front\HomeController;
 
 $slug = ['slug' => Route::SLUG];
+$id = ['id' => Route::ID];
 
 return [
     // Accueil
@@ -58,4 +60,10 @@ return [
     new Route('admin.account.2fa', 'GET', '/admin/compte/2fa', [AccountController::class, 'showTwoFactor']),
     new Route('admin.account.2fa.enable', 'POST', '/admin/compte/2fa', [AccountController::class, 'enableTwoFactor']),
     new Route('admin.account.2fa.disable', 'POST', '/admin/compte/2fa/retrait', [AccountController::class, 'disableTwoFactor']),
+
+    // Mediatheque
+    new Route('admin.media.index', 'GET', '/admin/medias', [MediaController::class, 'index']),
+    new Route('admin.media.upload', 'POST', '/admin/medias', [MediaController::class, 'upload']),
+    new Route('admin.media.update', 'POST', '/admin/medias/{id}', [MediaController::class, 'update'], requirements: $id),
+    new Route('admin.media.delete', 'POST', '/admin/medias/{id}/suppression', [MediaController::class, 'delete'], requirements: $id),
 ];

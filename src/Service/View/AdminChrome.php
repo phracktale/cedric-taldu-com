@@ -71,6 +71,19 @@ final class AdminChrome
         return $this->audit;
     }
 
+    /**
+     * Acteur a inscrire au journal d'audit.
+     *
+     * Null est possible en theorie — une action d'administration sans session —
+     * mais AuthGuard l'exclut sur toute route fermee. Le journal accepte
+     * l'absence d'acteur plutot que de refuser la trace : mieux vaut savoir
+     * qu'une action a eu lieu sans savoir qui, que de ne rien savoir.
+     */
+    public function currentUserId(): ?int
+    {
+        return $this->session->currentUser()?->id;
+    }
+
     public function now(): DateTimeImmutable
     {
         return $this->clock->now();

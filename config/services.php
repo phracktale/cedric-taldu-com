@@ -39,6 +39,7 @@ use App\Domain\Admin\SessionPolicy;
 use App\Http\Controller\Admin\AccountController;
 use App\Http\Controller\Admin\AuthController;
 use App\Http\Controller\Admin\DashboardController;
+use App\Http\Controller\Admin\MediaController;
 use App\Http\Controller\Front\ArtworkController;
 use App\Http\Controller\Front\CategoryController;
 use App\Http\Controller\Front\HomeController;
@@ -47,6 +48,7 @@ use App\Http\Middleware\CsrfGuard;
 use App\Http\Middleware\Locale;
 use App\Http\Middleware\SecurityHeaders;
 use App\Repository\Admin\DashboardRepository;
+use App\Repository\Admin\MediaAdminRepository;
 use App\Repository\ArtworkRepository;
 use App\Repository\AuditLogRepository;
 use App\Repository\CategoryRepository;
@@ -62,6 +64,9 @@ use App\Service\Auth\BackupCodes;
 use App\Service\Auth\PasswordHasher;
 use App\Service\Auth\Totp;
 use App\Service\I18n\UrlGenerator;
+use App\Service\Media\ImageProcessor;
+use App\Service\Media\MediaStore;
+use App\Service\Media\UploadValidator;
 use App\Service\Spam\RateLimiter;
 use App\Service\View\AdminChrome;
 use App\Service\View\Chrome;
@@ -170,6 +175,29 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         DashboardRepository::class,
         static fn (Container $c): DashboardRepository => new DashboardRepository($c->get(PDO::class)),
     );
+    $container->set(
+        MediaAdminRepository::class,
+        static fn (Container $c): MediaAdminRepository => new MediaAdminRepository($c->get(PDO::class)),
+    );
+
+    // --- Televersement d'images --------------------------------------------
+    //
+    // Les deux chemins sont donnes ICI et nulle part ailleurs : storage/uploads
+    // est hors webroot, public/media ne recoit que des derives re-engendres
+    // (06-securite §5.6). Aucun controleur ne construit de chemin de fichier.
+
+    $container->set(UploadValidator::class, static fn (): UploadValidator => new UploadValidator());
+    $container->set(ImageProcessor::class, static fn (): ImageProcessor => new ImageProcessor());
+
+    $container->set(MediaStore::class, static fn (Container $c): MediaStore => new MediaStore(
+        $c->get(UploadValidator::class),
+        $c->get(ImageProcessor::class),
+        $c->get(MediaAdminRepository::class),
+        $c->get(RandomInterface::class),
+        $c->get(ClockInterface::class),
+        $rootPath . '/storage/uploads',
+        $rootPath . '/public/media',
+    ));
 
     // --- Authentification --------------------------------------------------
     //
@@ -286,6 +314,13 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(BackupCodes::class),
         $c->get(RandomInterface::class),
         $config,
+    ));
+
+    $container->set(MediaController::class, static fn (Container $c): MediaController => new MediaController(
+        $c->get(AdminChrome::class),
+        $c->get(MediaAdminRepository::class),
+        $c->get(MediaStore::class),
+        $c->get(Validator::class),
     ));
 
     $container->set(DashboardController::class, static fn (Container $c): DashboardController => new DashboardController(
