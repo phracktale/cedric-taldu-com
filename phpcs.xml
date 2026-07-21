@@ -14,6 +14,17 @@
     <arg name="colors"/>
     <arg value="p"/>
 
+    <!--
+        Les AVERTISSEMENTS ne font pas échouer la construction, les ERREURS si.
+
+        Le seul avertissement que la suite produit est la longueur de ligne.
+        PSR-12 ne fixe pas de limite dure : 120 caractères est un objectif, et
+        le forcer conduirait à couper des attributs HTML au milieu, ce qui rend
+        un gabarit moins lisible et non plus. Ils restent affichés — on veut les
+        voir — mais ils n'arrêtent pas la chaîne.
+    -->
+    <config name="ignore_warnings_on_exit" value="1"/>
+
     <rule ref="PSR12"/>
 
     <!--
@@ -30,8 +41,23 @@
         <exclude-pattern>tests/*</exclude-pattern>
     </rule>
 
-    <!-- Les gabarits sont du PHP natif melange a du HTML : la regle qui interdit
-         le code apres la balise fermante n'y a pas de sens. -->
+    <!--
+        Les gabarits sont du PHP natif mêlé à du HTML. Les règles qui régissent
+        l'imbrication des balises PHP y produisent l'inverse du but recherché :
+        elles scindent « <?php if (…) : ?><p> » sur deux lignes, ce qui rend le
+        gabarit moins lisible, pas plus.
+
+        L'exclusion porte sur la MISE EN FORME seule. Tout ce qui relève de la
+        sécurité des gabarits est vérifié ailleurs, et bien mieux, par
+        EscapingTest : échappement obligatoire, aucun gestionnaire d'événement
+        inline, aucune URL en dur.
+    -->
+    <rule ref="Squiz.PHP.EmbeddedPhp">
+        <exclude-pattern>templates/*</exclude-pattern>
+    </rule>
+    <rule ref="Squiz.ControlStructures.ControlSignature.NewlineAfterOpenBrace">
+        <exclude-pattern>templates/*</exclude-pattern>
+    </rule>
     <rule ref="PSR2.Files.ClosingTag">
         <exclude-pattern>templates/*</exclude-pattern>
     </rule>

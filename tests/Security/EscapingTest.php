@@ -22,15 +22,27 @@ final class EscapingTest extends TestCase
     /**
      * Les seules expressions autorisees derriere « <?= ».
      *
-     * $content est pose par Core\View lui-meme et contient le rendu d'un autre
-     * gabarit, deja echappe : c'est la composition mise en page + contenu, et
-     * la seule valeur qui ne vient pas d'une donnee de gabarit.
+     * Trois d'entre elles sont les helpers d'echappement. Les deux autres sont
+     * poses par Core\View lui-meme et ne viennent d'aucune donnee de gabarit :
+     *
+     *  - $content : rendu de la page inseree dans sa mise en page ;
+     *  - $partial(...) : rendu d'un partiel.
+     *
+     * Dans les deux cas la valeur est le rendu d'un AUTRE gabarit, dont ce
+     * meme test controle la source. L'echappement n'est donc pas contourne, il
+     * a deja eu lieu — et le re-echapper afficherait le HTML au lieu de le
+     * rendre.
+     *
+     * money() ne calcule rien et ne produit que des chiffres, un separateur et
+     * un symbole monetaire : aucune donnee d'utilisateur n'y transite.
      */
     private const ALLOWED = [
         '/^e\(/',
         '/^attr\(/',
         '/^jsonAttr\(/',
+        '/^money\(/',
         '/^\$content$/',
+        '/^\$partial\(/',
     ];
 
     public function test_chaque_sortie_de_gabarit_passe_par_un_helper_autorise(): void

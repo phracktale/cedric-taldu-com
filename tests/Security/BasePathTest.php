@@ -168,7 +168,10 @@ final class BasePathTest extends FunctionalTestCase
      */
     private function urlsInternes(string $html): array
     {
-        preg_match_all('/(?:href|src|action|data-base)="(\/[^"]*)"/', $html, $trouves);
+        // data-base n'est PAS une URL : c'est le prefixe lui-meme, transmis au
+        // JavaScript. Il est verifie a part, et il vaut « /cedric-taldu » sans
+        // slash final.
+        preg_match_all('/(?:href|src|action)="(\/[^"]*)"/', $html, $trouves);
 
         /** @var list<string> $urls */
         $urls = $trouves[1];

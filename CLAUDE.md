@@ -10,7 +10,7 @@ Site de l'artiste plasticien Cédric Taldu (Amiens) : présentation des œuvres,
 | Langage | PHP 8.2+ strict types | Pas de framework (Laravel/Symfony full stack interdits) |
 | Base | MySQL 8 / MariaDB 10.6+, InnoDB, `utf8mb4_unicode_ci` | Accès **exclusivement** via PDO préparé |
 | Hébergement | **Preprod** : Docker `php:8.2-apache` sur **Thor**, derrière Heimdall, sur `https://customer.phracktale.com/cedric-taldu`. **Prod** : mutualisé o2switch/OVH | Le site doit fonctionner **sous un préfixe de chemin comme à la racine**. Pas de daemon, pas de worker, pas de file d'attente |
-| Développement | Windows **et** Linux (homelab), via Docker Compose | LF partout, casse des chemins significative, scripts POSIX |
+| Développement | **Local : aucun Docker.** Serveur web interne de PHP (`composer serve`), base de test sur Thor en LAN. Docker est réservé à Thor | LF partout, casse des chemins significative, scripts POSIX |
 | Composer | Utilisé en local. `vendor/` **commité à partir du lot 3** (voir §*Git*) | `composer install` n'est pas garanti sur le serveur mutualisé |
 | Templates | PHP natif + helpers d'échappement | Pas de Twig/Blade |
 | Front JS | ES modules vanilla, **aucune étape de build** | Pas de npm en prod, pas de bundler |
@@ -65,8 +65,7 @@ par de vraies balises `<picture>`.
 ## Commandes
 
 ```bash
-docker compose up -d                    # environnement local complet (app + MySQL + MailHog)
-docker compose exec app composer test   # suite complète PHPUnit
+composer serve                          # serveur web interne de PHP — http://localhost:8000/cedric-taldu
 composer install                        # dépendances (vendor/ n'est pas suivi, voir Git)
 composer test                           # suite complète
 composer test -- --testsuite unit       # une suite : unit | integration | functional | security
@@ -106,7 +105,7 @@ php bin/create-admin.php                # crée un compte administrateur
 
 | Env | URL | Détail |
 | --- | --- | --- |
-| local | `http://localhost:18120/cedric-taldu` | Docker Compose, `APP_BASE_PATH=/cedric-taldu` |
+| local | `http://localhost:8000/cedric-taldu` | Serveur interne de PHP, `APP_BASE_PATH=/cedric-taldu`. Base de test sur Thor (`192.168.1.36:13306`), compte `cedrictaldu_dev` limité à `cedrictaldu_test` |
 | preprod | `https://customer.phracktale.com/cedric-taldu` | Thor `192.168.1.36:18120`, TLS terminé par Heimdall, `X-Forwarded-Prefix` |
 | prod | `https://cedrictaldu.com` `@decision` | Mutualisé, `APP_BASE_PATH=""` |
 

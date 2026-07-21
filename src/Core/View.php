@@ -54,13 +54,34 @@ final class View
     {
         $level = ob_get_level();
 
+        // Composition de partiels. L'en-tete, le pied de page et la vignette
+        // d'œuvre servent a toutes les pages : les faire rendre par le
+        // controleur et les passer en donnee obligerait chaque controleur a
+        // connaitre la mise en page.
+        //
+        // Le partiel ne recoit QUE ce qu'on lui passe : un partiel qui
+        // heriterait du contexte du parent rendrait impossible de savoir ce
+        // dont il depend.
+        $partial =
+            /**
+             * @param array<string, mixed> $partialData
+             */
+            fn (string $template, array $partialData = []): string
+                => $this->evaluate($this->resolve($template), $partialData, '');
+
         ob_start();
 
         try {
             // Closure statique : le gabarit n'a acces ni a $this, ni au conteneur.
-            (static function (string $__template, array $data, UrlGenerator $url, string $content): void {
+            (static function (
+                string $__template,
+                array $data,
+                UrlGenerator $url,
+                string $content,
+                callable $partial,
+            ): void {
                 require $__template;
-            })($file, $data, $this->url, $content);
+            })($file, $data, $this->url, $content, $partial);
 
             return (string) ob_get_clean();
         } catch (Throwable $exception) {

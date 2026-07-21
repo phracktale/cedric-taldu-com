@@ -10,10 +10,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libicu-dev \
         libjpeg62-turbo-dev \
         libpng-dev \
-        libwebp-dev \
+        libavif-dev \n        libwebp-dev \
         libzip-dev \
         unzip \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp --with-avif \
     && docker-php-ext-install -j"$(nproc)" gd intl opcache pdo_mysql zip \
     && apt-get purge -y --auto-remove \
     && rm -rf /var/lib/apt/lists/*

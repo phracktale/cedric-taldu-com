@@ -20,6 +20,8 @@ use App\Core\Config;
 use App\Core\Container;
 use App\Core\CookieFactory;
 use App\Core\Csrf;
+use App\Core\Database;
+use App\Core\Env;
 use App\Core\ErrorResponder;
 use App\Core\FileLogger;
 use App\Core\Kernel;
@@ -32,13 +34,25 @@ use App\Core\SecureRandom;
 use App\Core\SessionInterface;
 use App\Core\SystemClock;
 use App\Core\View;
+use App\Http\Controller\Front\ArtworkController;
+use App\Http\Controller\Front\CategoryController;
 use App\Http\Controller\Front\HomeController;
 use App\Http\Middleware\CsrfGuard;
 use App\Http\Middleware\Locale;
 use App\Http\Middleware\SecurityHeaders;
+use App\Repository\ArtworkRepository;
+use App\Repository\CategoryRepository;
+use App\Repository\MediaRepository;
+use App\Repository\SeriesRepository;
+use App\Repository\SettingRepository;
 use App\Service\I18n\UrlGenerator;
+use App\Service\View\Chrome;
 
-return static function (Config $config, Request $request, string $rootPath): Container {
+return static function (Config $config, Request $request, string $rootPath, ?Env $env = null): Container {
+    // La connexion se construit depuis l'environnement, comme le reste. Le
+    // parametre permet aux tests de fournir le leur sans toucher au fichier.
+    $env ??= Env::load($rootPath . '/.env', array_filter(getenv(), 'is_string'));
+
     $container = new Container();
 
     $container->instance(Config::class, $config);
@@ -97,11 +111,68 @@ return static function (Config $config, Request $request, string $rootPath): Con
         $c->get(LoggerInterface::class),
     ));
 
+    // --- Base de donnees et depots ----------------------------------------
+
+    // Une seule connexion par requete : le conteneur memorise ses services.
+    $container->set(PDO::class, static fn (): PDO => Database::fromEnv($env)->connect());
+
+    $container->set(
+        CategoryRepository::class,
+        static fn (Container $c): CategoryRepository => new CategoryRepository($c->get(PDO::class)),
+    );
+    $container->set(
+        SeriesRepository::class,
+        static fn (Container $c): SeriesRepository => new SeriesRepository($c->get(PDO::class)),
+    );
+    $container->set(
+        ArtworkRepository::class,
+        static fn (Container $c): ArtworkRepository => new ArtworkRepository($c->get(PDO::class)),
+    );
+    $container->set(
+        MediaRepository::class,
+        static fn (Container $c): MediaRepository => new MediaRepository($c->get(PDO::class)),
+    );
+    $container->set(
+        SettingRepository::class,
+        static fn (Container $c): SettingRepository => new SettingRepository($c->get(PDO::class)),
+    );
+
+    // --- Presentation ------------------------------------------------------
+
+    $container->set(Chrome::class, static fn (Container $c): Chrome => new Chrome(
+        $c->get(CategoryRepository::class),
+        $config,
+        $c->get(ClockInterface::class),
+    ));
+
     // --- Controleurs ------------------------------------------------------
 
     $container->set(HomeController::class, static fn (Container $c): HomeController => new HomeController(
         $c->get(View::class),
-        $config,
+        $c->get(Chrome::class),
+        $c->get(SettingRepository::class),
+        $c->get(ArtworkRepository::class),
+        $c->get(MediaRepository::class),
+        $c->get(UrlGenerator::class),
+    ));
+
+    $container->set(CategoryController::class, static fn (Container $c): CategoryController => new CategoryController(
+        $c->get(View::class),
+        $c->get(Chrome::class),
+        $c->get(CategoryRepository::class),
+        $c->get(SeriesRepository::class),
+        $c->get(ArtworkRepository::class),
+        $c->get(MediaRepository::class),
+        $c->get(UrlGenerator::class),
+    ));
+
+    $container->set(ArtworkController::class, static fn (Container $c): ArtworkController => new ArtworkController(
+        $c->get(View::class),
+        $c->get(Chrome::class),
+        $c->get(ArtworkRepository::class),
+        $c->get(CategoryRepository::class),
+        $c->get(MediaRepository::class),
+        $c->get(UrlGenerator::class),
     ));
 
     // --- Noyau ------------------------------------------------------------

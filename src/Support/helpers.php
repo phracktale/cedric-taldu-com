@@ -50,6 +50,18 @@ function attr(string|int|float|null $value): string
  * Le JavaScript relit la valeur par element.dataset.* : le navigateur decode le
  * HTML, JSON.parse fait le reste.
  */
+/**
+ * Montant, formate selon la langue.
+ *
+ * Ne calcule RIEN : le formatage est la derniere etape, sur un montant deja
+ * arrete cote serveur. Un prix absent — artworks.price_cents a NULL, œuvre non
+ * vendable — rend une chaine vide et non « 0,00 € ».
+ */
+function money(?App\Domain\Money $amount, App\Domain\Locale $locale): string
+{
+    return $amount?->format($locale) ?? '';
+}
+
 function jsonAttr(mixed $value): string
 {
     $json = json_encode(
