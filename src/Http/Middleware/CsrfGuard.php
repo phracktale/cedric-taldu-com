@@ -36,7 +36,14 @@ final class CsrfGuard implements MiddlewareInterface
             return $next($request);
         }
 
-        if ($match?->route->csrfExempt === true) {
+        // Aucune route ne correspond : le noyau relancera la 404 ou la 405 et
+        // aucun controleur ne s'executera. Repondre 419 ici masquerait le vrai
+        // statut sans rien proteger.
+        if ($match === null) {
+            return $next($request);
+        }
+
+        if ($match->route->csrfExempt) {
             return $next($request);
         }
 
@@ -48,7 +55,7 @@ final class CsrfGuard implements MiddlewareInterface
             $this->logger->log(LogLevel::Warning, 'Rejet CSRF : jeton absent ou invalide.', [
                 'methode' => $request->method,
                 'chemin' => $request->path,
-                'route' => $match?->route->name ?? '(aucune)',
+                'route' => $match->route->name,
             ]);
 
             throw new CsrfTokenMismatch('Jeton CSRF absent ou invalide.');
