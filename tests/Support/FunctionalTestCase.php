@@ -132,19 +132,38 @@ abstract class FunctionalTestCase extends TestCase
     ): Response {
         $config = $this->config();
 
-        $request = Request::fromServer(
-            $config,
-            [
-                'REQUEST_METHOD' => $method,
-                'REQUEST_URI' => $uri,
-                'REMOTE_ADDR' => '203.0.113.7',
-                ...$server,
-            ],
-            query: $query,
-            post: $post,
-            cookies: $cookies,
-            body: $body,
-        );
+        // Un vrai serveur remplit $_GET depuis la chaine de requete de l'URI :
+        // le socle de test doit faire de meme, sans quoi « ?serie=piliers »
+        // n'aurait aucun effet et les tests de filtre ne prouveraient rien.
+        $queryString = parse_url($uri, PHP_URL_QUERY);
+
+        if (is_string($queryString) && $queryString !== '') {
+            parse_str($queryString, $fromUri);
+            /** @var array<string, string> $fromUri */
+            $query = [...$fromUri, ...$query];
+        }
+
+        // Comme public/index.php : la construction de la requete peut echouer —
+        // un chemin de traversee est refuse la — et cet echec doit produire une
+        // reponse, pas une exception. Sans ce filet, le socle de test ne
+        // reproduirait pas le comportement reel.
+        try {
+            $request = Request::fromServer(
+                $config,
+                [
+                    'REQUEST_METHOD' => $method,
+                    'REQUEST_URI' => $uri,
+                    'REMOTE_ADDR' => '203.0.113.7',
+                    ...$server,
+                ],
+                query: $query,
+                post: $post,
+                cookies: $cookies,
+                body: $body,
+            );
+        } catch (\Throwable $exception) {
+            return \App\Core\FailSafeResponse::for($exception, $config);
+        }
 
         /** @var callable(Config, Request, string): Container $build */
         $build = require $this->rootPath() . '/config/services.php';

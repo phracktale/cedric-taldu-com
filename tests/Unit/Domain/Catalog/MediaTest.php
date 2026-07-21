@@ -41,11 +41,16 @@ final class MediaTest extends TestCase
         $this->assertSame([320, 640, 1024, 1600, 2400], Media::WIDTHS);
     }
 
-    public function test_les_trois_formats_sont_declares_du_plus_efficace_au_repli(): void
+    public function test_les_formats_declares_sont_ceux_qui_sont_reellement_produits(): void
     {
         // L'ordre compte : <picture> retient la premiere source que le
-        // navigateur comprend, donc AVIF d'abord et JPEG en dernier.
-        $this->assertSame(['avif', 'webp', 'jpg'], Media::FORMATS);
+        // navigateur comprend, donc WebP d'abord et JPEG en dernier.
+        //
+        // AVIF est absent : la GD du conteneur n'a pas le support AVIF, et
+        // annoncer une source qu'aucun fichier n'accompagne afficherait une
+        // image cassee. Il rejoindra la liste au lot 2, avec le pipeline
+        // d'images et libavif dans l'image Docker.
+        $this->assertSame(['webp', 'jpg'], Media::FORMATS);
     }
 
     public function test_le_nom_d_un_derive_suit_le_schema_annonce(): void
