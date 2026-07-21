@@ -26,7 +26,7 @@ final class CategoryRepository
      */
     private const SELECT = <<<'SQL'
         SELECT c.id, c.cover_media_id, c.position,
-               t.locale, t.slug, t.eyebrow, t.title, t.description,
+               t.locale, t.slug, t.eyebrow, t.title, t.description, t.method_text,
                t.meta_title, t.meta_description
         FROM categories c
         INNER JOIN category_translations t ON t.category_id = c.id
@@ -136,6 +136,7 @@ final class CategoryRepository
                 description: self::nullableString($row['description']),
                 metaTitle: self::nullableString($row['meta_title']),
                 metaDescription: self::nullableString($row['meta_description']),
+                methodText: self::nullableString($row['method_text']),
             );
         }
 

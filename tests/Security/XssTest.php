@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Tests\Security;
 
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Support\AdminTestCase;
 use Tests\Support\Factory\ArtworkFactory;
 use Tests\Support\Factory\CategoryFactory;
 use Tests\Support\Factory\MediaFactory;
 use Tests\Support\Factory\SeriesFactory;
-use Tests\Support\FunctionalTestCase;
+use Tests\Support\Factory\UserFactory;
 
 /**
  * 06-securite §2, et tests/CLAUDE.md : « Injecte <script>, "><img onerror>,
@@ -20,7 +21,7 @@ use Tests\Support\FunctionalTestCase;
  * champ est ajoute au catalogue, il suffit de l'ajouter ici pour qu'il soit
  * couvert par toutes les charges d'un coup.
  */
-final class XssTest extends FunctionalTestCase
+final class XssTest extends AdminTestCase
 {
     /**
      * Charges reprises de tests/Support/payloads.php (07-tests-tdd §4).
@@ -182,5 +183,124 @@ final class XssTest extends FunctionalTestCase
         $corps = $this->get('/cedric-taldu/fr/oeuvre/%3Cscript%3E')->body;
 
         $this->assertStringNotContainsString('<script>', $corps);
+    }
+
+    // ------------------------------------------------ aller-retour complet
+
+    /**
+     * Le HTML riche est la SEULE sortie non echappee du projet (helper
+     * richText, autorise par EscapingTest). Sa surete ne repose pas sur
+     * l'echappement mais sur l'assainissement a l'ecriture — il faut donc
+     * l'eprouver de bout en bout, par le VRAI formulaire d'administration
+     * jusqu'a la page publique, et non en inserant une valeur deja propre.
+     */
+    #[DataProvider('chargesXss')]
+    public function test_une_charge_dans_la_description_d_une_rubrique_ressort_inerte(string $charge): void
+    {
+        $this->connecte();
+
+        $this->postAvecJeton('/cedric-taldu/admin/rubriques', [
+            'titre_fr' => 'Encres',
+            'slug_fr' => 'encres',
+            'description_fr' => '<p>Introduction</p>' . $charge,
+        ]);
+
+        $id = (int) $this->pdo->query('SELECT id FROM categories')?->fetchColumn();
+        $this->postAvecJeton('/cedric-taldu/admin/rubriques/' . $id . '/publication');
+
+        $this->assertPageInerte($this->get('/cedric-taldu/fr/galerie/encres')->body);
+    }
+
+    #[DataProvider('chargesXss')]
+    public function test_une_charge_dans_le_texte_de_methode_ressort_inerte(string $charge): void
+    {
+        $this->connecte();
+
+        $this->postAvecJeton('/cedric-taldu/admin/rubriques', [
+            'titre_fr' => 'Encres',
+            'slug_fr' => 'encres',
+            'methode_fr' => '<p>Le geste</p>' . $charge,
+        ]);
+
+        $id = (int) $this->pdo->query('SELECT id FROM categories')?->fetchColumn();
+        $this->postAvecJeton('/cedric-taldu/admin/rubriques/' . $id . '/publication');
+
+        $this->assertPageInerte($this->get('/cedric-taldu/fr/galerie/encres')->body);
+    }
+
+    #[DataProvider('chargesXss')]
+    public function test_une_charge_est_reaffichee_inerte_dans_le_back_office(string $charge): void
+    {
+        // tests/CLAUDE.md : « verifie l'echappement dans TOUTES les pages qui le
+        // reaffichent (public ET back-office) ». Un formulaire d'edition qui
+        // reafficherait la charge dans un attribut `value` serait une XSS
+        // stockee visant l'artiste lui-meme.
+        $this->connecte();
+
+        $this->postAvecJeton('/cedric-taldu/admin/rubriques', [
+            'titre_fr' => $charge,
+            'slug_fr' => 'encres',
+        ]);
+
+        $id = (int) $this->pdo->query('SELECT id FROM categories')?->fetchColumn();
+
+        $this->assertAucuneChargeActive($this->get('/cedric-taldu/admin/rubriques/' . $id)->body, $charge);
+        $this->assertAucuneChargeActive($this->get('/cedric-taldu/admin/rubriques')->body, $charge);
+    }
+
+    /**
+     * Aucune balise active, aucun gestionnaire d'evenement, aucun schema
+     * executable — quelle que soit la forme sous laquelle la charge a survecu.
+     *
+     * L'inspection porte sur l'ARBRE et non sur le texte de la page. Chercher
+     * « onmouseover= » dans le HTML rendu serait faux : la charge
+     * `" onmouseover="alert(1)` echouee en CONTENU TEXTUEL contient bien cette
+     * chaine, et elle y est parfaitement inerte — un guillemet dans du texte ne
+     * sort d'aucune balise. Ce qui compte est qu'aucun ELEMENT ne porte un tel
+     * attribut, et c'est ce que l'analyseur, seul, sait dire.
+     */
+    private function assertPageInerte(string $html): void
+    {
+        // Le corps de page seulement : la mise en page porte un <script
+        // type="module"> legitime, avec nonce.
+        $contenu = (string) preg_replace('#.*<main[^>]*>(.*)</main>.*#s', '$1', $html);
+
+        $document = new \DOMDocument();
+        $document->loadHTML(
+            '<?xml encoding="UTF-8"?><html><body>' . $contenu . '</body></html>',
+            LIBXML_NOERROR | LIBXML_NOWARNING,
+        );
+
+        foreach ((new \DOMXPath($document))->query('//*') ?: [] as $element) {
+            if (!$element instanceof \DOMElement) {
+                continue;
+            }
+
+            $this->assertNotContains(
+                strtolower($element->nodeName),
+                ['script', 'style', 'iframe', 'object', 'embed', 'form'],
+                'Balise active rendue par la page.',
+            );
+
+            foreach ($element->attributes ?? [] as $attribut) {
+                $nom = strtolower($attribut->nodeName);
+
+                $this->assertSame(0, preg_match('/^on[a-z]+$/', $nom), 'Gestionnaire d’événement : ' . $nom);
+
+                if ($nom === 'href' || $nom === 'src') {
+                    $this->assertSame(
+                        0,
+                        preg_match('/^\s*(javascript|data|vbscript):/i', (string) $attribut->nodeValue),
+                        'Schéma exécutable dans ' . $nom,
+                    );
+                }
+            }
+        }
+    }
+
+    private function connecte(): void
+    {
+        (new UserFactory($this->pdo))->withEmail('artiste@example.test')->create();
+        $this->seConnecter('artiste@example.test');
     }
 }

@@ -37,6 +37,9 @@ final class Request
      * @param array<string, string> $cookies
      * @param array<string, string> $attributes valeurs ajoutees par le noyau et
      *        les middlewares : langue, parametres de route, nonce CSP
+     * @param array<string, list<UploadedFile>> $files fichiers televerses,
+     *        indexes par nom de champ. Aucun controle n'est fait ici : c'est
+     *        UploadValidator qui decide de leur sort (06-securite §5).
      */
     public function __construct(
         public readonly string $method,
@@ -50,6 +53,7 @@ final class Request
         public readonly bool $secure,
         public readonly ?string $rawBody = null,
         public readonly array $attributes = [],
+        public readonly array $files = [],
     ) {
     }
 
@@ -58,6 +62,7 @@ final class Request
      * @param array<string, mixed> $query
      * @param array<string, mixed> $post
      * @param array<string, mixed> $cookies
+     * @param array<string, mixed> $files structure de $_FILES
      */
     public static function fromServer(
         Config $config,
@@ -66,6 +71,7 @@ final class Request
         array $post = [],
         array $cookies = [],
         ?string $body = null,
+        array $files = [],
     ): self {
         $headers = self::extractHeaders($server);
         $remoteAddr = self::stringOrEmpty($server['REMOTE_ADDR'] ?? null);
@@ -85,6 +91,7 @@ final class Request
             clientIp: self::resolveClientIp($headers, $remoteAddr, $behindTrustedProxy),
             secure: self::resolveScheme($server, $headers, $behindTrustedProxy),
             rawBody: $body,
+            files: self::normalizeFiles($files),
         );
     }
 
@@ -102,7 +109,24 @@ final class Request
             $_POST,
             $_COOKIE,
             $body === false ? null : $body,
+            $_FILES,
         );
+    }
+
+    /**
+     * Fichiers televerses pour ce champ. Toujours une liste, meme pour un champ
+     * simple : l'appelant n'a pas a distinguer les deux formes.
+     *
+     * @return list<UploadedFile>
+     */
+    public function files(string $name): array
+    {
+        return $this->files[$name] ?? [];
+    }
+
+    public function file(string $name): ?UploadedFile
+    {
+        return $this->files($name)[0] ?? null;
     }
 
     public function isMethod(string $method): bool
@@ -164,6 +188,7 @@ final class Request
             $this->secure,
             $this->rawBody,
             [...$this->attributes, ...$attributes],
+            $this->files,
         );
     }
 
@@ -313,6 +338,36 @@ final class Request
         $https = strtolower(self::stringOrEmpty($server['HTTPS'] ?? ''));
 
         return $https !== '' && $https !== 'off';
+    }
+
+    /**
+     * Ramene $_FILES a une forme unique : un tableau de listes.
+     *
+     * PHP presente un champ simple et un champ multiple de deux facons
+     * differentes — la seconde transpose la structure. Normaliser ici evite que
+     * chaque controleur ait a connaitre cette bizarrerie, et que l'un d'eux
+     * l'oublie.
+     *
+     * @param  array<string, mixed> $files
+     * @return array<string, list<UploadedFile>>
+     */
+    private static function normalizeFiles(array $files): array
+    {
+        $normalized = [];
+
+        foreach ($files as $field => $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+
+            $uploads = UploadedFile::fromPhpUploads($entry);
+
+            if ($uploads !== []) {
+                $normalized[(string) $field] = $uploads;
+            }
+        }
+
+        return $normalized;
     }
 
     /**

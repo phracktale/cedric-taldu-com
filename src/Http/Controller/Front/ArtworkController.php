@@ -38,13 +38,34 @@ final class ArtworkController
         private readonly CategoryRepository $categories,
         private readonly MediaRepository $medias,
         private readonly UrlGenerator $url,
+        private readonly \App\Service\Content\PreviewToken $preview,
     ) {
     }
 
     public function show(Request $request): Response
     {
         $locale = Locale::fromString($request->attribute('locale') ?? Locale::reference()->value);
-        $artwork = $this->artworks->findBySlug($locale, self::slug($request->attribute('slug')));
+        $slug = self::slug($request->attribute('slug'));
+
+        $artwork = $this->artworks->findBySlug($locale, $slug);
+        $isPreview = false;
+
+        // 04-back-office §5 : apercu avant publication par lien signe. La
+        // recherche non filtree n'a lieu QUE si un jeton est present, et le
+        // jeton n'ouvre que l'œuvre pour laquelle il a ete emis. Un jeton
+        // absent, faux ou perime laisse le brouillon en 404, jamais en 403 :
+        // 06-securite §8 interdit de confirmer son existence.
+        if ($artwork === null && $request->query('preview') !== null) {
+            $candidate = $this->artworks->findBySlugIncludingDrafts($locale, $slug);
+
+            if (
+                $candidate !== null
+                && $this->preview->isValid((string) $request->query('preview'), 'artwork', $candidate->id)
+            ) {
+                $artwork = $candidate;
+                $isPreview = true;
+            }
+        }
 
         if ($artwork === null) {
             throw new NotFoundException('Œuvre introuvable.');
@@ -69,9 +90,18 @@ final class ArtworkController
             'related' => $related,
             'medias' => $this->medias->findByIds($this->mediaIds($artwork, $related)),
             'isTranslated' => $artwork->isTranslatedIn($locale),
+            'isPreview' => $isPreview,
         ];
 
-        return Response::html($this->view->render('front/artwork', $data, layout: 'layouts/public'));
+        $response = Response::html($this->view->render('front/artwork', $data, layout: 'layouts/public'));
+
+        // Un apercu n'est ni indexable ni mettable en cache : le lien circule,
+        // et la page qu'il ouvre n'existe pas encore publiquement.
+        return $isPreview
+            ? $response
+                ->withHeader('X-Robots-Tag', 'noindex, nofollow')
+                ->withHeader('Cache-Control', 'no-store, private')
+            : $response;
     }
 
     /**

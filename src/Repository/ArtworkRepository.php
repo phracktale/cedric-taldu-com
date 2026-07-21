@@ -120,8 +120,33 @@ final class ArtworkRepository
      */
     public function findBySlug(Locale $locale, Slug $slug): ?Artwork
     {
+        return $this->lookupBySlug($locale, $slug, self::VISIBLE);
+    }
+
+    /**
+     * Œuvre portant ce slug, PUBLIEE OU NON.
+     *
+     * RESERVEE A L'APERCU SIGNE (04-back-office §5). Le seul appelant legitime
+     * est le controleur de fiche, et seulement apres avoir verifie un jeton
+     * PreviewToken valable POUR CETTE ŒUVRE. Toute autre utilisation ferait
+     * fuiter les brouillons, ce que 06-securite §8 interdit explicitement — un
+     * brouillon repond 404, jamais 403, pour ne pas confirmer son existence.
+     *
+     * La methode porte ce nom long precisement pour qu'un appel distrait se
+     * remarque a la relecture.
+     */
+    public function findBySlugIncludingDrafts(Locale $locale, Slug $slug): ?Artwork
+    {
+        return $this->lookupBySlug($locale, $slug, '1 = 1');
+    }
+
+    /**
+     * @param string $visibility condition litterale, jamais une donnee externe
+     */
+    private function lookupBySlug(Locale $locale, Slug $slug, string $visibility): ?Artwork
+    {
         $statement = $this->pdo->prepare(
-            self::SELECT . ' WHERE ' . self::VISIBLE . <<<'SQL'
+            self::SELECT . ' WHERE ' . $visibility . <<<'SQL'
                AND a.id = (
                    SELECT s.artwork_id
                    FROM artwork_translations s

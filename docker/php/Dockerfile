@@ -5,12 +5,19 @@ FROM php:8.2-apache
 
 # gd est requis par le re-encodage systematique des images televersees
 # (06-securite §5.4), intl par les formats de date et de monnaie par langue.
+#
+# libavif est compile mais AVIF n'est PAS produit : mesure au lot 2, un derive
+# AVIF de 2400 px coute onze secondes sur une image realiste, soit une vingtaine
+# de secondes pour les cinq largeurs — au-dela de ce qu'un mutualise accorde a
+# une requete. Media::FORMATS reste ['webp','jpg'] ; AVIF est reporte au lot 6,
+# avec la generation differee que sa lenteur impose de toute facon.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libfreetype6-dev \
         libicu-dev \
         libjpeg62-turbo-dev \
         libpng-dev \
-        libavif-dev \n        libwebp-dev \
+        libavif-dev \
+        libwebp-dev \
         libzip-dev \
         unzip \
     && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp --with-avif \

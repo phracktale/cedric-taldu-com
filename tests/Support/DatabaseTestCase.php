@@ -32,6 +32,9 @@ abstract class DatabaseTestCase extends TestCase
 {
     private static ?PDO $shared = null;
 
+    /** Le migrateur a-t-il deja tourne dans ce processus de test ? */
+    private static bool $migrated = false;
+
     protected PDO $pdo;
 
     protected function setUp(): void
@@ -83,10 +86,16 @@ abstract class DatabaseTestCase extends TestCase
     /**
      * Applique les migrations si le schema n'est pas en place.
      *
-     * Le controle porte sur une table reelle et non sur un drapeau statique :
-     * MigratorTest detruit le schema pour eprouver le moteur de migrations, et
-     * la classe doit savoir se reconstruire apres lui, quel que soit l'ordre
-     * d'execution.
+     * Le controle porte sur une table reelle et non sur le seul drapeau
+     * statique : MigratorTest detruit le schema pour eprouver le moteur de
+     * migrations, et la classe doit savoir se reconstruire apres lui, quel que
+     * soit l'ordre d'execution.
+     *
+     * Le drapeau, lui, force UN passage du migrateur au demarrage du processus,
+     * meme quand le schema parait en place. Sans cela, une base de test deja
+     * construite ne recevrait jamais une migration nouvellement ajoutee : la
+     * suite echouerait sur une colonne absente, avec pour seul remede de
+     * detruire la base a la main.
      */
     public static function ensureSchemaFor(PDO $pdo): void
     {
@@ -96,12 +105,15 @@ abstract class DatabaseTestCase extends TestCase
     protected static function ensureSchema(PDO $pdo): void
     {
         $statement = $pdo->query("SHOW TABLES LIKE 'artworks'");
+        $present = $statement !== false && $statement->fetchColumn() !== false;
 
-        if ($statement !== false && $statement->fetchColumn() !== false) {
+        if ($present && self::$migrated) {
             return;
         }
 
         (new Migrator($pdo, dirname(__DIR__, 2) . '/migrations', new FrozenClock()))->migrate();
+
+        self::$migrated = true;
     }
 
     /**

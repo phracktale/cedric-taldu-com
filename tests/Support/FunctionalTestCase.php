@@ -121,6 +121,13 @@ abstract class FunctionalTestCase extends TestCase
      * @param array<string, string> $post
      * @param array<string, string> $cookies
      */
+    /**
+     * @param array<string, mixed>  $server
+     * @param array<string, string> $query
+     * @param array<string, string> $post
+     * @param array<string, string> $cookies
+     * @param array<string, mixed>  $files structure de $_FILES
+     */
     protected function requete(
         string $method,
         string $uri,
@@ -129,6 +136,7 @@ abstract class FunctionalTestCase extends TestCase
         array $post = [],
         array $cookies = [],
         ?string $body = null,
+        array $files = [],
     ): Response {
         $config = $this->config();
 
@@ -160,6 +168,7 @@ abstract class FunctionalTestCase extends TestCase
                 post: $post,
                 cookies: $cookies,
                 body: $body,
+                files: $files,
             );
         } catch (\Throwable $exception) {
             return \App\Core\FailSafeResponse::for($exception, $config);

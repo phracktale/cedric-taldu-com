@@ -62,6 +62,28 @@ function money(?App\Domain\Money $amount, App\Domain\Locale $locale): string
     return $amount?->format($locale) ?? '';
 }
 
+/**
+ * HTML riche DEJA ASSAINI, rendu tel quel.
+ *
+ * 06-securite §2 : « HTML riche (blog, descriptions) : liste blanche stricte de
+ * balises et d'attributs, assainissement A L'ECRITURE, stockage de la version
+ * assainie. » La lecture ne fait donc plus qu'afficher.
+ *
+ * Cette fonction ne protege RIEN par elle-meme : elle nomme un contrat. Le seul
+ * usage legitime est une valeur passee par Service\Content\HtmlSanitizer avant
+ * d'entrer en base — description de rubrique, texte de methode, corps d'article.
+ * Toute autre valeur passe par e().
+ *
+ * Elle existe pour deux raisons : rendre le contrat visible a la lecture d'un
+ * gabarit, et permettre a EscapingTest d'autoriser cette sortie-la et aucune
+ * autre. Sans elle, la seule facon d'afficher du gras serait d'ouvrir la porte
+ * a toutes les sorties brutes.
+ */
+function richText(?string $sanitizedHtml): string
+{
+    return $sanitizedHtml ?? '';
+}
+
 function jsonAttr(mixed $value): string
 {
     $json = json_encode(

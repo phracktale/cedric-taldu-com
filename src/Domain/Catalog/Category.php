@@ -51,6 +51,15 @@ final class Category
         return $this->translations->for($locale)->description;
     }
 
+    /**
+     * 02-front-public §5 : bande « methode » en bas de la page rubrique, texte
+     * libre et facultatif. HTML deja assaini a l'ecriture.
+     */
+    public function methodText(Locale $locale): ?string
+    {
+        return $this->translations->for($locale)->methodText;
+    }
+
     public function isTranslatedIn(Locale $locale): bool
     {
         return $this->translations->isAvailableIn($locale);
