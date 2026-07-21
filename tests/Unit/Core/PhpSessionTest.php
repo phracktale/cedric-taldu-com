@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Core;
 
+use App\Core\Exception\SessionUnavailable;
 use App\Core\PhpSession;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -77,6 +78,35 @@ final class PhpSessionTest extends TestCase
         $session = new PhpSession('/cedric-taldu', true, sys_get_temp_dir() . '/ct-sessions-test');
 
         $this->assertFalse($session->isStarted());
+    }
+
+    public function test_un_repertoire_de_sessions_inutilisable_echoue_bruyamment(): void
+    {
+        // Defaut rencontre en preproduction le 2026-07-21, et le plus couteux du
+        // lot : storage/ est monte depuis l'hote, ce qui MASQUE le chown du
+        // Dockerfile. Le conteneur ne pouvait plus ecrire, session_start()
+        // repartait d'une session neuve a chaque requete en n'emettant qu'une
+        // alerte PHP, et le seul symptome visible etait un « 419 Formulaire
+        // expiré » a la connexion — un message qui envoie chercher le probleme
+        // du cote du jeton CSRF, ou il n'est pas.
+        //
+        // Une session qui ne peut pas etre ecrite n'est pas une session
+        // degradee : c'est l'absence de session. Elle doit s'annoncer.
+        $fichier = tempnam(sys_get_temp_dir(), 'ct-sessions-');
+        $this->assertIsString($fichier);
+
+        // Un FICHIER la ou un repertoire est attendu : inutilisable de la meme
+        // facon qu'un repertoire non inscriptible, et reproductible sous
+        // Windows comme sous Linux — chmod n'y a pas le meme sens.
+        $session = new PhpSession('/cedric-taldu', true, $fichier);
+
+        try {
+            $this->expectException(SessionUnavailable::class);
+
+            $session->get('peu-importe');
+        } finally {
+            unlink($fichier);
+        }
     }
 
     public function test_les_fichiers_de_session_sont_hors_webroot(): void
