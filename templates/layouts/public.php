@@ -1,21 +1,21 @@
 <?php
 
 /**
- * Gabarit public minimal du lot 0.
+ * Gabarit de mise en page publique — lot 0.
  *
  * Le design system des maquettes (palette, Marcellus/Jost auto-hebergees,
  * en-tete collante, pied de page) est extrait au lot 1 : ici, seule la
  * structure indispensable au fonctionnement de la chaine est posee.
  *
- * @var array<string, mixed>                 $data
- * @var App\Service\I18n\UrlGenerator        $url
+ * @var array<string, mixed>          $data
+ * @var App\Service\I18n\UrlGenerator $url
+ * @var string                        $content rendu du gabarit, deja echappe
  */
 
 declare(strict_types=1);
 
 $locale = is_string($data['locale'] ?? null) ? $data['locale'] : 'fr';
 $titre = is_string($data['titre'] ?? null) ? $data['titre'] : '';
-$contenu = is_string($data['contenu'] ?? null) ? $data['contenu'] : '';
 
 ?>
 <!DOCTYPE html>
@@ -27,7 +27,7 @@ $contenu = is_string($data['contenu'] ?? null) ? $data['contenu'] : '';
 </head>
 <body data-base="<?= attr($url->route('home', ['locale' => $locale])) ?>">
 <main>
-<?= $contenu ?>
+<?= $content ?>
 </main>
 </body>
 </html>

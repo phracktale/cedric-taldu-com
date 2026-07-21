@@ -28,11 +28,14 @@ final class HomeController
     {
         $locale = $request->attribute('locale') ?? $this->config->defaultLocale;
 
-        return Response::html($this->view->render('layouts/public', [
-            'locale' => $locale,
-            'nonce' => $request->attribute('csp_nonce') ?? '',
-            'titre' => 'Bonjour',
-            'contenu' => $this->view->render('front/home', ['locale' => $locale]),
-        ]));
+        return Response::html($this->view->render(
+            'front/home',
+            [
+                'locale' => $locale,
+                'nonce' => $request->attribute('csp_nonce') ?? '',
+                'titre' => 'Bonjour',
+            ],
+            layout: 'layouts/public',
+        ));
     }
 }

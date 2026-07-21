@@ -34,19 +34,33 @@ final class View
 
     /**
      * @param array<string, mixed> $data
+     * @param string|null $layout mise en page qui recevra le rendu dans $content
      */
-    public function render(string $template, array $data = []): string
+    public function render(string $template, array $data = [], ?string $layout = null): string
     {
-        $file = $this->resolve($template);
+        $content = $this->evaluate($this->resolve($template), $data, '');
+
+        if ($layout === null) {
+            return $content;
+        }
+
+        return $this->evaluate($this->resolve($layout), $data, $content);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function evaluate(string $file, array $data, string $content): string
+    {
         $level = ob_get_level();
 
         ob_start();
 
         try {
             // Closure statique : le gabarit n'a acces ni a $this, ni au conteneur.
-            (static function (string $__template, array $data, UrlGenerator $url): void {
+            (static function (string $__template, array $data, UrlGenerator $url, string $content): void {
                 require $__template;
-            })($file, $data, $this->url);
+            })($file, $data, $this->url, $content);
 
             return (string) ob_get_clean();
         } catch (Throwable $exception) {

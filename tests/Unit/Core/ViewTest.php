@@ -80,6 +80,31 @@ final class ViewTest extends TestCase
         $this->assertStringContainsString('<span class="dispo">Disponible</span>', $html);
     }
 
+    public function test_un_gabarit_s_insere_dans_une_mise_en_page(): void
+    {
+        // La mise en page recoit le contenu deja rendu dans $content, variable
+        // posee par View elle-meme. C'est le SEUL echappement legitime a la
+        // regle « tout <?= appelle un helper » : la valeur ne vient pas d'une
+        // donnee de gabarit mais d'un rendu deja echappe (EscapingTest).
+        $html = $this->vue()->render('simple', ['titre' => 'Articulation'], layout: 'mise-en-page');
+
+        $this->assertStringContainsString('<article><h1>Articulation</h1>', $html);
+    }
+
+    public function test_la_mise_en_page_recoit_les_memes_donnees_que_le_gabarit(): void
+    {
+        $html = $this->vue()->render('simple', ['titre' => 'Articulation'], layout: 'mise-en-page');
+
+        $this->assertStringContainsString('<title>Articulation</title>', $html);
+    }
+
+    public function test_une_mise_en_page_inexistante_leve_une_exception(): void
+    {
+        $this->expectException(TemplateNotFound::class);
+
+        $this->vue()->render('simple', ['titre' => 'x'], layout: '../../.env');
+    }
+
     public function test_un_gabarit_inexistant_leve_une_exception(): void
     {
         $this->expectException(TemplateNotFound::class);

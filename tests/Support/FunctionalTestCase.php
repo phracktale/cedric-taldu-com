@@ -33,6 +33,12 @@ abstract class FunctionalTestCase extends TestCase
     /** @var array<string, string> */
     private array $env = [];
 
+    /** @var list<\App\Core\Route>|null table de routes de remplacement */
+    private ?array $routes = null;
+
+    /** @var array<string, callable(Container): object> services supplementaires */
+    private array $services = [];
+
     protected function setUp(): void
     {
         $this->logger = new RecordingLogger();
@@ -47,6 +53,28 @@ abstract class FunctionalTestCase extends TestCase
     protected function withEnv(array $values): void
     {
         $this->env = [...$this->env, ...$values];
+    }
+
+    /**
+     * Remplace la table de routes, pour eprouver un comportement du noyau qui
+     * n'a pas encore de route reelle — une exception de controleur, par exemple.
+     *
+     * @param list<\App\Core\Route> $routes
+     */
+    protected function withRoutes(array $routes): void
+    {
+        $this->routes = $routes;
+    }
+
+    /**
+     * Enregistre un service que le cablage de production ne connait pas — le
+     * controleur d'un test, par exemple.
+     *
+     * @param callable(Container): object $factory
+     */
+    protected function withService(string $id, callable $factory): void
+    {
+        $this->services[$id] = $factory;
     }
 
     protected function config(): Config
@@ -106,6 +134,14 @@ abstract class FunctionalTestCase extends TestCase
         $this->container = $build($config, $request, $this->rootPath());
         $this->container->instance(LoggerInterface::class, $this->logger);
         $this->container->instance(SessionInterface::class, $this->session);
+
+        if ($this->routes !== null) {
+            $this->container->instance(\App\Core\Router::class, new \App\Core\Router($this->routes));
+        }
+
+        foreach ($this->services as $id => $factory) {
+            $this->container->set($id, $factory);
+        }
 
         $kernel = $this->container->get(Kernel::class);
         self::assertInstanceOf(Kernel::class, $kernel);
