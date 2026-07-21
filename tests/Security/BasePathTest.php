@@ -110,6 +110,48 @@ final class BasePathTest extends FunctionalTestCase
         }
     }
 
+    public function test_le_proxy_peut_retirer_le_prefixe_avant_de_transmettre(): void
+    {
+        // Topologie REELLE de la preprod, verifiee en ligne le 2026-07-21 :
+        // Heimdall proxifie `location /cedric-taldu/` vers `…:18120/` — le « / »
+        // final RETIRE le prefixe. Le conteneur recoit donc « /fr/ » alors que
+        // APP_BASE_PATH vaut « /cedric-taldu », et doit malgre tout produire des
+        // liens prefixes.
+        //
+        // Ce test n'est pas passe par un etat rouge : il caracterise un
+        // comportement deja verifie en production. Il est la pour qu'un
+        // changement de Request::stripBasePath ne casse pas silencieusement la
+        // preprod, cas que le reste de la suite ne couvrait pas.
+        $reponse = $this->get('/fr/', [
+            'REMOTE_ADDR' => '192.168.1.195',
+            'HTTP_X_FORWARDED_PREFIX' => self::PREFIXE,
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+
+        $this->assertSame(200, $reponse->status);
+
+        $urls = $this->urlsInternes($reponse->body);
+        $this->assertNotEmpty($urls);
+
+        foreach ($urls as $url) {
+            $this->assertStringStartsWith(self::PREFIXE . '/', $url);
+        }
+    }
+
+    public function test_la_racine_derriere_un_proxy_qui_retire_le_prefixe_redirige_avec_le_prefixe(): void
+    {
+        // Le conteneur recoit « / » pour une demande de
+        // https://customer.phracktale.com/cedric-taldu/ : la redirection de
+        // langue doit repartir vers /cedric-taldu/fr/ et non vers /fr/.
+        $reponse = $this->get('/', [
+            'REMOTE_ADDR' => '192.168.1.195',
+            'HTTP_X_FORWARDED_PREFIX' => self::PREFIXE,
+        ]);
+
+        $this->assertSame(302, $reponse->status);
+        $this->assertSame(self::PREFIXE . '/fr/', $reponse->header('Location'));
+    }
+
     public function test_un_prefixe_transfere_par_un_client_non_proxy_est_ignore(): void
     {
         // Sans ce garde-fou, un visiteur choisirait le prefixe de toutes les
