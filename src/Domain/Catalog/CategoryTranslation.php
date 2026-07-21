@@ -10,7 +10,8 @@ use App\Domain\Slug;
 /**
  * Textes d'une rubrique pour une langue.
  *
- * description contient du HTML deja assaini a l'ecriture (06-securite §2).
+ * description et methodText contiennent du HTML deja assaini a l'ecriture
+ * (06-securite §2) : la lecture ne fait plus qu'afficher.
  */
 final class CategoryTranslation
 {
@@ -22,6 +23,11 @@ final class CategoryTranslation
         public readonly ?string $description,
         public readonly ?string $metaTitle,
         public readonly ?string $metaDescription,
+        /**
+         * Bande basse de la page rubrique (02-front-public §5). Nullable et en
+         * fin de liste : le champ est facultatif et n'existait pas au lot 1.
+         */
+        public readonly ?string $methodText = null,
     ) {
     }
 }

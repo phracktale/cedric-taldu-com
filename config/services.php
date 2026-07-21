@@ -38,6 +38,7 @@ use App\Core\View;
 use App\Domain\Admin\SessionPolicy;
 use App\Http\Controller\Admin\AccountController;
 use App\Http\Controller\Admin\AuthController;
+use App\Http\Controller\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Admin\MediaController;
 use App\Http\Controller\Front\ArtworkController;
@@ -47,8 +48,10 @@ use App\Http\Middleware\AuthGuard;
 use App\Http\Middleware\CsrfGuard;
 use App\Http\Middleware\Locale;
 use App\Http\Middleware\SecurityHeaders;
+use App\Repository\Admin\CategoryAdminRepository;
 use App\Repository\Admin\DashboardRepository;
 use App\Repository\Admin\MediaAdminRepository;
+use App\Repository\Admin\SeriesAdminRepository;
 use App\Repository\ArtworkRepository;
 use App\Repository\AuditLogRepository;
 use App\Repository\CategoryRepository;
@@ -63,6 +66,8 @@ use App\Service\Auth\Authenticator;
 use App\Service\Auth\BackupCodes;
 use App\Service\Auth\PasswordHasher;
 use App\Service\Auth\Totp;
+use App\Service\Content\HtmlSanitizer;
+use App\Service\Content\TranslationInput;
 use App\Service\I18n\UrlGenerator;
 use App\Service\Media\ImageProcessor;
 use App\Service\Media\MediaStore;
@@ -178,6 +183,26 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
     $container->set(
         MediaAdminRepository::class,
         static fn (Container $c): MediaAdminRepository => new MediaAdminRepository($c->get(PDO::class)),
+    );
+    $container->set(
+        CategoryAdminRepository::class,
+        static fn (Container $c): CategoryAdminRepository => new CategoryAdminRepository($c->get(PDO::class)),
+    );
+    $container->set(
+        SeriesAdminRepository::class,
+        static fn (Container $c): SeriesAdminRepository => new SeriesAdminRepository($c->get(PDO::class)),
+    );
+
+    // --- Contenu riche ------------------------------------------------------
+    //
+    // L'assainissement a lieu A L'ECRITURE (06-securite §2) : TranslationInput
+    // le fait pour tous les champs HTML des formulaires, une fois, plutot que
+    // dans chaque controleur — ou l'oubli serait invisible.
+
+    $container->set(HtmlSanitizer::class, static fn (): HtmlSanitizer => new HtmlSanitizer());
+    $container->set(
+        TranslationInput::class,
+        static fn (Container $c): TranslationInput => new TranslationInput($c->get(HtmlSanitizer::class)),
     );
 
     // --- Televersement d'images --------------------------------------------
@@ -315,6 +340,16 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(RandomInterface::class),
         $config,
     ));
+
+    $container->set(
+        AdminCategoryController::class,
+        static fn (Container $c): AdminCategoryController => new AdminCategoryController(
+            $c->get(AdminChrome::class),
+            $c->get(CategoryAdminRepository::class),
+            $c->get(SeriesAdminRepository::class),
+            $c->get(TranslationInput::class),
+        ),
+    );
 
     $container->set(MediaController::class, static fn (Container $c): MediaController => new MediaController(
         $c->get(AdminChrome::class),

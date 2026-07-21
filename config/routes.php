@@ -20,6 +20,7 @@ declare(strict_types=1);
 use App\Core\Route;
 use App\Http\Controller\Admin\AccountController;
 use App\Http\Controller\Admin\AuthController;
+use App\Http\Controller\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Admin\MediaController;
 use App\Http\Controller\Front\ArtworkController;
@@ -28,6 +29,7 @@ use App\Http\Controller\Front\HomeController;
 
 $slug = ['slug' => Route::SLUG];
 $id = ['id' => Route::ID];
+$idEtSerie = ['id' => Route::ID, 'serie' => Route::ID];
 
 return [
     // Accueil
@@ -60,6 +62,18 @@ return [
     new Route('admin.account.2fa', 'GET', '/admin/compte/2fa', [AccountController::class, 'showTwoFactor']),
     new Route('admin.account.2fa.enable', 'POST', '/admin/compte/2fa', [AccountController::class, 'enableTwoFactor']),
     new Route('admin.account.2fa.disable', 'POST', '/admin/compte/2fa/retrait', [AccountController::class, 'disableTwoFactor']),
+
+    // Rubriques et series
+    new Route('admin.category.index', 'GET', '/admin/rubriques', [AdminCategoryController::class, 'index']),
+    new Route('admin.category.create', 'GET', '/admin/rubriques/nouvelle', [AdminCategoryController::class, 'create']),
+    new Route('admin.category.store', 'POST', '/admin/rubriques', [AdminCategoryController::class, 'store']),
+    new Route('admin.category.edit', 'GET', '/admin/rubriques/{id}', [AdminCategoryController::class, 'edit'], requirements: $id),
+    new Route('admin.category.update', 'POST', '/admin/rubriques/{id}', [AdminCategoryController::class, 'update'], requirements: $id),
+    new Route('admin.category.publish', 'POST', '/admin/rubriques/{id}/publication', [AdminCategoryController::class, 'togglePublication'], requirements: $id),
+    new Route('admin.category.move', 'POST', '/admin/rubriques/{id}/position', [AdminCategoryController::class, 'move'], requirements: $id),
+    new Route('admin.category.delete', 'POST', '/admin/rubriques/{id}/suppression', [AdminCategoryController::class, 'delete'], requirements: $id),
+    new Route('admin.series.store', 'POST', '/admin/rubriques/{id}/series', [AdminCategoryController::class, 'storeSeries'], requirements: $id),
+    new Route('admin.series.delete', 'POST', '/admin/rubriques/{id}/series/{serie}/suppression', [AdminCategoryController::class, 'deleteSeries'], requirements: $idEtSerie),
 
     // Mediatheque
     new Route('admin.media.index', 'GET', '/admin/medias', [MediaController::class, 'index']),

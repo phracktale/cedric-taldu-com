@@ -61,7 +61,8 @@ $lienRubrique = static fn (?Series $serie): string => $url->route('category.show
   <h1><?= e($rubrique->title($locale)) ?></h1>
 
   <?php if ($rubrique->description($locale) !== null) : ?>
-  <div class="intro"><p><?= e(trim(strip_tags($rubrique->description($locale)))) ?></p></div>
+  <?php /* HTML assaini a l'ecriture par HtmlSanitizer : la lecture affiche. */ ?>
+  <div class="intro"><?= richText($rubrique->description($locale)) ?></div>
   <?php endif; ?>
 
   <?php if ($series !== []) : ?>
@@ -102,3 +103,13 @@ $lienRubrique = static fn (?Series $serie): string => $url->route('category.show
   </nav>
   <?php endif; ?>
 </section>
+
+<?php if ($rubrique->methodText($locale) !== null) : ?>
+<?php /* 02-front-public §5 — bande « méthode », reprise de maquette/boutique-encres.html. */ ?>
+<section class="methode">
+  <div class="wrap">
+    <?= richText($rubrique->methodText($locale)) ?>
+    <hr class="stipple">
+  </div>
+</section>
+<?php endif; ?>
