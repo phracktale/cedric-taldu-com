@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Encres | Dessin à l'encre de Chine, point par point — Cédric Taldu, Amiens</title>
+<meta name="description" content="Dessins à l'encre de Chine de Cédric Taldu, artiste dessinateur à Amiens. Le dessin avance point par point, à partir de structures anatomiques réelles. Œuvres originales.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Jost:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+:root{
+  --papier:#FAF9F6;
+  --papier-chaud:#F1EEE8;
+  --mur:#E7E3DB;
+  --encre:#161513;
+  --encre-70:#4A4843;
+  --encre-40:#8C8983;
+  --filet:#D8D4CB;
+  --max:1180px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+body{
+  font-family:'Jost',sans-serif;font-weight:300;color:var(--encre);
+  background:var(--papier);line-height:1.65;font-size:1.0625rem;
+}
+img{max-width:100%;display:block}
+a{color:inherit}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 5vw}
+.eyebrow{font-size:.72rem;letter-spacing:.32em;text-transform:uppercase;color:var(--encre-40);margin-bottom:1.1rem}
+h1,h2,h3{font-family:'Marcellus',serif;font-weight:400;line-height:1.18}
+.stipple{
+  height:5px;border:none;margin:0 auto;width:min(240px,40vw);opacity:.75;
+  background-image:radial-gradient(circle, var(--encre-40) 1.1px, transparent 1.3px);
+  background-size:11px 5px;background-repeat:repeat-x;background-position:center;
+}
+
+/* nav (identique accueil) */
+header{position:sticky;top:0;z-index:50;background:rgba(250,249,246,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--filet)}
+.nav{max-width:var(--max);margin:0 auto;padding:0 5vw;display:flex;align-items:center;justify-content:space-between;height:72px}
+.brand{font-family:'Marcellus',serif;font-size:1.25rem;text-decoration:none;letter-spacing:.04em}
+.brand small{display:block;font-family:'Jost',sans-serif;font-weight:300;font-size:.66rem;letter-spacing:.3em;text-transform:uppercase;color:var(--encre-40)}
+nav ul{display:flex;gap:1.9rem;list-style:none;align-items:center}
+nav a{text-decoration:none;font-size:.86rem;letter-spacing:.12em;text-transform:uppercase;color:var(--encre-70);padding-bottom:.2rem;border-bottom:1px solid transparent;transition:color .2s,border-color .2s}
+nav a:hover,nav a:focus-visible{color:var(--encre);border-bottom-color:var(--encre)}
+nav a[aria-current]{color:var(--encre);border-bottom-color:var(--encre)}
+nav a.boutique{border:1px solid var(--encre);padding:.5rem 1.15rem;color:var(--encre);transition:background .2s,color .2s}
+nav a.boutique:hover,nav a.boutique:focus-visible{background:var(--encre);color:var(--papier)}
+.burger{display:none;background:none;border:1px solid var(--filet);font:inherit;padding:.4rem .8rem;cursor:pointer}
+@media (max-width:900px){
+  .burger{display:block}
+  nav ul{display:none;position:absolute;top:72px;left:0;right:0;background:var(--papier);border-bottom:1px solid var(--filet);flex-direction:column;gap:0;padding:1rem 5vw 1.5rem}
+  nav ul.open{display:flex}
+  nav li{width:100%}
+  nav a{display:block;padding:.7rem 0}
+  nav a.boutique{display:inline-block;margin-top:.6rem}
+}
+
+/* en-tête de page */
+.page-head{padding:clamp(3.5rem,8vh,5.5rem) 0 clamp(2.5rem,6vh,4rem);text-align:center}
+.page-head h1{font-size:clamp(1.9rem,4.4vw,3rem);max-width:24ch;margin:0 auto 1.5rem}
+.page-head .intro{max-width:58ch;margin:0 auto;color:var(--encre-70)}
+.page-head .intro p{margin-bottom:1rem}
+.fil{font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--encre-40);margin-bottom:1.4rem}
+.fil a{text-decoration:none}
+.fil a:hover{text-decoration:underline}
+
+/* filtres de série */
+.series{display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap;margin:2.4rem 0 0}
+.serie{
+  font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;text-decoration:none;
+  border:1px solid var(--filet);padding:.5rem 1.1rem;color:var(--encre-70);
+  transition:border-color .2s,color .2s;
+}
+.serie:hover,.serie:focus-visible{border-color:var(--encre);color:var(--encre)}
+.serie[aria-current]{background:var(--encre);border-color:var(--encre);color:var(--papier)}
+
+/* grille d'œuvres */
+.grille{padding:clamp(3rem,7vh,5rem) 0 clamp(4rem,9vh,6rem)}
+.oeuvres{display:grid;grid-template-columns:repeat(3,1fr);gap:2.4rem 1.8rem}
+.oeuvre{display:block;text-decoration:none}
+.cadre{
+  background:#fff;border:1px solid var(--filet);padding:8%;
+  box-shadow:0 14px 34px -22px rgba(22,21,19,.25);
+  transition:transform .25s,box-shadow .25s;
+}
+.oeuvre:hover .cadre,.oeuvre:focus-visible .cadre{transform:translateY(-5px);box-shadow:0 22px 44px -22px rgba(22,21,19,.32)}
+.dessin{
+  aspect-ratio:3/4;
+  background:
+    radial-gradient(circle at 32% 38%, rgba(22,21,19,.15) 0 18%, transparent 42%),
+    radial-gradient(circle at 66% 62%, rgba(22,21,19,.11) 0 20%, transparent 46%),
+    radial-gradient(circle, rgba(22,21,19,.5) .7px, transparent .9px);
+  background-size:100% 100%,100% 100%,4px 4px;
+  display:flex;align-items:center;justify-content:center;
+}
+.dessin span{font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--encre-40);background:rgba(255,255,255,.85);padding:.3rem .7rem}
+.oeuvre.carre .dessin{aspect-ratio:1/1}
+.oeuvre.haut .dessin{aspect-ratio:5/8}
+.legende{margin-top:.9rem;font-size:.82rem;letter-spacing:.05em;color:var(--encre-70)}
+.legende strong{display:block;font-weight:500;letter-spacing:.14em;text-transform:uppercase;font-size:.78rem;color:var(--encre)}
+.legende .dispo{
+  display:inline-block;margin-top:.35rem;font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;
+  border-bottom:1px solid var(--encre);color:var(--encre);
+}
+@media (max-width:900px){.oeuvres{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.oeuvres{grid-template-columns:1fr}}
+
+/* bande méthode */
+.methode{background:var(--papier-chaud);padding:clamp(3.5rem,8vh,5.5rem) 0;text-align:center}
+.methode h2{font-size:clamp(1.5rem,3vw,2.1rem);margin-bottom:1.2rem}
+.methode p{max-width:56ch;margin:0 auto 1rem;color:var(--encre-70)}
+.methode .stipple{margin:1.8rem auto 0}
+
+/* passerelle boutique */
+.passerelle{background:var(--encre);color:var(--papier);padding:clamp(3rem,7vh,4.5rem) 0;text-align:center}
+.passerelle p{max-width:52ch;margin:0 auto 1.8rem;color:rgba(250,249,246,.82)}
+.btn{
+  display:inline-block;text-decoration:none;font-size:.85rem;letter-spacing:.16em;text-transform:uppercase;
+  padding:.9rem 2rem;border:1px solid var(--papier);color:var(--papier);
+  transition:background .2s,color .2s;
+}
+.btn:hover,.btn:focus-visible{background:var(--papier);color:var(--encre)}
+
+footer{border-top:1px solid var(--filet);padding:2.5rem 0;font-size:.85rem;color:var(--encre-40)}
+.foot{max-width:var(--max);margin:0 auto;padding:0 5vw;display:flex;justify-content:space-between;gap:1.5rem;flex-wrap:wrap}
+footer a{color:var(--encre-70);text-decoration:none}
+footer a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <a class="brand" href="maquette-cedrictaldu-accueil.html">Cédric Taldu<small>artiste plasticien — Amiens</small></a>
+    <button class="burger" aria-expanded="false" aria-controls="menu" onclick="const m=document.getElementById('menu');const o=m.classList.toggle('open');this.setAttribute('aria-expanded',o)">Menu</button>
+    <nav aria-label="Navigation principale">
+      <ul id="menu">
+        <li><a href="#">À propos</a></li>
+        <li><a href="#" aria-current="page">Encres</a></li>
+        <li><a href="#">Peintures</a></li>
+        <li><a href="#">Actus</a></li>
+        <li><a href="#">Livret</a></li>
+        <li><a href="#">Contact</a></li>
+        <li><a class="boutique" href="#">Boutique</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <section class="page-head wrap">
+    <p class="fil"><a href="maquette-cedrictaldu-accueil.html">Accueil</a> · Encres</p>
+    <h1>Dessin à l'encre de Chine, point par point</h1>
+    <div class="intro">
+      <p>Le dessin avance lentement. À l'encre de Chine, chaque point engage la surface. L'image se construit par reprises et densités. Des blancs sont laissés ouverts.</p>
+      <p>Je travaille à partir de structures anatomiques reconnaissables. Leur fonction première reste présente, mais le dessin les conduit vers d'autres usages. Une articulation devient un espace de construction. Une épaule porte ce qu'elle a traversé.</p>
+    </div>
+    <div class="series" role="navigation" aria-label="Séries">
+      <a class="serie" href="#" aria-current="page">Toutes</a>
+      <a class="serie" href="#">Piliers</a>
+      <a class="serie" href="#">Fondations</a>
+      <a class="serie" href="#">Figures</a>
+    </div>
+  </section>
+
+  <section class="grille wrap" aria-label="Œuvres">
+    <div class="oeuvres">
+
+      <a class="oeuvre" href="maquette-cedrictaldu-fiche-oeuvre.html">
+        <div class="cadre"><div class="dessin"><span>Articulation</span></div></div>
+        <p class="legende"><strong>Articulation — 2026</strong>Encre de Chine sur papier, 10 × 16,5 cm<br><span class="dispo">Disponible en boutique</span></p>
+      </a>
+
+      <a class="oeuvre haut" href="#">
+        <div class="cadre"><div class="dessin"><span>Autoportrait</span></div></div>
+        <p class="legende"><strong>Autoportrait au Baron Samedi — 2026</strong>Encre de Chine sur papier, 24 × 32 cm</p>
+      </a>
+
+      <a class="oeuvre" href="#">
+        <div class="cadre"><div class="dessin"><span>Pendu</span></div></div>
+        <p class="legende"><strong>Auto-portrait au Pendu, Arcane Majeure — 2024</strong>Encre de Chine sur papier, 16 × 23 cm</p>
+      </a>
+
+      <a class="oeuvre" href="#">
+        <div class="cadre"><div class="dessin"><span>Pilier I</span></div></div>
+        <p class="legende"><strong>Pilier I — 2025</strong>Encre de Chine sur papier, 14 × 21 cm<br><span class="dispo">Disponible en boutique</span></p>
+      </a>
+
+      <a class="oeuvre" href="#">
+        <div class="cadre"><div class="dessin"><span>Pilier II</span></div></div>
+        <p class="legende"><strong>Pilier II — 2024</strong>Encre de Chine sur papier, 14 × 21 cm</p>
+      </a>
+
+      <a class="oeuvre haut" href="#">
+        <div class="cadre"><div class="dessin"><span>Fondation X</span></div></div>
+        <p class="legende"><strong>Fondation X — 2026</strong>Encre de Chine sur papier, 5 × 13 cm</p>
+      </a>
+
+      <a class="oeuvre" href="#">
+        <div class="cadre"><div class="dessin"><span>Fondations</span></div></div>
+        <p class="legende"><strong>Fondations — 2025</strong>Encre de Chine sur papier, 23 × 16 cm</p>
+      </a>
+
+      <a class="oeuvre" href="#">
+        <div class="cadre"><div class="dessin"><span>Fondation II</span></div></div>
+        <p class="legende"><strong>Fondation II — 2025</strong>Encre de Chine sur papier, 23 × 16 cm</p>
+      </a>
+
+      <a class="oeuvre carre" href="#">
+        <div class="cadre"><div class="dessin"><span>Catrina</span></div></div>
+        <p class="legende"><strong>Catrina — 2026</strong>Encre de Chine sur papier, 12 × 12 cm</p>
+      </a>
+
+    </div>
+  </section>
+
+  <section class="methode">
+    <div class="wrap">
+      <p class="eyebrow">Le corps comme terrain d'expérimentations</p>
+      <h2>Le point accumule et creuse. Il ralentit le regard.</h2>
+      <p>Chaque feuille devient un terrain d'expérimentation. Les éléments y sont mis en relation jusqu'à produire une organisation qui tienne. Le corps apparaît alors comme une construction possible, issue du réel, travaillée par l'expérience.</p>
+      <p>Ce travail part d'une expérience commune. Chacun connaît l'écart entre le corps que l'on montre et celui que l'on habite. Les œuvres donnent une forme visible à cet écart.</p>
+      <hr class="stipple">
+    </div>
+  </section>
+
+  <section class="passerelle">
+    <div class="wrap">
+      <p class="eyebrow" style="color:rgba(250,249,246,.55)">Boutique</p>
+      <p>Certaines encres sont disponibles à l'acquisition. Pièces uniques, certificat d'authenticité signé.</p>
+      <a class="btn" href="#">Voir les œuvres disponibles</a>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="foot">
+    <p>© 2025–2026 Cédric Taldu — Artiste plasticien, Amiens, Hauts-de-France</p>
+    <p><a href="mailto:contact@cedrictaldu.com">contact@cedrictaldu.com</a> · <a href="tel:+33609648058">+33 (0)6 09 64 80 58</a> · <a href="#">Instagram</a></p>
+    <p><a href="#">Mentions légales</a> · <a href="#">Livret d'artiste 2026</a></p>
+  </div>
+</footer>
+
+</body>
+</html>

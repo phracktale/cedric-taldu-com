@@ -1,0 +1,35 @@
+# Développement sur Windows ET sur Linux (homelab) : fins de ligne LF dans le dépôt
+# et dans les copies de travail, pour que Thor et le mutualisé reçoivent des fichiers
+# identiques à ceux du poste de développement.
+* text=auto eol=lf
+
+*.php   text eol=lf
+*.sql   text eol=lf
+*.md    text eol=lf
+*.css   text eol=lf
+*.js    text eol=lf
+*.json  text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.html  text eol=lf
+*.sh    text eol=lf
+.env.example text eol=lf
+Dockerfile   text eol=lf
+.htaccess    text eol=lf
+
+# Binaires : jamais de normalisation
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.webp binary
+*.avif binary
+*.gif  binary
+*.pdf  binary
+*.woff  binary
+*.woff2 binary
+*.ico  binary
+*.zip  binary
+
+# Fichiers exclus des archives et des diffs bruités
+maquette/**  linguist-documentation
+vendor/**    linguist-vendored
