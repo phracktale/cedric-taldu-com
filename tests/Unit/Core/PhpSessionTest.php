@@ -68,6 +68,17 @@ final class PhpSessionTest extends TestCase
         $this->assertSame('/', $this->options(basePath: '')['cookie_path']);
     }
 
+    public function test_la_session_ne_demarre_pas_a_la_construction(): void
+    {
+        // Une lecture anonyme ne doit poser aucun cookie : la session ne
+        // demarre qu'au premier acces reel. Sinon chaque visiteur d'une page
+        // publique repart avec un ct_session dont il n'a aucun usage, et la
+        // reponse devient impossible a mettre en cache.
+        $session = new PhpSession('/cedric-taldu', true, sys_get_temp_dir() . '/ct-sessions-test');
+
+        $this->assertFalse($session->isStarted());
+    }
+
     public function test_les_fichiers_de_session_sont_hors_webroot(): void
     {
         // 06-securite §4 : save_path dans storage/sessions, jamais dans public/.
