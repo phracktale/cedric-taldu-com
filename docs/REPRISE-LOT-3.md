@@ -74,18 +74,73 @@ tu poses la question, avec ta recommandation et son motif.
 
 ---
 
-## Décisions à trancher AVANT de coder le lot 3
+## Décisions — TOUTES TRANCHÉES le 2026-07-21
 
-Ces `@decision` étaient signalés « bloquants à partir du lot 3 » dès le lot 2.
-Ils le sont devenus.
+Les cinq `@decision` bloquants, plus un sixième découvert en écrivant `VatPolicy`.
+Le détail et les motifs sont dans
+[specs/00-perimetre-et-lexique.md](specs/00-perimetre-et-lexique.md) §5 bis.
 
-| Point | Pourquoi il bloque |
+| Point | Décision |
 | --- | --- |
-| **TVA — tirages rehaussés** | `products.vat_category` a une valeur par défaut, mais la règle métier décide de `VatPolicy` et du contenu des factures. 03-boutique §5. |
-| **Grille tarifaire de port** | `shipping_zones` et `shipping_rates` n'ont aucune donnée d'amorçage. `ShippingCalculator` ne peut pas être écrit sans les tranches réelles. |
-| **Délai de rétractation** | Mention obligatoire dans les CGV et l'e-mail de confirmation. |
-| **Numérotation des tirages** | `order_items.edition_number` : attribution à la commande ou à l'expédition ? |
-| **Régime de TVA au démarrage** | `orders.vat_mode` par défaut `exempt_293b`. Une commande créée avant la bascule n'est jamais recalculée (01-modele §7.7) : le choix initial est définitif pour toutes les commandes de la période. |
+| **Régime de TVA au démarrage** | `exempt_293b`, `taxable_from` nulle. **Définitif** pour la période. |
+| **TVA des tirages rehaussés** | `standard_goods`, 20 % |
+| **Numérotation des tirages** | Au paiement, dans le webhook, sous verrou de ligne |
+| **Rétractation** | 14 jours, retour aux frais du client |
+| **Grille de port** | Forfait par zone : FR 9 €, UE 20 €, Monde 35 €. Franco FR 300 €, UE 800 €. Tranche unique à 10 kg, emballage 250 g |
+| **TVA du port** (découvert en cours) | Deux colonnes dédiées sur `order_items`. Les six invariants de 01-modele §7.6 sont contradictoires sans elles |
+
+---
+
+## Où en est le lot 3 — branche `feature/lot-3-boutique-paiement`
+
+**18 commits, suite complète verte à chaque commit** : 1 590 tests, 14 168 assertions,
+PHPStan 8 sans erreur, PSR-12 sans erreur. **Rien n'est déployé** — le lot n'est pas fini.
+
+### Fait
+
+| Couche | Contenu |
+| --- | --- |
+| `Domain/Money` | `plus`, `minus`, `times`, `sum`, `isAtLeast`, `excludingVat` (arrondi **bancaire**), `allocate` (ventilation au prorata) |
+| `Domain/Order/` | `VatCategory`, `VatMode`, `VatRegime`, `VatRate`, `VatRateTable`, `VatPolicy`, `TaxableLine`, `LineVat`, `VatBreakdown`, `OrderStatus`, `OrderReference` |
+| `Domain/Shipping/` | `ShippingMethod`, `WeightBracket`, `ShippingZone`, `ShippingZones`, `ShippingQuote`, `ShippingCalculator` |
+| `Domain/Shop/` | `Cart`, `CartLine`, `LineKind`, `PurchasableItem`, `ItemCatalogue`, `StockPolicy`, `PricingPolicy`, `CartValuation`, `ValuedLine`, `CartNotice`, `CartNoticeReason` |
+| `Domain/Catalog/ArtworkStatus` | Machine à états complétée + `effectiveAt()` (expiration de réservation à la lecture) |
+| `migrations/0005_boutique.sql` | Les onze tables, amorces TVA / port / réglages |
+| `Repository/StockRepository` | `reserve`, `release`, `markSold`, `decrementStock`, `claimEditionNumbers` — **tous** en UPDATE conditionnel avec vérification du `rowCount()` |
+| Tests | `SchemaBoutiqueTest` (33), `StockRepositoryTest` (24, dont **3 de concurrence à deux connexions PDO**) |
+
+### Reste à faire, dans l'ordre
+
+1. **Dépôts** : `CartRepository`, `OrderRepository` (dont `nextReference` sous verrou),
+   `ProductRepository`, `VariantRepository`, `StripeEventRepository`,
+   `ShippingRepository`, `VatRateRepository`, `Admin/OrderAdminRepository`.
+2. **`vendor/` suivi en liste blanche** + `stripe/stripe-php` et `phpmailer/phpmailer`,
+   commités avec `composer.lock` (CLAUDE.md, « Pièges connus »).
+3. **`Service/Payment/`** : `PaymentGateway`, `StripeCheckoutGateway`, `FakeGateway`.
+4. **`Service/Mail/`** : `MailerInterface`, `SmtpMailer`, `ArrayMailer`, gabarits.
+5. **Front** : zone reproductions de la fiche œuvre, `CartController`,
+   `CheckoutController`, page de confirmation, `cart.js`.
+6. **Webhook** `POST /webhooks/stripe` — signé, idempotent, transactionnel.
+7. **Back-office** : reproductions, variantes, commandes, expédition, export CSV.
+8. **Sécurité** : `PriceIntegrityTest`, `WebhookTest`, `OrderTransitionTest`,
+   `MoneyTypeTest`, `TokenTest`.
+9. **Fusion, déploiement Thor, vérification en conditions réelles** (§Déploiement).
+
+### Trois pièges rencontrés, à ne pas rouvrir
+
+1. **La clé d'unicité de `cart_items` telle que 01-modele §5 la définit ne protège
+   rien.** `(cart_id, kind, artwork_id, variant_id)` : MySQL ne tient jamais deux `NULL`
+   pour égaux dans un index unique, et une ligne `original` a `variant_id` à `NULL`. La
+   même œuvre s'ajoutait deux fois. Corrigé par une colonne générée
+   `target_id = COALESCE(artwork_id, variant_id)`, en **VIRTUAL** et non `STORED` :
+   MySQL refuse `ON DELETE CASCADE` sur la colonne de base d'une colonne générée
+   stockée (erreur 1215).
+2. **Un test d'intégration qui écrit hors transaction doit nettoyer ce qu'il crée,
+   rubriques comprises.** Trois rubriques orphelines laissées par les tests de
+   concurrence faisaient échouer dix-neuf tests fonctionnels à l'autre bout de la suite,
+   sans aucun rapport apparent.
+3. **L'arrondi du HT est bancaire**, pas commercial (07-tests-tdd §2.1). 999 centimes
+   TTC à 20 % donnent 832 et non 833. Les attendus écrits d'instinct sont faux.
 
 ---
 
