@@ -47,10 +47,76 @@ final class PhpSession implements SessionInterface
         ];
     }
 
-    public function start(): void
+    public function isStarted(): bool
     {
-        if ($this->started || session_status() === PHP_SESSION_ACTIVE) {
+        return $this->started;
+    }
+
+    public function id(): string
+    {
+        $this->start();
+        $id = session_id();
+
+        return $id === false ? '' : $id;
+    }
+
+    public function has(string $key): bool
+    {
+        $this->start();
+
+        return array_key_exists($key, $_SESSION);
+    }
+
+    public function get(string $key, ?string $default = null): ?string
+    {
+        $this->start();
+        $value = $_SESSION[$key] ?? null;
+
+        return is_string($value) ? $value : $default;
+    }
+
+    public function set(string $key, string $value): void
+    {
+        $this->start();
+        $_SESSION[$key] = $value;
+    }
+
+    public function remove(string $key): void
+    {
+        $this->start();
+        unset($_SESSION[$key]);
+    }
+
+    public function clear(): void
+    {
+        $this->start();
+        $_SESSION = [];
+    }
+
+    public function regenerateId(): void
+    {
+        $this->start();
+        session_regenerate_id(true);
+    }
+
+    /**
+     * Demarrage PARESSEUX.
+     *
+     * Une lecture anonyme ne doit poser aucun cookie : sans cela, chaque
+     * visiteur d'une page publique repart avec un ct_session dont il n'a aucun
+     * usage, et la reponse devient impossible a mettre en cache. La session ne
+     * demarre donc qu'au premier acces reel — un formulaire, un panier, une
+     * connexion.
+     */
+    private function start(): void
+    {
+        if ($this->started) {
+            return;
+        }
+
+        if (session_status() === PHP_SESSION_ACTIVE) {
             $this->started = true;
+
             return;
         }
 
@@ -60,44 +126,5 @@ final class PhpSession implements SessionInterface
 
         session_start(self::options($this->basePath, $this->secure, $this->savePath));
         $this->started = true;
-    }
-
-    public function id(): string
-    {
-        $id = session_id();
-
-        return $id === false ? '' : $id;
-    }
-
-    public function has(string $key): bool
-    {
-        return array_key_exists($key, $_SESSION);
-    }
-
-    public function get(string $key, ?string $default = null): ?string
-    {
-        $value = $_SESSION[$key] ?? null;
-
-        return is_string($value) ? $value : $default;
-    }
-
-    public function set(string $key, string $value): void
-    {
-        $_SESSION[$key] = $value;
-    }
-
-    public function remove(string $key): void
-    {
-        unset($_SESSION[$key]);
-    }
-
-    public function clear(): void
-    {
-        $_SESSION = [];
-    }
-
-    public function regenerateId(): void
-    {
-        session_regenerate_id(true);
     }
 }

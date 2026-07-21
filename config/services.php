@@ -78,16 +78,13 @@ return static function (Config $config, Request $request, string $rootPath): Con
         $c->get(ClockInterface::class),
     ));
 
-    $container->set(SessionInterface::class, static function () use ($config, $request, $rootPath): SessionInterface {
-        $session = new PhpSession(
-            $request->basePath,
-            $request->secure,
-            $rootPath . '/storage/sessions',
-        );
-        $session->start();
-
-        return $session;
-    });
+    // La session demarre PARESSEUSEMENT, au premier acces reel : une lecture
+    // anonyme ne pose aucun cookie et reste mettable en cache.
+    $container->set(SessionInterface::class, static fn (): SessionInterface => new PhpSession(
+        $request->basePath,
+        $request->secure,
+        $rootPath . '/storage/sessions',
+    ));
 
     $container->set(Csrf::class, static fn (Container $c): Csrf => new Csrf(
         $c->get(SessionInterface::class),
