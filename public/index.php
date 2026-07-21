@@ -14,6 +14,7 @@ declare(strict_types=1);
 use App\Core\Config;
 use App\Core\Container;
 use App\Core\Env;
+use App\Core\FailSafeResponse;
 use App\Core\Kernel;
 use App\Core\Request;
 
@@ -33,15 +34,24 @@ ini_set('log_errors', '1');
 error_reporting(E_ALL);
 date_default_timezone_set('UTC');
 
-$request = Request::fromGlobals($config);
+// Tout ce qui precede le Kernel peut echouer : un chemin de traversee est
+// refuse des la construction de la requete. Sans ce filet, PHP repondrait 200
+// avec la trace complete et les chemins serveur (06-securite §10).
+try {
+    $request = Request::fromGlobals($config);
 
-/** @var callable(Config, Request, string): Container $build */
-$build = require $root . '/config/services.php';
+    /** @var callable(Config, Request, string): Container $build */
+    $build = require $root . '/config/services.php';
 
-$kernel = $build($config, $request, $root)->get(Kernel::class);
+    $kernel = $build($config, $request, $root)->get(Kernel::class);
 
-if (!$kernel instanceof Kernel) {
-    throw new RuntimeException('Le conteneur n\'a pas produit de Kernel.');
+    if (!$kernel instanceof Kernel) {
+        throw new RuntimeException('Le conteneur n\'a pas produit de Kernel.');
+    }
+
+    $response = $kernel->handle($request);
+} catch (Throwable $exception) {
+    $response = FailSafeResponse::for($exception, $config);
 }
 
-$kernel->handle($request)->send();
+$response->send();
