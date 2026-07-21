@@ -1,0 +1,39 @@
+# Secrets — jamais commités (CLAUDE.md §6)
+/.env
+/.env.*
+!/.env.example
+
+# Données d'exploitation — hors dépôt
+/storage/cache/*
+/storage/logs/*
+/storage/sessions/*
+/storage/uploads/*
+!/storage/**/.gitkeep
+
+# Dérivés d'images générés à l'upload
+/public/media/*
+!/public/media/.gitkeep
+
+# Outillage
+/.phpunit.cache/
+/.phpunit.result.cache
+/coverage/
+/build/
+
+# Postes de travail
+.DS_Store
+Thumbs.db
+/.idea/
+/.vscode/
+
+# Dépendances
+#
+# Décision du 2026-07-21 : `vendor/` n'est PAS suivi tant qu'il ne contient que
+# l'outillage de développement (PHPUnit, PHPStan, PHP_CodeSniffer, ~49 Mo), qui
+# n'a rien à faire sur un hébergement mutualisé. Il n'existe à ce stade aucune
+# dépendance de production.
+#
+# À revoir au lot 3, quand `stripe/stripe-php` arrive : la règle de CLAUDE.md
+# (« composer install n'est pas garanti sur le serveur mutualisé ») redevient
+# alors valable, et `vendor/` sera suivi en liste blanche, sans les dev-deps.
+/vendor/

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="cedrictaldu">
+    <description>PSR-12 sur le code applicatif, les tests et les scripts.</description>
+
+    <file>bin</file>
+    <file>public</file>
+    <file>src</file>
+    <file>tests</file>
+    <file>templates</file>
+
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+
+    <arg name="extensions" value="php"/>
+    <arg name="colors"/>
+    <arg value="p"/>
+
+    <rule ref="PSR12"/>
+
+    <!-- Les gabarits sont du PHP natif melange a du HTML : la regle qui interdit
+         le code apres la balise fermante n'y a pas de sens. -->
+    <rule ref="PSR2.Files.ClosingTag">
+        <exclude-pattern>templates/*</exclude-pattern>
+    </rule>
+    <rule ref="Squiz.WhiteSpace.ScopeClosingBrace">
+        <exclude-pattern>templates/*</exclude-pattern>
+    </rule>
+    <rule ref="Generic.WhiteSpace.ScopeIndent">
+        <exclude-pattern>templates/*</exclude-pattern>
+    </rule>
+</ruleset>

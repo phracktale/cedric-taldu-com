@@ -1,0 +1,50 @@
+{
+    "name": "phracktale/cedric-taldu-com",
+    "description": "Site vitrine et boutique de l'artiste plasticien Cedric Taldu",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.2",
+        "ext-fileinfo": "*",
+        "ext-gd": "*",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "ext-pdo": "*",
+        "ext-pdo_mysql": "*"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^11.5",
+        "squizlabs/php_codesniffer": "^3.11"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "scripts": {
+        "test": "phpunit",
+        "lint": [
+            "@lint:syntax",
+            "@lint:style"
+        ],
+        "lint:syntax": "php bin/lint.php",
+        "lint:style": "phpcs",
+        "lint:fix": "phpcbf",
+        "stan": "phpstan analyse --memory-limit=512M"
+    },
+    "scripts-descriptions": {
+        "test": "Suite complete PHPUnit (unit, integration, functional, security)",
+        "lint": "php -l recursif puis PHP_CodeSniffer PSR-12",
+        "stan": "PHPStan niveau 8 sur src/, sans baseline"
+    }
+}
