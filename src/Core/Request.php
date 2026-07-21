@@ -35,6 +35,8 @@ final class Request
      * @param array<string, string> $query
      * @param array<string, string> $post
      * @param array<string, string> $cookies
+     * @param array<string, string> $attributes valeurs ajoutees par le noyau et
+     *        les middlewares : langue, parametres de route, nonce CSP
      */
     public function __construct(
         public readonly string $method,
@@ -47,6 +49,7 @@ final class Request
         public readonly string $clientIp,
         public readonly bool $secure,
         public readonly ?string $rawBody = null,
+        public readonly array $attributes = [],
     ) {
     }
 
@@ -134,6 +137,34 @@ final class Request
     public function cookie(string $name, ?string $default = null): ?string
     {
         return $this->cookies[$name] ?? $default;
+    }
+
+    public function attribute(string $name, ?string $default = null): ?string
+    {
+        return $this->attributes[$name] ?? $default;
+    }
+
+    /**
+     * La requete restant immuable, un middleware qui enrichit le contexte rend
+     * une nouvelle instance et la transmet au maillon suivant.
+     *
+     * @param array<string, string> $attributes
+     */
+    public function withAttributes(array $attributes): self
+    {
+        return new self(
+            $this->method,
+            $this->path,
+            $this->basePath,
+            $this->query,
+            $this->post,
+            $this->cookies,
+            $this->headers,
+            $this->clientIp,
+            $this->secure,
+            $this->rawBody,
+            [...$this->attributes, ...$attributes],
+        );
     }
 
     // ------------------------------------------------------------------ interne
