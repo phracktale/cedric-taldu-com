@@ -1,0 +1,11 @@
+# storage/ est HORS webroot dans la configuration de reference.
+# Ce fichier est la ceinture et les bretelles du point 6 de 06-securite §5 :
+# meme servi par erreur, rien ne s exécute et rien ne se liste.
+
+Require all denied
+
+php_flag engine off
+RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .php8
+RemoveType .php .phtml
+SetHandler none
+Options -Indexes -ExecCGI

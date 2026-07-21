@@ -4,7 +4,7 @@
 
 | Env | Machine | URL | Serveur | Base |
 |---|---|---|---|---|
-| **local** | Poste Windows **ou** Linux (homelab) | `http://localhost:8080/cedric-taldu` | Docker `php:8.2-apache` | MySQL 8 en conteneur |
+| **local** | Poste Windows **ou** Linux (homelab) | `http://localhost:18120/cedric-taldu` | Docker `php:8.2-apache` | MySQL 8 en conteneur |
 | **preprod** | **Thor** `192.168.1.36`, Docker | `https://customer.phracktale.com/cedric-taldu` | Docker `php:8.2-apache`, TLS terminé par Heimdall | MySQL 8 en conteneur |
 | **prod** | o2switch / OVH mutualisé `@decision` | `https://cedrictaldu.com` | Apache + `.htaccess`, PHP 8.2 | MySQL mutualisé |
 

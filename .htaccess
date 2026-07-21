@@ -1,0 +1,37 @@
+# Repli pour un hebergement mutualise dont le DocumentRoot ne peut pas etre
+# deplace vers public/.
+#
+# La configuration DE REFERENCE reste DocumentRoot = public/ : c'est celle du
+# conteneur et celle de la preprod (09-environnements §5). Ce fichier n'existe
+# que pour le cas ou l'hebergeur ne la permet pas.
+#
+# 06-securite §10 : dans TOUS les cas, .env, .git, composer.*, storage/, src/,
+# vendor/, migrations/, tests/, docker/, config/, templates/ et les *.md doivent
+# rester inaccessibles. C'est ce que verifie ExposureTest.
+
+Options -Indexes -MultiViews
+ServerSignature Off
+
+# --- Rien de sensible ne sort, meme si la reecriture echoue -------------------
+
+<FilesMatch "(?i)(^\.|\.(env|ini|log|sql|sh|bak|swp|dist|lock|md|yml|yaml|neon|xml)$)">
+    Require all denied
+</FilesMatch>
+
+RedirectMatch 404 ^/(?:\.git|storage|src|tests|vendor|migrations|docker|docs|config|templates|maquette|bin)(?:/|$)
+
+# --- Redirection vers public/ ------------------------------------------------
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Deja dans public/ : ne rien faire, le .htaccess de public/ prend le relais.
+    RewriteRule ^public/ - [L]
+
+    # Un fichier reel de public/ est servi directement.
+    RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f
+    RewriteRule ^(.*)$ public/$1 [L]
+
+    # Tout le reste passe par le controleur frontal.
+    RewriteRule ^ public/index.php [L]
+</IfModule>

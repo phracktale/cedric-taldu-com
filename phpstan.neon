@@ -1,0 +1,7 @@
+parameters:
+    level: 8
+    paths:
+        - src
+    # Pas de baseline : docs/ARCHITECTURE.md §4. Une erreur PHPStan se corrige,
+    # elle ne se met pas sous le tapis.
+    treatPhpDocTypesAsCertain: false

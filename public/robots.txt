@@ -1,0 +1,15 @@
+# Ce fichier est celui de la PRODUCTION.
+#
+# Hors production, l'en-tete X-Robots-Tag: noindex, nofollow est posee sur
+# toutes les reponses par le middleware SecurityHeaders, et prime sur ce
+# fichier (09-environnements §7). Le sitemap est genere dynamiquement au lot 6.
+
+User-agent: *
+
+Disallow: /admin
+Disallow: /webhooks
+Disallow: /panier
+Disallow: /cart
+Disallow: /commande
+Disallow: /checkout
+Disallow: /*?preview=
