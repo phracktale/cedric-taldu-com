@@ -191,6 +191,42 @@ vide, fichier tronqué.
    lot et corrigée : `verifyTwoFactor()` écrivait le compteur sans le relire. La
    leçon vaut pour le lot 3 — un test qui vérifie qu'une colonne est écrite ne
    vérifie pas que la règle est appliquée.
+7. **Le montage masque les droits de l'image.** `docker-compose.yml` monte tout
+   le dépôt sur `/var/www/html` : le `chown www-data` du Dockerfile est recouvert
+   par l'appartenance de l'hôte. `docker/php/entrypoint.sh` rejoue l'opération à
+   chaque démarrage — **ne le retirez pas**, et si vous ajoutez un répertoire
+   inscriptible, ajoutez-le à sa liste. Voir le piège ci-dessous.
+
+---
+
+## Piège de déploiement rencontré au lot 2
+
+Le back-office a été livré **inutilisable** en préproduction, et le symptôme
+n'avait aucun rapport visible avec la cause. Il est consigné ici parce que la
+même mécanique guette toute écriture que le lot 3 ajoutera — factures,
+exports CSV, pièces jointes.
+
+| | |
+| --- | --- |
+| **Symptôme** | `419 Formulaire expiré` à chaque tentative de connexion |
+| **Ce qu'on cherche alors** | le jeton CSRF, la durée de session, `SameSite`, Heimdall |
+| **Cause réelle** | `storage/sessions` non inscriptible par le conteneur |
+| **Pourquoi** | `./:/var/www/html` masque le `chown www-data` de l'image ; le conteneur voit l'uid 1000 de l'hôte |
+| **Pourquoi le lot 1 ne l'a pas vu** | le site public ne démarre aucune session et n'écrit nulle part |
+| **Pourquoi c'était muet** | `session_start()` n'émet qu'une alerte et repart d'une session neuve ; `FileLogger` échouait aussi, donc le journal ne disait rien |
+
+**Diagnostic en une commande** — deux `GET` successifs sur le formulaire avec le
+même bocal à cookies. Si le jeton change, la session ne persiste pas :
+
+```bash
+curl -sS -c jar -o p1 "$URL/admin/connexion"
+curl -sS -b jar -o p2 "$URL/admin/connexion"
+grep -oE 'value="[a-f0-9]{64}"' p1 p2   # deux valeurs identiques = session OK
+```
+
+**Corrigé deux fois**, parce qu'il y avait deux défauts : `entrypoint.sh` rétablit
+les droits au démarrage, et `PhpSession` refuse désormais de démarrer sur un
+stockage inutilisable plutôt que de dégrader en silence.
 
 ---
 
