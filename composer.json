@@ -47,7 +47,8 @@
         "lint:syntax": "php bin/lint.php",
         "lint:style": "phpcs",
         "lint:fix": "phpcbf",
-        "stan": "phpstan analyse --memory-limit=512M"
+        "stan": "phpstan analyse --memory-limit=512M",
+        "dump:prod": "composer dump-autoload --no-dev --optimize"
     },
     "scripts-descriptions": {
         "serve": "Serveur web interne de PHP sur http://localhost:8000 (developpement local). Les limites de televersement sont relevees a 25 Mo, comme dans le conteneur : le php.ini d'un poste vaut souvent 2 Mo, et l'upload echouerait en silence",

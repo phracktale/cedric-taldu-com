@@ -124,12 +124,18 @@ php bin/create-admin.php                # crée un compte administrateur
   mutualisé accorde à une requête. `libavif` est compilé dans l'image Docker, mais
   `Media::FORMATS` reste `['webp','jpg']`. AVIF revient au **lot 6**, avec la génération
   différée que sa lenteur impose de toute façon.
-- **`vendor/` n'est pas suivi tant qu'il ne contient que l'outillage de développement**
-  (décision du 2026-07-21, lot 0). PHPUnit, PHPStan et PHP_CodeSniffer pèsent 49 Mo et
-  n'ont rien à faire sur un hébergement mutualisé. Il n'existe à ce stade aucune
-  dépendance de production. **À partir du lot 3**, quand `stripe/stripe-php` arrive, la
-  règle initiale redevient valable : `vendor/` est suivi en liste blanche, sans les
-  dépendances de développement, et tout ajout se commite avec `composer.lock`.
+- **`vendor/` est suivi en liste blanche depuis le lot 3** : `autoload.php`, `composer/`,
+  `stripe/`, `phpmailer/`, et rien d'autre. `composer install` n'est pas garanti sur le
+  mutualisé, donc ce qui est commité est ce qui tourne. Tout ajout se commite avec
+  `composer.lock`.
+- **Les cartes d'autoload commitées doivent venir de `composer dump:prod`.**
+  `vendor/composer/autoload_files.php` fait un `require` **à chaud** de ce qu'il liste :
+  un dump engendré avec les dépendances de développement y inscrit PHPUnit, PHPStan et
+  deep-copy, et déployé tel quel il fait échouer la **toute première requête** sur un
+  fichier absent. Le site est mort, et le symptôme ne désigne rien de ce qu'on vient de
+  changer. En local, `composer install` réintroduit légitimement ces entrées : la copie de
+  travail montre donc `vendor/composer/*.php` modifiés en permanence, c'est normal.
+  `VendorTest` vérifie le contenu **commité**, pas la copie de travail.
 - **Pas de worker, cron non garanti** : les tâches périodiques (purge RGPD, libération des
   réservations, purge des paniers) sont exposées par un endpoint protégé par jeton, et
   doivent être idempotentes.
