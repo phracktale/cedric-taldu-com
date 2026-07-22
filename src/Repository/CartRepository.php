@@ -31,6 +31,35 @@ final class CartRepository
     /** 32 octets aleatoires, en hexadecimal (03-boutique §2). */
     private const TOKEN_PATTERN = '/^[0-9a-f]{64}$/';
 
+    // Le SQL vit dans des constantes et la liste de MARQUEURS passe par un
+    // « %s » de sprintf. Concatener une variable a une chaine SQL est interdit
+    // sans exception (src/CLAUDE.md), y compris quand la variable ne contient
+    // que des marqueurs : la regle vaut par sa simplicite, et SqlLocationTest
+    // la fait respecter mecaniquement.
+
+    private const SELECT_ARTWORKS = <<<'SQL'
+        SELECT a.id, a.price_cents, a.vat_category, a.weight_grams, a.status,
+               a.reserved_until, a.is_published,
+               COALESCE(t.title, r.title) AS title
+        FROM artworks a
+        LEFT JOIN artwork_translations t ON t.artwork_id = a.id AND t.locale = :locale
+        LEFT JOIN artwork_translations r ON r.artwork_id = a.id AND r.locale = :reference
+        WHERE a.id IN (%s)
+        SQL;
+
+    private const SELECT_VARIANTS = <<<'SQL'
+        SELECT v.id, v.sku, v.size_label, v.price_cents, v.stock_qty, v.weight_grams,
+               v.is_active, p.is_published AS product_published, p.kind, p.edition_size,
+               p.editions_sold, p.vat_category, a.is_published AS artwork_published,
+               COALESCE(t.title, r.title) AS title
+        FROM product_variants v
+        INNER JOIN products p ON p.id = v.product_id
+        INNER JOIN artworks a ON a.id = p.artwork_id
+        LEFT JOIN product_translations t ON t.product_id = p.id AND t.locale = :locale
+        LEFT JOIN product_translations r ON r.product_id = p.id AND r.locale = :reference
+        WHERE v.id IN (%s)
+        SQL;
+
     public function __construct(private readonly PDO $pdo)
     {
     }
@@ -255,15 +284,7 @@ final class CartRepository
 
         // La traduction de reference sert de repli : 05-i18n-seo §3 rend le
         // francais obligatoire et l'anglais facultatif.
-        $sql = 'SELECT a.id, a.price_cents, a.vat_category, a.weight_grams, a.status,
-                       a.reserved_until, a.is_published,
-                       COALESCE(t.title, r.title) AS title
-                FROM artworks a
-                LEFT JOIN artwork_translations t ON t.artwork_id = a.id AND t.locale = :locale
-                LEFT JOIN artwork_translations r ON r.artwork_id = a.id AND r.locale = :reference
-                WHERE a.id IN (' . $placeholders . ')';
-
-        $statement = $this->pdo->prepare($sql);
+        $statement = $this->pdo->prepare(sprintf(self::SELECT_ARTWORKS, $placeholders));
         $statement->execute($parameters + [
             'locale' => $locale->value,
             'reference' => Locale::reference()->value,
@@ -313,18 +334,7 @@ final class CartRepository
 
         [$placeholders, $parameters] = self::inClause($ids);
 
-        $sql = 'SELECT v.id, v.sku, v.size_label, v.price_cents, v.stock_qty, v.weight_grams,
-                       v.is_active, p.is_published AS product_published, p.kind, p.edition_size,
-                       p.editions_sold, p.vat_category, a.is_published AS artwork_published,
-                       COALESCE(t.title, r.title) AS title
-                FROM product_variants v
-                INNER JOIN products p ON p.id = v.product_id
-                INNER JOIN artworks a ON a.id = p.artwork_id
-                LEFT JOIN product_translations t ON t.product_id = p.id AND t.locale = :locale
-                LEFT JOIN product_translations r ON r.product_id = p.id AND r.locale = :reference
-                WHERE v.id IN (' . $placeholders . ')';
-
-        $statement = $this->pdo->prepare($sql);
+        $statement = $this->pdo->prepare(sprintf(self::SELECT_VARIANTS, $placeholders));
         $statement->execute($parameters + [
             'locale' => $locale->value,
             'reference' => Locale::reference()->value,
