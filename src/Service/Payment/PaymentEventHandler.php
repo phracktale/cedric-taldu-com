@@ -13,6 +13,7 @@ use App\Repository\OrderRepository;
 use App\Repository\PersistedOrder;
 use App\Repository\StockRepository;
 use App\Repository\StripeEventRepository;
+use App\Service\Mail\OrderMailer;
 use DateTimeImmutable;
 use PDO;
 use Throwable;
@@ -44,6 +45,14 @@ final class PaymentEventHandler
         private readonly OrderRepository $orders,
         private readonly StockRepository $stock,
         private readonly LoggerInterface $logger,
+        /**
+         * Facultatifs : le traitement des effets ne doit dependre d'aucune
+         * capacite d'envoi. Sans eux, la commande est traitee sans courriel —
+         * degradation acceptable, contrairement a un encaissement perdu.
+         */
+        private readonly ?OrderMailer $mailer = null,
+        /** @var (callable(PersistedOrder): string)|null */
+        private readonly mixed $consultationUrl = null,
     ) {
     }
 
@@ -76,6 +85,14 @@ final class PaymentEventHandler
                 $this->pdo->commit();
             }
 
+            // Les courriels partent APRES la validation, et jamais dedans.
+            // 03-boutique §7 : « si l'envoi echoue, la commande RESTE PAYEE ;
+            // l'echec est journalise et rejouable ». Envoyer dans la
+            // transaction ferait annuler un encaissement pour une panne SMTP.
+            if ($outcome === WebhookOutcome::Processed && $event->type === 'checkout.session.completed') {
+                $this->notify($event);
+            }
+
             return $outcome;
         } catch (Throwable $e) {
             if ($own && $this->pdo->inTransaction()) {
@@ -89,6 +106,37 @@ final class PaymentEventHandler
             ]);
 
             throw $e;
+        }
+    }
+
+    /**
+     * Previent le client et l'artiste, sans jamais remettre en cause la
+     * commande.
+     *
+     * L'echec est AVALE et journalise : un e-mail n'est jamais une condition
+     * de validite d'une commande (03-boutique §7). Le laisser remonter ici
+     * ferait repondre 500 a Stripe, qui rejouerait un evenement dont tous les
+     * effets ont deja eu lieu.
+     */
+    private function notify(WebhookEvent $event): void
+    {
+        if ($this->mailer === null || $this->consultationUrl === null) {
+            return;
+        }
+
+        try {
+            $order = $this->locate($event);
+
+            if ($order === null) {
+                return;
+            }
+
+            $this->mailer->sendConfirmation($order, ($this->consultationUrl)($order));
+        } catch (Throwable $e) {
+            $this->logger->log(LogLevel::Error, 'Envoi des courriels de commande échoué', [
+                'event_id' => $event->id,
+                'exception' => $e::class,
+            ]);
         }
     }
 
