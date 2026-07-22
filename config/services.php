@@ -43,6 +43,7 @@ use App\Http\Controller\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Admin\MediaController;
 use App\Http\Controller\Front\ArtworkController;
+use App\Http\Controller\Front\StripeWebhookController;
 use App\Http\Controller\Front\CategoryController;
 use App\Http\Controller\Front\HomeController;
 use App\Http\Middleware\AuthGuard;
@@ -75,7 +76,18 @@ use App\Service\I18n\UrlGenerator;
 use App\Service\Media\ImageProcessor;
 use App\Service\Media\MediaStore;
 use App\Service\Media\UploadValidator;
+use App\Repository\CartRepository;
+use App\Repository\OrderRepository;
+use App\Repository\ShippingRepository;
+use App\Repository\StockRepository;
+use App\Repository\StripeEventRepository;
+use App\Repository\VatRepository;
+use App\Service\Payment\CheckoutService;
+use App\Service\Payment\PaymentEventHandler;
+use App\Service\Payment\PaymentGateway;
+use App\Service\Payment\StripeCheckoutGateway;
 use App\Service\Spam\RateLimiter;
+use Stripe\StripeClient;
 use App\Service\View\AdminChrome;
 use App\Service\View\Chrome;
 
@@ -299,6 +311,62 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(ClockInterface::class),
     ));
 
+    // --- Paiement ---------------------------------------------------------
+    //
+    // 06-securite §7 : les cles vivent dans .env, et un controle au demarrage
+    // interdit une cle de test en production comme une cle de production hors
+    // production.
+
+    $container->set(PaymentGateway::class, static function (Container $c) use ($config, $env): PaymentGateway {
+        $secretKey = $env->getOptional('STRIPE_SECRET_KEY', '') ?? '';
+        $webhookSecret = $env->getOptional('STRIPE_WEBHOOK_SECRET', '') ?? '';
+
+        // Sans cle, on ne bascule PAS silencieusement sur un double : le site
+        // annoncerait des paiements qui n'existent pas. La passerelle de test
+        // n'est cablee que par les tests, explicitement.
+        StripeCheckoutGateway::assertKeyMatchesEnvironment($secretKey, $config->env);
+
+        return new StripeCheckoutGateway(new StripeClient($secretKey), $webhookSecret);
+    });
+
+    $container->set(StripeEventRepository::class, static fn (Container $c): StripeEventRepository
+        => new StripeEventRepository($c->get(PDO::class)));
+
+    $container->set(StockRepository::class, static fn (Container $c): StockRepository
+        => new StockRepository($c->get(PDO::class)));
+
+    $container->set(OrderRepository::class, static fn (Container $c): OrderRepository
+        => new OrderRepository($c->get(PDO::class)));
+
+    $container->set(CartRepository::class, static fn (Container $c): CartRepository
+        => new CartRepository($c->get(PDO::class)));
+
+    $container->set(VatRepository::class, static fn (Container $c): VatRepository
+        => new VatRepository($c->get(PDO::class)));
+
+    $container->set(ShippingRepository::class, static fn (Container $c): ShippingRepository
+        => new ShippingRepository($c->get(PDO::class)));
+
+    $container->set(PaymentEventHandler::class, static fn (Container $c): PaymentEventHandler
+        => new PaymentEventHandler(
+            $c->get(PDO::class),
+            $c->get(StripeEventRepository::class),
+            $c->get(OrderRepository::class),
+            $c->get(StockRepository::class),
+            $c->get(LoggerInterface::class),
+        ));
+
+    $container->set(CheckoutService::class, static fn (Container $c): CheckoutService => new CheckoutService(
+        $c->get(PDO::class),
+        $c->get(CartRepository::class),
+        $c->get(OrderRepository::class),
+        $c->get(StockRepository::class),
+        $c->get(VatRepository::class),
+        $c->get(ShippingRepository::class),
+        $c->get(PaymentGateway::class),
+        $c->get(LoggerInterface::class),
+    ));
+
     // --- Controleurs ------------------------------------------------------
 
     $container->set(HomeController::class, static fn (Container $c): HomeController => new HomeController(
@@ -382,6 +450,15 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(MediaStore::class),
         $c->get(Validator::class),
     ));
+
+    $container->set(
+        StripeWebhookController::class,
+        static fn (Container $c): StripeWebhookController => new StripeWebhookController(
+            $c->get(PaymentGateway::class),
+            $c->get(PaymentEventHandler::class),
+            $c->get(LoggerInterface::class),
+        )
+    );
 
     $container->set(DashboardController::class, static fn (Container $c): DashboardController => new DashboardController(
         $c->get(AdminChrome::class),

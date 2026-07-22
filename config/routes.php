@@ -27,6 +27,7 @@ use App\Http\Controller\Admin\MediaController;
 use App\Http\Controller\Front\ArtworkController;
 use App\Http\Controller\Front\CategoryController;
 use App\Http\Controller\Front\HomeController;
+use App\Http\Controller\Front\StripeWebhookController;
 
 $slug = ['slug' => Route::SLUG];
 $id = ['id' => Route::ID];
@@ -44,6 +45,21 @@ return [
     // Fiche œuvre
     new Route('artwork.show', 'GET', '/fr/oeuvre/{slug}', [ArtworkController::class, 'show'], locale: 'fr', requirements: $slug),
     new Route('artwork.show', 'GET', '/en/artwork/{slug}', [ArtworkController::class, 'show'], locale: 'en', requirements: $slug),
+
+    // ------------------------------------------------------------- webhooks
+    //
+    // 03-boutique §6 : route NI LOCALISEE NI PROTEGEE PAR CSRF — Stripe n'a ni
+    // langue ni jeton de session a fournir. C'est la seule exemption du site
+    // (06-securite §3), et elle n'est tenue que par la signature
+    // cryptographique du corps, verifiee par le controleur.
+
+    new Route(
+        'stripe.webhook',
+        'POST',
+        '/webhooks/stripe',
+        [StripeWebhookController::class, 'handle'],
+        csrfExempt: true,
+    ),
 
     // ----------------------------------------------------------- back-office
     //
