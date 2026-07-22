@@ -80,11 +80,15 @@ final class CsrfTest extends AdminTestCase
         $this->assertContains($reponse->status, self::STATUTS_DE_REFUS, $methode . ' ' . $chemin);
     }
 
-    public function test_aucune_route_n_est_exemptee_de_jeton_a_ce_stade(): void
+    public function test_le_webhook_stripe_est_la_seule_route_exemptee(): void
     {
         // 06-securite §3 : « Seule exemption : /webhooks/stripe, protege par
-        // signature cryptographique. » Il arrive au lot 3. Jusque-la, toute
-        // exemption est un defaut, et ce test le dira.
+        // signature cryptographique. » La liste est fermee et nommee : toute
+        // exemption ajoutee sans passer par ce test est un defaut.
+        //
+        // Ce test compte pour ce qu'il INTERDIT, pas pour ce qu'il autorise :
+        // la vraie protection du webhook est verifiee par WebhookStripeTest,
+        // qui refuse un corps mal signe.
         /** @var list<Route> $routes */
         $routes = require dirname(__DIR__, 2) . '/config/routes.php';
 
@@ -93,7 +97,26 @@ final class CsrfTest extends AdminTestCase
             array_filter($routes, static fn (Route $route): bool => $route->csrfExempt),
         ));
 
-        $this->assertSame([], $exemptees);
+        $this->assertSame(['POST /webhooks/stripe'], $exemptees);
+    }
+
+    public function test_la_route_exemptee_n_est_ni_localisee_ni_ouverte_au_back_office(): void
+    {
+        // 03-boutique §6 : route « exemptee de CSRF ET DE LOCALISATION ». Une
+        // exemption de CSRF sous /admin serait une porte ouverte sur le
+        // back-office ; une route localisee exigerait de Stripe une langue
+        // qu'il n'a pas.
+        /** @var list<Route> $routes */
+        $routes = require dirname(__DIR__, 2) . '/config/routes.php';
+
+        foreach ($routes as $route) {
+            if (!$route->csrfExempt) {
+                continue;
+            }
+
+            $this->assertNull($route->locale, $route->path . ' ne doit pas être localisée.');
+            $this->assertFalse($route->isAdmin(), $route->path . ' ne doit pas être sous /admin.');
+        }
     }
 
     public function test_un_jeton_valide_laisse_passer(): void
