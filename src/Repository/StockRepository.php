@@ -155,6 +155,23 @@ final class StockRepository
     }
 
     /**
+     * Produit dont releve une variante.
+     *
+     * Le numero d'edition se compte par PRODUIT, pas par variante : les
+     * differentes tailles d'un meme tirage limite puisent dans la meme
+     * edition.
+     */
+    public function productIdForVariant(int $variantId): ?int
+    {
+        $statement = $this->pdo->prepare('SELECT product_id FROM product_variants WHERE id = :id');
+        $statement->execute(['id' => $variantId]);
+
+        $productId = $statement->fetchColumn();
+
+        return $productId === false ? null : (int) $productId;
+    }
+
+    /**
      * Attribue les numeros d'edition d'un tirage limite (03-boutique §6).
      *
      * Decision du 2026-07-21 : l'attribution a lieu AU PAIEMENT, dans le

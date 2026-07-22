@@ -205,6 +205,27 @@ final class OrderRepository
         return $this->hydrate($statement->fetch());
     }
 
+    /**
+     * Commande retrouvee par sa seule reference, SANS jeton.
+     *
+     * Reservee au traitement des webhooks, ou l'authenticite est deja etablie
+     * par la signature. Toute lecture declenchee par un visiteur passe
+     * obligatoirement par findByReferenceAndToken().
+     */
+    public function findByReferenceOnly(string $reference): ?PersistedOrder
+    {
+        try {
+            $parsed = OrderReference::fromString($reference);
+        } catch (InvalidOrderReference) {
+            return null;
+        }
+
+        $statement = $this->pdo->prepare('SELECT * FROM orders WHERE reference = :reference');
+        $statement->execute(['reference' => $parsed->value]);
+
+        return $this->hydrate($statement->fetch());
+    }
+
     public function findByStripeSession(string $sessionId): ?PersistedOrder
     {
         $statement = $this->pdo->prepare('SELECT * FROM orders WHERE stripe_session_id = :session');
