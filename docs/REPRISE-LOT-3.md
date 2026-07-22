@@ -93,8 +93,8 @@ Le détail et les motifs sont dans
 
 ## Où en est le lot 3 — branche `feature/lot-3-boutique-paiement`
 
-**18 commits, suite complète verte à chaque commit** : 1 590 tests, 14 168 assertions,
-PHPStan 8 sans erreur, PSR-12 sans erreur. **Rien n'est déployé** — le lot n'est pas fini.
+**33 commits, suite complète verte à chaque commit** : ~1 715 tests, PHPStan 8 sans
+erreur, PSR-12 sans erreur. **Rien n'est déployé** — le lot n'est pas fini.
 
 ### Fait
 
@@ -106,27 +106,30 @@ PHPStan 8 sans erreur, PSR-12 sans erreur. **Rien n'est déployé** — le lot n
 | `Domain/Shop/` | `Cart`, `CartLine`, `LineKind`, `PurchasableItem`, `ItemCatalogue`, `StockPolicy`, `PricingPolicy`, `CartValuation`, `ValuedLine`, `CartNotice`, `CartNoticeReason` |
 | `Domain/Catalog/ArtworkStatus` | Machine à états complétée + `effectiveAt()` (expiration de réservation à la lecture) |
 | `migrations/0005_boutique.sql` | Les onze tables, amorces TVA / port / réglages |
-| `Repository/StockRepository` | `reserve`, `release`, `markSold`, `decrementStock`, `claimEditionNumbers` — **tous** en UPDATE conditionnel avec vérification du `rowCount()` |
-| Tests | `SchemaBoutiqueTest` (33), `StockRepositoryTest` (24, dont **3 de concurrence à deux connexions PDO**) |
+| `Domain/Order/` (suite) | `Address` (refus des CR/LF à la construction), `OrderDraft`, `OrderLineDraft` |
+| `Repository/` | `StockRepository`, `CartRepository`, `OrderRepository`, `StripeEventRepository`, `VatRepository`, `ShippingRepository`, plus `PersistedOrder`, `PersistedOrderLine`, `EventClaim` |
+| `Service/Payment/` | `PaymentGateway`, `WebhookSignature`, `FakeGateway`, `StripeCheckoutGateway`, `CheckoutSession`, `WebhookEvent` |
+| `vendor/` | Suivi en liste blanche, avec `stripe/stripe-php` v21 et `phpmailer` v7 |
+| Tests | `SchemaBoutiqueTest`, `StockRepositoryTest` (dont **3 de concurrence à deux connexions PDO**), `CartRepositoryTest`, `OrderRepositoryTest`, `StripeEventRepositoryTest`, `VatRepositoryTest`, `ShippingRepositoryTest`, `VendorTest`, `OrderDraftTest`, `FakeGatewayTest`, `StripeKeyEnvironmentTest` |
 
 ### Reste à faire, dans l'ordre
 
-1. **Dépôts** : `CartRepository`, `OrderRepository` (dont `nextReference` sous verrou),
-   `ProductRepository`, `VariantRepository`, `StripeEventRepository`,
-   `ShippingRepository`, `VatRateRepository`, `Admin/OrderAdminRepository`.
-2. **`vendor/` suivi en liste blanche** + `stripe/stripe-php` et `phpmailer/phpmailer`,
-   commités avec `composer.lock` (CLAUDE.md, « Pièges connus »).
-3. **`Service/Payment/`** : `PaymentGateway`, `StripeCheckoutGateway`, `FakeGateway`.
-4. **`Service/Mail/`** : `MailerInterface`, `SmtpMailer`, `ArrayMailer`, gabarits.
-5. **Front** : zone reproductions de la fiche œuvre, `CartController`,
-   `CheckoutController`, page de confirmation, `cart.js`.
-6. **Webhook** `POST /webhooks/stripe` — signé, idempotent, transactionnel.
-7. **Back-office** : reproductions, variantes, commandes, expédition, export CSV.
-8. **Sécurité** : `PriceIntegrityTest`, `WebhookTest`, `OrderTransitionTest`,
+1. **`ProductRepository`** : reproductions publiées d'une œuvre, pour la fiche.
+2. **`Service/Mail/`** : `MailerInterface`, `SmtpMailer` (PHPMailer), `ArrayMailer`,
+   gabarits `emails/order-confirmation.{fr,en}.php` et `order-shipped`.
+3. **Front** : zone reproductions de la fiche œuvre, `CartController`,
+   `CheckoutController`, page de confirmation, `cart.js`, gabarits.
+4. **Webhook** `POST /webhooks/stripe` — signé, idempotent, transactionnel. **Toutes les
+   briques existent** : `StripeEventRepository::claim`, les quatre écritures de
+   `StockRepository`, `OrderRepository::transitionTo` / `flagAnomaly` /
+   `setEditionNumber`. Il reste à les orchestrer dans une transaction.
+5. **Back-office** : reproductions, variantes, commandes, expédition, export CSV.
+6. **Sécurité** : `PriceIntegrityTest`, `WebhookTest`, `OrderTransitionTest`,
    `MoneyTypeTest`, `TokenTest`.
-9. **Fusion, déploiement Thor, vérification en conditions réelles** (§Déploiement).
+7. **Fusion, déploiement Thor, vérification en conditions réelles** (§Déploiement).
+   Ajouter au préalable les variables Stripe et SMTP à `.env.example`.
 
-### Trois pièges rencontrés, à ne pas rouvrir
+### Six pièges rencontrés, à ne pas rouvrir
 
 1. **La clé d'unicité de `cart_items` telle que 01-modele §5 la définit ne protège
    rien.** `(cart_id, kind, artwork_id, variant_id)` : MySQL ne tient jamais deux `NULL`
@@ -141,6 +144,20 @@ PHPStan 8 sans erreur, PSR-12 sans erreur. **Rien n'est déployé** — le lot n
    sans aucun rapport apparent.
 3. **L'arrondi du HT est bancaire**, pas commercial (07-tests-tdd §2.1). 999 centimes
    TTC à 20 % donnent 832 et non 833. Les attendus écrits d'instinct sont faux.
+4. **Un marqueur nommé ne peut pas apparaître deux fois dans une requête.**
+   `EMULATE_PREPARES` est à `false` : `VALUES (…, :now, :now)` échoue en
+   `SQLSTATE[HY093]`. Il faut deux marqueurs distincts pour un même instant.
+5. **`SqlLocationTest` interdit de concaténer une variable à une chaîne SQL, sans
+   exception** — y compris quand la variable ne contient qu'une liste de marqueurs
+   `IN (?, ?)`. La convention du dépôt est celle d'`ArtworkRepository` : le SQL vit dans
+   une constante de classe et la liste passe par un `%s` de `sprintf`.
+6. **Les cartes d'autoload commitées doivent venir de `composer dump:prod`.**
+   `vendor/composer/autoload_files.php` fait un `require` **à chaud** : un dump engendré
+   avec les dépendances de développement y inscrit PHPUnit, PHPStan et deep-copy, et
+   ferait échouer la toute première requête en production sur un fichier absent. En
+   local, `composer install` réintroduit ces entrées — la copie de travail montre donc
+   `vendor/composer/*.php` modifiés en permanence, **c'est normal**. `VendorTest` vérifie
+   le contenu **commité**, pas la copie de travail.
 
 ---
 
