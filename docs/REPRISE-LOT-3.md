@@ -93,43 +93,37 @@ Le détail et les motifs sont dans
 
 ## Où en est le lot 3 — branche `feature/lot-3-boutique-paiement`
 
-**33 commits, suite complète verte à chaque commit** : ~1 715 tests, PHPStan 8 sans
-erreur, PSR-12 sans erreur. **Rien n'est déployé** — le lot n'est pas fini.
+**62 commits, suite complète verte** : ~1 990 tests, ~15 100 assertions, PHPStan 8 sans
+erreur, PSR-12 sans erreur. **Le critère de fin de 08-lots est atteint et prouvé par
+test** (`AchatCompletTest`). Reste la fusion et le déploiement.
 
-### Fait
+### Fait — l'intégralité du périmètre du lot
 
 | Couche | Contenu |
 | --- | --- |
 | `Domain/Money` | `plus`, `minus`, `times`, `sum`, `isAtLeast`, `excludingVat` (arrondi **bancaire**), `allocate` (ventilation au prorata) |
-| `Domain/Order/` | `VatCategory`, `VatMode`, `VatRegime`, `VatRate`, `VatRateTable`, `VatPolicy`, `TaxableLine`, `LineVat`, `VatBreakdown`, `OrderStatus`, `OrderReference` |
-| `Domain/Shipping/` | `ShippingMethod`, `WeightBracket`, `ShippingZone`, `ShippingZones`, `ShippingQuote`, `ShippingCalculator` |
-| `Domain/Shop/` | `Cart`, `CartLine`, `LineKind`, `PurchasableItem`, `ItemCatalogue`, `StockPolicy`, `PricingPolicy`, `CartValuation`, `ValuedLine`, `CartNotice`, `CartNoticeReason` |
-| `Domain/Catalog/ArtworkStatus` | Machine à états complétée + `effectiveAt()` (expiration de réservation à la lecture) |
+| `Domain/Order/` | TVA complète (`VatPolicy`, `VatRegime`, `VatRateTable`…), `OrderStatus`, `OrderReference`, `Address`, `OrderDraft`, `OrderLineDraft` |
+| `Domain/Shipping/` | `ShippingCalculator` + zones, tranches, devis |
+| `Domain/Shop/` | `Cart`, `StockPolicy`, `PricingPolicy`, `Product`, `ProductVariant`, `ProductKind` |
 | `migrations/0005_boutique.sql` | Les onze tables, amorces TVA / port / réglages |
-| `Domain/Order/` (suite) | `Address` (refus des CR/LF à la construction), `OrderDraft`, `OrderLineDraft` |
-| `Repository/` | `StockRepository`, `CartRepository`, `OrderRepository`, `StripeEventRepository`, `VatRepository`, `ShippingRepository`, plus `PersistedOrder`, `PersistedOrderLine`, `EventClaim` |
-| `Service/Payment/` | `PaymentGateway`, `WebhookSignature`, `FakeGateway`, `StripeCheckoutGateway`, `CheckoutSession`, `WebhookEvent` |
-| `vendor/` | Suivi en liste blanche, avec `stripe/stripe-php` v21 et `phpmailer` v7 |
-| Tests | `SchemaBoutiqueTest`, `StockRepositoryTest` (dont **3 de concurrence à deux connexions PDO**), `CartRepositoryTest`, `OrderRepositoryTest`, `StripeEventRepositoryTest`, `VatRepositoryTest`, `ShippingRepositoryTest`, `VendorTest`, `OrderDraftTest`, `FakeGatewayTest`, `StripeKeyEnvironmentTest` |
+| `Repository/` | `StockRepository`, `CartRepository`, `OrderRepository`, `StripeEventRepository`, `VatRepository`, `ShippingRepository`, `ProductRepository`, + `Admin/OrderAdminRepository`, `Admin/ProductAdminRepository` |
+| `Service/Payment/` | `PaymentGateway`, `WebhookSignature`, `FakeGateway`, `StripeCheckoutGateway`, `CheckoutService`, `PaymentEventHandler` |
+| `Service/Mail/` | `Email`, `MailerInterface`, `SmtpMailer`, `ArrayMailer`, `OrderMailer` + gabarits |
+| `Service/Export/CsvWriter` | Export comptable, injection de formules neutralisée |
+| Front | `CartController` + `cart.js`, zone d'achat de la fiche, `CheckoutController`, page de confirmation, route `POST /webhooks/stripe` |
+| Back-office | Commandes (liste, fiche, expédition, export CSV), CRUD reproductions et variantes |
+| `vendor/` | Suivi en liste blanche, `stripe/stripe-php` v21 + `phpmailer` v7 |
+| Sécurité | Les cinq gardes nommés : `MoneyTypeTest`, `PriceIntegrityTest`, `WebhookTest`, `OrderTransitionTest`, `TokenTest`, plus `VendorTest` et `DemarrageStripeTest` |
 
-### Reste à faire, dans l'ordre
+### Reste à faire
 
-1. **`ProductRepository`** : reproductions publiées d'une œuvre, pour la fiche.
-2. **`Service/Mail/`** : `MailerInterface`, `SmtpMailer` (PHPMailer), `ArrayMailer`,
-   gabarits `emails/order-confirmation.{fr,en}.php` et `order-shipped`.
-3. **Front** : zone reproductions de la fiche œuvre, `CartController`,
-   `CheckoutController`, page de confirmation, `cart.js`, gabarits.
-4. **Webhook** `POST /webhooks/stripe` — signé, idempotent, transactionnel. **Toutes les
-   briques existent** : `StripeEventRepository::claim`, les quatre écritures de
-   `StockRepository`, `OrderRepository::transitionTo` / `flagAnomaly` /
-   `setEditionNumber`. Il reste à les orchestrer dans une transaction.
-5. **Back-office** : reproductions, variantes, commandes, expédition, export CSV.
-6. **Sécurité** : `PriceIntegrityTest`, `WebhookTest`, `OrderTransitionTest`,
-   `MoneyTypeTest`, `TokenTest`.
-7. **Fusion, déploiement Thor, vérification en conditions réelles** (§Déploiement).
-   Ajouter au préalable les variables Stripe et SMTP à `.env.example`.
+1. **Fusion dans `main`** une fois la revue de sécurité du lot passée.
+2. **Déploiement Thor** puis **vérification en conditions réelles** (§Déploiement) :
+   un vrai achat en mode test Stripe à travers Heimdall, webhook compris.
+3. Renseigner `STRIPE_*` et `MAIL_*` dans le `.env` de Thor (documentés dans
+   `.env.example`).
 
-### Six pièges rencontrés, à ne pas rouvrir
+### Huit pièges rencontrés, à ne pas rouvrir
 
 1. **La clé d'unicité de `cart_items` telle que 01-modele §5 la définit ne protège
    rien.** `(cart_id, kind, artwork_id, variant_id)` : MySQL ne tient jamais deux `NULL`
@@ -157,7 +151,24 @@ erreur, PSR-12 sans erreur. **Rien n'est déployé** — le lot n'est pas fini.
    ferait échouer la toute première requête en production sur un fichier absent. En
    local, `composer install` réintroduit ces entrées — la copie de travail montre donc
    `vendor/composer/*.php` modifiés en permanence, **c'est normal**. `VendorTest` vérifie
-   le contenu **commité**, pas la copie de travail.
+   le contenu **commité**, pas la copie de travail. **Avant de commiter le déploiement,
+   lancer `composer dump:prod`** pour figer des cartes sans dev-deps.
+7. **La redirection vers Stripe est la seule redirection externe du site.**
+   `RedirectResponse::to()` refuse tout ce qui n'est pas un chemin interne (anti
+   open-redirect). Le tunnel emploie `RedirectResponse::toExternal()`, restreint à une
+   liste blanche d'hôtes (`checkout.stripe.com`, `checkout.stripe.test`).
+8. **Un dépôt d'admin qui écrit ne doit pas ouvrir sa propre transaction.** Les tests
+   fonctionnels tournent déjà dans une transaction, et MySQL ne les imbrique pas :
+   `beginTransaction()` y lève. Comme `ArtworkAdminRepository`, l'appelant tient la
+   transaction.
+
+### Câblage : un piège d'assemblage récurrent
+
+Plusieurs 500 de cette session venaient d'un `use … as Alias;` **non ajouté** dans
+`config/routes.php` ou `config/services.php` : `Alias::class` se résout alors en la
+chaîne littérale `"Alias"` (fichiers sans namespace), et le conteneur ne trouve pas le
+service. Quand une route neuve rend 500 « service non enregistré », vérifier d'abord
+l'`use` d'alias dans **les deux** fichiers.
 
 ---
 
