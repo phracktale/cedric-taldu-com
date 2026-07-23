@@ -24,9 +24,14 @@ use App\Http\Controller\Admin\AuthController;
 use App\Http\Controller\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Admin\MediaController;
+use App\Http\Controller\Admin\OrderController as AdminOrderController;
+use App\Http\Controller\Admin\ProductController as AdminProductController;
 use App\Http\Controller\Front\ArtworkController;
 use App\Http\Controller\Front\CategoryController;
+use App\Http\Controller\Front\CartController;
+use App\Http\Controller\Front\CheckoutController;
 use App\Http\Controller\Front\HomeController;
+use App\Http\Controller\Front\StripeWebhookController;
 
 $slug = ['slug' => Route::SLUG];
 $id = ['id' => Route::ID];
@@ -44,6 +49,68 @@ return [
     // Fiche œuvre
     new Route('artwork.show', 'GET', '/fr/oeuvre/{slug}', [ArtworkController::class, 'show'], locale: 'fr', requirements: $slug),
     new Route('artwork.show', 'GET', '/en/artwork/{slug}', [ArtworkController::class, 'show'], locale: 'en', requirements: $slug),
+
+    // --------------------------------------------------------------- panier
+    //
+    // Le panier n'existe qu'en francais et en anglais, sous prefixe de langue.
+    // L'ajout, la mise a jour et le retrait sont des POST : CsrfTest exige leur
+    // protection, et seul le webhook Stripe y echappe.
+
+    new Route('cart.show', 'GET', '/fr/panier', [CartController::class, 'show'], locale: 'fr'),
+    new Route('cart.show', 'GET', '/en/cart', [CartController::class, 'show'], locale: 'en'),
+
+    new Route('cart.add', 'POST', '/fr/panier/ajout', [CartController::class, 'add'], locale: 'fr'),
+    new Route('cart.add', 'POST', '/en/cart/add', [CartController::class, 'add'], locale: 'en'),
+
+    new Route('cart.update', 'POST', '/fr/panier/quantite', [CartController::class, 'update'], locale: 'fr'),
+    new Route('cart.update', 'POST', '/en/cart/quantity', [CartController::class, 'update'], locale: 'en'),
+
+    new Route('cart.remove', 'POST', '/fr/panier/retrait', [CartController::class, 'remove'], locale: 'fr'),
+    new Route('cart.remove', 'POST', '/en/cart/remove', [CartController::class, 'remove'], locale: 'en'),
+
+    // ------------------------------------------------------------- commande
+    //
+    // Tunnel en deux temps plus une page de retour. La reference de commande de
+    // la page de confirmation est validee par le controleur (OrderReference) :
+    // elle vient de l'URL, et le jeton d'acces protege la lecture.
+
+    new Route('checkout.form', 'GET', '/fr/commande', [CheckoutController::class, 'form'], locale: 'fr'),
+    new Route('checkout.form', 'GET', '/en/checkout', [CheckoutController::class, 'form'], locale: 'en'),
+
+    new Route('checkout.submit', 'POST', '/fr/commande', [CheckoutController::class, 'submit'], locale: 'fr'),
+    new Route('checkout.submit', 'POST', '/en/checkout', [CheckoutController::class, 'submit'], locale: 'en'),
+
+    new Route(
+        'checkout.confirmation',
+        'GET',
+        '/fr/commande/confirmation/{reference}',
+        [CheckoutController::class, 'confirmation'],
+        locale: 'fr',
+        requirements: ['reference' => 'CT-[0-9]{4}-[0-9]+'],
+    ),
+    new Route(
+        'checkout.confirmation',
+        'GET',
+        '/en/checkout/confirmation/{reference}',
+        [CheckoutController::class, 'confirmation'],
+        locale: 'en',
+        requirements: ['reference' => 'CT-[0-9]{4}-[0-9]+'],
+    ),
+
+    // ------------------------------------------------------------- webhooks
+    //
+    // 03-boutique §6 : route NI LOCALISEE NI PROTEGEE PAR CSRF — Stripe n'a ni
+    // langue ni jeton de session a fournir. C'est la seule exemption du site
+    // (06-securite §3), et elle n'est tenue que par la signature
+    // cryptographique du corps, verifiee par le controleur.
+
+    new Route(
+        'stripe.webhook',
+        'POST',
+        '/webhooks/stripe',
+        [StripeWebhookController::class, 'handle'],
+        csrfExempt: true,
+    ),
 
     // ----------------------------------------------------------- back-office
     //
@@ -91,4 +158,21 @@ return [
     new Route('admin.media.upload', 'POST', '/admin/medias', [MediaController::class, 'upload']),
     new Route('admin.media.update', 'POST', '/admin/medias/{id}', [MediaController::class, 'update'], requirements: $id),
     new Route('admin.media.delete', 'POST', '/admin/medias/{id}/suppression', [MediaController::class, 'delete'], requirements: $id),
+
+    // Reproductions et variantes, rattachees a une œuvre.
+    new Route('admin.product.index', 'GET', '/admin/oeuvres/{id}/reproductions', [AdminProductController::class, 'index'], requirements: $id),
+    new Route('admin.product.store', 'POST', '/admin/oeuvres/{id}/reproductions', [AdminProductController::class, 'store'], requirements: $id),
+    new Route('admin.product.publish', 'POST', '/admin/reproductions/{id}/publication', [AdminProductController::class, 'togglePublication'], requirements: $id),
+    new Route('admin.product.delete', 'POST', '/admin/reproductions/{id}/suppression', [AdminProductController::class, 'delete'], requirements: $id),
+    new Route('admin.variant.store', 'POST', '/admin/reproductions/{id}/variantes', [AdminProductController::class, 'storeVariant'], requirements: $id),
+    new Route('admin.variant.update', 'POST', '/admin/variantes/{id}', [AdminProductController::class, 'updateVariant'], requirements: $id),
+    new Route('admin.variant.delete', 'POST', '/admin/variantes/{id}/suppression', [AdminProductController::class, 'deleteVariant'], requirements: $id),
+
+    // Commandes. Fermees par defaut comme toute route /admin (AuthTest).
+    // L'export vient AVANT la route a parametre, sinon « export.csv » serait lu
+    // comme un {id}.
+    new Route('admin.order.export', 'GET', '/admin/commandes/export.csv', [AdminOrderController::class, 'export']),
+    new Route('admin.order.index', 'GET', '/admin/commandes', [AdminOrderController::class, 'index']),
+    new Route('admin.order.show', 'GET', '/admin/commandes/{id}', [AdminOrderController::class, 'show'], requirements: $id),
+    new Route('admin.order.ship', 'POST', '/admin/commandes/{id}/expedition', [AdminOrderController::class, 'ship'], requirements: $id),
 ];

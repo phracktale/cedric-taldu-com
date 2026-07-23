@@ -42,9 +42,14 @@ use App\Http\Controller\Admin\ArtworkController as AdminArtworkController;
 use App\Http\Controller\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Admin\MediaController;
+use App\Http\Controller\Admin\OrderController as AdminOrderController;
+use App\Http\Controller\Admin\ProductController as AdminProductController;
 use App\Http\Controller\Front\ArtworkController;
+use App\Http\Controller\Front\CartController;
+use App\Http\Controller\Front\CheckoutController;
 use App\Http\Controller\Front\CategoryController;
 use App\Http\Controller\Front\HomeController;
+use App\Http\Controller\Front\StripeWebhookController;
 use App\Http\Middleware\AuthGuard;
 use App\Http\Middleware\CsrfGuard;
 use App\Http\Middleware\Locale;
@@ -53,11 +58,14 @@ use App\Repository\Admin\ArtworkAdminRepository;
 use App\Repository\Admin\CategoryAdminRepository;
 use App\Repository\Admin\DashboardRepository;
 use App\Repository\Admin\MediaAdminRepository;
+use App\Repository\Admin\OrderAdminRepository;
+use App\Repository\Admin\ProductAdminRepository;
 use App\Repository\Admin\SeriesAdminRepository;
 use App\Repository\ArtworkRepository;
 use App\Repository\AuditLogRepository;
 use App\Repository\CategoryRepository;
 use App\Repository\MediaRepository;
+use App\Repository\ProductRepository;
 use App\Repository\RateLimitRepository;
 use App\Repository\SeriesRepository;
 use App\Repository\SettingRepository;
@@ -75,7 +83,22 @@ use App\Service\I18n\UrlGenerator;
 use App\Service\Media\ImageProcessor;
 use App\Service\Media\MediaStore;
 use App\Service\Media\UploadValidator;
+use App\Repository\CartRepository;
+use App\Repository\OrderRepository;
+use App\Repository\ShippingRepository;
+use App\Repository\StockRepository;
+use App\Repository\StripeEventRepository;
+use App\Repository\VatRepository;
+use App\Repository\PersistedOrder;
+use App\Service\Mail\MailerInterface;
+use App\Service\Mail\OrderMailer;
+use App\Service\Mail\SmtpMailer;
+use App\Service\Payment\CheckoutService;
+use App\Service\Payment\PaymentEventHandler;
+use App\Service\Payment\PaymentGateway;
+use App\Service\Payment\StripeCheckoutGateway;
 use App\Service\Spam\RateLimiter;
+use Stripe\StripeClient;
 use App\Service\View\AdminChrome;
 use App\Service\View\Chrome;
 
@@ -83,6 +106,15 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
     // La connexion se construit depuis l'environnement, comme le reste. Le
     // parametre permet aux tests de fournir le leur sans toucher au fichier.
     $env ??= Env::load($rootPath . '/.env', array_filter(getenv(), 'is_string'));
+
+    // Controle AU DEMARRAGE des cles Stripe (06-securite §7) : une cle de test
+    // en production, ou une cle de production hors production, arrete tout ici,
+    // avant qu'une seule requete ne soit traitee. Le controle est bon marche —
+    // un simple prefixe — et n'attend pas qu'un paiement le declenche.
+    StripeCheckoutGateway::assertKeyMatchesEnvironment(
+        $env->getOptional('STRIPE_SECRET_KEY', '') ?? '',
+        $config->env,
+    );
 
     $container = new Container();
 
@@ -288,6 +320,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(CategoryRepository::class),
         $config,
         $c->get(ClockInterface::class),
+        $c->get(Csrf::class),
     ));
 
     $container->set(AdminChrome::class, static fn (Container $c): AdminChrome => new AdminChrome(
@@ -297,6 +330,92 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(AdminSession::class),
         $c->get(AuditTrail::class),
         $c->get(ClockInterface::class),
+    ));
+
+    // --- Paiement ---------------------------------------------------------
+    //
+    // 06-securite §7 : les cles vivent dans .env, et un controle au demarrage
+    // interdit une cle de test en production comme une cle de production hors
+    // production.
+
+    $container->set(PaymentGateway::class, static function (Container $c) use ($config, $env): PaymentGateway {
+        $secretKey = $env->getOptional('STRIPE_SECRET_KEY', '') ?? '';
+        $webhookSecret = $env->getOptional('STRIPE_WEBHOOK_SECRET', '') ?? '';
+
+        // Sans cle, on ne bascule PAS silencieusement sur un double : le site
+        // annoncerait des paiements qui n'existent pas. La passerelle de test
+        // n'est cablee que par les tests, explicitement.
+        StripeCheckoutGateway::assertKeyMatchesEnvironment($secretKey, $config->env);
+
+        return new StripeCheckoutGateway(new StripeClient($secretKey), $webhookSecret);
+    });
+
+    $container->set(StripeEventRepository::class, static fn (Container $c): StripeEventRepository
+        => new StripeEventRepository($c->get(PDO::class)));
+
+    $container->set(StockRepository::class, static fn (Container $c): StockRepository
+        => new StockRepository($c->get(PDO::class)));
+
+    $container->set(OrderRepository::class, static fn (Container $c): OrderRepository
+        => new OrderRepository($c->get(PDO::class)));
+
+    $container->set(CartRepository::class, static fn (Container $c): CartRepository
+        => new CartRepository($c->get(PDO::class)));
+
+    $container->set(ProductRepository::class, static fn (Container $c): ProductRepository
+        => new ProductRepository($c->get(PDO::class)));
+
+    $container->set(VatRepository::class, static fn (Container $c): VatRepository
+        => new VatRepository($c->get(PDO::class)));
+
+    $container->set(ShippingRepository::class, static fn (Container $c): ShippingRepository
+        => new ShippingRepository($c->get(PDO::class)));
+
+    // Courrier sortant. En preprod, MailHog capture tout : ni chiffrement ni
+    // authentification (MAIL_USERNAME et MAIL_ENCRYPTION vides).
+    $container->set(MailerInterface::class, static fn (): MailerInterface => new SmtpMailer(
+        $env->getOptional('MAIL_HOST', '127.0.0.1') ?? '127.0.0.1',
+        (int) ($env->getOptional('MAIL_PORT', '1025') ?? '1025'),
+        $env->getOptional('MAIL_USERNAME', '') ?? '',
+        $env->getOptional('MAIL_PASSWORD', '') ?? '',
+        $env->getOptional('MAIL_FROM_ADDRESS', 'commandes@cedrictaldu.com') ?? 'commandes@cedrictaldu.com',
+        $env->getOptional('MAIL_FROM_NAME', 'Cédric Taldu') ?? 'Cédric Taldu',
+        $env->getOptional('MAIL_ENCRYPTION', '') ?? '',
+    ));
+
+    $container->set(OrderMailer::class, static fn (Container $c): OrderMailer => new OrderMailer(
+        $c->get(View::class),
+        $c->get(MailerInterface::class),
+        $env->getOptional('ARTIST_EMAIL', 'cedric@cedrictaldu.com') ?? 'cedric@cedrictaldu.com',
+        $env->getOptional('ARTIST_NAME', 'Cédric Taldu') ?? 'Cédric Taldu',
+    ));
+
+    $container->set(PaymentEventHandler::class, static fn (Container $c): PaymentEventHandler
+        => new PaymentEventHandler(
+            $c->get(PDO::class),
+            $c->get(StripeEventRepository::class),
+            $c->get(OrderRepository::class),
+            $c->get(StockRepository::class),
+            $c->get(LoggerInterface::class),
+            $c->get(OrderMailer::class),
+            // Lien de consultation signe (03-boutique §7) : reference + jeton,
+            // construits cote serveur a partir de la commande.
+            static fn (PersistedOrder $order): string => $c->get(UrlGenerator::class)->absolute(
+                'checkout.confirmation',
+                ['locale' => $order->locale->value, 'reference' => $order->reference],
+            ) . '?t=' . $order->accessToken,
+        ));
+
+    $container->set(CheckoutService::class, static fn (Container $c): CheckoutService => new CheckoutService(
+        $c->get(PDO::class),
+        $c->get(CartRepository::class),
+        $c->get(OrderRepository::class),
+        $c->get(StockRepository::class),
+        $c->get(VatRepository::class),
+        $c->get(ShippingRepository::class),
+        $c->get(PaymentGateway::class),
+        $c->get(UrlGenerator::class),
+        $c->get(LoggerInterface::class),
     ));
 
     // --- Controleurs ------------------------------------------------------
@@ -328,6 +447,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(MediaRepository::class),
         $c->get(UrlGenerator::class),
         $c->get(PreviewToken::class),
+        $c->get(ProductRepository::class),
     ));
 
     // --- Controleurs d'administration --------------------------------------
@@ -382,6 +502,54 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(MediaStore::class),
         $c->get(Validator::class),
     ));
+
+    $container->set(CheckoutController::class, static fn (Container $c): CheckoutController => new CheckoutController(
+        $c->get(View::class),
+        $c->get(Chrome::class),
+        $c->get(CartRepository::class),
+        $c->get(OrderRepository::class),
+        $c->get(CheckoutService::class),
+        $c->get(UrlGenerator::class),
+        $c->get(LoggerInterface::class),
+    ));
+
+    $container->set(CartController::class, static fn (Container $c): CartController => new CartController(
+        $c->get(View::class),
+        $c->get(Chrome::class),
+        $c->get(CartRepository::class),
+        $c->get(CookieFactory::class),
+        $c->get(UrlGenerator::class),
+    ));
+
+    $container->set(OrderAdminRepository::class, static fn (Container $c): OrderAdminRepository
+        => new OrderAdminRepository($c->get(PDO::class)));
+
+    $container->set(ProductAdminRepository::class, static fn (Container $c): ProductAdminRepository
+        => new ProductAdminRepository($c->get(PDO::class)));
+
+    $container->set(AdminProductController::class, static fn (Container $c): AdminProductController
+        => new AdminProductController(
+            $c->get(AdminChrome::class),
+            $c->get(ProductAdminRepository::class),
+        ));
+
+    $container->set(AdminOrderController::class, static fn (Container $c): AdminOrderController
+        => new AdminOrderController(
+            $c->get(AdminChrome::class),
+            $c->get(OrderAdminRepository::class),
+            $c->get(OrderRepository::class),
+            $c->get(OrderMailer::class),
+            $c->get(UrlGenerator::class),
+        ));
+
+    $container->set(
+        StripeWebhookController::class,
+        static fn (Container $c): StripeWebhookController => new StripeWebhookController(
+            $c->get(PaymentGateway::class),
+            $c->get(PaymentEventHandler::class),
+            $c->get(LoggerInterface::class),
+        )
+    );
 
     $container->set(DashboardController::class, static fn (Container $c): DashboardController => new DashboardController(
         $c->get(AdminChrome::class),

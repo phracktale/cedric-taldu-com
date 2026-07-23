@@ -26,14 +26,21 @@ Thumbs.db
 /.idea/
 /.vscode/
 
-# Dépendances
+# Dépendances — liste blanche (lot 3)
 #
-# Décision du 2026-07-21 : `vendor/` n'est PAS suivi tant qu'il ne contient que
-# l'outillage de développement (PHPUnit, PHPStan, PHP_CodeSniffer, ~49 Mo), qui
-# n'a rien à faire sur un hébergement mutualisé. Il n'existe à ce stade aucune
-# dépendance de production.
+# `composer install` n'est pas garanti sur l'hébergement mutualisé (CLAUDE.md) :
+# ce qui tourne en production est donc ce qui est commité ici. Seules les
+# dépendances de PRODUCTION le sont — PHPUnit, PHPStan et PHP_CodeSniffer pèsent
+# 44 Mo et n'ont rien à faire sur le serveur.
 #
-# À revoir au lot 3, quand `stripe/stripe-php` arrive : la règle de CLAUDE.md
-# (« composer install n'est pas garanti sur le serveur mutualisé ») redevient
-# alors valable, et `vendor/` sera suivi en liste blanche, sans les dev-deps.
-/vendor/
+# PIÈGE : `vendor/composer/autoload_files.php` fait un `require` À CHAUD des
+# fichiers listés. Un dump généré AVEC les dépendances de développement y
+# inscrit PHPUnit, PHPStan et deep-copy ; déployé tel quel, il fait échouer la
+# toute première requête sur un fichier absent. Les cartes commitées doivent
+# donc TOUJOURS venir de `composer dump:prod`. VendorTest le vérifie sur le
+# contenu commité, pas sur la copie de travail.
+/vendor/*
+!/vendor/autoload.php
+!/vendor/composer/
+!/vendor/stripe/
+!/vendor/phpmailer/

@@ -32,6 +32,12 @@ $rubrique = $data['category'];
 $liees = $data['related'];
 /** @var array<int, Media> $medias */
 $medias = $data['medias'];
+/** @var list<App\Domain\Shop\Product> $products */
+$products = $data['products'];
+/** @var string $cartAddUrl */
+$cartAddUrl = $data['cartAddUrl'];
+/** @var string $csrfToken */
+$csrfToken = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
 
 $media = $medias[$oeuvre->primaryMediaId] ?? null;
 
@@ -110,6 +116,59 @@ $media = $medias[$oeuvre->primaryMediaId] ?? null;
         <p><?= e(trim(strip_tags($oeuvre->translations->for($locale)->detail))) ?></p>
       <?php endif; ?>
     </div>
+
+    <?php // Zone d'achat de l'original (02-front-public §4.6). Le bouton
+          // n'existe que si l'œuvre est disponible ET a un prix : isPurchasable()
+          // porte les deux conditions. ?>
+    <?php if ($oeuvre->isPurchasable()) : ?>
+    <div class="achat">
+      <form method="post" action="<?= attr($cartAddUrl) ?>" data-cart-add>
+        <input type="hidden" name="_token" value="<?= attr($csrfToken) ?>">
+        <input type="hidden" name="kind" value="original">
+        <input type="hidden" name="id" value="<?= attr($oeuvre->id) ?>">
+        <button type="submit" class="btn btn-plein">
+          <?= e($locale === Locale::Fr ? 'Acquérir cette œuvre' : 'Acquire this work') ?>
+        </button>
+      </form>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($products !== []) : ?>
+    <section class="reproductions">
+      <h2><?= e($locale === Locale::Fr ? 'Reproductions' : 'Prints') ?></h2>
+      <?php foreach ($products as $product) : ?>
+        <?php if (!$product->isPurchasable()) {
+            continue;
+        } ?>
+        <div class="reproduction">
+          <h3><?= e($product->title) ?></h3>
+          <?php if ($product->editionsRemaining() !== null) : ?>
+          <p class="edition">
+            <?= e($locale === Locale::Fr
+                ? $product->editionsRemaining() . ' exemplaire(s) restant(s)'
+                : $product->editionsRemaining() . ' remaining') ?>
+          </p>
+          <?php endif; ?>
+          <ul class="variantes">
+            <?php foreach ($product->availableVariants() as $variante) : ?>
+            <li class="variante">
+              <span class="variante-taille"><?= e($variante->label($locale)) ?></span>
+              <span class="variante-prix"><?= e(money($variante->price, $locale)) ?></span>
+              <form method="post" action="<?= attr($cartAddUrl) ?>" data-cart-add>
+                <input type="hidden" name="_token" value="<?= attr($csrfToken) ?>">
+                <input type="hidden" name="kind" value="reproduction">
+                <input type="hidden" name="id" value="<?= attr($variante->id) ?>">
+                <button type="submit" class="btn btn-vide">
+                  <?= e($locale === Locale::Fr ? 'Ajouter au panier' : 'Add to cart') ?>
+                </button>
+              </form>
+            </li>
+            <?php endforeach; ?>
+          </ul>
+        </div>
+      <?php endforeach; ?>
+    </section>
+    <?php endif; ?>
   </div>
 </div>
 

@@ -97,7 +97,19 @@ abstract class FunctionalTestCase extends TestCase
 
     protected function config(): Config
     {
-        return Config::fromEnv(Env::fromArray([
+        return Config::fromEnv($this->testEnv());
+    }
+
+    /**
+     * Environnement de test, partage par la Config ET par le cablage.
+     *
+     * Sans ce partage, `withEnv` ne toucherait que la Config, et une variable
+     * lue directement dans config/services.php — une cle Stripe, un reglage
+     * SMTP — echapperait au test en retombant sur le vrai .env.
+     */
+    protected function testEnv(): Env
+    {
+        return Env::fromArray([
             'APP_ENV' => 'preprod',
             'APP_DEBUG' => '0',
             'APP_URL' => 'https://customer.phracktale.com/cedric-taldu',
@@ -107,7 +119,7 @@ abstract class FunctionalTestCase extends TestCase
             'TRUSTED_PROXIES' => '',
             'SECURITY_PEPPER' => str_repeat('a', 64),
             ...$this->env,
-        ]));
+        ]);
     }
 
     protected function rootPath(): string
@@ -174,28 +186,36 @@ abstract class FunctionalTestCase extends TestCase
             return \App\Core\FailSafeResponse::for($exception, $config);
         }
 
-        /** @var callable(Config, Request, string): Container $build */
+        /** @var callable(Config, Request, string, Env): Container $build */
         $build = require $this->rootPath() . '/config/services.php';
 
-        $this->container = $build($config, $request, $this->rootPath());
-        $this->container->instance(LoggerInterface::class, $this->logger);
-        $this->container->instance(SessionInterface::class, $this->session);
-        // La MEME connexion que les fixtures du test : sans cela, la page ne
-        // verrait rien de ce que le test vient d'inserer dans sa transaction.
-        $this->container->instance(\PDO::class, $this->pdo);
+        // Comme public/index.php : la CONSTRUCTION du conteneur peut echouer —
+        // le controle des cles Stripe au demarrage leve la, avant tout
+        // traitement (06-securite §7). Cet echec doit produire une reponse 500,
+        // pas une exception de test.
+        try {
+            $this->container = $build($config, $request, $this->rootPath(), $this->testEnv());
+            $this->container->instance(LoggerInterface::class, $this->logger);
+            $this->container->instance(SessionInterface::class, $this->session);
+            // La MEME connexion que les fixtures du test : sans cela, la page ne
+            // verrait rien de ce que le test vient d'inserer dans sa transaction.
+            $this->container->instance(\PDO::class, $this->pdo);
 
-        if ($this->routes !== null) {
-            $this->container->instance(\App\Core\Router::class, new \App\Core\Router($this->routes));
+            if ($this->routes !== null) {
+                $this->container->instance(\App\Core\Router::class, new \App\Core\Router($this->routes));
+            }
+
+            foreach ($this->services as $id => $factory) {
+                $this->container->set($id, $factory);
+            }
+
+            $kernel = $this->container->get(Kernel::class);
+            self::assertInstanceOf(Kernel::class, $kernel);
+
+            return $kernel->handle($request);
+        } catch (\Throwable $exception) {
+            return \App\Core\FailSafeResponse::for($exception, $config);
         }
-
-        foreach ($this->services as $id => $factory) {
-            $this->container->set($id, $factory);
-        }
-
-        $kernel = $this->container->get(Kernel::class);
-        self::assertInstanceOf(Kernel::class, $kernel);
-
-        return $kernel->handle($request);
     }
 
     /**
