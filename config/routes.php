@@ -24,6 +24,7 @@ use App\Http\Controller\Admin\AuthController;
 use App\Http\Controller\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Admin\MediaController;
+use App\Http\Controller\Admin\OrderController as AdminOrderController;
 use App\Http\Controller\Front\ArtworkController;
 use App\Http\Controller\Front\CategoryController;
 use App\Http\Controller\Front\CartController;
@@ -156,4 +157,12 @@ return [
     new Route('admin.media.upload', 'POST', '/admin/medias', [MediaController::class, 'upload']),
     new Route('admin.media.update', 'POST', '/admin/medias/{id}', [MediaController::class, 'update'], requirements: $id),
     new Route('admin.media.delete', 'POST', '/admin/medias/{id}/suppression', [MediaController::class, 'delete'], requirements: $id),
+
+    // Commandes. Fermees par defaut comme toute route /admin (AuthTest).
+    // L'export vient AVANT la route a parametre, sinon « export.csv » serait lu
+    // comme un {id}.
+    new Route('admin.order.export', 'GET', '/admin/commandes/export.csv', [AdminOrderController::class, 'export']),
+    new Route('admin.order.index', 'GET', '/admin/commandes', [AdminOrderController::class, 'index']),
+    new Route('admin.order.show', 'GET', '/admin/commandes/{id}', [AdminOrderController::class, 'show'], requirements: $id),
+    new Route('admin.order.ship', 'POST', '/admin/commandes/{id}/expedition', [AdminOrderController::class, 'ship'], requirements: $id),
 ];
