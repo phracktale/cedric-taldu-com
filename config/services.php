@@ -105,6 +105,15 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
     // parametre permet aux tests de fournir le leur sans toucher au fichier.
     $env ??= Env::load($rootPath . '/.env', array_filter(getenv(), 'is_string'));
 
+    // Controle AU DEMARRAGE des cles Stripe (06-securite §7) : une cle de test
+    // en production, ou une cle de production hors production, arrete tout ici,
+    // avant qu'une seule requete ne soit traitee. Le controle est bon marche —
+    // un simple prefixe — et n'attend pas qu'un paiement le declenche.
+    StripeCheckoutGateway::assertKeyMatchesEnvironment(
+        $env->getOptional('STRIPE_SECRET_KEY', '') ?? '',
+        $config->env,
+    );
+
     $container = new Container();
 
     $container->instance(Config::class, $config);

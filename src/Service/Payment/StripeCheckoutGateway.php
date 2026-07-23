@@ -7,7 +7,6 @@ namespace App\Service\Payment;
 use App\Service\Payment\Exception\InvalidWebhookSignature;
 use JsonException;
 use Stripe\StripeClient;
-use Throwable;
 
 /**
  * Passerelle reelle : Stripe Checkout heberge, mode `payment`.
@@ -130,6 +129,14 @@ final class StripeCheckoutGateway implements PaymentGateway
      */
     public static function assertKeyMatchesEnvironment(string $secretKey, string $appEnv): void
     {
+        // Une cle absente signifie « paiement non configuré », pas « cle
+        // egaree » : le site — et son portfolio — demarre, et c'est la
+        // creation de session Stripe qui echouera si l'on tente de payer. Le
+        // controle ne vise que la MECONNAISSANCE d'une cle PRESENTE.
+        if ($secretKey === '') {
+            return;
+        }
+
         $isLive = str_starts_with($secretKey, 'sk_live_');
         $isProduction = $appEnv === 'prod';
 
