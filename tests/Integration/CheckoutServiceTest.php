@@ -58,6 +58,7 @@ final class CheckoutServiceTest extends DatabaseTestCase
             new VatRepository($this->pdo),
             new ShippingRepository($this->pdo),
             $this->gateway,
+            self::urlGenerator(),
             new RecordingLogger(),
         );
 
@@ -395,8 +396,6 @@ final class CheckoutServiceTest extends DatabaseTestCase
             shippingAddress: new Address('12 rue des Trois-Cailloux', null, '80000', 'Amiens', 'FR'),
             billingAddress: null,
             customerNote: null,
-            successUrl: 'https://example.test/fr/commande/confirmation',
-            cancelUrl: 'https://example.test/fr/panier',
         );
     }
 
@@ -441,6 +440,29 @@ final class CheckoutServiceTest extends DatabaseTestCase
         );
         $variant->execute(['prod' => $productId, 'sku' => 'ART-3040', 'size' => '30 × 40 cm']);
         $this->variant = (int) $this->pdo->lastInsertId();
+    }
+
+    private static function urlGenerator(): \App\Service\I18n\UrlGenerator
+    {
+        $racine = dirname(__DIR__, 2);
+        /** @var list<\App\Core\Route> $routes */
+        $routes = require $racine . '/config/routes.php';
+
+        return new \App\Service\I18n\UrlGenerator(
+            new \App\Core\Router($routes),
+            \App\Core\Config::fromEnv(\App\Core\Env::fromArray([
+                'APP_ENV' => 'preprod',
+                'APP_DEBUG' => '0',
+                'APP_URL' => 'https://example.test',
+                'APP_BASE_PATH' => '',
+                'APP_DEFAULT_LOCALE' => 'fr',
+                'APP_LOCALES' => 'fr,en',
+                'TRUSTED_PROXIES' => '',
+                'SECURITY_PEPPER' => str_repeat('a', 64),
+            ])),
+            '',
+            $racine . '/public',
+        );
     }
 
     private static function secondeConnexion(): \PDO
