@@ -52,12 +52,15 @@ final class StripeKeyEnvironmentTest extends TestCase
         StripeCheckoutGateway::assertKeyMatchesEnvironment('sk_test_abc', 'prod');
     }
 
-    public function test_une_cle_vide_est_traitee_comme_une_cle_de_test(): void
+    public function test_une_cle_absente_laisse_demarrer_partout(): void
     {
-        // Elle ne doit surtout pas passer pour une cle de production : en prod,
-        // le controle doit echouer bruyamment au demarrage.
-        $this->expectException(RuntimeException::class);
-
+        // Une cle vide signifie « paiement non configuré », pas « cle
+        // egaree » : le site demarre, et c'est la tentative de paiement qui
+        // echouera. Bloquer tout le site — portfolio compris — parce que
+        // Stripe n'est pas cablé serait disproportionne.
         StripeCheckoutGateway::assertKeyMatchesEnvironment('', 'prod');
+        StripeCheckoutGateway::assertKeyMatchesEnvironment('', 'preprod');
+
+        $this->addToAssertionCount(2);
     }
 }
