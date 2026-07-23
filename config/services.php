@@ -60,6 +60,7 @@ use App\Repository\ArtworkRepository;
 use App\Repository\AuditLogRepository;
 use App\Repository\CategoryRepository;
 use App\Repository\MediaRepository;
+use App\Repository\ProductRepository;
 use App\Repository\RateLimitRepository;
 use App\Repository\SeriesRepository;
 use App\Repository\SettingRepository;
@@ -343,6 +344,9 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
     $container->set(CartRepository::class, static fn (Container $c): CartRepository
         => new CartRepository($c->get(PDO::class)));
 
+    $container->set(ProductRepository::class, static fn (Container $c): ProductRepository
+        => new ProductRepository($c->get(PDO::class)));
+
     $container->set(VatRepository::class, static fn (Container $c): VatRepository
         => new VatRepository($c->get(PDO::class)));
 
@@ -398,6 +402,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(MediaRepository::class),
         $c->get(UrlGenerator::class),
         $c->get(PreviewToken::class),
+        $c->get(ProductRepository::class),
     ));
 
     // --- Controleurs d'administration --------------------------------------

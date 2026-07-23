@@ -39,6 +39,7 @@ final class ArtworkController
         private readonly MediaRepository $medias,
         private readonly UrlGenerator $url,
         private readonly \App\Service\Content\PreviewToken $preview,
+        private readonly \App\Repository\ProductRepository $products,
     ) {
     }
 
@@ -91,6 +92,10 @@ final class ArtworkController
             'medias' => $this->medias->findByIds($this->mediaIds($artwork, $related)),
             'isTranslated' => $artwork->isTranslatedIn($locale),
             'isPreview' => $isPreview,
+            // Reproductions publiees de cette œuvre. Un apercu de brouillon
+            // n'en montre aucune : elles n'existent pas encore publiquement.
+            'products' => $isPreview ? [] : $this->products->findPublishedForArtwork($artwork->id, $locale),
+            'cartAddUrl' => $this->url->route('cart.add', ['locale' => $locale->value]),
         ];
 
         $response = Response::html($this->view->render('front/artwork', $data, layout: 'layouts/public'));
