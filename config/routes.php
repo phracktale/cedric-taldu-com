@@ -26,6 +26,7 @@ use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Admin\MediaController;
 use App\Http\Controller\Front\ArtworkController;
 use App\Http\Controller\Front\CategoryController;
+use App\Http\Controller\Front\CartController;
 use App\Http\Controller\Front\HomeController;
 use App\Http\Controller\Front\StripeWebhookController;
 
@@ -45,6 +46,24 @@ return [
     // Fiche œuvre
     new Route('artwork.show', 'GET', '/fr/oeuvre/{slug}', [ArtworkController::class, 'show'], locale: 'fr', requirements: $slug),
     new Route('artwork.show', 'GET', '/en/artwork/{slug}', [ArtworkController::class, 'show'], locale: 'en', requirements: $slug),
+
+    // --------------------------------------------------------------- panier
+    //
+    // Le panier n'existe qu'en francais et en anglais, sous prefixe de langue.
+    // L'ajout, la mise a jour et le retrait sont des POST : CsrfTest exige leur
+    // protection, et seul le webhook Stripe y echappe.
+
+    new Route('cart.show', 'GET', '/fr/panier', [CartController::class, 'show'], locale: 'fr'),
+    new Route('cart.show', 'GET', '/en/cart', [CartController::class, 'show'], locale: 'en'),
+
+    new Route('cart.add', 'POST', '/fr/panier/ajout', [CartController::class, 'add'], locale: 'fr'),
+    new Route('cart.add', 'POST', '/en/cart/add', [CartController::class, 'add'], locale: 'en'),
+
+    new Route('cart.update', 'POST', '/fr/panier/quantite', [CartController::class, 'update'], locale: 'fr'),
+    new Route('cart.update', 'POST', '/en/cart/quantity', [CartController::class, 'update'], locale: 'en'),
+
+    new Route('cart.remove', 'POST', '/fr/panier/retrait', [CartController::class, 'remove'], locale: 'fr'),
+    new Route('cart.remove', 'POST', '/en/cart/remove', [CartController::class, 'remove'], locale: 'en'),
 
     // ------------------------------------------------------------- webhooks
     //

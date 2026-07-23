@@ -43,9 +43,10 @@ use App\Http\Controller\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Admin\MediaController;
 use App\Http\Controller\Front\ArtworkController;
-use App\Http\Controller\Front\StripeWebhookController;
+use App\Http\Controller\Front\CartController;
 use App\Http\Controller\Front\CategoryController;
 use App\Http\Controller\Front\HomeController;
+use App\Http\Controller\Front\StripeWebhookController;
 use App\Http\Middleware\AuthGuard;
 use App\Http\Middleware\CsrfGuard;
 use App\Http\Middleware\Locale;
@@ -300,6 +301,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(CategoryRepository::class),
         $config,
         $c->get(ClockInterface::class),
+        $c->get(Csrf::class),
     ));
 
     $container->set(AdminChrome::class, static fn (Container $c): AdminChrome => new AdminChrome(
@@ -449,6 +451,14 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(MediaAdminRepository::class),
         $c->get(MediaStore::class),
         $c->get(Validator::class),
+    ));
+
+    $container->set(CartController::class, static fn (Container $c): CartController => new CartController(
+        $c->get(View::class),
+        $c->get(Chrome::class),
+        $c->get(CartRepository::class),
+        $c->get(CookieFactory::class),
+        $c->get(UrlGenerator::class),
     ));
 
     $container->set(

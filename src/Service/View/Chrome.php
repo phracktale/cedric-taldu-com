@@ -6,6 +6,7 @@ namespace App\Service\View;
 
 use App\Core\ClockInterface;
 use App\Core\Config;
+use App\Core\Csrf;
 use App\Core\Request;
 use App\Domain\Locale;
 use App\Http\Middleware\SecurityHeaders;
@@ -28,6 +29,7 @@ final class Chrome
         private readonly CategoryRepository $categories,
         private readonly Config $config,
         private readonly ClockInterface $clock,
+        private readonly Csrf $csrf,
     ) {
     }
 
@@ -44,6 +46,9 @@ final class Chrome
             'isProduction' => $this->config->isProduction(),
             'menuCategories' => $this->categories->findPublished(),
             'year' => $this->clock->now()->format('Y'),
+            // Le panier et le tunnel postent depuis le front : le jeton doit
+            // etre disponible a tout gabarit public portant un formulaire.
+            'csrfToken' => $this->csrf->token(),
             // Renseignes par chaque controleur : le lien de changement de langue
             // doit mener a la page EQUIVALENTE, pas a l'accueil.
             'localeSwitch' => [],

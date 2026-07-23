@@ -46,6 +46,25 @@ final class Response
         return (new self($body, $status))->withHeader('Content-Type', 'text/html; charset=utf-8');
     }
 
+    /**
+     * Reponse JSON, pour les requetes fetch (pastille du panier, 03-boutique §2).
+     *
+     * Les memes drapeaux que jsonAttr() : une valeur hostile issue du catalogue
+     * ne doit pas pouvoir refermer une balise si le fragment est un jour insere
+     * dans du HTML.
+     *
+     * @param array<string, mixed> $data
+     */
+    public static function json(array $data, int $status = 200): self
+    {
+        $body = json_encode(
+            $data,
+            JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR,
+        );
+
+        return (new self($body, $status))->withHeader('Content-Type', 'application/json; charset=utf-8');
+    }
+
     public function withHeader(string $name, string $value): self
     {
         if (self::containsControlCharacter($name) || self::containsControlCharacter($value)) {
