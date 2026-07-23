@@ -68,7 +68,8 @@ final class ProductRepository
             return [];
         }
 
-        $variantsByProduct = $this->variantsFor(array_map(static fn (array $r): int => (int) $r['id'], $rows));
+        $productIds = array_values(array_map(static fn (array $r): int => (int) $r['id'], $rows));
+        $variantsByProduct = $this->variantsFor($productIds);
 
         $products = [];
 

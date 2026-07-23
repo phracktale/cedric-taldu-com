@@ -54,13 +54,15 @@ final class Product
             static fn (ProductVariant $v): bool => $v->isAvailable(),
         );
 
+        $available = array_values($available);
+
         usort(
             $available,
             static fn (ProductVariant $a, ProductVariant $b): int
                 => [$a->position, $a->id] <=> [$b->position, $b->id],
         );
 
-        return array_values($available);
+        return $available;
     }
 
     public function isPurchasable(): bool
