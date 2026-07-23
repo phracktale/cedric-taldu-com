@@ -22,10 +22,26 @@ use Stripe\StripeClient;
  */
 final class StripeCheckoutGateway implements PaymentGateway
 {
+    private ?StripeClient $stripe = null;
+
+    /**
+     * Le client Stripe est construit PARESSEUSEMENT, au premier paiement.
+     *
+     * Le SDK refuse `new StripeClient('')` : construire le client dès l'assemblage
+     * ferait échouer TOUTE requête de paiement — webhook compris — quand la clé
+     * n'est pas configurée. Or `verifyWebhook` n'a besoin que du secret de
+     * signature. On garde donc la clé sous forme de chaîne et on ne bâtit le
+     * client que lorsqu'on doit réellement parler à Stripe.
+     */
     public function __construct(
-        private readonly StripeClient $stripe,
+        private readonly string $apiKey,
         private readonly string $webhookSecret,
     ) {
+    }
+
+    private function stripe(): StripeClient
+    {
+        return $this->stripe ??= new StripeClient($this->apiKey);
     }
 
     public function createCheckout(
@@ -65,7 +81,7 @@ final class StripeCheckoutGateway implements PaymentGateway
             ];
         }
 
-        $session = $this->stripe->checkout->sessions->create([
+        $session = $this->stripe()->checkout->sessions->create([
             'mode' => 'payment',
             'line_items' => $items,
             'customer_email' => $customerEmail,
