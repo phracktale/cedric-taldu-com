@@ -39,8 +39,26 @@ Thumbs.db
 # toute première requête sur un fichier absent. Les cartes commitées doivent
 # donc TOUJOURS venir de `composer dump:prod`. VendorTest le vérifie sur le
 # contenu commité, pas sur la copie de travail.
+#
+# On ne suit que le CODE D'EXÉCUTION de chaque dépendance, pas ses docs ni ses
+# tests. Motif concret : le README du SDK Stripe contient une clé « sk_test_… »
+# d'exemple qui déclenche la protection anti-secret de GitHub. Ces fichiers
+# n'ont de toute façon aucune utilité en production.
 /vendor/*
 !/vendor/autoload.php
 !/vendor/composer/
+!/vendor/phpmailer/phpmailer/
+/vendor/phpmailer/phpmailer/*
+!/vendor/phpmailer/phpmailer/src/
+# PHPMailer charge ses traductions de messages d'erreur à l'exécution.
+!/vendor/phpmailer/phpmailer/language/
+!/vendor/phpmailer/phpmailer/composer.json
+!/vendor/phpmailer/phpmailer/VERSION
+!/vendor/phpmailer/phpmailer/LICENSE
 !/vendor/stripe/
-!/vendor/phpmailer/
+/vendor/stripe/stripe-php/*
+!/vendor/stripe/stripe-php/lib/
+!/vendor/stripe/stripe-php/composer.json
+!/vendor/stripe/stripe-php/VERSION
+!/vendor/stripe/stripe-php/LICENSE
+!/vendor/stripe/stripe-php/init.php
