@@ -297,6 +297,12 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
     </form>
 
     <?php if ($oeuvre !== null) : ?>
+    <p class="admin-lien-reproductions">
+        <a href="<?= attr($base . '/admin/oeuvres/' . $oeuvre['id'] . '/reproductions') ?>">
+            Gérer les reproductions de cette œuvre →
+        </a>
+    </p>
+
     <div class="actions">
         <form method="post" action="<?= attr($base . '/admin/oeuvres/' . $oeuvre['id'] . '/publication') ?>">
             <input type="hidden" name="_token" value="<?= attr($jeton) ?>">

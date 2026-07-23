@@ -25,6 +25,7 @@ use App\Http\Controller\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Admin\MediaController;
 use App\Http\Controller\Admin\OrderController as AdminOrderController;
+use App\Http\Controller\Admin\ProductController as AdminProductController;
 use App\Http\Controller\Front\ArtworkController;
 use App\Http\Controller\Front\CategoryController;
 use App\Http\Controller\Front\CartController;
@@ -157,6 +158,15 @@ return [
     new Route('admin.media.upload', 'POST', '/admin/medias', [MediaController::class, 'upload']),
     new Route('admin.media.update', 'POST', '/admin/medias/{id}', [MediaController::class, 'update'], requirements: $id),
     new Route('admin.media.delete', 'POST', '/admin/medias/{id}/suppression', [MediaController::class, 'delete'], requirements: $id),
+
+    // Reproductions et variantes, rattachees a une œuvre.
+    new Route('admin.product.index', 'GET', '/admin/oeuvres/{id}/reproductions', [AdminProductController::class, 'index'], requirements: $id),
+    new Route('admin.product.store', 'POST', '/admin/oeuvres/{id}/reproductions', [AdminProductController::class, 'store'], requirements: $id),
+    new Route('admin.product.publish', 'POST', '/admin/reproductions/{id}/publication', [AdminProductController::class, 'togglePublication'], requirements: $id),
+    new Route('admin.product.delete', 'POST', '/admin/reproductions/{id}/suppression', [AdminProductController::class, 'delete'], requirements: $id),
+    new Route('admin.variant.store', 'POST', '/admin/reproductions/{id}/variantes', [AdminProductController::class, 'storeVariant'], requirements: $id),
+    new Route('admin.variant.update', 'POST', '/admin/variantes/{id}', [AdminProductController::class, 'updateVariant'], requirements: $id),
+    new Route('admin.variant.delete', 'POST', '/admin/variantes/{id}/suppression', [AdminProductController::class, 'deleteVariant'], requirements: $id),
 
     // Commandes. Fermees par defaut comme toute route /admin (AuthTest).
     // L'export vient AVANT la route a parametre, sinon « export.csv » serait lu

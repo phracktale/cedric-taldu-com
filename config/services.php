@@ -43,6 +43,7 @@ use App\Http\Controller\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Admin\MediaController;
 use App\Http\Controller\Admin\OrderController as AdminOrderController;
+use App\Http\Controller\Admin\ProductController as AdminProductController;
 use App\Http\Controller\Front\ArtworkController;
 use App\Http\Controller\Front\CartController;
 use App\Http\Controller\Front\CheckoutController;
@@ -58,6 +59,7 @@ use App\Repository\Admin\CategoryAdminRepository;
 use App\Repository\Admin\DashboardRepository;
 use App\Repository\Admin\MediaAdminRepository;
 use App\Repository\Admin\OrderAdminRepository;
+use App\Repository\Admin\ProductAdminRepository;
 use App\Repository\Admin\SeriesAdminRepository;
 use App\Repository\ArtworkRepository;
 use App\Repository\AuditLogRepository;
@@ -521,6 +523,15 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
 
     $container->set(OrderAdminRepository::class, static fn (Container $c): OrderAdminRepository
         => new OrderAdminRepository($c->get(PDO::class)));
+
+    $container->set(ProductAdminRepository::class, static fn (Container $c): ProductAdminRepository
+        => new ProductAdminRepository($c->get(PDO::class)));
+
+    $container->set(AdminProductController::class, static fn (Container $c): AdminProductController
+        => new AdminProductController(
+            $c->get(AdminChrome::class),
+            $c->get(ProductAdminRepository::class),
+        ));
 
     $container->set(AdminOrderController::class, static fn (Container $c): AdminOrderController
         => new AdminOrderController(
