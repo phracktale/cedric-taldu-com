@@ -1,0 +1,129 @@
+<?php
+
+/**
+ * Formulaire de commande (03-boutique §3, étape 2).
+ *
+ * Un seul écran : identité, mode de remise, adresse, note, acceptation des CGV.
+ * AUCUN champ de prix : les montants sont recalculés côté serveur. Le champ
+ * appât `site_web` est masqué hors écran, jamais en display:none seul, et porte
+ * aria-hidden + tabindex=-1 (06-securite §6.1).
+ *
+ * @var array<string, mixed>          $data
+ * @var App\Service\I18n\UrlGenerator $url
+ * @var callable                      $partial
+ */
+
+declare(strict_types=1);
+
+use App\Domain\Locale;
+use App\Domain\Shop\CartValuation;
+
+/** @var Locale $locale */
+$locale = $data['locale'];
+/** @var CartValuation $valuation */
+$valuation = $data['valuation'];
+/** @var string $submitUrl */
+$submitUrl = $data['submitUrl'];
+/** @var string $honeypot */
+$honeypot = $data['honeypot'];
+/** @var string $csrfToken */
+$csrfToken = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
+/** @var string|null $error */
+$error = is_string($data['error'] ?? null) ? $data['error'] : null;
+
+$estFr = $locale === Locale::Fr;
+$cgvUrl = $url->route('cart.show', ['locale' => $locale->value]);
+?>
+<main class="commande" id="contenu">
+  <div class="wrap">
+    <h1><?= e($estFr ? 'Votre commande' : 'Your order') ?></h1>
+
+    <?php if ($error !== null) : ?>
+      <p class="commande-erreur" role="alert"><?= e($error) ?></p>
+    <?php endif; ?>
+
+    <section class="commande-recap">
+      <h2><?= e($estFr ? 'Récapitulatif' : 'Summary') ?></h2>
+      <ul>
+        <?php foreach ($valuation->lines as $line) : ?>
+          <li>
+            <span><?= e($line->item->label) ?> × <?= e($line->quantity) ?></span>
+            <span><?= e(money($line->total, $locale)) ?></span>
+          </li>
+        <?php endforeach; ?>
+      </ul>
+      <p class="commande-soustotal">
+        <strong><?= e($estFr ? 'Sous-total' : 'Subtotal') ?></strong>
+        <?= e(money($valuation->subtotal, $locale)) ?>
+      </p>
+    </section>
+
+    <form method="post" action="<?= attr($submitUrl) ?>" class="commande-form">
+      <input type="hidden" name="_token" value="<?= attr($csrfToken) ?>">
+
+      <?php // Champ appât : positionné hors écran, jamais atteignable au clavier. ?>
+      <div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;" tabindex="-1">
+        <label for="<?= attr($honeypot) ?>"><?= e($estFr ? 'Ne pas remplir' : 'Do not fill') ?></label>
+        <input type="text" id="<?= attr($honeypot) ?>" name="<?= attr($honeypot) ?>"
+               tabindex="-1" autocomplete="off">
+      </div>
+
+      <fieldset>
+        <legend><?= e($estFr ? 'Vos coordonnées' : 'Your details') ?></legend>
+        <label for="nom"><?= e($estFr ? 'Nom' : 'Name') ?></label>
+        <input type="text" id="nom" name="nom" required maxlength="160">
+
+        <label for="email"><?= e($estFr ? 'Adresse e-mail' : 'Email address') ?></label>
+        <input type="email" id="email" name="email" required maxlength="190">
+
+        <label for="telephone"><?= e($estFr ? 'Téléphone (facultatif)' : 'Phone (optional)') ?></label>
+        <input type="tel" id="telephone" name="telephone" maxlength="40">
+      </fieldset>
+
+      <fieldset>
+        <legend><?= e($estFr ? 'Mode de remise' : 'Delivery method') ?></legend>
+        <label>
+          <input type="radio" name="mode" value="shipping" checked>
+          <?= e($estFr ? 'Expédition' : 'Shipping') ?>
+        </label>
+        <label>
+          <input type="radio" name="mode" value="pickup">
+          <?= e($estFr ? 'Remise en main propre à Amiens' : 'Collection in Amiens') ?>
+        </label>
+      </fieldset>
+
+      <fieldset class="commande-adresse">
+        <legend><?= e($estFr ? 'Adresse de livraison' : 'Shipping address') ?></legend>
+        <label for="adresse"><?= e($estFr ? 'Adresse' : 'Address') ?></label>
+        <input type="text" id="adresse" name="adresse" maxlength="190">
+
+        <label for="complement"><?= e($estFr ? 'Complément (facultatif)' : 'Address line 2 (optional)') ?></label>
+        <input type="text" id="complement" name="complement" maxlength="190">
+
+        <label for="code_postal"><?= e($estFr ? 'Code postal' : 'Postal code') ?></label>
+        <input type="text" id="code_postal" name="code_postal" maxlength="16">
+
+        <label for="ville"><?= e($estFr ? 'Ville' : 'City') ?></label>
+        <input type="text" id="ville" name="ville" maxlength="120">
+
+        <label for="pays"><?= e($estFr ? 'Pays' : 'Country') ?></label>
+        <input type="text" id="pays" name="pays" value="FR" maxlength="2">
+      </fieldset>
+
+      <label for="note"><?= e($estFr ? 'Note (facultative)' : 'Note (optional)') ?></label>
+      <textarea id="note" name="note" maxlength="500" rows="3"></textarea>
+
+      <label class="commande-cgv">
+        <input type="checkbox" name="cgv" value="on" required>
+        <?= e($estFr
+            ? 'J’accepte les conditions générales de vente'
+            : 'I accept the terms and conditions') ?>
+        <a href="<?= attr($cgvUrl) ?>"><?= e($estFr ? '(lire)' : '(read)') ?></a>
+      </label>
+
+      <button type="submit" class="btn btn-plein">
+        <?= e($estFr ? 'Procéder au paiement' : 'Proceed to payment') ?>
+      </button>
+    </form>
+  </div>
+</main>

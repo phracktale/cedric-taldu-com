@@ -27,9 +27,6 @@ final class CheckoutRequest
         public readonly ?Address $shippingAddress,
         public readonly ?Address $billingAddress,
         public readonly ?string $customerNote,
-        /** Construites cote serveur depuis la configuration (03-boutique §8.6). */
-        public readonly string $successUrl,
-        public readonly string $cancelUrl,
     ) {
     }
 }

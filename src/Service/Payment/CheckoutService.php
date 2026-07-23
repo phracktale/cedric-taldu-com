@@ -52,6 +52,7 @@ final class CheckoutService
         private readonly VatRepository $vat,
         private readonly ShippingRepository $shipping,
         private readonly PaymentGateway $gateway,
+        private readonly \App\Service\I18n\UrlGenerator $url,
         private readonly LoggerInterface $logger,
     ) {
     }
@@ -181,6 +182,11 @@ final class CheckoutService
 
         // 6. Session de paiement, construite depuis LA COMMANDE — pas depuis le
         //    panier, et surtout pas depuis la requete.
+        //
+        //    Les URL de retour sont construites ICI, cote serveur, a partir de
+        //    la reference et du jeton de la commande (03-boutique §8.6). Le
+        //    client n'en fournit aucune : la page de confirmation n'existe
+        //    qu'apres creation, et son jeton la protege.
         $session = $this->gateway->createCheckout(
             reference: $order->reference,
             orderId: $order->id,
@@ -188,8 +194,11 @@ final class CheckoutService
             shippingCents: $order->shipping->cents,
             currency: Money::CURRENCY,
             customerEmail: $order->customerEmail,
-            successUrl: $request->successUrl,
-            cancelUrl: $request->cancelUrl,
+            successUrl: $this->url->absolute('checkout.confirmation', [
+                'locale' => $request->locale->value,
+                'reference' => $order->reference,
+            ]) . '?t=' . $order->accessToken,
+            cancelUrl: $this->url->absolute('cart.show', ['locale' => $request->locale->value]),
             // Alignee sur reserved_until : sans cela, un client pourrait payer
             // une piece deja reliberee.
             expiresAt: $reservedUntil->getTimestamp(),

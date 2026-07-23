@@ -44,6 +44,7 @@ use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Admin\MediaController;
 use App\Http\Controller\Front\ArtworkController;
 use App\Http\Controller\Front\CartController;
+use App\Http\Controller\Front\CheckoutController;
 use App\Http\Controller\Front\CategoryController;
 use App\Http\Controller\Front\HomeController;
 use App\Http\Controller\Front\StripeWebhookController;
@@ -370,6 +371,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(VatRepository::class),
         $c->get(ShippingRepository::class),
         $c->get(PaymentGateway::class),
+        $c->get(UrlGenerator::class),
         $c->get(LoggerInterface::class),
     ));
 
@@ -456,6 +458,16 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(MediaAdminRepository::class),
         $c->get(MediaStore::class),
         $c->get(Validator::class),
+    ));
+
+    $container->set(CheckoutController::class, static fn (Container $c): CheckoutController => new CheckoutController(
+        $c->get(View::class),
+        $c->get(Chrome::class),
+        $c->get(CartRepository::class),
+        $c->get(OrderRepository::class),
+        $c->get(CheckoutService::class),
+        $c->get(UrlGenerator::class),
+        $c->get(LoggerInterface::class),
     ));
 
     $container->set(CartController::class, static fn (Container $c): CartController => new CartController(

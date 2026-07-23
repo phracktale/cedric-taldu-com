@@ -27,6 +27,7 @@ use App\Http\Controller\Admin\MediaController;
 use App\Http\Controller\Front\ArtworkController;
 use App\Http\Controller\Front\CategoryController;
 use App\Http\Controller\Front\CartController;
+use App\Http\Controller\Front\CheckoutController;
 use App\Http\Controller\Front\HomeController;
 use App\Http\Controller\Front\StripeWebhookController;
 
@@ -64,6 +65,35 @@ return [
 
     new Route('cart.remove', 'POST', '/fr/panier/retrait', [CartController::class, 'remove'], locale: 'fr'),
     new Route('cart.remove', 'POST', '/en/cart/remove', [CartController::class, 'remove'], locale: 'en'),
+
+    // ------------------------------------------------------------- commande
+    //
+    // Tunnel en deux temps plus une page de retour. La reference de commande de
+    // la page de confirmation est validee par le controleur (OrderReference) :
+    // elle vient de l'URL, et le jeton d'acces protege la lecture.
+
+    new Route('checkout.form', 'GET', '/fr/commande', [CheckoutController::class, 'form'], locale: 'fr'),
+    new Route('checkout.form', 'GET', '/en/checkout', [CheckoutController::class, 'form'], locale: 'en'),
+
+    new Route('checkout.submit', 'POST', '/fr/commande', [CheckoutController::class, 'submit'], locale: 'fr'),
+    new Route('checkout.submit', 'POST', '/en/checkout', [CheckoutController::class, 'submit'], locale: 'en'),
+
+    new Route(
+        'checkout.confirmation',
+        'GET',
+        '/fr/commande/confirmation/{reference}',
+        [CheckoutController::class, 'confirmation'],
+        locale: 'fr',
+        requirements: ['reference' => 'CT-[0-9]{4}-[0-9]+'],
+    ),
+    new Route(
+        'checkout.confirmation',
+        'GET',
+        '/en/checkout/confirmation/{reference}',
+        [CheckoutController::class, 'confirmation'],
+        locale: 'en',
+        requirements: ['reference' => 'CT-[0-9]{4}-[0-9]+'],
+    ),
 
     // ------------------------------------------------------------- webhooks
     //
