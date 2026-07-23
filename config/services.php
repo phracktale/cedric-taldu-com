@@ -347,7 +347,10 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         // n'est cablee que par les tests, explicitement.
         StripeCheckoutGateway::assertKeyMatchesEnvironment($secretKey, $config->env);
 
-        return new StripeCheckoutGateway(new StripeClient($secretKey), $webhookSecret);
+        // La cle est passee en chaine : la passerelle ne construit son
+        // StripeClient qu'au premier paiement (voir StripeCheckoutGateway).
+        // Sans cela, une cle absente ferait echouer jusqu'au webhook.
+        return new StripeCheckoutGateway($secretKey, $webhookSecret);
     });
 
     $container->set(StripeEventRepository::class, static fn (Container $c): StripeEventRepository
