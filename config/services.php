@@ -85,6 +85,10 @@ use App\Repository\ShippingRepository;
 use App\Repository\StockRepository;
 use App\Repository\StripeEventRepository;
 use App\Repository\VatRepository;
+use App\Repository\PersistedOrder;
+use App\Service\Mail\MailerInterface;
+use App\Service\Mail\OrderMailer;
+use App\Service\Mail\SmtpMailer;
 use App\Service\Payment\CheckoutService;
 use App\Service\Payment\PaymentEventHandler;
 use App\Service\Payment\PaymentGateway;
@@ -354,6 +358,25 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
     $container->set(ShippingRepository::class, static fn (Container $c): ShippingRepository
         => new ShippingRepository($c->get(PDO::class)));
 
+    // Courrier sortant. En preprod, MailHog capture tout : ni chiffrement ni
+    // authentification (MAIL_USERNAME et MAIL_ENCRYPTION vides).
+    $container->set(MailerInterface::class, static fn (): MailerInterface => new SmtpMailer(
+        $env->getOptional('MAIL_HOST', '127.0.0.1') ?? '127.0.0.1',
+        (int) ($env->getOptional('MAIL_PORT', '1025') ?? '1025'),
+        $env->getOptional('MAIL_USERNAME', '') ?? '',
+        $env->getOptional('MAIL_PASSWORD', '') ?? '',
+        $env->getOptional('MAIL_FROM_ADDRESS', 'commandes@cedrictaldu.com') ?? 'commandes@cedrictaldu.com',
+        $env->getOptional('MAIL_FROM_NAME', 'Cédric Taldu') ?? 'Cédric Taldu',
+        $env->getOptional('MAIL_ENCRYPTION', '') ?? '',
+    ));
+
+    $container->set(OrderMailer::class, static fn (Container $c): OrderMailer => new OrderMailer(
+        $c->get(View::class),
+        $c->get(MailerInterface::class),
+        $env->getOptional('ARTIST_EMAIL', 'cedric@cedrictaldu.com') ?? 'cedric@cedrictaldu.com',
+        $env->getOptional('ARTIST_NAME', 'Cédric Taldu') ?? 'Cédric Taldu',
+    ));
+
     $container->set(PaymentEventHandler::class, static fn (Container $c): PaymentEventHandler
         => new PaymentEventHandler(
             $c->get(PDO::class),
@@ -361,6 +384,13 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(OrderRepository::class),
             $c->get(StockRepository::class),
             $c->get(LoggerInterface::class),
+            $c->get(OrderMailer::class),
+            // Lien de consultation signe (03-boutique §7) : reference + jeton,
+            // construits cote serveur a partir de la commande.
+            static fn (PersistedOrder $order): string => $c->get(UrlGenerator::class)->absolute(
+                'checkout.confirmation',
+                ['locale' => $order->locale->value, 'reference' => $order->reference],
+            ) . '?t=' . $order->accessToken,
         ));
 
     $container->set(CheckoutService::class, static fn (Container $c): CheckoutService => new CheckoutService(
