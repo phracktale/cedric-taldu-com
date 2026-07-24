@@ -133,6 +133,16 @@ $media = $medias[$oeuvre->primaryMediaId] ?? null;
     </div>
     <?php endif; ?>
 
+    <?php // « Poser une question » (02-front §4.6) : sans JavaScript, un simple
+          // lien vers le formulaire de contact pré-rempli du contexte de l'œuvre.
+          // Un module JS pourra plus tard l'ouvrir en place. ?>
+    <p class="poser-question">
+      <a class="btn btn-vide"
+         href="<?= attr($url->route('contact.form', ['locale' => $locale->value]) . '?oeuvre=' . rawurlencode($oeuvre->slug($locale)->value)) ?>">
+        <?= e($locale === Locale::Fr ? 'Poser une question' : 'Ask a question') ?>
+      </a>
+    </p>
+
     <?php if ($products !== []) : ?>
     <section class="reproductions">
       <h2><?= e($locale === Locale::Fr ? 'Reproductions' : 'Prints') ?></h2>
