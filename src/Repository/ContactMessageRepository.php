@@ -70,6 +70,64 @@ final class ContactMessageRepository
         return $row === false ? null : $this->hydrate($row);
     }
 
+    /**
+     * Messages, du plus récent au plus ancien, éventuellement filtrés par statut.
+     *
+     * @return list<ContactMessage>
+     */
+    public function findAll(?MessageStatus $status, int $limit, int $offset): array
+    {
+        if ($limit <= 0) {
+            return [];
+        }
+
+        $sql = self::SELECT;
+
+        if ($status !== null) {
+            $sql .= ' WHERE status = :status';
+        }
+
+        $sql .= ' ORDER BY created_at DESC, id DESC LIMIT :limit OFFSET :offset';
+
+        $statement = $this->pdo->prepare($sql);
+
+        if ($status !== null) {
+            $statement->bindValue('status', $status->value);
+        }
+
+        $statement->bindValue('limit', $limit, PDO::PARAM_INT);
+        $statement->bindValue('offset', max(0, $offset), PDO::PARAM_INT);
+        $statement->execute();
+
+        return array_values(array_map($this->hydrate(...), $statement->fetchAll()));
+    }
+
+    public function countByStatus(?MessageStatus $status): int
+    {
+        $sql = 'SELECT COUNT(*) FROM contact_messages';
+
+        if ($status !== null) {
+            $sql .= ' WHERE status = :status';
+        }
+
+        $statement = $this->pdo->prepare($sql);
+
+        if ($status !== null) {
+            $statement->bindValue('status', $status->value);
+        }
+
+        $statement->execute();
+
+        return (int) $statement->fetchColumn();
+    }
+
+    public function delete(int $id): void
+    {
+        $statement = $this->pdo->prepare('DELETE FROM contact_messages WHERE id = :id');
+        $statement->bindValue('id', $id, PDO::PARAM_INT);
+        $statement->execute();
+    }
+
     public function updateStatus(int $id, MessageStatus $status): void
     {
         $statement = $this->pdo->prepare('UPDATE contact_messages SET status = :status WHERE id = :id');

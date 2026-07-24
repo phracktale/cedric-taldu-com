@@ -165,9 +165,13 @@ final class ContactController
         // Un échec d'e-mail ne doit jamais faire perdre un message reçu
         // (même principe que les e-mails de commande, 03-boutique §7).
         try {
-            // Le lien vers la boîte de réception est ajouté quand la route
-            // d'administration des messages existe (back-office du lot 4).
-            $this->mailer->notify($message, $artwork?->title($locale), null);
+            $this->mailer->notify(
+                $message,
+                $artwork?->title($locale),
+                // Lien absolu vers la boîte de réception : l'e-mail est lu hors
+                // du site, l'URL doit donc être complète (jamais l'en-tête Host).
+                $this->url->absolute('admin.message.show', ['id' => $id]),
+            );
         } catch (\Throwable $exception) {
             $this->logger->log(LogLevel::Error, 'Notification de contact non envoyée', [
                 'message_id' => $id,

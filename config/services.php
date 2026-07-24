@@ -109,6 +109,7 @@ use App\Service\Mail\ContactMailer;
 use App\Http\Controller\Front\ContactController;
 use App\Http\Controller\Front\BlogController;
 use App\Http\Controller\Admin\PostController as AdminPostController;
+use App\Http\Controller\Admin\MessageController as AdminMessageController;
 use Stripe\StripeClient;
 use App\Service\View\AdminChrome;
 use App\Service\View\Chrome;
@@ -556,6 +557,15 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(AdminChrome::class),
             $c->get(PostAdminRepository::class),
             $c->get(TranslationInput::class),
+        ),
+    );
+
+    $container->set(
+        AdminMessageController::class,
+        static fn (Container $c): AdminMessageController => new AdminMessageController(
+            $c->get(AdminChrome::class),
+            $c->get(ContactMessageRepository::class),
+            $c->get(ArtworkRepository::class),
         ),
     );
 

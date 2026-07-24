@@ -36,6 +36,7 @@ $entrees = $utilisateur === null ? [] : [
     ['chemin' => '/admin/oeuvres', 'libelle' => 'Œuvres'],
     ['chemin' => '/admin/actus', 'libelle' => 'Actus'],
     ['chemin' => '/admin/medias', 'libelle' => 'Médiathèque'],
+    ['chemin' => '/admin/messages', 'libelle' => 'Messages'],
 ];
 
 ?>

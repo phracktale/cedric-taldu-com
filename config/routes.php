@@ -24,6 +24,7 @@ use App\Http\Controller\Admin\AuthController;
 use App\Http\Controller\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Admin\MediaController;
+use App\Http\Controller\Admin\MessageController as AdminMessageController;
 use App\Http\Controller\Admin\OrderController as AdminOrderController;
 use App\Http\Controller\Admin\PostController as AdminPostController;
 use App\Http\Controller\Admin\ProductController as AdminProductController;
@@ -178,6 +179,12 @@ return [
     new Route('admin.post.update', 'POST', '/admin/actus/{id}', [AdminPostController::class, 'update'], requirements: $id),
     new Route('admin.post.publish', 'POST', '/admin/actus/{id}/publication', [AdminPostController::class, 'togglePublication'], requirements: $id),
     new Route('admin.post.delete', 'POST', '/admin/actus/{id}/suppression', [AdminPostController::class, 'delete'], requirements: $id),
+
+    // Messages de contact (boîte de réception)
+    new Route('admin.message.index', 'GET', '/admin/messages', [AdminMessageController::class, 'index']),
+    new Route('admin.message.show', 'GET', '/admin/messages/{id}', [AdminMessageController::class, 'show'], requirements: $id),
+    new Route('admin.message.status', 'POST', '/admin/messages/{id}/statut', [AdminMessageController::class, 'updateStatus'], requirements: $id),
+    new Route('admin.message.delete', 'POST', '/admin/messages/{id}/suppression', [AdminMessageController::class, 'delete'], requirements: $id),
 
     // Mediatheque
     new Route('admin.media.index', 'GET', '/admin/medias', [MediaController::class, 'index']),
