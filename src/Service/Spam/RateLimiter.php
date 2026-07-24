@@ -19,7 +19,7 @@ use App\Repository\RateLimitRepository;
  * API en deux temps — `hit()` puis `count()` — se prete a l'oubli du second
  * appel, et un oubli de limitation ne se voit pas : tout continue de marcher.
  */
-final class RateLimiter
+final class RateLimiter implements Throttle
 {
     /**
      * Largeur d'une tranche, en secondes.
