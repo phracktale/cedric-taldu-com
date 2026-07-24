@@ -30,6 +30,7 @@ use App\Http\Controller\Front\ArtworkController;
 use App\Http\Controller\Front\CategoryController;
 use App\Http\Controller\Front\CartController;
 use App\Http\Controller\Front\CheckoutController;
+use App\Http\Controller\Front\ContactController;
 use App\Http\Controller\Front\HomeController;
 use App\Http\Controller\Front\StripeWebhookController;
 
@@ -49,6 +50,13 @@ return [
     // Fiche œuvre
     new Route('artwork.show', 'GET', '/fr/oeuvre/{slug}', [ArtworkController::class, 'show'], locale: 'fr', requirements: $slug),
     new Route('artwork.show', 'GET', '/en/artwork/{slug}', [ArtworkController::class, 'show'], locale: 'en', requirements: $slug),
+
+    // Contact — général ou rattaché à une œuvre (?oeuvre={slug}). Le POST est
+    // protégé par CSRF (défaut) ET par le SpamGuard.
+    new Route('contact.form', 'GET', '/fr/contact', [ContactController::class, 'form'], locale: 'fr'),
+    new Route('contact.form', 'GET', '/en/contact', [ContactController::class, 'form'], locale: 'en'),
+    new Route('contact.submit', 'POST', '/fr/contact', [ContactController::class, 'submit'], locale: 'fr'),
+    new Route('contact.submit', 'POST', '/en/contact', [ContactController::class, 'submit'], locale: 'en'),
 
     // --------------------------------------------------------------- panier
     //

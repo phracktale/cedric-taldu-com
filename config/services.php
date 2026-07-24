@@ -97,7 +97,14 @@ use App\Service\Payment\CheckoutService;
 use App\Service\Payment\PaymentEventHandler;
 use App\Service\Payment\PaymentGateway;
 use App\Service\Payment\StripeCheckoutGateway;
+use App\Service\Spam\FormTimestamp;
 use App\Service\Spam\RateLimiter;
+use App\Service\Spam\SpamGuard;
+use App\Service\Spam\SpamHeuristics;
+use App\Service\Spam\Throttle;
+use App\Repository\ContactMessageRepository;
+use App\Service\Mail\ContactMailer;
+use App\Http\Controller\Front\ContactController;
 use Stripe\StripeClient;
 use App\Service\View\AdminChrome;
 use App\Service\View\Chrome;
@@ -299,6 +306,27 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $config->securityPepper,
     ));
 
+    // La limitation de debit du SpamGuard s'appuie sur le compteur reel.
+    $container->set(Throttle::class, static fn (Container $c): Throttle => $c->get(RateLimiter::class));
+
+    $container->set(FormTimestamp::class, static fn (Container $c): FormTimestamp => new FormTimestamp(
+        $config->securityPepper,
+        $c->get(ClockInterface::class),
+    ));
+
+    $container->set(SpamHeuristics::class, static fn (): SpamHeuristics => new SpamHeuristics());
+
+    $container->set(SpamGuard::class, static fn (Container $c): SpamGuard => new SpamGuard(
+        $c->get(FormTimestamp::class),
+        $c->get(Throttle::class),
+        $c->get(SpamHeuristics::class),
+    ));
+
+    $container->set(
+        ContactMessageRepository::class,
+        static fn (Container $c): ContactMessageRepository => new ContactMessageRepository($c->get(PDO::class)),
+    );
+
     $container->set(AdminSession::class, static fn (Container $c): AdminSession => new AdminSession(
         $c->get(SessionInterface::class),
         $c->get(UserRepository::class),
@@ -387,6 +415,13 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
     ));
 
     $container->set(OrderMailer::class, static fn (Container $c): OrderMailer => new OrderMailer(
+        $c->get(View::class),
+        $c->get(MailerInterface::class),
+        $env->getOptional('ARTIST_EMAIL', 'cedric@cedrictaldu.com') ?? 'cedric@cedrictaldu.com',
+        $env->getOptional('ARTIST_NAME', 'Cédric Taldu') ?? 'Cédric Taldu',
+    ));
+
+    $container->set(ContactMailer::class, static fn (Container $c): ContactMailer => new ContactMailer(
         $c->get(View::class),
         $c->get(MailerInterface::class),
         $env->getOptional('ARTIST_EMAIL', 'cedric@cedrictaldu.com') ?? 'cedric@cedrictaldu.com',
@@ -514,6 +549,21 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(CheckoutService::class),
         $c->get(UrlGenerator::class),
         $c->get(LoggerInterface::class),
+    ));
+
+    $container->set(ContactController::class, static fn (Container $c): ContactController => new ContactController(
+        $c->get(View::class),
+        $c->get(Chrome::class),
+        $c->get(ContactMessageRepository::class),
+        $c->get(ArtworkRepository::class),
+        $c->get(SpamGuard::class),
+        $c->get(FormTimestamp::class),
+        $c->get(ContactMailer::class),
+        $c->get(Validator::class),
+        $c->get(UrlGenerator::class),
+        $c->get(LoggerInterface::class),
+        $c->get(ClockInterface::class),
+        $config->securityPepper,
     ));
 
     $container->set(CartController::class, static fn (Container $c): CartController => new CartController(
