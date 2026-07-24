@@ -109,5 +109,8 @@ $estFr = $locale === Locale::Fr;
           . 'Vous disposez d’un droit d’accès, de rectification et d’effacement de vos données.'
         : 'The information you provide is used solely to answer your request. '
           . 'You have the right to access, rectify and erase your data.') ?>
+    <a href="<?= attr($url->route('page.privacy', ['locale' => $locale->value])) ?>">
+      <?= e($estFr ? 'En savoir plus' : 'Learn more') ?>
+    </a>
   </p>
 </div>

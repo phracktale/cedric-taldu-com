@@ -24,9 +24,24 @@ $langues = is_array($data['localeSwitch'] ?? null) ? $data['localeSwitch'] : [];
 $annee = is_string($data['year'] ?? null) ? $data['year'] : '2026';
 
 ?>
+<?php
+$estFr = $locale === Locale::Fr;
+$liensLegaux = [
+    ['route' => 'page.legal', 'libelle' => $estFr ? 'Mentions légales' : 'Legal notice'],
+    ['route' => 'page.privacy', 'libelle' => $estFr ? 'Confidentialité' : 'Privacy'],
+    ['route' => 'page.terms', 'libelle' => $estFr ? 'CGV' : 'Terms'],
+    ['route' => 'contact.form', 'libelle' => 'Contact'],
+];
+?>
 <footer>
   <div class="foot">
     <p>© 2025–<?= e($annee) ?> Cédric Taldu — <?= e($locale === Locale::Fr ? 'Artiste plasticien, Amiens, Hauts-de-France' : 'Visual artist, Amiens, France') ?></p>
+
+    <nav class="foot-legal" aria-label="<?= attr($estFr ? 'Informations légales' : 'Legal') ?>">
+      <?php foreach ($liensLegaux as $lien) : ?>
+        <a href="<?= attr($url->route($lien['route'], ['locale' => $locale->value])) ?>"><?= e($lien['libelle']) ?></a>
+      <?php endforeach; ?>
+    </nav>
 
     <p>
       <?php foreach (Locale::cases() as $autre) : ?>

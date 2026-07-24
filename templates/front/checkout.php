@@ -32,7 +32,7 @@ $csrfToken = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
 $error = is_string($data['error'] ?? null) ? $data['error'] : null;
 
 $estFr = $locale === Locale::Fr;
-$cgvUrl = $url->route('cart.show', ['locale' => $locale->value]);
+$cgvUrl = $url->route('page.terms', ['locale' => $locale->value]);
 ?>
 <main class="commande" id="contenu">
   <div class="wrap">
