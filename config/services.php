@@ -104,9 +104,11 @@ use App\Service\Spam\SpamHeuristics;
 use App\Service\Spam\Throttle;
 use App\Repository\ContactMessageRepository;
 use App\Repository\PostRepository;
+use App\Repository\Admin\PostAdminRepository;
 use App\Service\Mail\ContactMailer;
 use App\Http\Controller\Front\ContactController;
 use App\Http\Controller\Front\BlogController;
+use App\Http\Controller\Admin\PostController as AdminPostController;
 use Stripe\StripeClient;
 use App\Service\View\AdminChrome;
 use App\Service\View\Chrome;
@@ -334,6 +336,11 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         static fn (Container $c): PostRepository => new PostRepository($c->get(PDO::class)),
     );
 
+    $container->set(
+        PostAdminRepository::class,
+        static fn (Container $c): PostAdminRepository => new PostAdminRepository($c->get(PDO::class)),
+    );
+
     $container->set(AdminSession::class, static fn (Container $c): AdminSession => new AdminSession(
         $c->get(SessionInterface::class),
         $c->get(UserRepository::class),
@@ -539,6 +546,15 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(AdminChrome::class),
             $c->get(CategoryAdminRepository::class),
             $c->get(SeriesAdminRepository::class),
+            $c->get(TranslationInput::class),
+        ),
+    );
+
+    $container->set(
+        AdminPostController::class,
+        static fn (Container $c): AdminPostController => new AdminPostController(
+            $c->get(AdminChrome::class),
+            $c->get(PostAdminRepository::class),
             $c->get(TranslationInput::class),
         ),
     );

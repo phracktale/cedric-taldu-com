@@ -25,6 +25,7 @@ use App\Http\Controller\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Admin\MediaController;
 use App\Http\Controller\Admin\OrderController as AdminOrderController;
+use App\Http\Controller\Admin\PostController as AdminPostController;
 use App\Http\Controller\Admin\ProductController as AdminProductController;
 use App\Http\Controller\Front\ArtworkController;
 use App\Http\Controller\Front\BlogController;
@@ -167,6 +168,16 @@ return [
     new Route('admin.artwork.publish', 'POST', '/admin/oeuvres/{id}/publication', [AdminArtworkController::class, 'togglePublication'], requirements: $id),
     new Route('admin.artwork.move', 'POST', '/admin/oeuvres/{id}/position', [AdminArtworkController::class, 'move'], requirements: $id),
     new Route('admin.artwork.delete', 'POST', '/admin/oeuvres/{id}/suppression', [AdminArtworkController::class, 'delete'], requirements: $id),
+
+    // Actus (blog) — CRUD. La contrainte $id empêche « nouvel-article » d'être
+    // capté par la route {id}.
+    new Route('admin.post.index', 'GET', '/admin/actus', [AdminPostController::class, 'index']),
+    new Route('admin.post.create', 'GET', '/admin/actus/nouvel-article', [AdminPostController::class, 'create']),
+    new Route('admin.post.store', 'POST', '/admin/actus', [AdminPostController::class, 'store']),
+    new Route('admin.post.edit', 'GET', '/admin/actus/{id}', [AdminPostController::class, 'edit'], requirements: $id),
+    new Route('admin.post.update', 'POST', '/admin/actus/{id}', [AdminPostController::class, 'update'], requirements: $id),
+    new Route('admin.post.publish', 'POST', '/admin/actus/{id}/publication', [AdminPostController::class, 'togglePublication'], requirements: $id),
+    new Route('admin.post.delete', 'POST', '/admin/actus/{id}/suppression', [AdminPostController::class, 'delete'], requirements: $id),
 
     // Mediatheque
     new Route('admin.media.index', 'GET', '/admin/medias', [MediaController::class, 'index']),
