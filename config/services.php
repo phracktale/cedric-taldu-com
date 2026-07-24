@@ -104,12 +104,16 @@ use App\Service\Spam\SpamHeuristics;
 use App\Service\Spam\Throttle;
 use App\Repository\ContactMessageRepository;
 use App\Repository\PostRepository;
+use App\Repository\PageRepository;
 use App\Repository\Admin\PostAdminRepository;
+use App\Repository\Admin\PageAdminRepository;
 use App\Service\Mail\ContactMailer;
 use App\Http\Controller\Front\ContactController;
 use App\Http\Controller\Front\BlogController;
+use App\Http\Controller\Front\PageController;
 use App\Http\Controller\Admin\PostController as AdminPostController;
 use App\Http\Controller\Admin\MessageController as AdminMessageController;
+use App\Http\Controller\Admin\PageController as AdminPageController;
 use Stripe\StripeClient;
 use App\Service\View\AdminChrome;
 use App\Service\View\Chrome;
@@ -342,6 +346,16 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         static fn (Container $c): PostAdminRepository => new PostAdminRepository($c->get(PDO::class)),
     );
 
+    $container->set(
+        PageRepository::class,
+        static fn (Container $c): PageRepository => new PageRepository($c->get(PDO::class)),
+    );
+
+    $container->set(
+        PageAdminRepository::class,
+        static fn (Container $c): PageAdminRepository => new PageAdminRepository($c->get(PDO::class)),
+    );
+
     $container->set(AdminSession::class, static fn (Container $c): AdminSession => new AdminSession(
         $c->get(SessionInterface::class),
         $c->get(UserRepository::class),
@@ -569,6 +583,15 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         ),
     );
 
+    $container->set(
+        AdminPageController::class,
+        static fn (Container $c): AdminPageController => new AdminPageController(
+            $c->get(AdminChrome::class),
+            $c->get(PageAdminRepository::class),
+            $c->get(TranslationInput::class),
+        ),
+    );
+
     $container->set(MediaController::class, static fn (Container $c): MediaController => new MediaController(
         $c->get(AdminChrome::class),
         $c->get(MediaAdminRepository::class),
@@ -584,6 +607,12 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(CheckoutService::class),
         $c->get(UrlGenerator::class),
         $c->get(LoggerInterface::class),
+    ));
+
+    $container->set(PageController::class, static fn (Container $c): PageController => new PageController(
+        $c->get(View::class),
+        $c->get(Chrome::class),
+        $c->get(PageRepository::class),
     ));
 
     $container->set(BlogController::class, static fn (Container $c): BlogController => new BlogController(
