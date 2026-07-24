@@ -471,6 +471,8 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(SettingRepository::class),
         $c->get(ArtworkRepository::class),
         $c->get(MediaRepository::class),
+        $c->get(PostRepository::class),
+        $c->get(ClockInterface::class),
         $c->get(UrlGenerator::class),
     ));
 
