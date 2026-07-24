@@ -30,6 +30,14 @@
         </testsuite>
     </testsuites>
 
+    <!-- La generation de derives d'images (tests media du lot 2) alloue de gros
+         tampons GD ; cumulee au fil d'un run complet, la suite depasse les 128 Mo
+         par defaut de PHP. On aligne PHPUnit sur PHPStan (memory-limit 512M) pour
+         que `composer test` passe d'un bloc, sans dependre d'un reglage machine. -->
+    <php>
+        <ini name="memory_limit" value="512M"/>
+    </php>
+
     <source>
         <include>
             <directory>src</directory>
