@@ -103,8 +103,10 @@ use App\Service\Spam\SpamGuard;
 use App\Service\Spam\SpamHeuristics;
 use App\Service\Spam\Throttle;
 use App\Repository\ContactMessageRepository;
+use App\Repository\PostRepository;
 use App\Service\Mail\ContactMailer;
 use App\Http\Controller\Front\ContactController;
+use App\Http\Controller\Front\BlogController;
 use Stripe\StripeClient;
 use App\Service\View\AdminChrome;
 use App\Service\View\Chrome;
@@ -325,6 +327,11 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
     $container->set(
         ContactMessageRepository::class,
         static fn (Container $c): ContactMessageRepository => new ContactMessageRepository($c->get(PDO::class)),
+    );
+
+    $container->set(
+        PostRepository::class,
+        static fn (Container $c): PostRepository => new PostRepository($c->get(PDO::class)),
     );
 
     $container->set(AdminSession::class, static fn (Container $c): AdminSession => new AdminSession(
@@ -549,6 +556,15 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(CheckoutService::class),
         $c->get(UrlGenerator::class),
         $c->get(LoggerInterface::class),
+    ));
+
+    $container->set(BlogController::class, static fn (Container $c): BlogController => new BlogController(
+        $c->get(View::class),
+        $c->get(Chrome::class),
+        $c->get(PostRepository::class),
+        $c->get(MediaRepository::class),
+        $c->get(UrlGenerator::class),
+        $c->get(ClockInterface::class),
     ));
 
     $container->set(ContactController::class, static fn (Container $c): ContactController => new ContactController(

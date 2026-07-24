@@ -27,6 +27,7 @@ use App\Http\Controller\Admin\MediaController;
 use App\Http\Controller\Admin\OrderController as AdminOrderController;
 use App\Http\Controller\Admin\ProductController as AdminProductController;
 use App\Http\Controller\Front\ArtworkController;
+use App\Http\Controller\Front\BlogController;
 use App\Http\Controller\Front\CategoryController;
 use App\Http\Controller\Front\CartController;
 use App\Http\Controller\Front\CheckoutController;
@@ -50,6 +51,12 @@ return [
     // Fiche œuvre
     new Route('artwork.show', 'GET', '/fr/oeuvre/{slug}', [ArtworkController::class, 'show'], locale: 'fr', requirements: $slug),
     new Route('artwork.show', 'GET', '/en/artwork/{slug}', [ArtworkController::class, 'show'], locale: 'en', requirements: $slug),
+
+    // Actus (blog) — liste paginée et article. Segments traduits (05-i18n §2).
+    new Route('blog.index', 'GET', '/fr/actus', [BlogController::class, 'index'], locale: 'fr'),
+    new Route('blog.index', 'GET', '/en/news', [BlogController::class, 'index'], locale: 'en'),
+    new Route('blog.show', 'GET', '/fr/actus/{slug}', [BlogController::class, 'show'], locale: 'fr', requirements: $slug),
+    new Route('blog.show', 'GET', '/en/news/{slug}', [BlogController::class, 'show'], locale: 'en', requirements: $slug),
 
     // Contact — général ou rattaché à une œuvre (?oeuvre={slug}). Le POST est
     // protégé par CSRF (défaut) ET par le SpamGuard.
