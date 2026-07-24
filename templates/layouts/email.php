@@ -21,13 +21,16 @@ declare(strict_types=1);
 $locale = $data['locale'];
 /** @var array<string, string> $strings */
 $strings = $data['strings'];
+// Titre du document : les courriels de commande passent `order`, les autres
+// (contact) fournissent `docTitle`. Le repli garde les commandes intactes.
+$docTitle = is_string($data['docTitle'] ?? null) ? $data['docTitle'] : ($strings['order'] ?? '');
 ?>
 <!doctype html>
 <html lang="<?= attr($locale->value) ?>">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?= e($strings['order']) ?></title>
+<title><?= e($docTitle) ?></title>
 </head>
 <body style="margin:0;padding:24px;background:#f6f5f2;font-family:Georgia,'Times New Roman',serif;color:#1c1a17;">
 <div style="max-width:600px;margin:0 auto;background:#fffdfa;padding:32px;border:1px solid #e4e0d8;">
