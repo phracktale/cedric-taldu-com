@@ -3,7 +3,7 @@
         'name' => 'phracktale/cedric-taldu-com',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '70071998b8a82be5074707fa98801b8a88a8fcde',
+        'reference' => '92a758e4a9e68beb232b866c3dd297194a3d2a5e',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -121,7 +121,7 @@
         'phracktale/cedric-taldu-com' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '70071998b8a82be5074707fa98801b8a88a8fcde',
+            'reference' => '92a758e4a9e68beb232b866c3dd297194a3d2a5e',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
