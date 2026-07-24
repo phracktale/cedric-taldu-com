@@ -169,6 +169,12 @@ $formatDate = static function (?\DateTimeImmutable $date) use ($locale, $moisFr,
       <?php foreach ($paragraphes as $paragraphe) : ?>
         <?php if (is_string($paragraphe) && $paragraphe !== '') : ?><p><?= e($paragraphe) ?></p><?php endif; ?>
       <?php endforeach; ?>
+      <?php // 02-front §2 (module 6) : le bouton mène à la page « À propos ». ?>
+      <p class="cta-row">
+        <a class="btn btn-vide" href="<?= attr($url->route('page.about', ['locale' => $locale->value])) ?>">
+          <?= e($locale === Locale::Fr ? 'Parcours et démarche' : 'Path and approach') ?>
+        </a>
+      </p>
     </div>
   </div>
 </section>

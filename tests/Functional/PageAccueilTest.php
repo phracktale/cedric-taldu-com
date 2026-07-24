@@ -68,6 +68,17 @@ final class PageAccueilTest extends FunctionalTestCase
         $this->assertStringNotContainsString('Brouillon secret', $this->get('/cedric-taldu/fr/')->body);
     }
 
+    public function test_le_module_atelier_mene_a_la_page_a_propos(): void
+    {
+        // 02-front §2 (module 6) : le bouton « Parcours et démarche » ouvre la
+        // page éditoriale « À propos ».
+        $this->reglage('home.studio', json_encode(['title' => 'À l’atelier'], JSON_THROW_ON_ERROR));
+
+        $corps = $this->get('/cedric-taldu/fr/')->body;
+
+        $this->assertStringContainsString('/cedric-taldu/fr/a-propos', $corps);
+    }
+
     public function test_la_page_charge_la_feuille_de_style_et_le_module_js(): void
     {
         $corps = $this->get('/cedric-taldu/fr/')->body;
