@@ -48,6 +48,18 @@ final class FicheOeuvreTest extends FunctionalTestCase
         $this->assertSame(404, $this->get('/cedric-taldu/fr/oeuvre/inexistante')->status);
     }
 
+    public function test_la_fiche_offre_de_poser_une_question_rattachee_a_l_oeuvre(): void
+    {
+        // 02-front §4.6 : sans JavaScript, un lien vers le contact pré-rempli du
+        // contexte de l'œuvre — jamais un mailto:.
+        $this->oeuvre()->translated('fr', 'articulation', 'Articulation')->create($this->rubrique);
+
+        $reponse = $this->get('/cedric-taldu/fr/oeuvre/articulation');
+
+        $this->assertStringContainsString('/cedric-taldu/fr/contact?oeuvre=articulation', $reponse->body);
+        $this->assertStringNotContainsString('mailto:', $reponse->body);
+    }
+
     public function test_un_brouillon_repond_404_et_non_403(): void
     {
         $this->oeuvre()->draft()->translated('fr', 'brouillon', 'Brouillon')->create($this->rubrique);

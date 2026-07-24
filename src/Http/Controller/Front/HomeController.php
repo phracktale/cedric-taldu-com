@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Controller\Front;
 
+use App\Core\ClockInterface;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\View;
 use App\Domain\Catalog\Artwork;
 use App\Domain\Catalog\Media;
+use App\Domain\Editorial\Post;
 use App\Domain\Locale;
 use App\Repository\ArtworkRepository;
 use App\Repository\MediaRepository;
+use App\Repository\PostRepository;
 use App\Repository\SettingRepository;
 use App\Service\I18n\UrlGenerator;
 use App\Service\View\Chrome;
@@ -24,8 +27,9 @@ use App\Service\View\Chrome;
  * ajouter une rubrique en back-office fait apparaitre une carte de plus, sans
  * intervention.
  *
- * Les modules « Actus » et « Atelier » sont ici alimentes par des reglages ;
- * ils le seront par `posts` et par la page `about` au lot 4 (08-lots).
+ * Le module « Actus » est alimente par les trois derniers articles publies
+ * (02-front §2, module 7). Le module « Atelier » le sera par la page `about`
+ * quand les pages editoriales existeront.
  */
 final class HomeController
 {
@@ -40,12 +44,17 @@ final class HomeController
         'home.contact',
     ];
 
+    /** Nombre d'articles récents affichés sur l'accueil (02-front §2, module 7). */
+    private const RECENT_NEWS = 3;
+
     public function __construct(
         private readonly View $view,
         private readonly Chrome $chrome,
         private readonly SettingRepository $settings,
         private readonly ArtworkRepository $artworks,
         private readonly MediaRepository $medias,
+        private readonly PostRepository $posts,
+        private readonly ClockInterface $clock,
         private readonly UrlGenerator $url,
     ) {
     }
@@ -72,6 +81,12 @@ final class HomeController
             'contact' => $content['home.contact'],
             'showcase' => $showcase['artworks'],
             'showcaseMedias' => $showcase['medias'],
+            'recentPosts' => $this->posts->findRecent($this->clock->now(), self::RECENT_NEWS),
+            'articleUrl' => fn (Post $post): string => $this->url->route(
+                'blog.show',
+                ['locale' => $locale->value, 'slug' => $post->slug($locale)->value],
+            ),
+            'newsIndexUrl' => $this->url->route('blog.index', ['locale' => $locale->value]),
         ];
 
         return Response::html($this->view->render('front/home', $data, layout: 'layouts/public'));

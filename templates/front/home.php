@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 use App\Domain\Catalog\Artwork;
 use App\Domain\Catalog\Category;
+use App\Domain\Editorial\Post;
 use App\Domain\Locale;
 
 /** @var Locale $locale */
@@ -48,8 +49,30 @@ $texte = static fn (array $source, string $cle): ?string
 $cellules = is_array($triptych['cells'] ?? null) ? $triptych['cells'] : [];
 /** @var list<array<string, mixed>> $paragraphes */
 $paragraphes = is_array($studio['paragraphs'] ?? null) ? $studio['paragraphs'] : [];
-/** @var list<array<string, mixed>> $actualites */
-$actualites = is_array($news['items'] ?? null) ? $news['items'] : [];
+/** @var list<Post> $recentPosts */
+$recentPosts = is_array($data['recentPosts'] ?? null) ? $data['recentPosts'] : [];
+/** @var callable(Post): string $articleUrl */
+$articleUrl = $data['articleUrl'];
+/** @var string $newsIndexUrl */
+$newsIndexUrl = is_string($data['newsIndexUrl'] ?? null) ? $data['newsIndexUrl'] : '';
+
+$moisFr = [1 => 'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+    'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+$moisEn = [1 => 'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'];
+
+$formatDate = static function (?\DateTimeImmutable $date) use ($locale, $moisFr, $moisEn): string {
+    if ($date === null) {
+        return '';
+    }
+
+    $estFr = $locale === Locale::Fr;
+    $mois = ($estFr ? $moisFr : $moisEn)[(int) $date->format('n')];
+
+    return $estFr
+        ? $date->format('j') . ' ' . $mois . ' ' . $date->format('Y')
+        : $mois . ' ' . $date->format('j') . ', ' . $date->format('Y');
+};
 
 ?>
 
@@ -146,26 +169,40 @@ $actualites = is_array($news['items'] ?? null) ? $news['items'] : [];
       <?php foreach ($paragraphes as $paragraphe) : ?>
         <?php if (is_string($paragraphe) && $paragraphe !== '') : ?><p><?= e($paragraphe) ?></p><?php endif; ?>
       <?php endforeach; ?>
+      <?php // 02-front §2 (module 6) : le bouton mène à la page « À propos ». ?>
+      <p class="cta-row">
+        <a class="btn btn-vide" href="<?= attr($url->route('page.about', ['locale' => $locale->value])) ?>">
+          <?= e($locale === Locale::Fr ? 'Parcours et démarche' : 'Path and approach') ?>
+        </a>
+      </p>
     </div>
   </div>
 </section>
 <?php endif; ?>
 
-<?php /* 7 — ACTUS : alimentées par `posts` au lot 4 ; par les réglages ici. */ ?>
-<?php if ($actualites !== []) : ?>
+<?php /* 7 — ACTUS : les trois derniers articles publiés (02-front §2, module 7). */ ?>
+<?php if ($recentPosts !== []) : ?>
 <section class="actus" id="actus">
   <div class="wrap">
     <p class="eyebrow"><?= e($locale === Locale::Fr ? 'Actualités' : 'News') ?></p>
     <h2><?= e($texte($news, 'title') ?? ($locale === Locale::Fr ? 'Expositions et travail en cours' : 'Exhibitions and work in progress')) ?></h2>
     <div class="actu-liste">
-      <?php foreach ($actualites as $actualite) : ?>
+      <?php foreach ($recentPosts as $post) : ?>
+        <?php $dateAffichee = $post->eventDate ?? $post->publishedAt; ?>
       <article class="actu">
-        <time datetime="<?= attr($texte($actualite, 'date') ?? '') ?>"><?= e($texte($actualite, 'label') ?? '') ?></time>
-        <h3><?= e($texte($actualite, 'title') ?? '') ?></h3>
-        <p class="lieu"><?= e($texte($actualite, 'place') ?? '') ?></p>
+        <?php if ($dateAffichee !== null) : ?>
+        <time datetime="<?= attr($dateAffichee->format('Y-m-d')) ?>"><?= e($formatDate($dateAffichee)) ?></time>
+        <?php endif; ?>
+        <h3><a href="<?= attr($articleUrl($post)) ?>"><?= e($post->title($locale)) ?></a></h3>
+        <?php if ($post->isEvent() && $post->eventPlace !== null) : ?>
+        <p class="lieu"><?= e($post->eventPlace) ?></p>
+        <?php endif; ?>
       </article>
       <?php endforeach; ?>
     </div>
+    <p class="actus-plus">
+      <a href="<?= attr($newsIndexUrl) ?>"><?= e($locale === Locale::Fr ? 'Toutes les actus' : 'All news') ?></a>
+    </p>
   </div>
 </section>
 <?php endif; ?>

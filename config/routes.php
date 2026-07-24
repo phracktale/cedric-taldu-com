@@ -24,13 +24,19 @@ use App\Http\Controller\Admin\AuthController;
 use App\Http\Controller\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Admin\MediaController;
+use App\Http\Controller\Admin\MessageController as AdminMessageController;
 use App\Http\Controller\Admin\OrderController as AdminOrderController;
+use App\Http\Controller\Admin\PageController as AdminPageController;
+use App\Http\Controller\Admin\PostController as AdminPostController;
 use App\Http\Controller\Admin\ProductController as AdminProductController;
 use App\Http\Controller\Front\ArtworkController;
+use App\Http\Controller\Front\BlogController;
 use App\Http\Controller\Front\CategoryController;
 use App\Http\Controller\Front\CartController;
 use App\Http\Controller\Front\CheckoutController;
+use App\Http\Controller\Front\ContactController;
 use App\Http\Controller\Front\HomeController;
+use App\Http\Controller\Front\PageController;
 use App\Http\Controller\Front\StripeWebhookController;
 
 $slug = ['slug' => Route::SLUG];
@@ -49,6 +55,31 @@ return [
     // Fiche œuvre
     new Route('artwork.show', 'GET', '/fr/oeuvre/{slug}', [ArtworkController::class, 'show'], locale: 'fr', requirements: $slug),
     new Route('artwork.show', 'GET', '/en/artwork/{slug}', [ArtworkController::class, 'show'], locale: 'en', requirements: $slug),
+
+    // Actus (blog) — liste paginée et article. Segments traduits (05-i18n §2).
+    new Route('blog.index', 'GET', '/fr/actus', [BlogController::class, 'index'], locale: 'fr'),
+    new Route('blog.index', 'GET', '/en/news', [BlogController::class, 'index'], locale: 'en'),
+    new Route('blog.show', 'GET', '/fr/actus/{slug}', [BlogController::class, 'show'], locale: 'fr', requirements: $slug),
+    new Route('blog.show', 'GET', '/en/news/{slug}', [BlogController::class, 'show'], locale: 'en', requirements: $slug),
+
+    // Pages éditoriales à code fixe (segments traduits, 05-i18n §2).
+    new Route('page.about', 'GET', '/fr/a-propos', [PageController::class, 'about'], locale: 'fr'),
+    new Route('page.about', 'GET', '/en/about', [PageController::class, 'about'], locale: 'en'),
+    new Route('page.booklet', 'GET', '/fr/livret', [PageController::class, 'booklet'], locale: 'fr'),
+    new Route('page.booklet', 'GET', '/en/booklet', [PageController::class, 'booklet'], locale: 'en'),
+    new Route('page.legal', 'GET', '/fr/mentions-legales', [PageController::class, 'legal'], locale: 'fr'),
+    new Route('page.legal', 'GET', '/en/legal-notice', [PageController::class, 'legal'], locale: 'en'),
+    new Route('page.privacy', 'GET', '/fr/confidentialite', [PageController::class, 'privacy'], locale: 'fr'),
+    new Route('page.privacy', 'GET', '/en/privacy', [PageController::class, 'privacy'], locale: 'en'),
+    new Route('page.terms', 'GET', '/fr/conditions-generales-de-vente', [PageController::class, 'terms'], locale: 'fr'),
+    new Route('page.terms', 'GET', '/en/terms', [PageController::class, 'terms'], locale: 'en'),
+
+    // Contact — général ou rattaché à une œuvre (?oeuvre={slug}). Le POST est
+    // protégé par CSRF (défaut) ET par le SpamGuard.
+    new Route('contact.form', 'GET', '/fr/contact', [ContactController::class, 'form'], locale: 'fr'),
+    new Route('contact.form', 'GET', '/en/contact', [ContactController::class, 'form'], locale: 'en'),
+    new Route('contact.submit', 'POST', '/fr/contact', [ContactController::class, 'submit'], locale: 'fr'),
+    new Route('contact.submit', 'POST', '/en/contact', [ContactController::class, 'submit'], locale: 'en'),
 
     // --------------------------------------------------------------- panier
     //
@@ -152,6 +183,30 @@ return [
     new Route('admin.artwork.publish', 'POST', '/admin/oeuvres/{id}/publication', [AdminArtworkController::class, 'togglePublication'], requirements: $id),
     new Route('admin.artwork.move', 'POST', '/admin/oeuvres/{id}/position', [AdminArtworkController::class, 'move'], requirements: $id),
     new Route('admin.artwork.delete', 'POST', '/admin/oeuvres/{id}/suppression', [AdminArtworkController::class, 'delete'], requirements: $id),
+
+    // Actus (blog) — CRUD. La contrainte $id empêche « nouvel-article » d'être
+    // capté par la route {id}.
+    new Route('admin.post.index', 'GET', '/admin/actus', [AdminPostController::class, 'index']),
+    new Route('admin.post.create', 'GET', '/admin/actus/nouvel-article', [AdminPostController::class, 'create']),
+    new Route('admin.post.store', 'POST', '/admin/actus', [AdminPostController::class, 'store']),
+    new Route('admin.post.edit', 'GET', '/admin/actus/{id}', [AdminPostController::class, 'edit'], requirements: $id),
+    new Route('admin.post.update', 'POST', '/admin/actus/{id}', [AdminPostController::class, 'update'], requirements: $id),
+    new Route('admin.post.publish', 'POST', '/admin/actus/{id}/publication', [AdminPostController::class, 'togglePublication'], requirements: $id),
+    new Route('admin.post.delete', 'POST', '/admin/actus/{id}/suppression', [AdminPostController::class, 'delete'], requirements: $id),
+
+    // Pages éditoriales à code fixe : édition seule, ni création ni suppression.
+    // On les adresse par id (comme le reste du back-office) ; le code reste la
+    // clef métier, porté par la ligne.
+    new Route('admin.page.index', 'GET', '/admin/pages', [AdminPageController::class, 'index']),
+    new Route('admin.page.edit', 'GET', '/admin/pages/{id}', [AdminPageController::class, 'edit'], requirements: $id),
+    new Route('admin.page.update', 'POST', '/admin/pages/{id}', [AdminPageController::class, 'update'], requirements: $id),
+    new Route('admin.page.publish', 'POST', '/admin/pages/{id}/publication', [AdminPageController::class, 'togglePublication'], requirements: $id),
+
+    // Messages de contact (boîte de réception)
+    new Route('admin.message.index', 'GET', '/admin/messages', [AdminMessageController::class, 'index']),
+    new Route('admin.message.show', 'GET', '/admin/messages/{id}', [AdminMessageController::class, 'show'], requirements: $id),
+    new Route('admin.message.status', 'POST', '/admin/messages/{id}/statut', [AdminMessageController::class, 'updateStatus'], requirements: $id),
+    new Route('admin.message.delete', 'POST', '/admin/messages/{id}/suppression', [AdminMessageController::class, 'delete'], requirements: $id),
 
     // Mediatheque
     new Route('admin.media.index', 'GET', '/admin/medias', [MediaController::class, 'index']),

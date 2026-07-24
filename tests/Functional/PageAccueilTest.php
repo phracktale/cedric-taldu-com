@@ -6,6 +6,7 @@ namespace Tests\Functional;
 
 use Tests\Support\Factory\ArtworkFactory;
 use Tests\Support\Factory\CategoryFactory;
+use Tests\Support\Factory\PostFactory;
 use Tests\Support\FunctionalTestCase;
 
 /**
@@ -46,6 +47,36 @@ final class PageAccueilTest extends FunctionalTestCase
     public function test_la_page_porte_un_seul_h1(): void
     {
         $this->assertSame(1, substr_count($this->get('/cedric-taldu/fr/')->body, '<h1'));
+    }
+
+    public function test_le_module_actus_montre_les_derniers_articles_publies(): void
+    {
+        // 02-front §2, module 7 : les articles récents, non les réglages.
+        (new PostFactory($this->pdo))->publishedAt('2026-06-01 09:00:00')
+            ->translated('fr', 'mon-expo', 'Mon exposition')->create();
+
+        $corps = $this->get('/cedric-taldu/fr/')->body;
+
+        $this->assertStringContainsString('Mon exposition', $corps);
+        $this->assertStringContainsString('/cedric-taldu/fr/actus/mon-expo', $corps);
+    }
+
+    public function test_un_brouillon_n_apparait_pas_dans_le_module_actus(): void
+    {
+        (new PostFactory($this->pdo))->draft()->translated('fr', 'secret', 'Brouillon secret')->create();
+
+        $this->assertStringNotContainsString('Brouillon secret', $this->get('/cedric-taldu/fr/')->body);
+    }
+
+    public function test_le_module_atelier_mene_a_la_page_a_propos(): void
+    {
+        // 02-front §2 (module 6) : le bouton « Parcours et démarche » ouvre la
+        // page éditoriale « À propos ».
+        $this->reglage('home.studio', json_encode(['title' => 'À l’atelier'], JSON_THROW_ON_ERROR));
+
+        $corps = $this->get('/cedric-taldu/fr/')->body;
+
+        $this->assertStringContainsString('/cedric-taldu/fr/a-propos', $corps);
     }
 
     public function test_la_page_charge_la_feuille_de_style_et_le_module_js(): void

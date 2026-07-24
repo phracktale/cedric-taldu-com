@@ -42,6 +42,9 @@ $libelles = $locale === Locale::Fr
 
     <nav aria-label="<?= attr($locale === Locale::Fr ? 'Navigation principale' : 'Main navigation') ?>">
       <ul id="menu">
+        <li>
+          <a href="<?= attr($url->route('page.about', ['locale' => $locale->value])) ?>"><?= e($libelles['apropos']) ?></a>
+        </li>
         <li class="sous-menu">
           <?php /* Non cliquable : c'est un ouvreur de sous-menu, pas une page. */ ?>
           <button type="button" class="nav-bouton" aria-expanded="true"><?= e($libelles['galerie']) ?></button>
@@ -55,6 +58,15 @@ $libelles = $locale === Locale::Fr
             </li>
             <?php endforeach; ?>
           </ul>
+        </li>
+        <li>
+          <a href="<?= attr($url->route('blog.index', ['locale' => $locale->value])) ?>"><?= e($libelles['actus']) ?></a>
+        </li>
+        <li>
+          <a href="<?= attr($url->route('page.booklet', ['locale' => $locale->value])) ?>"><?= e($libelles['livret']) ?></a>
+        </li>
+        <li>
+          <a href="<?= attr($url->route('contact.form', ['locale' => $locale->value])) ?>"><?= e($libelles['contact']) ?></a>
         </li>
       </ul>
     </nav>
