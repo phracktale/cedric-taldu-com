@@ -62,7 +62,11 @@ if ($compter('categories') > 0) {
 
     $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
     foreach (
-        ['artwork_media', 'artwork_translations', 'artworks', 'series_translations', 'series',
+        // Les reproductions d'abord : elles pendent aux œuvres, et un --force
+        // qui les oublierait laisserait des tirages orphelins pointant vers des
+        // œuvres effacées.
+        ['product_variants', 'product_translations', 'products',
+              'artwork_media', 'artwork_translations', 'artworks', 'series_translations', 'series',
               'category_translations', 'categories', 'media_translations', 'media'] as $table
     ) {
         $pdo->exec('TRUNCATE TABLE `' . $table . '`');
@@ -264,6 +268,62 @@ foreach ($oeuvres as [$slug, $titre, $annee, $largeurMm, $hauteurMm, $serie, $st
         ->execute(['a' => $id, 'm' => $media, 'r' => 'main']);
 
     $identifiants[$slug] = $id;
+}
+
+// --------------------------------------------------------- reproductions
+
+// Une offre de tirage sur une œuvre disponible, pour que la préproduction
+// permette d'éprouver le PARCOURS DE REPRODUCTION autant que celui de
+// l'original. Prix et stock fictifs, comme le reste du jeu de démonstration.
+// Catégorie de TVA par défaut : standard_goods (20 %), décision du 2026-07-21.
+
+fwrite(STDOUT, "Reproductions de démonstration…\n");
+
+$produit = $inserer(
+    'INSERT INTO products (artwork_id, kind, edition_size, editions_sold, vat_category, is_published,
+                           position, created_at, updated_at)
+     VALUES (:art, :kind, :size, 0, :vat, 1, 0, NOW(), NOW())',
+    [
+        'art' => $identifiants['articulation'],
+        'kind' => 'limited',
+        'size' => 30,
+        'vat' => 'standard_goods',
+    ],
+);
+
+$pdo->prepare(
+    'INSERT INTO product_translations (product_id, locale, title, description)
+     VALUES (:id, :l, :t, :d)'
+)->execute([
+    'id' => $produit,
+    'l' => 'fr',
+    't' => 'Tirage d’art limité, signé et numéroté',
+    'd' => '<p>Tirage giclée sur papier fine art, signé et numéroté à la main. '
+        . 'Édition limitée à 30 exemplaires.</p>',
+]);
+
+$variantes = [
+    ['ART-3040', '30 × 40 cm', 0, 6000, 8, 300],
+    ['ART-5070', '50 × 70 cm', 0, 9000, 5, 500],
+    ['ART-5070-C', '50 × 70 cm', 1, 14000, 3, 1800],
+];
+
+foreach ($variantes as $rang => [$sku, $taille, $encadre, $prix, $stock, $poids]) {
+    $pdo->prepare(
+        'INSERT INTO product_variants
+            (product_id, sku, size_label, is_framed, price_cents, stock_qty, weight_grams, is_active,
+             position, created_at, updated_at)
+         VALUES (:p, :sku, :size, :framed, :price, :stock, :weight, 1, :pos, NOW(), NOW())'
+    )->execute([
+        'p' => $produit,
+        'sku' => $sku,
+        'size' => $taille,
+        'framed' => $encadre,
+        'price' => $prix,
+        'stock' => $stock,
+        'weight' => $poids,
+        'pos' => $rang,
+    ]);
 }
 
 // -------------------------------------------------------------- réglages
