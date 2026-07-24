@@ -195,8 +195,12 @@ final class ContactController
         return $this->artworks->findBySlug($locale, $slug);
     }
 
-    private function rejectForm(Request $request, Locale $locale, ?Artwork $artwork, ValidationFailed $failure): Response
-    {
+    private function rejectForm(
+        Request $request,
+        Locale $locale,
+        ?Artwork $artwork,
+        ValidationFailed $failure,
+    ): Response {
         return Response::html($this->view->render('front/contact', [
             ...$this->chrome->base($request, $locale),
             'metaTitle' => 'Contact',
