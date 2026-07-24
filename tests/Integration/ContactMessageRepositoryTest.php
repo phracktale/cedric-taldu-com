@@ -146,4 +146,68 @@ final class ContactMessageRepositoryTest extends DatabaseTestCase
     {
         $this->assertNull($this->repository()->findById(999999));
     }
+
+    public function test_la_liste_rend_les_messages_du_plus_recent_au_plus_ancien(): void
+    {
+        $repo = $this->repository();
+        $repo->store($this->message('Ancien'), new DateTimeImmutable('2026-07-20 10:00:00', new DateTimeZone('UTC')));
+        $repo->store($this->message('Recent'), new DateTimeImmutable('2026-07-24 10:00:00', new DateTimeZone('UTC')));
+
+        $messages = $repo->findAll(null, 10, 0);
+
+        $this->assertCount(2, $messages);
+        $this->assertSame('Recent', $messages[0]->senderName);
+        $this->assertSame('Ancien', $messages[1]->senderName);
+    }
+
+    public function test_la_liste_filtre_par_statut(): void
+    {
+        $repo = $this->repository();
+        $repo->store($this->message('Neuf', MessageStatus::New), $this->now());
+        $repo->store($this->message('Indésirable', MessageStatus::Spam), $this->now());
+
+        $indesirables = $repo->findAll(MessageStatus::Spam, 10, 0);
+
+        $this->assertCount(1, $indesirables);
+        $this->assertSame('Indésirable', $indesirables[0]->senderName);
+    }
+
+    public function test_le_comptage_par_statut(): void
+    {
+        $repo = $this->repository();
+        $repo->store($this->message('A', MessageStatus::New), $this->now());
+        $repo->store($this->message('B', MessageStatus::New), $this->now());
+        $repo->store($this->message('C', MessageStatus::Answered), $this->now());
+
+        $this->assertSame(2, $repo->countByStatus(MessageStatus::New));
+        $this->assertSame(3, $repo->countByStatus(null));
+    }
+
+    public function test_un_message_se_supprime(): void
+    {
+        $repo = $this->repository();
+        $id = $repo->store($this->message('À supprimer'), $this->now());
+
+        $repo->delete($id);
+
+        $this->assertNull($repo->findById($id));
+    }
+
+    private function message(string $name, MessageStatus $status = MessageStatus::New): ContactMessage
+    {
+        return new ContactMessage(
+            id: null,
+            artworkId: null,
+            senderName: $name,
+            senderEmail: 'x@example.com',
+            subject: 'Sujet',
+            body: 'Corps.',
+            locale: Locale::Fr,
+            status: $status,
+            spamScore: 0,
+            ipHash: null,
+            userAgent: null,
+            createdAt: null,
+        );
+    }
 }
