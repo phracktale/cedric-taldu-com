@@ -72,9 +72,19 @@ final class ContactController
         $locale = self::locale($request);
         $artwork = $this->resolveArtwork($request->query('oeuvre'), $locale);
 
+        // Le sélecteur de langue préserve le contexte d'œuvre s'il y en a un,
+        // avec le slug traduit dans chaque langue.
+        $paramsByLocale = [];
+        if ($artwork !== null) {
+            foreach (Locale::cases() as $autre) {
+                $paramsByLocale[$autre->value] = ['oeuvre' => $artwork->slug($autre)->value];
+            }
+        }
+
         return Response::html($this->view->render('front/contact', [
             ...$this->chrome->base($request, $locale),
             'metaTitle' => 'Contact',
+            'localeSwitch' => $this->url->localeAlternates('contact.form', $paramsByLocale),
             'submitUrl' => $this->url->route('contact.submit', ['locale' => $locale->value]),
             'honeypot' => self::HONEYPOT,
             'timestampField' => self::TIMESTAMP,

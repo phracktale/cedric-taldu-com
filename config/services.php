@@ -627,6 +627,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(View::class),
         $c->get(Chrome::class),
         $c->get(PageRepository::class),
+        $c->get(UrlGenerator::class),
     ));
 
     $container->set(BlogController::class, static fn (Container $c): BlogController => new BlogController(

@@ -23,6 +23,7 @@ return [
     'nav.skip' => 'Skip to content',
     'nav.breadcrumb' => 'Breadcrumb',
     'nav.home' => 'Home',
+    'nav.language' => 'Language',
 
     // Footer
     'footer.legal' => 'Legal notice',

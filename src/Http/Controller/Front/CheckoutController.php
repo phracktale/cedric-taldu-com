@@ -77,6 +77,7 @@ final class CheckoutController
         return Response::html($this->view->render('front/checkout', [
             ...$this->chrome->base($request, $locale),
             'metaTitle' => 'Commande',
+            'localeSwitch' => $this->url->localeAlternates('checkout.form'),
             'valuation' => $valuation,
             'submitUrl' => $this->url->route('checkout.submit', ['locale' => $locale->value]),
             'honeypot' => self::HONEYPOT,
@@ -195,6 +196,7 @@ final class CheckoutController
         return Response::html($this->view->render('front/checkout', [
             ...$this->chrome->base($request, $locale),
             'metaTitle' => 'Commande',
+            'localeSwitch' => $this->url->localeAlternates('checkout.form'),
             'valuation' => $valuation,
             'submitUrl' => $this->url->route('checkout.submit', ['locale' => $locale->value]),
             'honeypot' => self::HONEYPOT,

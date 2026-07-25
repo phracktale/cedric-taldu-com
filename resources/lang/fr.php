@@ -25,6 +25,7 @@ return [
     'nav.skip' => 'Aller au contenu',
     'nav.breadcrumb' => 'Fil d’Ariane',
     'nav.home' => 'Accueil',
+    'nav.language' => 'Langue',
 
     // Pied de page
     'footer.legal' => 'Mentions légales',
