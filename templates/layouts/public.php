@@ -49,10 +49,10 @@ $alternates = is_array($data['alternates'] ?? null) ? $data['alternates'] : [];
 </head>
 <body data-base="<?= attr($data['basePath'] ?? '') ?>">
 <?php if (($data['isProduction'] ?? true) === false) : ?>
-<p class="bandeau-env">Préproduction — <?= e($data['env'] ?? '') ?> · contenus de démonstration</p>
+<p class="bandeau-env"><?= $t('env.preprod', ['env' => is_string($data['env'] ?? null) ? $data['env'] : '']) ?></p>
 <?php endif; ?>
 
-<a class="skip-link" href="#contenu">Aller au contenu</a>
+<a class="skip-link" href="#contenu"><?= $t('nav.skip') ?></a>
 
 <?= $partial('partials/header', $data) ?>
 

@@ -32,7 +32,7 @@ final class ContactMailerTest extends TestCase
 
         $this->mailer = new ArrayMailer();
         $this->contactMailer = new ContactMailer(
-            new View($racine . '/templates', self::url($racine)),
+            new View($racine . '/templates', self::url($racine), \Tests\Support\Lang::translator()),
             $this->mailer,
             'artiste@example.test',
             'Cédric Taldu',

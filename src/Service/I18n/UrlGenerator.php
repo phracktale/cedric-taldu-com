@@ -8,6 +8,7 @@ use App\Core\Config;
 use App\Core\Exception\AssetNotFound;
 use App\Core\Exception\InvalidRouteParameter;
 use App\Core\Router;
+use App\Domain\Locale;
 
 /**
  * Production de toutes les URL du site.
@@ -45,6 +46,27 @@ final class UrlGenerator
     public function route(string $name, array $parameters = []): string
     {
         return $this->basePath . $this->pathFor($name, $parameters);
+    }
+
+    /**
+     * URL équivalente de la même route dans CHAQUE langue, pour le sélecteur de
+     * langue (05-i18n-seo §2). Une route à segment fixe n'a pas de paramètre
+     * propre ; une route à slug traduit reçoit son slug par langue via
+     * `$paramsByLocale` (le slug EN retombe sur le FR quand la traduction manque).
+     *
+     * @param array<string, array<string, string|int>> $paramsByLocale
+     * @return array<string, string> URL relative par code de langue
+     */
+    public function localeAlternates(string $name, array $paramsByLocale = []): array
+    {
+        $alternates = [];
+
+        foreach (Locale::cases() as $locale) {
+            $params = $paramsByLocale[$locale->value] ?? [];
+            $alternates[$locale->value] = $this->route($name, [...$params, 'locale' => $locale->value]);
+        }
+
+        return $alternates;
     }
 
     /**

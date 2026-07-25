@@ -26,36 +26,29 @@ $order = $data['order'];
 /** @var string $nonce */
 $nonce = $data['nonce'];
 
-$estFr = $locale === Locale::Fr;
 $enAttente = $order->status === OrderStatus::Pending;
 ?>
 <main class="confirmation" id="contenu"<?php if ($enAttente) : ?> data-confirmation-poll<?php endif; ?>>
   <div class="wrap">
     <?php if ($enAttente) : ?>
-      <h1><?= e($estFr ? 'Paiement en cours de confirmation' : 'Payment being confirmed') ?></h1>
+      <h1><?= $t('confirmation.pending_title') ?></h1>
       <p class="confirmation-attente" role="status">
-        <?= e($estFr
-            ? 'Votre paiement est en cours de traitement. Cette page se met à jour automatiquement.'
-            : 'Your payment is being processed. This page refreshes automatically.') ?>
+        <?= $t('confirmation.pending_text') ?>
       </p>
     <?php elseif ($order->status === OrderStatus::Paid || $order->status === OrderStatus::Shipped) : ?>
-      <h1><?= e($estFr ? 'Merci pour votre commande' : 'Thank you for your order') ?></h1>
-      <p><?= e($estFr
-          ? 'Votre paiement a bien été reçu. Un e-mail de confirmation vous a été envoyé.'
-          : 'Your payment has been received. A confirmation email is on its way.') ?></p>
+      <h1><?= $t('confirmation.paid_title') ?></h1>
+      <p><?= $t('confirmation.paid_text') ?></p>
     <?php else : ?>
-      <h1><?= e($estFr ? 'Commande non aboutie' : 'Order not completed') ?></h1>
-      <p><?= e($estFr
-          ? 'Le paiement n’a pas abouti. Aucun montant ne vous a été prélevé.'
-          : 'The payment did not go through. You have not been charged.') ?></p>
+      <h1><?= $t('confirmation.failed_title') ?></h1>
+      <p><?= $t('confirmation.failed_text') ?></p>
     <?php endif; ?>
 
     <p class="confirmation-reference">
-      <strong><?= e($estFr ? 'Référence' : 'Reference') ?></strong> <?= e($order->reference) ?>
+      <strong><?= $t('confirmation.reference') ?></strong> <?= e($order->reference) ?>
     </p>
 
     <p class="confirmation-total">
-      <strong><?= e($estFr ? 'Total' : 'Total') ?></strong> <?= e(money($order->total, $locale)) ?>
+      <strong><?= $t('confirmation.total') ?></strong> <?= e(money($order->total, $locale)) ?>
     </p>
 
     <?php if ($order->legalMention() !== null) : ?>
@@ -64,7 +57,7 @@ $enAttente = $order->status === OrderStatus::Pending;
 
     <p>
       <a href="<?= attr($url->route('home', ['locale' => $locale->value])) ?>">
-        <?= e($estFr ? 'Retour à l’accueil' : 'Back to home') ?>
+        <?= $t('confirmation.back_home') ?>
       </a>
     </p>
   </div>

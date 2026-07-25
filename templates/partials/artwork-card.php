@@ -42,7 +42,7 @@ $caracteristiques = array_filter([
     <strong><?= e($artwork->caption($locale)) ?></strong>
     <?= e(implode(', ', $caracteristiques)) ?>
     <?php if ($artwork->isPurchasable()) : ?>
-      <br><span class="dispo"><?= e($locale === Locale::Fr ? 'Disponible en boutique' : 'Available in the shop') ?></span>
+      <br><span class="dispo"><?= $t('artwork.available_in_shop') ?></span>
     <?php endif; ?>
   </p>
 </a>

@@ -35,27 +35,25 @@ $csrfToken = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
 
 $updateUrl = $url->route('cart.update', ['locale' => $locale->value]);
 $removeUrl = $url->route('cart.remove', ['locale' => $locale->value]);
-
-$estFr = $locale === Locale::Fr;
 ?>
 <main class="panier" id="contenu">
   <div class="wrap">
-    <h1><?= e($estFr ? 'Votre panier' : 'Your cart') ?></h1>
+    <h1><?= $t('cart.title') ?></h1>
 
     <?php foreach ($valuation->notices as $notice) : ?>
       <p class="panier-message" role="status"><?= e($notice->message($locale)) ?></p>
     <?php endforeach; ?>
 
     <?php if ($valuation->isEmpty()) : ?>
-      <p class="panier-vide"><?= e($estFr ? 'Votre panier est vide.' : 'Your cart is empty.') ?></p>
+      <p class="panier-vide"><?= $t('cart.empty') ?></p>
     <?php else : ?>
       <table class="panier-lignes">
         <thead>
           <tr>
-            <th><?= e($estFr ? 'Article' : 'Item') ?></th>
-            <th><?= e($estFr ? 'Quantité' : 'Quantity') ?></th>
-            <th><?= e($estFr ? 'Montant' : 'Amount') ?></th>
-            <th><span class="visually-hidden"><?= e($estFr ? 'Retirer' : 'Remove') ?></span></th>
+            <th><?= $t('cart.item') ?></th>
+            <th><?= $t('cart.quantity') ?></th>
+            <th><?= $t('cart.amount') ?></th>
+            <th><span class="visually-hidden"><?= $t('cart.remove') ?></span></th>
           </tr>
         </thead>
         <tbody>
@@ -73,11 +71,11 @@ $estFr = $locale === Locale::Fr;
                     <input type="hidden" name="kind" value="<?= attr($item->kind->value) ?>">
                     <input type="hidden" name="id" value="<?= attr($item->targetId) ?>">
                     <label class="visually-hidden" for="qte-<?= attr($item->targetId) ?>">
-                      <?= e($estFr ? 'Quantité' : 'Quantity') ?>
+                      <?= $t('cart.quantity') ?>
                     </label>
                     <input type="number" id="qte-<?= attr($item->targetId) ?>" name="quantite"
                            min="0" max="5" value="<?= attr($line->quantity) ?>" inputmode="numeric">
-                    <button type="submit"><?= e($estFr ? 'Mettre à jour' : 'Update') ?></button>
+                    <button type="submit"><?= $t('cart.update') ?></button>
                   </form>
                 <?php else : ?>
                   <?= e($line->quantity) ?>
@@ -89,7 +87,7 @@ $estFr = $locale === Locale::Fr;
                   <input type="hidden" name="_token" value="<?= attr($csrfToken) ?>">
                   <input type="hidden" name="kind" value="<?= attr($item->kind->value) ?>">
                   <input type="hidden" name="id" value="<?= attr($item->targetId) ?>">
-                  <button type="submit"><?= e($estFr ? 'Retirer' : 'Remove') ?></button>
+                  <button type="submit"><?= $t('cart.remove') ?></button>
                 </form>
               </td>
             </tr>
@@ -97,22 +95,16 @@ $estFr = $locale === Locale::Fr;
         </tbody>
         <tfoot>
           <tr>
-            <th colspan="2"><?= e($estFr ? 'Sous-total' : 'Subtotal') ?></th>
+            <th colspan="2"><?= $t('cart.subtotal') ?></th>
             <td colspan="2"><?= e(money($valuation->subtotal, $locale)) ?></td>
           </tr>
         </tfoot>
       </table>
 
-      <p class="panier-rappel">
-        <?= e($estFr
-            ? 'Les frais de port et la TVA éventuelle sont calculés à l’étape suivante.'
-            : 'Shipping and any VAT are calculated at the next step.') ?>
-      </p>
+      <p class="panier-rappel"><?= $t('cart.reminder') ?></p>
 
       <div class="panier-actions">
-        <a class="btn btn-plein" href="<?= attr($checkoutUrl) ?>">
-          <?= e($estFr ? 'Passer la commande' : 'Proceed to checkout') ?>
-        </a>
+        <a class="btn btn-plein" href="<?= attr($checkoutUrl) ?>"><?= $t('cart.checkout') ?></a>
       </div>
     <?php endif; ?>
   </div>

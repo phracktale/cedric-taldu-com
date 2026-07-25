@@ -59,6 +59,7 @@ final class BlogController
             'medias' => $this->coversFor($posts),
             'page' => $page,
             'pages' => $pages,
+            'localeSwitch' => $this->url->localeAlternates('blog.index'),
             'articleUrl' => fn (string $slug): string
                 => $this->url->route('blog.show', ['locale' => $locale->value, 'slug' => $slug]),
         ], layout: 'layouts/public'));
@@ -85,6 +86,10 @@ final class BlogController
             'post' => $post,
             'cover' => $cover,
             'listUrl' => $this->url->route('blog.index', ['locale' => $locale->value]),
+            'localeSwitch' => $this->url->localeAlternates('blog.show', [
+                Locale::Fr->value => ['slug' => $post->slug(Locale::Fr)->value],
+                Locale::En->value => ['slug' => $post->slug(Locale::En)->value],
+            ]),
         ], layout: 'layouts/public'));
     }
 

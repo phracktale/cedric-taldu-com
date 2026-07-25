@@ -31,19 +31,18 @@ $csrfToken = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
 /** @var string|null $error */
 $error = is_string($data['error'] ?? null) ? $data['error'] : null;
 
-$estFr = $locale === Locale::Fr;
 $cgvUrl = $url->route('page.terms', ['locale' => $locale->value]);
 ?>
 <main class="commande" id="contenu">
   <div class="wrap">
-    <h1><?= e($estFr ? 'Votre commande' : 'Your order') ?></h1>
+    <h1><?= $t('checkout.title') ?></h1>
 
     <?php if ($error !== null) : ?>
       <p class="commande-erreur" role="alert"><?= e($error) ?></p>
     <?php endif; ?>
 
     <section class="commande-recap">
-      <h2><?= e($estFr ? 'Récapitulatif' : 'Summary') ?></h2>
+      <h2><?= $t('checkout.summary') ?></h2>
       <ul>
         <?php foreach ($valuation->lines as $line) : ?>
           <li>
@@ -53,7 +52,7 @@ $cgvUrl = $url->route('page.terms', ['locale' => $locale->value]);
         <?php endforeach; ?>
       </ul>
       <p class="commande-soustotal">
-        <strong><?= e($estFr ? 'Sous-total' : 'Subtotal') ?></strong>
+        <strong><?= $t('cart.subtotal') ?></strong>
         <?= e(money($valuation->subtotal, $locale)) ?>
       </p>
     </section>
@@ -63,66 +62,64 @@ $cgvUrl = $url->route('page.terms', ['locale' => $locale->value]);
 
       <?php // Champ appât : positionné hors écran, jamais atteignable au clavier. ?>
       <div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;" tabindex="-1">
-        <label for="<?= attr($honeypot) ?>"><?= e($estFr ? 'Ne pas remplir' : 'Do not fill') ?></label>
+        <label for="<?= attr($honeypot) ?>"><?= $t('form.do_not_fill') ?></label>
         <input type="text" id="<?= attr($honeypot) ?>" name="<?= attr($honeypot) ?>"
                tabindex="-1" autocomplete="off">
       </div>
 
       <fieldset>
-        <legend><?= e($estFr ? 'Vos coordonnées' : 'Your details') ?></legend>
-        <label for="nom"><?= e($estFr ? 'Nom' : 'Name') ?></label>
+        <legend><?= $t('checkout.your_details') ?></legend>
+        <label for="nom"><?= $t('checkout.name') ?></label>
         <input type="text" id="nom" name="nom" required maxlength="160">
 
-        <label for="email"><?= e($estFr ? 'Adresse e-mail' : 'Email address') ?></label>
+        <label for="email"><?= $t('checkout.email') ?></label>
         <input type="email" id="email" name="email" required maxlength="190">
 
-        <label for="telephone"><?= e($estFr ? 'Téléphone (facultatif)' : 'Phone (optional)') ?></label>
+        <label for="telephone"><?= $t('checkout.phone') ?></label>
         <input type="tel" id="telephone" name="telephone" maxlength="40">
       </fieldset>
 
       <fieldset>
-        <legend><?= e($estFr ? 'Mode de remise' : 'Delivery method') ?></legend>
+        <legend><?= $t('checkout.delivery_method') ?></legend>
         <label>
           <input type="radio" name="mode" value="shipping" checked>
-          <?= e($estFr ? 'Expédition' : 'Shipping') ?>
+          <?= $t('checkout.shipping') ?>
         </label>
         <label>
           <input type="radio" name="mode" value="pickup">
-          <?= e($estFr ? 'Remise en main propre à Amiens' : 'Collection in Amiens') ?>
+          <?= $t('checkout.pickup') ?>
         </label>
       </fieldset>
 
       <fieldset class="commande-adresse">
-        <legend><?= e($estFr ? 'Adresse de livraison' : 'Shipping address') ?></legend>
-        <label for="adresse"><?= e($estFr ? 'Adresse' : 'Address') ?></label>
+        <legend><?= $t('checkout.shipping_address') ?></legend>
+        <label for="adresse"><?= $t('checkout.address') ?></label>
         <input type="text" id="adresse" name="adresse" maxlength="190">
 
-        <label for="complement"><?= e($estFr ? 'Complément (facultatif)' : 'Address line 2 (optional)') ?></label>
+        <label for="complement"><?= $t('checkout.address_line2') ?></label>
         <input type="text" id="complement" name="complement" maxlength="190">
 
-        <label for="code_postal"><?= e($estFr ? 'Code postal' : 'Postal code') ?></label>
+        <label for="code_postal"><?= $t('checkout.postal_code') ?></label>
         <input type="text" id="code_postal" name="code_postal" maxlength="16">
 
-        <label for="ville"><?= e($estFr ? 'Ville' : 'City') ?></label>
+        <label for="ville"><?= $t('checkout.city') ?></label>
         <input type="text" id="ville" name="ville" maxlength="120">
 
-        <label for="pays"><?= e($estFr ? 'Pays' : 'Country') ?></label>
+        <label for="pays"><?= $t('checkout.country') ?></label>
         <input type="text" id="pays" name="pays" value="FR" maxlength="2">
       </fieldset>
 
-      <label for="note"><?= e($estFr ? 'Note (facultative)' : 'Note (optional)') ?></label>
+      <label for="note"><?= $t('checkout.note') ?></label>
       <textarea id="note" name="note" maxlength="500" rows="3"></textarea>
 
       <label class="commande-cgv">
         <input type="checkbox" name="cgv" value="on" required>
-        <?= e($estFr
-            ? 'J’accepte les conditions générales de vente'
-            : 'I accept the terms and conditions') ?>
-        <a href="<?= attr($cgvUrl) ?>"><?= e($estFr ? '(lire)' : '(read)') ?></a>
+        <?= $t('checkout.accept_terms') ?>
+        <a href="<?= attr($cgvUrl) ?>"><?= $t('checkout.read') ?></a>
       </label>
 
       <button type="submit" class="btn btn-plein">
-        <?= e($estFr ? 'Procéder au paiement' : 'Proceed to payment') ?>
+        <?= $t('checkout.pay') ?>
       </button>
     </form>
   </div>

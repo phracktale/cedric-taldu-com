@@ -59,6 +59,7 @@ final class CartController
         $data = [
             ...$this->chrome->base($request, $locale),
             'metaTitle' => 'Panier',
+            'localeSwitch' => $this->url->localeAlternates('cart.show'),
             'valuation' => $valuation,
             'cartCount' => $valuation->cart->itemCount(),
             'panierUrl' => $this->url->route('cart.show', ['locale' => $locale->value]),

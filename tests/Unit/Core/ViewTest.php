@@ -43,6 +43,7 @@ final class ViewTest extends TestCase
         return new View(
             self::TEMPLATES,
             new UrlGenerator($routeur, $config, '/cedric-taldu', self::PUBLIC_DIR),
+            \Tests\Support\Lang::translator(),
         );
     }
 

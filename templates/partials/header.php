@@ -27,27 +27,23 @@ $rubriques = is_array($data['menuCategories'] ?? null) ? $data['menuCategories']
 
 $rubriqueCourante = is_int($data['currentCategoryId'] ?? null) ? $data['currentCategoryId'] : null;
 
-$libelles = $locale === Locale::Fr
-    ? ['apropos' => 'À propos', 'galerie' => 'Galerie', 'actus' => 'Actus',
-       'livret' => 'Livret', 'contact' => 'Contact', 'menu' => 'Menu', 'surtitre' => 'artiste plasticien — Amiens']
-    : ['apropos' => 'About', 'galerie' => 'Gallery', 'actus' => 'News',
-       'livret' => 'Booklet', 'contact' => 'Contact', 'menu' => 'Menu', 'surtitre' => 'visual artist — Amiens, France'];
-
+/** @var array<string, string> $localeSwitch URL équivalente par code de langue */
+$localeSwitch = is_array($data['localeSwitch'] ?? null) ? $data['localeSwitch'] : [];
 ?>
 <header>
   <div class="nav">
-    <a class="brand" href="<?= attr($url->route('home', ['locale' => $locale->value])) ?>">Cédric Taldu<small><?= e($libelles['surtitre']) ?></small></a>
+    <a class="brand" href="<?= attr($url->route('home', ['locale' => $locale->value])) ?>">Cédric Taldu<small><?= $t('nav.tagline') ?></small></a>
 
-    <button class="burger" aria-expanded="false" aria-controls="menu"><?= e($libelles['menu']) ?></button>
+    <button class="burger" aria-expanded="false" aria-controls="menu"><?= $t('nav.menu') ?></button>
 
-    <nav aria-label="<?= attr($locale === Locale::Fr ? 'Navigation principale' : 'Main navigation') ?>">
+    <nav aria-label="<?= $t('nav.main_label') ?>">
       <ul id="menu">
         <li>
-          <a href="<?= attr($url->route('page.about', ['locale' => $locale->value])) ?>"><?= e($libelles['apropos']) ?></a>
+          <a href="<?= attr($url->route('page.about', ['locale' => $locale->value])) ?>"><?= $t('nav.about') ?></a>
         </li>
         <li class="sous-menu">
           <?php /* Non cliquable : c'est un ouvreur de sous-menu, pas une page. */ ?>
-          <button type="button" class="nav-bouton" aria-expanded="true"><?= e($libelles['galerie']) ?></button>
+          <button type="button" class="nav-bouton" aria-expanded="true"><?= $t('nav.gallery') ?></button>
           <ul>
             <?php foreach ($rubriques as $rubrique) : ?>
             <li>
@@ -60,15 +56,29 @@ $libelles = $locale === Locale::Fr
           </ul>
         </li>
         <li>
-          <a href="<?= attr($url->route('blog.index', ['locale' => $locale->value])) ?>"><?= e($libelles['actus']) ?></a>
+          <a href="<?= attr($url->route('blog.index', ['locale' => $locale->value])) ?>"><?= $t('nav.news') ?></a>
         </li>
         <li>
-          <a href="<?= attr($url->route('page.booklet', ['locale' => $locale->value])) ?>"><?= e($libelles['livret']) ?></a>
+          <a href="<?= attr($url->route('page.booklet', ['locale' => $locale->value])) ?>"><?= $t('nav.booklet') ?></a>
         </li>
         <li>
-          <a href="<?= attr($url->route('contact.form', ['locale' => $locale->value])) ?>"><?= e($libelles['contact']) ?></a>
+          <a href="<?= attr($url->route('contact.form', ['locale' => $locale->value])) ?>"><?= $t('nav.contact') ?></a>
         </li>
       </ul>
     </nav>
+
+    <?php // Sélecteur de langue : vers l'URL équivalente dans l'autre langue,
+          // fournie par le contrôleur (05-i18n §2). Muet si l'équivalent manque. ?>
+    <?php if ($localeSwitch !== []) : ?>
+    <nav class="langues" aria-label="<?= $t('nav.language') ?>">
+      <?php foreach (Locale::cases() as $autre) : ?>
+        <?php if ($autre === $locale) : ?>
+          <span aria-current="true"><?= e($autre->nativeName()) ?></span>
+        <?php elseif (isset($localeSwitch[$autre->value])) : ?>
+          <a href="<?= attr($localeSwitch[$autre->value]) ?>" hreflang="<?= attr($autre->value) ?>"><?= e($autre->nativeName()) ?></a>
+        <?php endif; ?>
+      <?php endforeach; ?>
+    </nav>
+    <?php endif; ?>
   </div>
 </header>

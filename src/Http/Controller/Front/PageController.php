@@ -10,6 +10,7 @@ use App\Core\Response;
 use App\Core\View;
 use App\Domain\Locale;
 use App\Repository\PageRepository;
+use App\Service\I18n\UrlGenerator;
 use App\Service\View\Chrome;
 
 /**
@@ -30,6 +31,7 @@ final class PageController
         private readonly View $view,
         private readonly Chrome $chrome,
         private readonly PageRepository $pages,
+        private readonly UrlGenerator $url,
     ) {
     }
 
@@ -71,6 +73,8 @@ final class PageController
             ...$this->chrome->base($request, $locale),
             'metaTitle' => $page->title($locale),
             'page' => $page,
+            // Le code fixe donne le nom de route (page.about, page.terms, …).
+            'localeSwitch' => $this->url->localeAlternates('page.' . $code),
         ], layout: 'layouts/public'));
     }
 

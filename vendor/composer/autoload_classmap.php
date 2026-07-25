@@ -192,6 +192,8 @@ return array(
     'App\\Service\\Content\\PreviewToken' => $baseDir . '/src/Service/Content/PreviewToken.php',
     'App\\Service\\Content\\TranslationInput' => $baseDir . '/src/Service/Content/TranslationInput.php',
     'App\\Service\\Export\\CsvWriter' => $baseDir . '/src/Service/Export/CsvWriter.php',
+    'App\\Service\\I18n\\Exception\\MissingTranslationKey' => $baseDir . '/src/Service/I18n/Exception/MissingTranslationKey.php',
+    'App\\Service\\I18n\\Translator' => $baseDir . '/src/Service/I18n/Translator.php',
     'App\\Service\\I18n\\UrlGenerator' => $baseDir . '/src/Service/I18n/UrlGenerator.php',
     'App\\Service\\Mail\\ArrayMailer' => $baseDir . '/src/Service/Mail/ArrayMailer.php',
     'App\\Service\\Mail\\ContactMailer' => $baseDir . '/src/Service/Mail/ContactMailer.php',

@@ -79,6 +79,7 @@ use App\Service\Auth\Totp;
 use App\Service\Content\HtmlSanitizer;
 use App\Service\Content\PreviewToken;
 use App\Service\Content\TranslationInput;
+use App\Service\I18n\Translator;
 use App\Service\I18n\UrlGenerator;
 use App\Service\Media\ImageProcessor;
 use App\Service\Media\MediaStore;
@@ -160,9 +161,22 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $rootPath . '/public',
     ));
 
+    // Traduction de l'interface : catalogues chargés une fois, comportement
+    // strict hors production (une clé manquante lève ; en prod elle retombe sur
+    // la clé et se journalise, cf. Translator).
+    $container->set(Translator::class, static fn (Container $c): Translator => new Translator(
+        [
+            'fr' => require $rootPath . '/resources/lang/fr.php',
+            'en' => require $rootPath . '/resources/lang/en.php',
+        ],
+        !$config->isProduction(),
+        $c->get(LoggerInterface::class),
+    ));
+
     $container->set(View::class, static fn (Container $c): View => new View(
         $rootPath . '/templates',
         $c->get(UrlGenerator::class),
+        $c->get(Translator::class),
     ));
 
     $container->set(CookieFactory::class, static fn (Container $c): CookieFactory => new CookieFactory(
@@ -613,6 +627,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(View::class),
         $c->get(Chrome::class),
         $c->get(PageRepository::class),
+        $c->get(UrlGenerator::class),
     ));
 
     $container->set(BlogController::class, static fn (Container $c): BlogController => new BlogController(
