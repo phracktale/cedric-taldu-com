@@ -228,6 +228,8 @@ class ComposerStaticInitd6e83bb86c354df1a881ef8b472112b4
         'App\\Service\\Content\\PreviewToken' => __DIR__ . '/../..' . '/src/Service/Content/PreviewToken.php',
         'App\\Service\\Content\\TranslationInput' => __DIR__ . '/../..' . '/src/Service/Content/TranslationInput.php',
         'App\\Service\\Export\\CsvWriter' => __DIR__ . '/../..' . '/src/Service/Export/CsvWriter.php',
+        'App\\Service\\I18n\\Exception\\MissingTranslationKey' => __DIR__ . '/../..' . '/src/Service/I18n/Exception/MissingTranslationKey.php',
+        'App\\Service\\I18n\\Translator' => __DIR__ . '/../..' . '/src/Service/I18n/Translator.php',
         'App\\Service\\I18n\\UrlGenerator' => __DIR__ . '/../..' . '/src/Service/I18n/UrlGenerator.php',
         'App\\Service\\Mail\\ArrayMailer' => __DIR__ . '/../..' . '/src/Service/Mail/ArrayMailer.php',
         'App\\Service\\Mail\\ContactMailer' => __DIR__ . '/../..' . '/src/Service/Mail/ContactMailer.php',
