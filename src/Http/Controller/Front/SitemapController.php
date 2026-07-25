@@ -83,7 +83,7 @@ final class SitemapController
             ));
         }
 
-        return Response::xml($this->document(array_filter($entries)))
+        return Response::xml($this->document(array_values(array_filter($entries))))
             ->withHeader('Cache-Control', 'public, max-age=3600');
     }
 
