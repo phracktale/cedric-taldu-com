@@ -43,9 +43,9 @@ $media = $medias[$oeuvre->primaryMediaId] ?? null;
 
 ?>
 <div class="wrap">
-  <nav class="fil" aria-label="<?= attr($locale === Locale::Fr ? 'Fil d’Ariane' : 'Breadcrumb') ?>">
+  <nav class="fil" aria-label="<?= $t('nav.breadcrumb') ?>">
     <ol>
-      <li><a href="<?= attr($url->route('home', ['locale' => $locale->value])) ?>"><?= e($locale === Locale::Fr ? 'Accueil' : 'Home') ?></a></li>
+      <li><a href="<?= attr($url->route('home', ['locale' => $locale->value])) ?>"><?= $t('nav.home') ?></a></li>
       <?php if ($rubrique !== null) : ?>
       <li><a href="<?= attr($url->route('category.show', ['locale' => $locale->value, 'slug' => $rubrique->slug($locale)->value])) ?>"><?= e($rubrique->title($locale)) ?></a></li>
       <?php endif; ?>
@@ -73,7 +73,7 @@ $media = $medias[$oeuvre->primaryMediaId] ?? null;
           'priority' => true,
           'sizes' => '(max-width: 860px) 100vw, 55vw',
       ]) ?></a>
-      <p class="vue-detail"><?= e($locale === Locale::Fr ? 'Cliquer pour agrandir' : 'Click to enlarge') ?></p>
+      <p class="vue-detail"><?= $t('artwork.zoom') ?></p>
     <?php else : ?>
       <div class="cadre"><?= $partial('partials/picture', [
           'media' => null,
@@ -127,7 +127,7 @@ $media = $medias[$oeuvre->primaryMediaId] ?? null;
         <input type="hidden" name="kind" value="original">
         <input type="hidden" name="id" value="<?= attr($oeuvre->id) ?>">
         <button type="submit" class="btn btn-plein">
-          <?= e($locale === Locale::Fr ? 'Acquérir cette œuvre' : 'Acquire this work') ?>
+          <?= $t('artwork.acquire') ?>
         </button>
       </form>
     </div>
@@ -139,13 +139,13 @@ $media = $medias[$oeuvre->primaryMediaId] ?? null;
     <p class="poser-question">
       <a class="btn btn-vide"
          href="<?= attr($url->route('contact.form', ['locale' => $locale->value]) . '?oeuvre=' . rawurlencode($oeuvre->slug($locale)->value)) ?>">
-        <?= e($locale === Locale::Fr ? 'Poser une question' : 'Ask a question') ?>
+        <?= $t('artwork.ask_question') ?>
       </a>
     </p>
 
     <?php if ($products !== []) : ?>
     <section class="reproductions">
-      <h2><?= e($locale === Locale::Fr ? 'Reproductions' : 'Prints') ?></h2>
+      <h2><?= $t('artwork.prints') ?></h2>
       <?php foreach ($products as $product) : ?>
         <?php if (!$product->isPurchasable()) {
             continue;
@@ -154,9 +154,7 @@ $media = $medias[$oeuvre->primaryMediaId] ?? null;
           <h3><?= e($product->title) ?></h3>
           <?php if ($product->editionsRemaining() !== null) : ?>
           <p class="edition">
-            <?= e($locale === Locale::Fr
-                ? $product->editionsRemaining() . ' exemplaire(s) restant(s)'
-                : $product->editionsRemaining() . ' remaining') ?>
+            <?= $t('artwork.editions_remaining', ['count' => $product->editionsRemaining()]) ?>
           </p>
           <?php endif; ?>
           <ul class="variantes">
@@ -169,7 +167,7 @@ $media = $medias[$oeuvre->primaryMediaId] ?? null;
                 <input type="hidden" name="kind" value="reproduction">
                 <input type="hidden" name="id" value="<?= attr($variante->id) ?>">
                 <button type="submit" class="btn btn-vide">
-                  <?= e($locale === Locale::Fr ? 'Ajouter au panier' : 'Add to cart') ?>
+                  <?= $t('artwork.add_to_cart') ?>
                 </button>
               </form>
             </li>
@@ -185,7 +183,7 @@ $media = $medias[$oeuvre->primaryMediaId] ?? null;
 <?php if ($liees !== []) : ?>
 <section class="liees">
   <div class="wrap">
-    <h2><?= e($locale === Locale::Fr ? 'De la même recherche' : 'From the same research') ?></h2>
+    <h2><?= $t('artwork.related') ?></h2>
     <div class="liees-grid">
       <?php foreach ($liees as $liee) : ?>
         <?= $partial('partials/artwork-card', [

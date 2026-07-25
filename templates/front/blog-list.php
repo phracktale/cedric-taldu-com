@@ -27,34 +27,15 @@ $medias = is_array($data['medias'] ?? null) ? $data['medias'] : [];
 $articleUrl = $data['articleUrl'];
 $page = is_int($data['page'] ?? null) ? $data['page'] : 1;
 $pages = is_int($data['pages'] ?? null) ? $data['pages'] : 1;
-
-$estFr = $locale === Locale::Fr;
-
-$moisFr = [1 => 'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
-    'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
-$moisEn = [1 => 'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'];
-
-$formatDate = static function (?\DateTimeImmutable $date) use ($estFr, $moisFr, $moisEn): string {
-    if ($date === null) {
-        return '';
-    }
-
-    $mois = ($estFr ? $moisFr : $moisEn)[(int) $date->format('n')];
-
-    return $estFr
-        ? $date->format('j') . ' ' . $mois . ' ' . $date->format('Y')
-        : $mois . ' ' . $date->format('j') . ', ' . $date->format('Y');
-};
 ?>
 <section class="page-head wrap">
-  <p class="eyebrow"><?= e($estFr ? 'Journal' : 'Journal') ?></p>
-  <h1><?= e($estFr ? 'Actus' : 'News') ?></h1>
+  <p class="eyebrow"><?= $t('blog.journal') ?></p>
+  <h1><?= $t('nav.news') ?></h1>
 </section>
 
 <div class="wrap actus">
   <?php if ($posts === []) : ?>
-    <p class="actus-vide"><?= e($estFr ? 'Aucun article pour le moment.' : 'No articles yet.') ?></p>
+    <p class="actus-vide"><?= $t('blog.empty') ?></p>
   <?php else : ?>
     <ul class="actus-liste">
       <?php foreach ($posts as $post) : ?>
@@ -75,7 +56,7 @@ $formatDate = static function (?\DateTimeImmutable $date) use ($estFr, $moisFr, 
             </div>
             <div class="actu-texte">
               <?php if ($dateAffichee !== null) : ?>
-                <p class="actu-date"><?= e($formatDate($dateAffichee)) ?></p>
+                <p class="actu-date"><?= e(dateLong($dateAffichee, $locale)) ?></p>
               <?php endif; ?>
               <h2 class="actu-titre"><?= e($post->title($locale)) ?></h2>
               <?php if ($post->isEvent() && $post->eventPlace !== null) : ?>
@@ -91,13 +72,13 @@ $formatDate = static function (?\DateTimeImmutable $date) use ($estFr, $moisFr, 
     </ul>
 
     <?php if ($pages > 1) : ?>
-      <nav class="pagination" aria-label="<?= attr($estFr ? 'Pages' : 'Pages') ?>">
+      <nav class="pagination" aria-label="<?= $t('blog.pages') ?>">
         <?php if ($page > 1) : ?>
-          <a rel="prev" href="?page=<?= attr($page - 1) ?>"><?= e($estFr ? 'Précédent' : 'Previous') ?></a>
+          <a rel="prev" href="?page=<?= attr($page - 1) ?>"><?= $t('blog.previous') ?></a>
         <?php endif; ?>
         <span class="pagination-etat"><?= e($page) ?> / <?= e($pages) ?></span>
         <?php if ($page < $pages) : ?>
-          <a rel="next" href="?page=<?= attr($page + 1) ?>"><?= e($estFr ? 'Suivant' : 'Next') ?></a>
+          <a rel="next" href="?page=<?= attr($page + 1) ?>"><?= $t('blog.next') ?></a>
         <?php endif; ?>
       </nav>
     <?php endif; ?>

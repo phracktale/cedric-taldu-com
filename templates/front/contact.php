@@ -40,22 +40,19 @@ $values = is_array($data['values'] ?? null) ? $data['values'] : [];
 /** @var string $csrfToken */
 $csrfToken = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
 
-$estFr = $locale === Locale::Fr;
 ?>
 <div class="wrap contact">
-  <h1><?= e($estFr ? 'Contact' : 'Contact') ?></h1>
+  <h1><?= $t('nav.contact') ?></h1>
 
   <?php if ($sent) : ?>
     <p class="contact-succes" role="status">
-      <?= e($estFr
-          ? 'Merci, votre message a bien été envoyé. Une réponse vous parviendra par courriel.'
-          : 'Thank you, your message has been sent. You will receive a reply by email.') ?>
+      <?= $t('contact.success') ?>
     </p>
   <?php endif; ?>
 
   <?php if ($artwork !== null) : ?>
     <p class="contact-oeuvre">
-      <?= e($estFr ? 'Votre question concerne l’œuvre :' : 'Your question is about:') ?>
+      <?= $t('contact.about_artwork') ?>
       <strong><?= e($artwork->title($locale)) ?></strong>
     </p>
   <?php endif; ?>
@@ -73,44 +70,40 @@ $estFr = $locale === Locale::Fr;
 
     <?php // Champ appât : hors écran, jamais atteignable au clavier. ?>
     <div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;" tabindex="-1">
-      <label for="<?= attr($honeypot) ?>"><?= e($estFr ? 'Ne pas remplir' : 'Do not fill') ?></label>
+      <label for="<?= attr($honeypot) ?>"><?= $t('form.do_not_fill') ?></label>
       <input type="text" id="<?= attr($honeypot) ?>" name="<?= attr($honeypot) ?>"
              tabindex="-1" autocomplete="off">
     </div>
 
-    <label for="nom"><?= e($estFr ? 'Votre nom' : 'Your name') ?></label>
+    <label for="nom"><?= $t('contact.name') ?></label>
     <input type="text" id="nom" name="nom" required maxlength="160"
            value="<?= attr($values['nom'] ?? '') ?>">
     <?php if (isset($errors['nom'])) : ?>
       <span class="champ-erreur" role="alert"><?= e($errors['nom']) ?></span>
     <?php endif; ?>
 
-    <label for="email"><?= e($estFr ? 'Votre adresse e-mail' : 'Your email address') ?></label>
+    <label for="email"><?= $t('contact.email') ?></label>
     <input type="email" id="email" name="email" required maxlength="190"
            value="<?= attr($values['email'] ?? '') ?>">
     <?php if (isset($errors['email'])) : ?>
       <span class="champ-erreur" role="alert"><?= e($errors['email']) ?></span>
     <?php endif; ?>
 
-    <label for="message"><?= e($estFr ? 'Votre message' : 'Your message') ?></label>
+    <label for="message"><?= $t('contact.message') ?></label>
     <textarea id="message" name="message" required maxlength="3000" rows="8"><?= e($values['message'] ?? '') ?></textarea>
     <?php if (isset($errors['message'])) : ?>
       <span class="champ-erreur" role="alert"><?= e($errors['message']) ?></span>
     <?php endif; ?>
 
     <button type="submit" class="btn btn-plein">
-      <?= e($estFr ? 'Envoyer' : 'Send') ?>
+      <?= $t('contact.send') ?>
     </button>
   </form>
 
   <p class="contact-rgpd">
-    <?= e($estFr
-        ? 'Les informations transmises servent uniquement à répondre à votre demande. '
-          . 'Vous disposez d’un droit d’accès, de rectification et d’effacement de vos données.'
-        : 'The information you provide is used solely to answer your request. '
-          . 'You have the right to access, rectify and erase your data.') ?>
+    <?= $t('contact.rgpd') ?>
     <a href="<?= attr($url->route('page.privacy', ['locale' => $locale->value])) ?>">
-      <?= e($estFr ? 'En savoir plus' : 'Learn more') ?>
+      <?= $t('contact.learn_more') ?>
     </a>
   </p>
 </div>

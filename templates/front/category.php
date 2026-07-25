@@ -42,9 +42,9 @@ $lienRubrique = static fn (?Series $serie): string => $url->route('category.show
 
 ?>
 <section class="page-head wrap">
-  <nav class="fil" aria-label="<?= attr($locale === Locale::Fr ? 'Fil d’Ariane' : 'Breadcrumb') ?>">
+  <nav class="fil" aria-label="<?= $t('nav.breadcrumb') ?>">
     <ol>
-      <li><a href="<?= attr($url->route('home', ['locale' => $locale->value])) ?>"><?= e($locale === Locale::Fr ? 'Accueil' : 'Home') ?></a></li>
+      <li><a href="<?= attr($url->route('home', ['locale' => $locale->value])) ?>"><?= $t('nav.home') ?></a></li>
       <li><?= e($rubrique->title($locale)) ?></li>
     </ol>
   </nav>
@@ -66,8 +66,8 @@ $lienRubrique = static fn (?Series $serie): string => $url->route('category.show
   <?php endif; ?>
 
   <?php if ($series !== []) : ?>
-  <nav class="series" aria-label="<?= attr($locale === Locale::Fr ? 'Séries' : 'Series') ?>">
-    <a class="serie" href="<?= attr($lienRubrique(null)) ?>"<?php if ($serieChoisie === null) : ?> aria-current="page"<?php endif; ?>><?= e($locale === Locale::Fr ? 'Toutes' : 'All') ?></a>
+  <nav class="series" aria-label="<?= $t('category.series') ?>">
+    <a class="serie" href="<?= attr($lienRubrique(null)) ?>"<?php if ($serieChoisie === null) : ?> aria-current="page"<?php endif; ?>><?= $t('category.all') ?></a>
     <?php foreach ($series as $serie) : ?>
     <a class="serie" href="<?= attr($lienRubrique($serie)) ?>"<?php if ($serieChoisie?->id === $serie->id) : ?> aria-current="page"<?php endif; ?>><?= e($serie->title($locale)) ?></a>
     <?php endforeach; ?>
@@ -75,9 +75,9 @@ $lienRubrique = static fn (?Series $serie): string => $url->route('category.show
   <?php endif; ?>
 </section>
 
-<section class="grille wrap" aria-label="<?= attr($locale === Locale::Fr ? 'Œuvres' : 'Works') ?>">
+<section class="grille wrap" aria-label="<?= $t('category.works') ?>">
   <?php if ($oeuvres === []) : ?>
-    <p class="vide"><?= e($locale === Locale::Fr ? 'Aucune œuvre à afficher pour l’instant.' : 'No works to show yet.') ?></p>
+    <p class="vide"><?= $t('category.empty') ?></p>
   <?php else : ?>
   <div class="oeuvres">
     <?php foreach ($oeuvres as $rang => $oeuvre) : ?>
@@ -92,7 +92,7 @@ $lienRubrique = static fn (?Series $serie): string => $url->route('category.show
   <?php endif; ?>
 
   <?php if ($pages > 1) : ?>
-  <nav class="pagination" aria-label="<?= attr($locale === Locale::Fr ? 'Pagination' : 'Pagination') ?>">
+  <nav class="pagination" aria-label="<?= $t('category.pagination') ?>">
     <?php for ($n = 1; $n <= $pages; $n++) : ?>
       <?php if ($n === $page) : ?>
         <span class="courante" aria-current="page"><?= e($n) ?></span>

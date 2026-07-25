@@ -56,24 +56,6 @@ $articleUrl = $data['articleUrl'];
 /** @var string $newsIndexUrl */
 $newsIndexUrl = is_string($data['newsIndexUrl'] ?? null) ? $data['newsIndexUrl'] : '';
 
-$moisFr = [1 => 'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
-    'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
-$moisEn = [1 => 'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'];
-
-$formatDate = static function (?\DateTimeImmutable $date) use ($locale, $moisFr, $moisEn): string {
-    if ($date === null) {
-        return '';
-    }
-
-    $estFr = $locale === Locale::Fr;
-    $mois = ($estFr ? $moisFr : $moisEn)[(int) $date->format('n')];
-
-    return $estFr
-        ? $date->format('j') . ' ' . $mois . ' ' . $date->format('Y')
-        : $mois . ' ' . $date->format('j') . ', ' . $date->format('Y');
-};
-
 ?>
 
 <?php /* 1 — HERO : le H1 SEO, la baseline, deux portes d'entrée. */ ?>
@@ -83,14 +65,14 @@ $formatDate = static function (?\DateTimeImmutable $date) use ($locale, $moisFr,
   <?php if ($texte($hero, 'baseline') !== null) : ?><p class="baseline"><?= e($texte($hero, 'baseline')) ?></p><?php endif; ?>
   <?php if ($rubriques !== []) : ?>
   <div class="cta-row">
-    <a class="btn btn-plein" href="#galeries"><?= e($texte($hero, 'cta') ?? ($locale === Locale::Fr ? 'Voir les œuvres' : 'View the works')) ?></a>
+    <a class="btn btn-plein" href="#galeries"><?php if ($texte($hero, 'cta') !== null) : ?><?= e($texte($hero, 'cta')) ?><?php else : ?><?= $t('home.hero_cta') ?><?php endif; ?></a>
   </div>
   <?php endif; ?>
 </section>
 
 <?php /* 2 — VITRINE : trois œuvres, celle du centre plus haute. */ ?>
 <?php if ($vitrine !== []) : ?>
-<section class="vitrine wrap" aria-label="<?= attr($locale === Locale::Fr ? 'Œuvres en vitrine' : 'Featured works') ?>">
+<section class="vitrine wrap" aria-label="<?= $t('home.showcase_label') ?>">
   <div class="vitrine-grid">
     <?php foreach ($vitrine as $rang => $oeuvre) : ?>
       <?= $partial('partials/artwork-card', [
@@ -127,8 +109,8 @@ $formatDate = static function (?\DateTimeImmutable $date) use ($locale, $moisFr,
 <?php /* 4 — GALERIES : une carte par rubrique publiée, alimentée par la base. */ ?>
 <?php if ($rubriques !== []) : ?>
 <section class="galeries wrap" id="galeries">
-  <p class="eyebrow"><?= e($locale === Locale::Fr ? 'Galeries' : 'Galleries') ?></p>
-  <h2><?= e($locale === Locale::Fr ? 'Le travail, par technique' : 'The work, by medium') ?></h2>
+  <p class="eyebrow"><?= $t('home.galleries_eyebrow') ?></p>
+  <h2><?= $t('home.galleries_title') ?></h2>
   <?php /* Au-delà de deux rubriques, la grille passe en auto-fit : ajouter une
            rubrique en back-office ne demande aucune retouche. */ ?>
   <div class="gal-grid<?php if (count($rubriques) > 2) : ?> auto<?php endif; ?>">
@@ -138,7 +120,7 @@ $formatDate = static function (?\DateTimeImmutable $date) use ($locale, $moisFr,
       <?php if ($rubrique->description($locale) !== null) : ?>
       <p><?= e(mb_substr(trim(strip_tags($rubrique->description($locale))), 0, 220)) ?></p>
       <?php endif; ?>
-      <span class="lien"><?= e(($locale === Locale::Fr ? 'Voir ' : 'View ') . mb_strtolower($rubrique->title($locale))) ?></span>
+      <span class="lien"><?= $t('home.gallery_link', ['name' => mb_strtolower($rubrique->title($locale))]) ?></span>
     </a>
     <?php endforeach; ?>
   </div>
@@ -161,7 +143,7 @@ $formatDate = static function (?\DateTimeImmutable $date) use ($locale, $moisFr,
 <?php if ($texte($studio, 'title') !== null) : ?>
 <section class="atelier wrap" id="atelier">
   <div class="atelier-grid">
-    <div class="portrait"><span><?= e($locale === Locale::Fr ? 'Portrait d’atelier' : 'Studio portrait') ?></span></div>
+    <div class="portrait"><span><?= $t('home.studio_portrait') ?></span></div>
     <div>
       <?php if ($texte($studio, 'eyebrow') !== null) : ?><p class="eyebrow"><?= e($texte($studio, 'eyebrow')) ?></p><?php endif; ?>
       <h2><?= e($texte($studio, 'title')) ?></h2>
@@ -172,7 +154,7 @@ $formatDate = static function (?\DateTimeImmutable $date) use ($locale, $moisFr,
       <?php // 02-front §2 (module 6) : le bouton mène à la page « À propos ». ?>
       <p class="cta-row">
         <a class="btn btn-vide" href="<?= attr($url->route('page.about', ['locale' => $locale->value])) ?>">
-          <?= e($locale === Locale::Fr ? 'Parcours et démarche' : 'Path and approach') ?>
+          <?= $t('home.studio_cta') ?>
         </a>
       </p>
     </div>
@@ -184,14 +166,14 @@ $formatDate = static function (?\DateTimeImmutable $date) use ($locale, $moisFr,
 <?php if ($recentPosts !== []) : ?>
 <section class="actus" id="actus">
   <div class="wrap">
-    <p class="eyebrow"><?= e($locale === Locale::Fr ? 'Actualités' : 'News') ?></p>
-    <h2><?= e($texte($news, 'title') ?? ($locale === Locale::Fr ? 'Expositions et travail en cours' : 'Exhibitions and work in progress')) ?></h2>
+    <p class="eyebrow"><?= $t('home.news_eyebrow') ?></p>
+    <h2><?php if ($texte($news, 'title') !== null) : ?><?= e($texte($news, 'title')) ?><?php else : ?><?= $t('home.news_title') ?><?php endif; ?></h2>
     <div class="actu-liste">
       <?php foreach ($recentPosts as $post) : ?>
         <?php $dateAffichee = $post->eventDate ?? $post->publishedAt; ?>
       <article class="actu">
         <?php if ($dateAffichee !== null) : ?>
-        <time datetime="<?= attr($dateAffichee->format('Y-m-d')) ?>"><?= e($formatDate($dateAffichee)) ?></time>
+        <time datetime="<?= attr($dateAffichee->format('Y-m-d')) ?>"><?= e(dateLong($dateAffichee, $locale)) ?></time>
         <?php endif; ?>
         <h3><a href="<?= attr($articleUrl($post)) ?>"><?= e($post->title($locale)) ?></a></h3>
         <?php if ($post->isEvent() && $post->eventPlace !== null) : ?>
@@ -201,7 +183,7 @@ $formatDate = static function (?\DateTimeImmutable $date) use ($locale, $moisFr,
       <?php endforeach; ?>
     </div>
     <p class="actus-plus">
-      <a href="<?= attr($newsIndexUrl) ?>"><?= e($locale === Locale::Fr ? 'Toutes les actus' : 'All news') ?></a>
+      <a href="<?= attr($newsIndexUrl) ?>"><?= $t('home.all_news') ?></a>
     </p>
   </div>
 </section>
@@ -210,7 +192,7 @@ $formatDate = static function (?\DateTimeImmutable $date) use ($locale, $moisFr,
 <?php /* 8 — CONTACT. */ ?>
 <?php if ($texte($contact, 'title') !== null) : ?>
 <section class="contact wrap" id="contact">
-  <p class="eyebrow"><?= e($texte($contact, 'eyebrow') ?? ($locale === Locale::Fr ? 'Contact' : 'Contact')) ?></p>
+  <p class="eyebrow"><?php if ($texte($contact, 'eyebrow') !== null) : ?><?= e($texte($contact, 'eyebrow')) ?><?php else : ?><?= $t('nav.contact') ?><?php endif; ?></p>
   <h2><?= e($texte($contact, 'title')) ?></h2>
   <?php if ($texte($contact, 'text') !== null) : ?><p><?= e($texte($contact, 'text')) ?></p><?php endif; ?>
 </section>
