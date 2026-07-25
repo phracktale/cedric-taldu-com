@@ -257,6 +257,7 @@ class ComposerStaticInitd6e83bb86c354df1a881ef8b472112b4
         'App\\Service\\Payment\\PaymentEventHandler' => __DIR__ . '/../..' . '/src/Service/Payment/PaymentEventHandler.php',
         'App\\Service\\Payment\\PaymentGateway' => __DIR__ . '/../..' . '/src/Service/Payment/PaymentGateway.php',
         'App\\Service\\Payment\\StripeCheckoutGateway' => __DIR__ . '/../..' . '/src/Service/Payment/StripeCheckoutGateway.php',
+        'App\\Service\\Payment\\StripeConfig' => __DIR__ . '/../..' . '/src/Service/Payment/StripeConfig.php',
         'App\\Service\\Payment\\WebhookEvent' => __DIR__ . '/../..' . '/src/Service/Payment/WebhookEvent.php',
         'App\\Service\\Payment\\WebhookOutcome' => __DIR__ . '/../..' . '/src/Service/Payment/WebhookOutcome.php',
         'App\\Service\\Payment\\WebhookSignature' => __DIR__ . '/../..' . '/src/Service/Payment/WebhookSignature.php',
