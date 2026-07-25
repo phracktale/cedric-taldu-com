@@ -86,6 +86,20 @@ final class ArtworkRepository
         return $this->findByIds(self::identifiers($statement));
     }
 
+    /**
+     * Toutes les œuvres visibles, tous rubriques confondues — pour le sitemap.
+     *
+     * @return list<Artwork>
+     */
+    public function findAllPublished(): array
+    {
+        $statement = $this->pdo->query(
+            'SELECT a.id FROM artworks a WHERE ' . self::VISIBLE . ' ORDER BY a.id ASC'
+        );
+
+        return $statement === false ? [] : $this->findByIds(self::identifiers($statement));
+    }
+
     public function countPublishedInCategory(int $categoryId, ?int $seriesId): int
     {
         $sql = 'SELECT COUNT(*) FROM artworks a WHERE a.category_id = :category AND ' . self::VISIBLE

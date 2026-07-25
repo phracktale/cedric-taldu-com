@@ -113,6 +113,7 @@ use App\Service\Mail\ContactMailer;
 use App\Http\Controller\Front\ContactController;
 use App\Http\Controller\Front\BlogController;
 use App\Http\Controller\Front\PageController;
+use App\Http\Controller\Front\SitemapController;
 use App\Http\Controller\Admin\PostController as AdminPostController;
 use App\Http\Controller\Admin\MessageController as AdminMessageController;
 use App\Http\Controller\Admin\PageController as AdminPageController;
@@ -630,6 +631,15 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(Chrome::class),
         $c->get(PageRepository::class),
         $c->get(UrlGenerator::class),
+    ));
+
+    $container->set(SitemapController::class, static fn (Container $c): SitemapController => new SitemapController(
+        $c->get(UrlGenerator::class),
+        $c->get(CategoryRepository::class),
+        $c->get(ArtworkRepository::class),
+        $c->get(PostRepository::class),
+        $c->get(PageRepository::class),
+        $c->get(ClockInterface::class),
     ));
 
     $container->set(BlogController::class, static fn (Container $c): BlogController => new BlogController(

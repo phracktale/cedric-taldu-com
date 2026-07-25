@@ -65,6 +65,15 @@ final class Response
         return (new self($body, $status))->withHeader('Content-Type', 'application/json; charset=utf-8');
     }
 
+    /**
+     * Reponse XML : sitemap (05-i18n-seo §5). Le corps est deja echappe pour XML
+     * par l'appelant ; cette fabrique ne fixe que le type de contenu.
+     */
+    public static function xml(string $body, int $status = 200): self
+    {
+        return (new self($body, $status))->withHeader('Content-Type', 'application/xml; charset=utf-8');
+    }
+
     public function withHeader(string $name, string $value): self
     {
         if (self::containsControlCharacter($name) || self::containsControlCharacter($value)) {

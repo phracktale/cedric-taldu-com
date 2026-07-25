@@ -2,7 +2,7 @@
 #
 # Hors production, l'en-tete X-Robots-Tag: noindex, nofollow est posee sur
 # toutes les reponses par le middleware SecurityHeaders, et prime sur ce
-# fichier (09-environnements §7). Le sitemap est genere dynamiquement au lot 6.
+# fichier (09-environnements §7).
 
 User-agent: *
 
@@ -13,3 +13,5 @@ Disallow: /cart
 Disallow: /commande
 Disallow: /checkout
 Disallow: /*?preview=
+
+Sitemap: https://cedrictaldu.com/sitemap.xml
