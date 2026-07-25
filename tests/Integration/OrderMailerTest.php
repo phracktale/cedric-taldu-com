@@ -40,7 +40,7 @@ final class OrderMailerTest extends TestCase
 
         $this->mailer = new ArrayMailer();
         $this->orderMailer = new OrderMailer(
-            new View($racine . '/templates', self::url($racine)),
+            new View($racine . '/templates', self::url($racine), \Tests\Support\Lang::translator()),
             $this->mailer,
             'artiste@example.test',
             'Cédric Taldu',
