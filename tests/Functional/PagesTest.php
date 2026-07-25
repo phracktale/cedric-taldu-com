@@ -44,6 +44,18 @@ final class PagesTest extends FunctionalTestCase
         $this->assertStringContainsString('About', $reponse->body);
     }
 
+    public function test_une_page_porte_son_canonique_et_ses_hreflang(): void
+    {
+        $corps = $this->get('/cedric-taldu/fr/mentions-legales')->body;
+
+        $this->assertStringContainsString(
+            '<link rel="canonical" href="https://customer.phracktale.com/cedric-taldu/fr/mentions-legales">',
+            $corps,
+        );
+        $this->assertStringContainsString('hreflang="en"', $corps);
+        $this->assertStringContainsString('hreflang="x-default"', $corps);
+    }
+
     public function test_une_page_depubliee_repond_404(): void
     {
         // Pas d'énumération : une page dépubliée est introuvable, pas interdite.

@@ -49,6 +49,19 @@ final class BlogTest extends FunctionalTestCase
         $this->assertStringContainsString('Le corps de l’article.', $response->body);
     }
 
+    public function test_l_article_porte_son_canonique(): void
+    {
+        (new PostFactory($this->pdo))->publishedAt('2026-06-01 09:00:00')
+            ->translated('fr', 'mon-expo', 'Mon exposition')->create();
+
+        $corps = $this->get('/cedric-taldu/fr/actus/mon-expo')->body;
+
+        $this->assertStringContainsString(
+            '<link rel="canonical" href="https://customer.phracktale.com/cedric-taldu/fr/actus/mon-expo">',
+            $corps,
+        );
+    }
+
     public function test_un_slug_inconnu_renvoie_404(): void
     {
         $response = $this->get('/cedric-taldu/fr/actus/inexistant');
