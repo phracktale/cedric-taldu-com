@@ -40,6 +40,19 @@ DirectoryIndex index.php
     Require all denied
 </FilesMatch>
 
+# --- Sitemap : une ROUTE, pas un fichier -------------------------------------
+#
+# Apache refuse les *.xml demandes A LA RACINE du DocumentRoot (403 AH01630)
+# avant meme la reecriture — un fichier .xml en sous-dossier, lui, est route
+# normalement. « /sitemap.xml » etant une route servie par le controleur
+# frontal (SitemapController), on l'autorise explicitement : la reecriture
+# l'envoie alors a index.php. Verifie sur Thor (lot 7) et valable a l'identique
+# en production (meme .htaccess). Aucun autre .xml n'est expose.
+
+<Files "sitemap.xml">
+    Require all granted
+</Files>
+
 # --- Types et en-tetes statiques ---------------------------------------------
 
 <IfModule mod_headers.c>
