@@ -61,6 +61,11 @@ final class BlogController
             'medias' => $this->coversFor($posts),
             'page' => $page,
             'pages' => $pages,
+            'canonical' => $this->url->absolute('blog.index', ['locale' => $locale->value]),
+            'alternates' => $this->url->hreflangAlternates('blog.index', [
+                Locale::Fr->value => [],
+                Locale::En->value => [],
+            ]),
             'localeSwitch' => $this->url->localeAlternates('blog.index'),
             'articleUrl' => fn (string $slug): string
                 => $this->url->route('blog.show', ['locale' => $locale->value, 'slug' => $slug]),
@@ -88,12 +93,36 @@ final class BlogController
             'post' => $post,
             'cover' => $cover,
             'listUrl' => $this->url->route('blog.index', ['locale' => $locale->value]),
+            'canonical' => $this->url->absolute('blog.show', [
+                'locale' => $locale->value,
+                'slug' => $post->slug($locale)->value,
+            ]),
+            'alternates' => $this->url->hreflangAlternates('blog.show', $this->translatedSlugs($post)),
             'localeSwitch' => $this->url->localeAlternates('blog.show', [
                 Locale::Fr->value => ['slug' => $post->slug(Locale::Fr)->value],
                 Locale::En->value => ['slug' => $post->slug(Locale::En)->value],
             ]),
             'jsonLd' => $this->articleGraph($post, $locale),
         ], layout: 'layouts/public'));
+    }
+
+    /**
+     * Slugs par langue RÉELLEMENT traduite, pour n'émettre le hreflang que des
+     * paires qui existent (05-i18n-seo §3).
+     *
+     * @return array<string, array<string, string>>
+     */
+    private function translatedSlugs(\App\Domain\Editorial\Post $post): array
+    {
+        $slugs = [];
+
+        foreach (Locale::cases() as $locale) {
+            if ($post->isTranslatedIn($locale)) {
+                $slugs[$locale->value] = ['slug' => $post->slug($locale)->value];
+            }
+        }
+
+        return $slugs;
     }
 
     /**

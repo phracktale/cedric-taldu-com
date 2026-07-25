@@ -69,12 +69,22 @@ final class PageController
             throw new NotFoundException('Page introuvable.');
         }
 
+        $route = 'page.' . $code;
+        $translated = [];
+        foreach (Locale::cases() as $autre) {
+            if ($page->isTranslatedIn($autre)) {
+                $translated[$autre->value] = [];
+            }
+        }
+
         return Response::html($this->view->render('front/page', [
             ...$this->chrome->base($request, $locale),
             'metaTitle' => $page->title($locale),
             'page' => $page,
+            'canonical' => $this->url->absolute($route, ['locale' => $locale->value]),
+            'alternates' => $this->url->hreflangAlternates($route, $translated),
             // Le code fixe donne le nom de route (page.about, page.terms, …).
-            'localeSwitch' => $this->url->localeAlternates('page.' . $code),
+            'localeSwitch' => $this->url->localeAlternates($route),
         ], layout: 'layouts/public'));
     }
 
