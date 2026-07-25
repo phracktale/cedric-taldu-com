@@ -136,36 +136,4 @@ final class StripeCheckoutGateway implements PaymentGateway
             is_array($object) ? $object : [],
         );
     }
-
-    /**
-     * Controle au demarrage : une cle de test en production, ou une cle de
-     * production ailleurs, est une faute grave (06-securite §7).
-     *
-     * @throws \RuntimeException
-     */
-    public static function assertKeyMatchesEnvironment(string $secretKey, string $appEnv): void
-    {
-        // Une cle absente signifie « paiement non configuré », pas « cle
-        // egaree » : le site — et son portfolio — demarre, et c'est la
-        // creation de session Stripe qui echouera si l'on tente de payer. Le
-        // controle ne vise que la MECONNAISSANCE d'une cle PRESENTE.
-        if ($secretKey === '') {
-            return;
-        }
-
-        $isLive = str_starts_with($secretKey, 'sk_live_');
-        $isProduction = $appEnv === 'prod';
-
-        if ($isLive && !$isProduction) {
-            throw new \RuntimeException(
-                'Clé Stripe de PRODUCTION hors production : un paiement réel serait encaissé par erreur.'
-            );
-        }
-
-        if (!$isLive && $isProduction) {
-            throw new \RuntimeException(
-                'Clé Stripe de TEST en production : aucun paiement ne serait réellement encaissé.'
-            );
-        }
-    }
 }

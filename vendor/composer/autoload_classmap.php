@@ -221,6 +221,7 @@ return array(
     'App\\Service\\Payment\\PaymentEventHandler' => $baseDir . '/src/Service/Payment/PaymentEventHandler.php',
     'App\\Service\\Payment\\PaymentGateway' => $baseDir . '/src/Service/Payment/PaymentGateway.php',
     'App\\Service\\Payment\\StripeCheckoutGateway' => $baseDir . '/src/Service/Payment/StripeCheckoutGateway.php',
+    'App\\Service\\Payment\\StripeConfig' => $baseDir . '/src/Service/Payment/StripeConfig.php',
     'App\\Service\\Payment\\WebhookEvent' => $baseDir . '/src/Service/Payment/WebhookEvent.php',
     'App\\Service\\Payment\\WebhookOutcome' => $baseDir . '/src/Service/Payment/WebhookOutcome.php',
     'App\\Service\\Payment\\WebhookSignature' => $baseDir . '/src/Service/Payment/WebhookSignature.php',
