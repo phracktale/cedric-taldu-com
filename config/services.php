@@ -53,6 +53,7 @@ use App\Http\Controller\Front\StripeWebhookController;
 use App\Http\Middleware\AuthGuard;
 use App\Http\Middleware\CsrfGuard;
 use App\Http\Middleware\Locale;
+use App\Http\Middleware\RedirectMiddleware;
 use App\Http\Middleware\SecurityHeaders;
 use App\Repository\Admin\ArtworkAdminRepository;
 use App\Repository\Admin\CategoryAdminRepository;
@@ -107,12 +108,16 @@ use App\Service\Spam\Throttle;
 use App\Repository\ContactMessageRepository;
 use App\Repository\PostRepository;
 use App\Repository\PageRepository;
+use App\Repository\RedirectRepository;
 use App\Repository\Admin\PostAdminRepository;
 use App\Repository\Admin\PageAdminRepository;
 use App\Service\Mail\ContactMailer;
 use App\Http\Controller\Front\ContactController;
 use App\Http\Controller\Front\BlogController;
 use App\Http\Controller\Front\PageController;
+use App\Http\Controller\Front\SitemapController;
+use App\Service\Seo\StructuredData;
+use App\Service\Seo\SlugHistory;
 use App\Http\Controller\Admin\PostController as AdminPostController;
 use App\Http\Controller\Admin\MessageController as AdminMessageController;
 use App\Http\Controller\Admin\PageController as AdminPageController;
@@ -373,6 +378,11 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
     );
 
     $container->set(
+        RedirectRepository::class,
+        static fn (Container $c): RedirectRepository => new RedirectRepository($c->get(PDO::class)),
+    );
+
+    $container->set(
         PageAdminRepository::class,
         static fn (Container $c): PageAdminRepository => new PageAdminRepository($c->get(PDO::class)),
     );
@@ -512,6 +522,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(PostRepository::class),
         $c->get(ClockInterface::class),
         $c->get(UrlGenerator::class),
+        $c->get(StructuredData::class),
     ));
 
     $container->set(CategoryController::class, static fn (Container $c): CategoryController => new CategoryController(
@@ -522,6 +533,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(ArtworkRepository::class),
         $c->get(MediaRepository::class),
         $c->get(UrlGenerator::class),
+        $c->get(StructuredData::class),
     ));
 
     $container->set(ArtworkController::class, static fn (Container $c): ArtworkController => new ArtworkController(
@@ -533,6 +545,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(UrlGenerator::class),
         $c->get(PreviewToken::class),
         $c->get(ProductRepository::class),
+        $c->get(StructuredData::class),
     ));
 
     // --- Controleurs d'administration --------------------------------------
@@ -568,6 +581,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(TranslationInput::class),
             $c->get(PreviewToken::class),
             $c->get(UrlGenerator::class),
+            $c->get(SlugHistory::class),
         ),
     );
 
@@ -578,6 +592,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(CategoryAdminRepository::class),
             $c->get(SeriesAdminRepository::class),
             $c->get(TranslationInput::class),
+            $c->get(SlugHistory::class),
         ),
     );
 
@@ -587,6 +602,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(AdminChrome::class),
             $c->get(PostAdminRepository::class),
             $c->get(TranslationInput::class),
+            $c->get(SlugHistory::class),
         ),
     );
 
@@ -632,6 +648,22 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(UrlGenerator::class),
     ));
 
+    $container->set(StructuredData::class, static fn (): StructuredData => new StructuredData());
+
+    $container->set(SlugHistory::class, static fn (Container $c): SlugHistory => new SlugHistory(
+        $c->get(RedirectRepository::class),
+        $c->get(UrlGenerator::class),
+    ));
+
+    $container->set(SitemapController::class, static fn (Container $c): SitemapController => new SitemapController(
+        $c->get(UrlGenerator::class),
+        $c->get(CategoryRepository::class),
+        $c->get(ArtworkRepository::class),
+        $c->get(PostRepository::class),
+        $c->get(PageRepository::class),
+        $c->get(ClockInterface::class),
+    ));
+
     $container->set(BlogController::class, static fn (Container $c): BlogController => new BlogController(
         $c->get(View::class),
         $c->get(Chrome::class),
@@ -639,6 +671,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(MediaRepository::class),
         $c->get(UrlGenerator::class),
         $c->get(ClockInterface::class),
+        $c->get(StructuredData::class),
     ));
 
     $container->set(ContactController::class, static fn (Container $c): ContactController => new ContactController(
@@ -713,6 +746,9 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         [
             new SecurityHeaders($config, $c->get(RandomInterface::class)),
             new Locale($config),
+            // Sur un 404 public, tente une redirection 301 d'un ancien slug avant
+            // de rendre la page d'erreur (05-i18n-seo §5).
+            new RedirectMiddleware($c->get(RedirectRepository::class)),
             new CsrfGuard($c->get(Csrf::class), $c->get(LoggerInterface::class)),
             new AuthGuard($c->get(AdminSession::class), $c->get(LoggerInterface::class)),
         ],

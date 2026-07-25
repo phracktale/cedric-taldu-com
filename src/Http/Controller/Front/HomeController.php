@@ -17,6 +17,7 @@ use App\Repository\MediaRepository;
 use App\Repository\PostRepository;
 use App\Repository\SettingRepository;
 use App\Service\I18n\UrlGenerator;
+use App\Service\Seo\StructuredData;
 use App\Service\View\Chrome;
 
 /**
@@ -56,6 +57,7 @@ final class HomeController
         private readonly PostRepository $posts,
         private readonly ClockInterface $clock,
         private readonly UrlGenerator $url,
+        private readonly StructuredData $seo,
     ) {
     }
 
@@ -73,6 +75,10 @@ final class HomeController
             'canonical' => $this->url->absolute('home', ['locale' => $locale->value]),
             'alternates' => $this->alternates(),
             'localeSwitch' => $this->alternatePaths(),
+            'jsonLd' => [
+                $this->seo->person($this->url->absolute('home', ['locale' => $locale->value])),
+                $this->seo->website($this->url->absolute('home', ['locale' => $locale->value])),
+            ],
             'hero' => $content['home.hero'],
             'triptych' => $content['home.triptych'],
             'shop' => $content['home.shop'],

@@ -16,6 +16,7 @@ use App\Repository\ArtworkRepository;
 use App\Repository\CategoryRepository;
 use App\Repository\MediaRepository;
 use App\Service\I18n\UrlGenerator;
+use App\Service\Seo\StructuredData;
 use App\Service\View\Chrome;
 
 /**
@@ -40,6 +41,7 @@ final class ArtworkController
         private readonly UrlGenerator $url,
         private readonly \App\Service\Content\PreviewToken $preview,
         private readonly \App\Repository\ProductRepository $products,
+        private readonly StructuredData $seo,
     ) {
     }
 
@@ -85,6 +87,8 @@ final class ArtworkController
             ]),
             'alternates' => $this->alternates($artwork, $locale),
             'localeSwitch' => $this->alternatePaths($artwork),
+            // Un aperçu de brouillon n'est pas indexable : pas de données structurées.
+            'jsonLd' => $isPreview ? null : $this->artworkGraph($artwork, $category, $locale),
             'currentCategoryId' => $artwork->categoryId,
             'artwork' => $artwork,
             'category' => $category,
@@ -107,6 +111,51 @@ final class ArtworkController
                 ->withHeader('X-Robots-Tag', 'noindex, nofollow')
                 ->withHeader('Cache-Control', 'no-store, private')
             : $response;
+    }
+
+    /**
+     * Product + VisualArtwork + fil d'Ariane de l'œuvre (05-i18n-seo §5).
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function artworkGraph(Artwork $artwork, ?\App\Domain\Catalog\Category $category, Locale $locale): array
+    {
+        $url = $this->url->absolute('artwork.show', [
+            'locale' => $locale->value,
+            'slug' => $artwork->slug($locale)->value,
+        ]);
+
+        $product = $this->seo->artwork([
+            'name' => $artwork->title($locale),
+            'url' => $url,
+            'technique' => $artwork->technique,
+            'widthMm' => $artwork->dimensions?->widthMm,
+            'heightMm' => $artwork->dimensions?->heightMm,
+            'priceDecimal' => $artwork->price?->decimal(),
+            'availability' => $artwork->status->schemaAvailability(),
+            'image' => null,
+        ]);
+
+        $trail = [['name' => self::home($locale), 'url' => $this->url->absolute('home', ['locale' => $locale->value])]];
+
+        if ($category !== null) {
+            $trail[] = [
+                'name' => $category->title($locale),
+                'url' => $this->url->absolute('category.show', [
+                    'locale' => $locale->value,
+                    'slug' => $category->slug($locale)->value,
+                ]),
+            ];
+        }
+
+        $trail[] = ['name' => $artwork->title($locale), 'url' => $url];
+
+        return [$product, $this->seo->breadcrumb($trail)];
+    }
+
+    private static function home(Locale $locale): string
+    {
+        return $locale === Locale::Fr ? 'Accueil' : 'Home';
     }
 
     /**

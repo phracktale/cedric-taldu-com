@@ -14,6 +14,7 @@ use App\Domain\Slug;
 use App\Repository\Admin\CategoryAdminRepository;
 use App\Repository\Admin\SeriesAdminRepository;
 use App\Service\Content\TranslationInput;
+use App\Service\Seo\SlugHistory;
 use App\Service\View\AdminChrome;
 
 /**
@@ -50,6 +51,7 @@ final class CategoryController
         private readonly CategoryAdminRepository $categories,
         private readonly SeriesAdminRepository $series,
         private readonly TranslationInput $translations,
+        private readonly SlugHistory $slugHistory,
     ) {
     }
 
@@ -113,10 +115,19 @@ final class CategoryController
         }
 
         $id = (int) $existing['id'];
+        $slugged = $this->withSlugs($translations, $request, $id);
+
+        // 05-i18n-seo §5 : le changement d'un slug PUBLIÉ laisse une 301 depuis
+        // l'ancien chemin. Une rubrique en brouillon n'a pas d'ancienne URL à
+        // préserver.
+        if (($existing['is_published'] ?? false) === true) {
+            $before = is_array($existing['translations'] ?? null) ? $existing['translations'] : [];
+            $this->slugHistory->capture('category.show', $before, $slugged, $request->basePath, $this->chrome->now());
+        }
 
         $this->categories->update(
             $id,
-            $this->withSlugs($translations, $request, $id),
+            $slugged,
             self::mediaId($request->input('couverture')),
             $this->chrome->now(),
         );

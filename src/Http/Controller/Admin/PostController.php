@@ -46,6 +46,7 @@ final class PostController
         private readonly AdminChrome $chrome,
         private readonly PostAdminRepository $posts,
         private readonly TranslationInput $translations,
+        private readonly \App\Service\Seo\SlugHistory $slugHistory,
     ) {
     }
 
@@ -112,10 +113,17 @@ final class PostController
         }
 
         $id = (int) $existing['id'];
+        $slugged = $this->withSlugs($translations, $request, $id);
+
+        // 05-i18n-seo §5 : un article publié dont le slug change laisse une 301.
+        if (($existing['is_published'] ?? false) === true) {
+            $before = is_array($existing['translations'] ?? null) ? $existing['translations'] : [];
+            $this->slugHistory->capture('blog.show', $before, $slugged, $request->basePath, $this->chrome->now());
+        }
 
         $this->posts->update(
             $id,
-            $this->withSlugs($translations, $request, $id),
+            $slugged,
             self::mediaId($request->input('couverture')),
             $request->input('date_evenement'),
             $request->input('lieu_evenement'),

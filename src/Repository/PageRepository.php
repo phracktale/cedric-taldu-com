@@ -40,6 +40,18 @@ final class PageRepository
     }
 
     /**
+     * Toutes les pages publiées — pour le sitemap.
+     *
+     * @return list<Page>
+     */
+    public function findAllPublished(): array
+    {
+        $statement = $this->pdo->query(self::SELECT . ' WHERE p.is_published = 1 ORDER BY p.id ASC');
+
+        return $statement === false ? [] : $this->hydrateAll($statement->fetchAll());
+    }
+
+    /**
      * @param array<int, array<string, mixed>> $rows
      * @return list<Page>
      */

@@ -70,6 +70,31 @@ final class UrlGenerator
     }
 
     /**
+     * hreflang ABSOLUS par langue + x-default, pour les balises
+     * `<link rel="alternate">` (05-i18n-seo §5). Ne recevoir que les langues
+     * réellement traduites évite d'annoncer une version qui n'existe pas (§3).
+     *
+     * @param array<string, array<string, string|int>> $paramsByLocale
+     * @return array<string, string>
+     */
+    public function hreflangAlternates(string $name, array $paramsByLocale): array
+    {
+        $alternates = [];
+
+        foreach ($paramsByLocale as $code => $params) {
+            $alternates[$code] = $this->absolute($name, [...$params, 'locale' => $code]);
+        }
+
+        $reference = Locale::reference()->value;
+
+        if (isset($alternates[$reference])) {
+            $alternates['x-default'] = $alternates[$reference];
+        }
+
+        return $alternates;
+    }
+
+    /**
      * URL absolue, construite depuis APP_URL et jamais depuis l'en-tete Host :
      * sert aux liens canoniques, au sitemap, aux e-mails et aux retours Stripe
      * (05-i18n-seo §5, 09-environnements §3.8).

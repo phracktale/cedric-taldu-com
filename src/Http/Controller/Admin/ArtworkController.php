@@ -63,6 +63,7 @@ final class ArtworkController
         private readonly TranslationInput $translations,
         private readonly PreviewToken $preview,
         private readonly UrlGenerator $url,
+        private readonly \App\Service\Seo\SlugHistory $slugHistory,
     ) {
     }
 
@@ -149,8 +150,15 @@ final class ArtworkController
         }
 
         $fields = $this->fields($request);
+        $slugged = $this->withSlugs($translations, $request, $id);
 
-        $this->artworks->update($id, $fields, $this->withSlugs($translations, $request, $id), $this->chrome->now());
+        // 05-i18n-seo §5 : une œuvre publiée dont le slug change laisse une 301.
+        if (($existing['is_published'] ?? false) === true) {
+            $before = is_array($existing['translations'] ?? null) ? $existing['translations'] : [];
+            $this->slugHistory->capture('artwork.show', $before, $slugged, $request->basePath, $this->chrome->now());
+        }
+
+        $this->artworks->update($id, $fields, $slugged, $this->chrome->now());
 
         $this->chrome->audit()->record(
             $this->chrome->currentUserId(),

@@ -20,6 +20,7 @@ use App\Repository\CategoryRepository;
 use App\Repository\MediaRepository;
 use App\Repository\SeriesRepository;
 use App\Service\I18n\UrlGenerator;
+use App\Service\Seo\StructuredData;
 use App\Service\View\Chrome;
 
 /**
@@ -45,6 +46,7 @@ final class CategoryController
         private readonly ArtworkRepository $artworks,
         private readonly MediaRepository $medias,
         private readonly UrlGenerator $url,
+        private readonly StructuredData $seo,
     ) {
     }
 
@@ -89,6 +91,7 @@ final class CategoryController
             ]),
             'alternates' => $this->alternates($category, $locale),
             'localeSwitch' => $this->alternatePaths($category),
+            'jsonLd' => $this->categoryGraph($category, $artworks, $locale),
             'currentCategoryId' => $category->id,
             'category' => $category,
             'series' => $series,
@@ -140,6 +143,39 @@ final class CategoryController
         }
 
         return $this->medias->findByIds($ids);
+    }
+
+    /**
+     * CollectionPage + ItemList des œuvres de la page + fil d'Ariane (05-i18n §5).
+     *
+     * @param list<Artwork> $artworks
+     * @return list<array<string, mixed>>
+     */
+    private function categoryGraph(Category $category, array $artworks, Locale $locale): array
+    {
+        $url = $this->url->absolute('category.show', [
+            'locale' => $locale->value,
+            'slug' => $category->slug($locale)->value,
+        ]);
+
+        $itemUrls = [];
+        foreach ($artworks as $artwork) {
+            $itemUrls[] = $this->url->absolute('artwork.show', [
+                'locale' => $locale->value,
+                'slug' => $artwork->slug($locale)->value,
+            ]);
+        }
+
+        return [
+            $this->seo->category($category->title($locale), $url, $itemUrls),
+            $this->seo->breadcrumb([
+                [
+                    'name' => $locale === Locale::Fr ? 'Accueil' : 'Home',
+                    'url' => $this->url->absolute('home', ['locale' => $locale->value]),
+                ],
+                ['name' => $category->title($locale), 'url' => $url],
+            ]),
+        ];
     }
 
     /**
