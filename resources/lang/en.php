@@ -35,4 +35,16 @@ return [
 
     // Preproduction banner
     'env.preprod' => 'Preproduction — :env · demo content',
+
+    // Cart
+    'cart.title' => 'Your cart',
+    'cart.empty' => 'Your cart is empty.',
+    'cart.item' => 'Item',
+    'cart.quantity' => 'Quantity',
+    'cart.amount' => 'Amount',
+    'cart.remove' => 'Remove',
+    'cart.update' => 'Update',
+    'cart.subtotal' => 'Subtotal',
+    'cart.reminder' => 'Shipping and any VAT are calculated at the next step.',
+    'cart.checkout' => 'Proceed to checkout',
 ];

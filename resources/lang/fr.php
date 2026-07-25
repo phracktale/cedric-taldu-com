@@ -37,4 +37,16 @@ return [
 
     // Bandeau de préproduction
     'env.preprod' => 'Préproduction — :env · contenus de démonstration',
+
+    // Panier
+    'cart.title' => 'Votre panier',
+    'cart.empty' => 'Votre panier est vide.',
+    'cart.item' => 'Article',
+    'cart.quantity' => 'Quantité',
+    'cart.amount' => 'Montant',
+    'cart.remove' => 'Retirer',
+    'cart.update' => 'Mettre à jour',
+    'cart.subtotal' => 'Sous-total',
+    'cart.reminder' => 'Les frais de port et la TVA éventuelle sont calculés à l’étape suivante.',
+    'cart.checkout' => 'Passer la commande',
 ];
