@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Core;
 
 use App\Core\Exception\TemplateNotFound;
+use App\Domain\Locale;
+use App\Service\I18n\Translator;
 use App\Service\I18n\UrlGenerator;
 use Throwable;
 
@@ -15,11 +17,14 @@ use Throwable;
  * deux variables exactement dans la portee du gabarit.
  *
  *  - $data : le tableau fourni par le controleur ;
- *  - $url  : le generateur d'URL, pour qu'aucun chemin ne soit ecrit en dur.
+ *  - $url  : le generateur d'URL, pour qu'aucun chemin ne soit ecrit en dur ;
+ *  - $t / $tRaw : la traduction d'interface, liee a la langue du gabarit.
  *
  * Volontairement PAS d'extract() ni de variables variables (src/CLAUDE.md) :
- * les deux locales sont declarees explicitement, et ce qui entre dans la portee
- * d'un gabarit se lit dans cette classe et nulle part ailleurs.
+ * les entrees dans la portee d'un gabarit se lisent dans cette classe et nulle
+ * part ailleurs. `$t` est une closure, et non une fonction globale : le
+ * catalogue et la langue courante sont un etat, que le projet interdit de porter
+ * en global (comme `$url`, qui depend du prefixe resolu par la requete).
  */
 final class View
 {
@@ -29,6 +34,7 @@ final class View
     public function __construct(
         private readonly string $templatesPath,
         private readonly UrlGenerator $url,
+        private readonly Translator $translator,
     ) {
     }
 
@@ -69,6 +75,18 @@ final class View
             fn (string $template, array $partialData = []): string
                 => $this->evaluate($this->resolve($template), $partialData, '');
 
+        // La langue du gabarit vient de son contexte ; un partiel qui n'en
+        // recoit pas retombe sur le francais, langue de reference.
+        $locale = ($data['locale'] ?? null) instanceof Locale ? $data['locale'] : Locale::reference();
+
+        $t =
+            /** @param array<string, string|int> $params */
+            fn (string $key, array $params = []): string => $this->translator->t($key, $locale, $params);
+
+        $tRaw =
+            /** @param array<string, string|int> $params */
+            fn (string $key, array $params = []): string => $this->translator->tRaw($key, $locale, $params);
+
         ob_start();
 
         try {
@@ -79,9 +97,11 @@ final class View
                 UrlGenerator $url,
                 string $content,
                 callable $partial,
+                callable $t,
+                callable $tRaw,
             ): void {
                 require $__template;
-            })($file, $data, $this->url, $content, $partial);
+            })($file, $data, $this->url, $content, $partial, $t, $tRaw);
 
             return (string) ob_get_clean();
         } catch (Throwable $exception) {

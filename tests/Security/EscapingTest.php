@@ -43,6 +43,11 @@ final class EscapingTest extends TestCase
      * responsabilite — d'ou HtmlSanitizerTest, et d'ou XssTest qui rejoue des
      * charges a travers le VRAI formulaire d'administration jusqu'a la page
      * publique.
+     *
+     * $t(...) est la traduction d'interface (05-i18n-seo §4), posee par Core\View :
+     * elle ECHAPPE par defaut (Translator::t), y compris ses parametres. Le
+     * pendant brut $tRaw(...) n'est PAS autorise ici : il sortirait du balisage
+     * sans echappement et n'a pas sa place dans un « <?= ».
      */
     private const ALLOWED = [
         '/^e\(/',
@@ -52,6 +57,7 @@ final class EscapingTest extends TestCase
         '/^richText\(/',
         '/^\$content$/',
         '/^\$partial\(/',
+        '/^\$t\(/',
     ];
 
     public function test_chaque_sortie_de_gabarit_passe_par_un_helper_autorise(): void

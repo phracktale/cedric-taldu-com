@@ -94,3 +94,33 @@ function jsonAttr(mixed $value): string
 
     return htmlspecialchars($json, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
+
+/**
+ * Date longue formatee selon la langue (05-i18n-seo §4).
+ *
+ *   FR : « 1 juin 2026 »      EN : « June 1, 2026 »
+ *
+ * Fonction PURE et sans etat, comme money() : les noms de mois sont la logique
+ * de formatage, au meme titre que les separateurs de Money::format(). Aucune
+ * dependance a ICU/NumberFormatter, pour la stabilite des tests et du mutualise.
+ * Le resultat est du texte simple ; les gabarits l'ecrivent via e(dateLong(...)).
+ */
+function dateLong(?DateTimeImmutable $date, App\Domain\Locale $locale): string
+{
+    if ($date === null) {
+        return '';
+    }
+
+    $months = [
+        'fr' => [1 => 'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+            'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'],
+        'en' => [1 => 'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'],
+    ];
+
+    $month = $months[$locale->value][(int) $date->format('n')];
+
+    return $locale === App\Domain\Locale::Fr
+        ? $date->format('j') . ' ' . $month . ' ' . $date->format('Y')
+        : $month . ' ' . $date->format('j') . ', ' . $date->format('Y');
+}
