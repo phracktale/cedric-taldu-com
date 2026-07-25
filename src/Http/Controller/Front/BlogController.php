@@ -15,6 +15,7 @@ use App\Domain\Slug;
 use App\Repository\MediaRepository;
 use App\Repository\PostRepository;
 use App\Service\I18n\UrlGenerator;
+use App\Service\Seo\StructuredData;
 use App\Service\View\Chrome;
 
 /**
@@ -35,6 +36,7 @@ final class BlogController
         private readonly MediaRepository $medias,
         private readonly UrlGenerator $url,
         private readonly ClockInterface $clock,
+        private readonly StructuredData $seo,
     ) {
     }
 
@@ -90,7 +92,35 @@ final class BlogController
                 Locale::Fr->value => ['slug' => $post->slug(Locale::Fr)->value],
                 Locale::En->value => ['slug' => $post->slug(Locale::En)->value],
             ]),
+            'jsonLd' => $this->articleGraph($post, $locale),
         ], layout: 'layouts/public'));
+    }
+
+    /**
+     * BlogPosting (ou Event si daté) + fil d'Ariane (05-i18n-seo §5).
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function articleGraph(\App\Domain\Editorial\Post $post, Locale $locale): array
+    {
+        $url = $this->url->absolute('blog.show', ['locale' => $locale->value, 'slug' => $post->slug($locale)->value]);
+        $home = $locale === Locale::Fr ? 'Accueil' : 'Home';
+        $news = $locale === Locale::Fr ? 'Actus' : 'News';
+
+        $article = $this->seo->article([
+            'name' => $post->title($locale),
+            'url' => $url,
+            'datePublished' => $post->publishedAt?->format('Y-m-d'),
+            'eventDate' => $post->eventDate?->format('Y-m-d'),
+            'eventPlace' => $post->eventPlace,
+            'image' => null,
+        ]);
+
+        return [$article, $this->seo->breadcrumb([
+            ['name' => $home, 'url' => $this->url->absolute('home', ['locale' => $locale->value])],
+            ['name' => $news, 'url' => $this->url->absolute('blog.index', ['locale' => $locale->value])],
+            ['name' => $post->title($locale), 'url' => $url],
+        ])];
     }
 
     /**

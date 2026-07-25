@@ -96,6 +96,36 @@ function jsonAttr(mixed $value): string
 }
 
 /**
+ * Bloc JSON-LD de donnees structurees (05-i18n-seo §5).
+ *
+ * Serialisation par json_encode avec les drapeaux JSON_HEX_*, JAMAIS par
+ * concatenation : un titre d'œuvre contenant « </script> » devient
+ * « </script> » et ne peut pas refermer la balise. Le nonce satisfait
+ * la CSP stricte (aucun script sans nonce).
+ *
+ * @param array<int|string, mixed>|null $graph un objet, ou une liste d'objets
+ */
+function jsonLd(?array $graph, string $nonce): string
+{
+    if ($graph === null || $graph === []) {
+        return '';
+    }
+
+    // JSON_HEX_TAG neutralise « < » et « > » (donc « </script> ») quels que
+    // soient les slashes : on peut laisser ceux-ci non echappes, pour des URL
+    // lisibles, sans rouvrir la faille de fermeture de balise.
+    $json = json_encode(
+        $graph,
+        JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+        | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
+    );
+
+    return '<script type="application/ld+json" nonce="'
+        . htmlspecialchars($nonce, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+        . '">' . $json . '</script>';
+}
+
+/**
  * Date longue formatee selon la langue (05-i18n-seo §4).
  *
  *   FR : « 1 juin 2026 »      EN : « June 1, 2026 »

@@ -114,6 +114,7 @@ use App\Http\Controller\Front\ContactController;
 use App\Http\Controller\Front\BlogController;
 use App\Http\Controller\Front\PageController;
 use App\Http\Controller\Front\SitemapController;
+use App\Service\Seo\StructuredData;
 use App\Http\Controller\Admin\PostController as AdminPostController;
 use App\Http\Controller\Admin\MessageController as AdminMessageController;
 use App\Http\Controller\Admin\PageController as AdminPageController;
@@ -513,6 +514,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(PostRepository::class),
         $c->get(ClockInterface::class),
         $c->get(UrlGenerator::class),
+        $c->get(StructuredData::class),
     ));
 
     $container->set(CategoryController::class, static fn (Container $c): CategoryController => new CategoryController(
@@ -523,6 +525,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(ArtworkRepository::class),
         $c->get(MediaRepository::class),
         $c->get(UrlGenerator::class),
+        $c->get(StructuredData::class),
     ));
 
     $container->set(ArtworkController::class, static fn (Container $c): ArtworkController => new ArtworkController(
@@ -534,6 +537,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(UrlGenerator::class),
         $c->get(PreviewToken::class),
         $c->get(ProductRepository::class),
+        $c->get(StructuredData::class),
     ));
 
     // --- Controleurs d'administration --------------------------------------
@@ -633,6 +637,8 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(UrlGenerator::class),
     ));
 
+    $container->set(StructuredData::class, static fn (): StructuredData => new StructuredData());
+
     $container->set(SitemapController::class, static fn (Container $c): SitemapController => new SitemapController(
         $c->get(UrlGenerator::class),
         $c->get(CategoryRepository::class),
@@ -649,6 +655,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(MediaRepository::class),
         $c->get(UrlGenerator::class),
         $c->get(ClockInterface::class),
+        $c->get(StructuredData::class),
     ));
 
     $container->set(ContactController::class, static fn (Container $c): ContactController => new ContactController(

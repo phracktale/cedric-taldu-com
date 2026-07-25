@@ -56,6 +56,18 @@ final class Money
         return $this->cents === 0;
     }
 
+    /**
+     * Montant décimal à point, pour schema.org (« 450.00 »).
+     *
+     * Par arithmétique ENTIERE — jamais de division flottante sur des centimes
+     * (src/CLAUDE.md, MoneyTypeTest) : les unités et la fraction sont séparées
+     * par intdiv et modulo.
+     */
+    public function decimal(): string
+    {
+        return intdiv($this->cents, 100) . '.' . str_pad((string) ($this->cents % 100), 2, '0', STR_PAD_LEFT);
+    }
+
     public function equals(self $other): bool
     {
         return $this->cents === $other->cents && $this->currency === $other->currency;

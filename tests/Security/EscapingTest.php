@@ -58,6 +58,7 @@ final class EscapingTest extends TestCase
         '/^\$content$/',
         '/^\$partial\(/',
         '/^\$t\(/',
+        '/^jsonLd\(/',
     ];
 
     public function test_chaque_sortie_de_gabarit_passe_par_un_helper_autorise(): void

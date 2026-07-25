@@ -43,6 +43,7 @@ $alternates = is_array($data['alternates'] ?? null) ? $data['alternates'] : [];
 <?php foreach ($alternates as $code => $href) : ?>
 <link rel="alternate" hreflang="<?= attr($code) ?>" href="<?= attr($href) ?>">
 <?php endforeach; ?>
+<?= jsonLd(is_array($data['jsonLd'] ?? null) ? $data['jsonLd'] : null, $nonce) ?>
 <link rel="preload" href="<?= attr($url->asset('fonts/Marcellus-Regular.woff2')) ?>" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="<?= attr($url->asset('css/site.css')) ?>">
 <script type="module" src="<?= attr($url->asset('js/app.js')) ?>" nonce="<?= attr($nonce) ?>" defer></script>
