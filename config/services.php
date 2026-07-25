@@ -98,6 +98,7 @@ use App\Service\Payment\CheckoutService;
 use App\Service\Payment\PaymentEventHandler;
 use App\Service\Payment\PaymentGateway;
 use App\Service\Payment\StripeCheckoutGateway;
+use App\Service\Payment\StripeConfig;
 use App\Service\Spam\FormTimestamp;
 use App\Service\Spam\RateLimiter;
 use App\Service\Spam\SpamGuard;
@@ -124,13 +125,19 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
     // parametre permet aux tests de fournir le leur sans toucher au fichier.
     $env ??= Env::load($rootPath . '/.env', array_filter(getenv(), 'is_string'));
 
-    // Controle AU DEMARRAGE des cles Stripe (06-securite §7) : une cle de test
-    // en production, ou une cle de production hors production, arrete tout ici,
-    // avant qu'une seule requete ne soit traitee. Le controle est bon marche —
-    // un simple prefixe — et n'attend pas qu'un paiement le declenche.
-    StripeCheckoutGateway::assertKeyMatchesEnvironment(
-        $env->getOptional('STRIPE_SECRET_KEY', '') ?? '',
+    // Resolution AU DEMARRAGE de la configuration Stripe (06-securite §7) :
+    // STRIPE_ENV choisit la paire de cles (test | prod), et l'invariant est
+    // verifie ici, avant qu'une seule requete ne soit servie — une cle live
+    // activee hors production, ou une cle incoherente avec le mode, arrete tout.
+    $stripeConfig = StripeConfig::resolve(
+        $env->getOptional('STRIPE_ENV', StripeConfig::MODE_TEST) ?? StripeConfig::MODE_TEST,
         $config->env,
+        [
+            'testKey' => $env->getOptional('STRIPE_TEST_SECRET_KEY', '') ?? '',
+            'testWebhook' => $env->getOptional('STRIPE_TEST_WEBHOOK_SECRET', '') ?? '',
+            'liveKey' => $env->getOptional('STRIPE_LIVE_SECRET_KEY', '') ?? '',
+            'liveWebhook' => $env->getOptional('STRIPE_LIVE_WEBHOOK_SECRET', '') ?? '',
+        ],
     );
 
     $container = new Container();
@@ -409,20 +416,15 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
     // interdit une cle de test en production comme une cle de production hors
     // production.
 
-    $container->set(PaymentGateway::class, static function (Container $c) use ($config, $env): PaymentGateway {
-        $secretKey = $env->getOptional('STRIPE_SECRET_KEY', '') ?? '';
-        $webhookSecret = $env->getOptional('STRIPE_WEBHOOK_SECRET', '') ?? '';
-
-        // Sans cle, on ne bascule PAS silencieusement sur un double : le site
+    $container->set(PaymentGateway::class, static fn (Container $c): PaymentGateway => new StripeCheckoutGateway(
+        // Clés déjà résolues et validées au démarrage (voir StripeConfig). Sans
+        // clé, on ne bascule PAS silencieusement sur un double : le site
         // annoncerait des paiements qui n'existent pas. La passerelle de test
-        // n'est cablee que par les tests, explicitement.
-        StripeCheckoutGateway::assertKeyMatchesEnvironment($secretKey, $config->env);
-
-        // La cle est passee en chaine : la passerelle ne construit son
-        // StripeClient qu'au premier paiement (voir StripeCheckoutGateway).
-        // Sans cela, une cle absente ferait echouer jusqu'au webhook.
-        return new StripeCheckoutGateway($secretKey, $webhookSecret);
-    });
+        // n'est câblée que par les tests, explicitement. La clé reste une chaîne :
+        // la passerelle ne construit son StripeClient qu'au premier paiement.
+        $stripeConfig->secretKey,
+        $stripeConfig->webhookSecret,
+    ));
 
     $container->set(StripeEventRepository::class, static fn (Container $c): StripeEventRepository
         => new StripeEventRepository($c->get(PDO::class)));
