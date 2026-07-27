@@ -252,6 +252,123 @@ final class MediaStoreTest extends DatabaseTestCase
         $this->assertSame(0, $this->depot->countAll());
     }
 
+    // ------------------------------------------------------- remplacement
+
+    public function test_remplacer_une_image_conserve_l_identifiant_et_les_usages(): void
+    {
+        // 04-back-office §7 : remplacer l'image d'un media garde sa place — donc
+        // son identifiant, et les couvertures qui pointent vers lui.
+        $resultat = $this->store->store($this->televerse($this->fixtures->jpeg(1600, 1200, 'origine.jpg')));
+        $this->pdo->exec('INSERT INTO categories (cover_media_id, created_at, updated_at) VALUES ('
+            . $resultat->id . ', NOW(), NOW())');
+
+        $this->store->replace($resultat->id, $this->televerse($this->fixtures->jpeg(800, 400, 'nouvelle.jpg')));
+
+        $media = $this->depot->findById($resultat->id);
+        $this->assertNotNull($media);
+        $this->assertSame(800, $media['width']);
+        $this->assertSame(400, $media['height']);
+        $this->assertSame(1, $this->depot->usageOf($resultat->id)['categories']);
+    }
+
+    public function test_remplacer_regenere_les_derives_et_purge_les_orphelins(): void
+    {
+        // L'original passe de 2400 a 640 px : les derives -1024/-1600/-2400 de
+        // l'ancienne image n'ont plus de source et doivent disparaitre.
+        $resultat = $this->store->store($this->televerse($this->fixtures->jpeg(2400, 1800, 'grande.jpg')));
+        $media = $this->depot->findById($resultat->id);
+        $this->assertNotNull($media);
+        $base = (string) $media['public_basename'];
+        $this->assertFileExists($this->racine . '/public/media/' . $base . '-2400.jpg');
+
+        $this->store->replace($resultat->id, $this->televerse($this->fixtures->jpeg(640, 480, 'petite.jpg')));
+
+        $this->assertFileExists($this->racine . '/public/media/' . $base . '-640.jpg');
+        $this->assertFileDoesNotExist($this->racine . '/public/media/' . $base . '-2400.jpg');
+        $this->assertFileDoesNotExist($this->racine . '/public/media/' . $base . '-1024.jpg');
+    }
+
+    public function test_remplacer_par_une_image_deja_presente_ailleurs_est_refuse(): void
+    {
+        // Sinon deux medias porteraient la meme empreinte : la contrainte
+        // d'unicite l'interdit, autant le dire clairement a l'artiste.
+        $a = $this->store->store($this->televerse($this->fixtures->jpeg(500, 500, 'a.jpg')));
+        $b = $this->store->store($this->televerse($this->fixtures->jpeg(300, 300, 'b.jpg')));
+
+        try {
+            $this->store->replace($b->id, $this->televerse($this->fixtures->jpeg(500, 500, 'copie-de-a.jpg')));
+            $this->fail('Remplacer par une image déjà présente ailleurs doit être refusé.');
+        } catch (UploadRejected $exception) {
+            $this->assertSame(\App\Service\Media\UploadRejection::Duplicate, $exception->reason());
+        }
+
+        // Le media b n'a pas bouge : ni ses dimensions, ni son fichier.
+        $media = $this->depot->findById($b->id);
+        $this->assertNotNull($media);
+        $this->assertSame(300, $media['width']);
+    }
+
+    public function test_remplacer_reinitialise_le_point_focal(): void
+    {
+        // Le point focal designait un endroit de l'ANCIENNE image ; sur la
+        // nouvelle il ne veut plus rien dire, on le remet au centre (NULL).
+        $resultat = $this->store->store($this->televerse($this->fixtures->jpeg(800, 600, 'avant.jpg')));
+        $this->depot->updateFocalPoint($resultat->id, 200, 40);
+
+        $this->store->replace($resultat->id, $this->televerse($this->fixtures->jpeg(800, 600, 'apres.jpg')));
+
+        $media = $this->depot->findById($resultat->id);
+        $this->assertNotNull($media);
+        $this->assertNull($media['focal_x']);
+        $this->assertNull($media['focal_y']);
+    }
+
+    // ---------------------------------------------------------- recadrage
+
+    public function test_recadrer_met_a_jour_les_dimensions_et_les_derives(): void
+    {
+        $resultat = $this->store->store($this->televerse($this->fixtures->jpeg(1600, 1200, 'entiere.jpg')));
+
+        $this->store->crop(
+            $resultat->id,
+            \App\Service\Media\CropRegion::fromFractions(0.25, 0.25, 0.5, 0.5),
+        );
+
+        $media = $this->depot->findById($resultat->id);
+        $this->assertNotNull($media);
+        $this->assertSame(800, $media['width']);
+        $this->assertSame(600, $media['height']);
+        $taille = getimagesize($this->racine . '/public/media/' . $media['public_basename'] . '-640.jpg');
+        $this->assertIsArray($taille);
+        $this->assertSame(640, $taille[0]);
+    }
+
+    public function test_recadrer_conserve_l_identifiant_les_traductions_et_le_copyright(): void
+    {
+        $resultat = $this->store->store(
+            $this->televerse($this->fixtures->jpeg(1200, 1200, 'carree.jpg')),
+            'Encre sur papier',
+        );
+        $this->depot->updateCopyright($resultat->id, '© Cédric Taldu');
+
+        $this->store->crop(
+            $resultat->id,
+            \App\Service\Media\CropRegion::fromFractions(0.0, 0.0, 0.5, 1.0),
+        );
+
+        $media = $this->depot->findById($resultat->id);
+        $this->assertNotNull($media);
+        $this->assertSame('© Cédric Taldu', $media['copyright']);
+        $this->assertSame('Encre sur papier', $this->depot->translationsOf($resultat->id)['fr']['alt']);
+    }
+
+    public function test_recadrer_un_media_inexistant_est_sans_effet(): void
+    {
+        $this->store->crop(999999, \App\Service\Media\CropRegion::fromFractions(0.0, 0.0, 0.5, 0.5));
+
+        $this->assertSame(0, $this->depot->countAll());
+    }
+
     // --------------------------------------------------------------- outils
 
     private function storeAvec(SequenceRandom $alea): MediaStore

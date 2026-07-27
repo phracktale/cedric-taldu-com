@@ -265,6 +265,59 @@ final class ImageProcessorTest extends TestCase
         $this->assertFileExists($repertoire . '/abcdef-320.jpg');
     }
 
+    // ------------------------------------------------------------ recadrage
+
+    public function test_le_recadrage_produit_une_image_aux_dimensions_de_la_zone(): void
+    {
+        // La zone couvre la moitie centrale : sur un original 1600 x 1200, on
+        // attend 800 x 600.
+        $original = $this->reencode($this->fixtures->jpeg(1600, 1200));
+        $destination = $this->fixtures->path('recadre.jpg');
+
+        $resultat = $this->processeur->crop(
+            $original,
+            \App\Service\Media\CropRegion::fromFractions(0.25, 0.25, 0.5, 0.5),
+            $destination,
+        );
+
+        $this->assertSame(800, $resultat->width);
+        $this->assertSame(600, $resultat->height);
+        $taille = getimagesize($destination);
+        $this->assertIsArray($taille);
+        $this->assertSame(800, $taille[0]);
+        $this->assertSame(600, $taille[1]);
+    }
+
+    public function test_le_recadrage_conserve_le_format_de_l_original(): void
+    {
+        $original = $this->reencode($this->fixtures->png(400, 400));
+
+        $resultat = $this->processeur->crop(
+            $original,
+            \App\Service\Media\CropRegion::fromFractions(0.0, 0.0, 0.5, 0.5),
+            $this->fixtures->path('recadre.png'),
+        );
+
+        $this->assertSame('image/png', $resultat->mime);
+        $this->assertSame('png', $resultat->extension);
+    }
+
+    public function test_le_recadrage_change_l_empreinte(): void
+    {
+        // Une image recadree est une image differente : son empreinte doit
+        // changer, sinon la deduplication la confondrait avec l'originale.
+        $original = $this->reencode($this->fixtures->jpeg(800, 600));
+        $avant = hash_file('sha256', $original);
+
+        $resultat = $this->processeur->crop(
+            $original,
+            \App\Service\Media\CropRegion::fromFractions(0.1, 0.1, 0.5, 0.5),
+            $this->fixtures->path('recadre-empreinte.jpg'),
+        );
+
+        $this->assertNotSame($avant, $resultat->checksum);
+    }
+
     // ---------------------------------------------------------------- outils
 
     private function televerse(string $chemin): UploadedFile
