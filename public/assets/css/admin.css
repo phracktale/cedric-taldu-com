@@ -249,6 +249,28 @@ legend {
 .vignette-media { background: var(--papier); border: 1px solid var(--filet); padding: .5rem; }
 .vignette-media img { display: block; width: 100%; height: 9rem; object-fit: cover; background: var(--mur); }
 .vignette-media figcaption { font-size: .78rem; color: var(--encre-70); margin-top: .4rem; word-break: break-word; }
+.vignette-media-lien { display: block; text-decoration: none; color: inherit; }
+.vignette-media-lien:hover .vignette-media { border-color: var(--encre); }
+.vignette-media-lien:focus-visible { outline: 2px solid var(--encre); outline-offset: 2px; }
+
+/* -------------------------------------------------------- fiche d'un média */
+
+.media-apercu { margin: 0 0 1.4rem; }
+.media-apercu img { display: block; max-width: 100%; height: auto; background: var(--mur); border: 1px solid var(--filet); }
+.media-apercu figcaption { font-size: .82rem; color: var(--encre-70); margin-top: .4rem; }
+
+.media-recadrage { margin: 0 0 1.6rem; }
+
+/* Cadre construit par admin.js autour de l'aperçu pour y tracer la zone. */
+.recadrage-cadre {
+  position: relative; display: inline-block; max-width: 100%; overflow: hidden;
+  cursor: crosshair; touch-action: none;
+}
+.recadrage-cadre img { display: block; max-width: 100%; height: auto; }
+.recadrage-zone {
+  position: absolute; border: 2px solid var(--encre);
+  box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .45); pointer-events: none;
+}
 
 /* --------------------------------------------------------------- onglets */
 
