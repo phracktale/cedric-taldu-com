@@ -282,5 +282,4 @@ final class PostController
 
         return $post ?? throw new NotFoundException('Article introuvable.');
     }
-
 }

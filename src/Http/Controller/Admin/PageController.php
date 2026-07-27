@@ -168,5 +168,4 @@ final class PageController
 
         return $page ?? throw new NotFoundException('Page introuvable.');
     }
-
 }
