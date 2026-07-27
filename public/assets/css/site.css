@@ -171,6 +171,25 @@ nav a, .nav-bouton {
 }
 nav a:hover, nav a:focus-visible,
 .nav-bouton:hover, .nav-bouton:focus-visible { color: var(--encre); border-bottom-color: var(--encre); }
+
+/* Panier : lien global + pastille du nombre d'articles. */
+.panier-lien {
+  display: inline-flex; align-items: center; gap: .45rem;
+  text-decoration: none; font-size: .86rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--encre-70); border-bottom: 1px solid transparent; transition: color .2s, border-color .2s;
+}
+.panier-lien:hover, .panier-lien:focus-visible { color: var(--encre); border-bottom-color: var(--encre); }
+.pastille-panier {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1.35rem; height: 1.35rem; padding: 0 .35rem;
+  border-radius: 999px; background: var(--encre); color: var(--papier);
+  font-size: .72rem; letter-spacing: 0; line-height: 1;
+}
+.pastille-panier[hidden] { display: none; }
+
+/* Confirmation d'ajout, révélée par admin.js (masquée sans JavaScript). */
+.achat-confirme { margin: .8rem 0 0; font-size: .9rem; color: var(--encre-70); }
+.achat-confirme[hidden] { display: none; }
 nav a[aria-current] { color: var(--encre); border-bottom-color: var(--encre); }
 
 nav a.boutique {

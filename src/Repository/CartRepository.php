@@ -80,6 +80,30 @@ final class CartRepository
         return $cart ?? $this->create($locale);
     }
 
+    /**
+     * Nombre d'articles d'un panier, en LECTURE SEULE.
+     *
+     * La pastille de l'en-tete l'appelle a chaque page : contrairement a open(),
+     * il ne cree jamais de panier — sinon le moindre robot en semerait un par
+     * vue. Un jeton absent ou mal forme rend 0 sans toucher la base.
+     */
+    public function countByToken(?string $token): int
+    {
+        if ($token === null || preg_match(self::TOKEN_PATTERN, $token) !== 1) {
+            return 0;
+        }
+
+        $statement = $this->pdo->prepare(
+            'SELECT COALESCE(SUM(ci.qty), 0)
+               FROM cart_items ci
+               JOIN carts c ON c.id = ci.cart_id
+              WHERE c.token = :token'
+        );
+        $statement->execute(['token' => $token]);
+
+        return (int) $statement->fetchColumn();
+    }
+
     private function findByToken(string $token): ?Cart
     {
         $statement = $this->pdo->prepare('SELECT id, token, locale FROM carts WHERE token = :token');

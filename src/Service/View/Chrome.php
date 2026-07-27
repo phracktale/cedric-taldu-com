@@ -6,10 +6,12 @@ namespace App\Service\View;
 
 use App\Core\ClockInterface;
 use App\Core\Config;
+use App\Core\CookieFactory;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Domain\Locale;
 use App\Http\Middleware\SecurityHeaders;
+use App\Repository\CartRepository;
 use App\Repository\CategoryRepository;
 
 /**
@@ -25,11 +27,15 @@ use App\Repository\CategoryRepository;
  */
 final class Chrome
 {
+    /** Cookie du panier, comme dans CartController (03-boutique §2). */
+    private const CART_COOKIE = CookieFactory::PREFIX . 'cart';
+
     public function __construct(
         private readonly CategoryRepository $categories,
         private readonly Config $config,
         private readonly ClockInterface $clock,
         private readonly Csrf $csrf,
+        private readonly CartRepository $carts,
     ) {
     }
 
@@ -45,6 +51,9 @@ final class Chrome
             'env' => $this->config->env,
             'isProduction' => $this->config->isProduction(),
             'menuCategories' => $this->categories->findPublished(),
+            // Pastille du panier dans l'en-tete : lecture seule, sans jamais
+            // creer de panier (voir CartRepository::countByToken).
+            'cartCount' => $this->carts->countByToken($request->cookie(self::CART_COOKIE)),
             'year' => $this->clock->now()->format('Y'),
             // Le panier et le tunnel postent depuis le front : le jeton doit
             // etre disponible a tout gabarit public portant un formulaire.
