@@ -56,7 +56,8 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
     <p class="erreur" role="alert"><?= e($data['erreur']) ?></p>
     <?php endif; ?>
 
-    <form method="post" action="<?= attr($action) ?>" class="formulaire" data-surveiller>
+    <form method="post" action="<?= attr($action) ?>" class="formulaire" data-surveiller
+          enctype="multipart/form-data">
         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
 
         <div data-onglets-langue>
@@ -125,11 +126,20 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
         <fieldset>
             <legend>Couverture</legend>
             <p class="champ">
-                <label for="couverture">Identifiant de l’image</label>
+                <label for="couverture_fichier">Téléverser une image</label>
+                <input type="file" id="couverture_fichier" name="couverture_fichier"
+                       accept="image/jpeg,image/png,image/webp">
+                <span class="champ-aide">
+                    JPEG, PNG ou WebP. L’image rejoint la médiathèque et devient la couverture.
+                </span>
+            </p>
+            <p class="champ">
+                <label for="couverture">ou identifiant d’une image existante</label>
                 <input type="number" id="couverture" name="couverture" min="1"
                        value="<?= attr($rubrique['cover_media_id'] ?? '') ?>">
                 <span class="champ-aide">
                     Le numéro affiché dans la <a href="<?= attr($base . '/admin/medias') ?>">médiathèque</a>.
+                    Un fichier téléversé a la priorité.
                 </span>
             </p>
         </fieldset>

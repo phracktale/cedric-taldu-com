@@ -133,7 +133,90 @@ final class ImageProcessor
         return $written;
     }
 
+    /**
+     * Recadre l'original et reecrit la zone retenue, dans le format d'origine.
+     *
+     * La zone arrive en fractions (CropRegion) : elle est convertie en pixels
+     * contre les dimensions REELLES de l'image, jamais celles annoncees par le
+     * client. Comme reencode(), c'est GD qui redecode et reecrit — la sortie ne
+     * porte donc aucune metadonnee ni charge (06-securite §5.4).
+     *
+     * @throws UploadRejected si le fichier est illisible ou la decoupe impossible
+     */
+    public function crop(string $sourcePath, CropRegion $region, string $destination): ProcessedImage
+    {
+        $mime = $this->mimeOf($sourcePath);
+        $source = $this->decodeFile($sourcePath, $mime);
+        $rectangle = $region->toPixels(imagesx($source), imagesy($source));
+
+        $cropped = $this->promotingWarnings(
+            static fn (): GdImage|false => imagecrop($source, $rectangle),
+        );
+        imagedestroy($source);
+
+        if (!$cropped instanceof GdImage) {
+            throw UploadRejected::because(UploadRejection::Corrupt, 'recadrage impossible');
+        }
+
+        // Meme precaution que decodeFile : sans quoi la transparence d'un PNG se
+        // melange au fond a l'ecriture.
+        imagealphablending($cropped, false);
+        imagesavealpha($cropped, true);
+
+        $extension = self::EXTENSIONS[$mime];
+
+        try {
+            $this->write($cropped, $destination, $extension);
+        } catch (Throwable $exception) {
+            imagedestroy($cropped);
+            $this->discard($destination);
+
+            throw $exception;
+        }
+
+        $width = imagesx($cropped);
+        $height = imagesy($cropped);
+        imagedestroy($cropped);
+
+        $checksum = hash_file('sha256', $destination);
+
+        if ($checksum === false) {
+            $this->discard($destination);
+
+            throw UploadRejected::because(UploadRejection::Corrupt, 'empreinte illisible');
+        }
+
+        return new ProcessedImage(
+            path: $destination,
+            mime: $mime,
+            extension: $extension,
+            width: $width,
+            height: $height,
+            bytes: (int) filesize($destination),
+            checksum: $checksum,
+        );
+    }
+
     // ------------------------------------------------------------- interne
+
+    /** @var array<string, string> type MIME accepte vers extension d'ecriture */
+    private const EXTENSIONS = [
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'image/webp' => 'webp',
+    ];
+
+    private function mimeOf(string $path): string
+    {
+        $size = getimagesize($path);
+        $mime = $size === false ? '' : $size['mime'];
+
+        if (!isset(self::EXTENSIONS[$mime])) {
+            throw UploadRejected::because(UploadRejection::Corrupt, 'format non pris en charge');
+        }
+
+        return $mime;
+    }
 
     /**
      * Largeurs reellement produites.

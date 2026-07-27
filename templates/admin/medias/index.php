@@ -80,39 +80,22 @@ $refus = is_array($data['refus'] ?? null) ? $data['refus'] : [];
     <ul class="grille-medias">
     <?php foreach ($medias as $media) : ?>
         <li>
-            <figure class="vignette-media">
-                <img src="<?= attr($url->media($media['public_basename'] . '-320.jpg')) ?>"
-                     alt="<?= attr($media['original_name'] ?? '') ?>"
-                     width="320" loading="lazy">
+            <?php // Cliquer sur la vignette ouvre la fiche : edition, remplacement, recadrage. ?>
+            <a class="vignette-media-lien" href="<?= attr($base . '/admin/medias/' . $media['id']) ?>">
+                <figure class="vignette-media">
+                    <img src="<?= attr($url->media($media['public_basename'] . '-320.jpg')) ?>"
+                         alt="<?= attr($media['original_name'] ?? '') ?>"
+                         width="320" loading="lazy">
 
-                <figcaption>
-                    <?= e($media['original_name'] ?? 'Sans nom') ?><br>
-                    <?= e($media['width']) ?> × <?= e($media['height']) ?> px
-                    <?php if (($usages[$media['id']] ?? 0) > 0) : ?>
-                    <br><span class="pastille">utilisée <?= e($usages[$media['id']]) ?> fois</span>
-                    <?php endif; ?>
-                </figcaption>
-            </figure>
-
-            <form method="post" action="<?= attr($base . '/admin/medias/' . $media['id']) ?>" class="formulaire">
-                <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
-                <p class="champ">
-                    <label for="alt-<?= attr($media['id']) ?>">Texte alternatif</label>
-                    <input type="text" id="alt-<?= attr($media['id']) ?>" name="alt"
-                           value="<?= attr($data['alts'][$media['id']] ?? '') ?>" maxlength="255">
-                </p>
-                <p class="actions">
-                    <button type="submit" class="bouton bouton--secondaire">Enregistrer</button>
-                </p>
-            </form>
-
-            <?php if (($usages[$media['id']] ?? 0) === 0) : ?>
-            <form method="post" action="<?= attr($base . '/admin/medias/' . $media['id'] . '/suppression') ?>"
-                  data-confirmation="Supprimer définitivement cette image ?">
-                <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
-                <button type="submit" class="lien-bouton">Supprimer</button>
-            </form>
-            <?php endif; ?>
+                    <figcaption>
+                        <?= e($media['original_name'] ?? 'Sans nom') ?><br>
+                        <?= e($media['width']) ?> × <?= e($media['height']) ?> px
+                        <?php if (($usages[$media['id']] ?? 0) > 0) : ?>
+                        <br><span class="pastille">utilisée <?= e($usages[$media['id']]) ?> fois</span>
+                        <?php endif; ?>
+                    </figcaption>
+                </figure>
+            </a>
         </li>
     <?php endforeach; ?>
     </ul>

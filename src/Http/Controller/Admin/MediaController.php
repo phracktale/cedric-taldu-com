@@ -12,9 +12,11 @@ use App\Core\Rule;
 use App\Core\Validator;
 use App\Domain\Locale;
 use App\Repository\Admin\MediaAdminRepository;
+use App\Service\Media\CropRegion;
 use App\Service\Media\Exception\UploadRejected;
 use App\Service\Media\MediaStore;
 use App\Service\View\AdminChrome;
+use InvalidArgumentException;
 
 /**
  * Mediatheque (04-back-office §7).
@@ -97,23 +99,35 @@ final class MediaController
     }
 
     /**
-     * Texte alternatif, legende et point focal.
+     * Fiche d'edition d'une image (04-back-office §7).
+     *
+     * Page a part entiere, donc utilisable sans JavaScript : le module admin.js
+     * la replie en panneau et y greffe le recadrage, mais texte alternatif,
+     * legende, copyright, point focal et remplacement s'y font sans lui (§12).
+     */
+    public function edit(Request $request): Response
+    {
+        return $this->editPage($request, $this->media($request), succes: $this->flash($request));
+    }
+
+    /**
+     * Textes alternatifs et legendes (par langue), copyright, point focal.
      */
     public function update(Request $request): Response
     {
         $media = $this->media($request);
 
-        $saisie = $this->validator->validate($request->post, [
-            'alt' => Rule::text(255, required: false),
-            'caption' => Rule::text(255, required: false),
-        ]);
+        $regles = ['copyright' => Rule::text(190, required: false)];
 
-        $this->medias->replaceTranslations((int) $media['id'], [
-            Locale::reference()->value => [
-                'alt' => (string) ($saisie['alt'] ?? ''),
-                'caption' => isset($saisie['caption']) ? (string) $saisie['caption'] : null,
-            ],
-        ]);
+        foreach (Locale::cases() as $locale) {
+            $regles['alt_' . $locale->value] = Rule::text(255, required: false);
+            $regles['caption_' . $locale->value] = Rule::text(255, required: false);
+        }
+
+        $saisie = $this->validator->validate($request->post, $regles);
+
+        $this->medias->replaceTranslations((int) $media['id'], $this->translations($saisie));
+        $this->medias->updateCopyright((int) $media['id'], self::texteOuNull($saisie['copyright'] ?? null));
 
         $this->medias->updateFocalPoint(
             (int) $media['id'],
@@ -123,7 +137,72 @@ final class MediaController
 
         $this->chrome->audit()->record($this->userId(), 'media.update', $request, 'media', (int) $media['id']);
 
-        return RedirectResponse::to($request->basePath . '/admin/medias');
+        return RedirectResponse::to($request->basePath . '/admin/medias/' . (int) $media['id'] . '?maj=1');
+    }
+
+    /**
+     * Remplace l'image par un nouveau televersement, sans changer sa place.
+     */
+    public function replace(Request $request): Response
+    {
+        $media = $this->media($request);
+        $fichier = $request->file('image');
+
+        if ($fichier === null) {
+            return $this->editPage($request, $media, erreur: 'Aucun fichier n’a été reçu.', status: 422);
+        }
+
+        try {
+            $this->store->replace((int) $media['id'], $fichier);
+        } catch (UploadRejected $exception) {
+            $this->chrome->audit()->record(
+                $this->userId(),
+                'media.replace_rejected',
+                $request,
+                'media',
+                (int) $media['id'],
+                ['motif' => $exception->reason()->value],
+            );
+
+            return $this->editPage(
+                $request,
+                $this->media($request),
+                erreur: $exception->reason()->message(),
+                status: 422,
+            );
+        }
+
+        $this->chrome->audit()->record($this->userId(), 'media.replace', $request, 'media', (int) $media['id']);
+
+        return RedirectResponse::to($request->basePath . '/admin/medias/' . (int) $media['id'] . '?remplace=1');
+    }
+
+    /**
+     * Recadre l'image existante d'apres une zone exprimee en fractions.
+     */
+    public function crop(Request $request): Response
+    {
+        $media = $this->media($request);
+        $region = $this->region($request);
+
+        if ($region === null) {
+            return $this->editPage($request, $media, erreur: 'La zone de recadrage est invalide.', status: 422);
+        }
+
+        try {
+            $this->store->crop((int) $media['id'], $region);
+        } catch (UploadRejected $exception) {
+            return $this->editPage(
+                $request,
+                $this->media($request),
+                erreur: $exception->reason()->message(),
+                status: 422,
+            );
+        }
+
+        $this->chrome->audit()->record($this->userId(), 'media.crop', $request, 'media', (int) $media['id']);
+
+        return RedirectResponse::to($request->basePath . '/admin/medias/' . (int) $media['id'] . '?recadre=1');
     }
 
     public function delete(Request $request): Response
@@ -174,6 +253,109 @@ final class MediaController
             'erreur' => $erreur,
             'refus' => $refus,
         ], $status);
+    }
+
+    /**
+     * @param array<string, mixed> $media
+     */
+    private function editPage(
+        Request $request,
+        array $media,
+        ?string $succes = null,
+        ?string $erreur = null,
+        int $status = 200,
+    ): Response {
+        $id = (int) $media['id'];
+
+        return $this->chrome->page($request, 'admin/medias/edition', [
+            'titre' => 'Modifier une image',
+            'media' => $media,
+            'traductions' => $this->medias->translationsOf($id),
+            'usages' => $this->medias->usageOf($id),
+            'succes' => $succes,
+            'erreur' => $erreur,
+        ], $status);
+    }
+
+    /**
+     * Traductions a ecrire : une ligne par langue qui porte du texte, la langue
+     * de reference etant toujours conservee pour ne pas perdre le media.
+     *
+     * @param  array<string, mixed> $saisie
+     * @return array<string, array{alt: string, caption: string|null}>
+     */
+    private function translations(array $saisie): array
+    {
+        $translations = [];
+
+        foreach (Locale::cases() as $locale) {
+            $alt = self::texteOuNull($saisie['alt_' . $locale->value] ?? null);
+            $caption = self::texteOuNull($saisie['caption_' . $locale->value] ?? null);
+
+            if ($alt === null && $caption === null) {
+                continue;
+            }
+
+            $translations[$locale->value] = ['alt' => $alt ?? '', 'caption' => $caption];
+        }
+
+        if (!isset($translations[Locale::reference()->value])) {
+            $translations[Locale::reference()->value] = ['alt' => '', 'caption' => null];
+        }
+
+        return $translations;
+    }
+
+    /**
+     * Zone de recadrage, ou null si l'entree est incoherente.
+     *
+     * Aucune valeur du client n'est utilisee telle quelle : les fractions sont
+     * validees par CropRegion, qui refuse ce qui sort de l'image, et c'est le
+     * serveur seul qui les convertira en pixels (autorite serveur, CLAUDE.md).
+     */
+    private function region(Request $request): ?CropRegion
+    {
+        $fractions = [];
+
+        foreach (['x', 'y', 'w', 'h'] as $clef) {
+            $valeur = $request->input('crop_' . $clef);
+
+            if ($valeur === null || !is_numeric($valeur)) {
+                return null;
+            }
+
+            $fractions[$clef] = (float) $valeur;
+        }
+
+        try {
+            return CropRegion::fromFractions($fractions['x'], $fractions['y'], $fractions['w'], $fractions['h']);
+        } catch (InvalidArgumentException) {
+            return null;
+        }
+    }
+
+    /**
+     * Message de confirmation apres une redirection PRG.
+     */
+    private function flash(Request $request): ?string
+    {
+        return match (true) {
+            $request->query('maj') !== null => 'Les informations ont été enregistrées.',
+            $request->query('remplace') !== null => 'L’image a été remplacée.',
+            $request->query('recadre') !== null => 'L’image a été recadrée.',
+            default => null,
+        };
+    }
+
+    private static function texteOuNull(mixed $valeur): ?string
+    {
+        if (!is_string($valeur)) {
+            return null;
+        }
+
+        $valeur = trim($valeur);
+
+        return $valeur === '' ? null : $valeur;
     }
 
     /**

@@ -88,7 +88,8 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
     </p>
     <?php endif; ?>
 
-    <form method="post" action="<?= attr($action) ?>" class="formulaire" data-surveiller>
+    <form method="post" action="<?= attr($action) ?>" class="formulaire" data-surveiller
+          enctype="multipart/form-data">
         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
 
         <fieldset>
@@ -280,12 +281,20 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
             <legend>Média</legend>
 
             <p class="champ">
-                <label for="image_principale">Image principale</label>
+                <label for="image_principale_fichier">Téléverser une image principale</label>
+                <input type="file" id="image_principale_fichier" name="image_principale_fichier"
+                       accept="image/jpeg,image/png,image/webp">
+                <span class="champ-aide">
+                    JPEG, PNG ou WebP. L’image rejoint la médiathèque et devient l’image principale.
+                </span>
+            </p>
+            <p class="champ">
+                <label for="image_principale">ou identifiant d’une image existante</label>
                 <input type="number" id="image_principale" name="image_principale" min="1"
                        value="<?= attr($champ('image_principale', 'primary_media_id')) ?>">
                 <span class="champ-aide">
                     Le numéro affiché dans la <a href="<?= attr($base . '/admin/medias') ?>">médiathèque</a>.
-                    Sans image principale, l’œuvre ne peut pas être publiée.
+                    Un fichier téléversé a la priorité. Sans image principale, l’œuvre ne peut pas être publiée.
                 </span>
             </p>
         </fieldset>

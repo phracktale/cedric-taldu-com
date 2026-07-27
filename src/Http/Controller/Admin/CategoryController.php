@@ -14,6 +14,8 @@ use App\Domain\Slug;
 use App\Repository\Admin\CategoryAdminRepository;
 use App\Repository\Admin\SeriesAdminRepository;
 use App\Service\Content\TranslationInput;
+use App\Service\Media\CoverUpload;
+use App\Service\Media\Exception\UploadRejected;
 use App\Service\Seo\SlugHistory;
 use App\Service\View\AdminChrome;
 
@@ -52,6 +54,7 @@ final class CategoryController
         private readonly SeriesAdminRepository $series,
         private readonly TranslationInput $translations,
         private readonly SlugHistory $slugHistory,
+        private readonly CoverUpload $covers,
     ) {
     }
 
@@ -80,9 +83,15 @@ final class CategoryController
             return $this->form($request, null, 'Le titre en français est obligatoire.', 422);
         }
 
+        try {
+            $cover = $this->covers->resolve($request, 'couverture_fichier', 'couverture');
+        } catch (UploadRejected $exception) {
+            return $this->form($request, null, $exception->reason()->message(), 422);
+        }
+
         $id = $this->categories->insert(
             $this->withSlugs($translations, $request, null),
-            self::mediaId($request->input('couverture')),
+            $cover,
             $this->chrome->now(),
         );
 
@@ -114,6 +123,12 @@ final class CategoryController
             return $this->form($request, $existing, 'Le titre en français est obligatoire.', 422);
         }
 
+        try {
+            $cover = $this->covers->resolve($request, 'couverture_fichier', 'couverture');
+        } catch (UploadRejected $exception) {
+            return $this->form($request, $existing, $exception->reason()->message(), 422);
+        }
+
         $id = (int) $existing['id'];
         $slugged = $this->withSlugs($translations, $request, $id);
 
@@ -128,7 +143,7 @@ final class CategoryController
         $this->categories->update(
             $id,
             $slugged,
-            self::mediaId($request->input('couverture')),
+            $cover,
             $this->chrome->now(),
         );
 
@@ -389,8 +404,4 @@ final class CategoryController
         return $category ?? throw new NotFoundException('Rubrique introuvable.');
     }
 
-    private static function mediaId(?string $value): ?int
-    {
-        return $value !== null && ctype_digit($value) && (int) $value > 0 ? (int) $value : null;
-    }
 }

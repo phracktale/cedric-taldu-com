@@ -19,7 +19,7 @@ final class MediaAdminRepository
 {
     private const SELECT = <<<'SQL'
         SELECT m.id, m.storage_path, m.public_basename, m.mime, m.width, m.height,
-               m.bytes, m.checksum, m.original_name, m.focal_x, m.focal_y, m.created_at
+               m.bytes, m.checksum, m.original_name, m.copyright, m.focal_x, m.focal_y, m.created_at
         FROM media m
         SQL;
 
@@ -218,6 +218,44 @@ final class MediaAdminRepository
     }
 
     /**
+     * Remplace le FICHIER d'un media sans changer sa place.
+     *
+     * Remplacement et recadrage produisent une nouvelle image a l'identifiant
+     * inchange : les couvertures qui pointent vers lui restent valides. Le point
+     * focal, en revanche, designait l'ancienne image — il est remis au centre
+     * (NULL). Le nom de base public ne change pas : les URL des derives non plus.
+     */
+    public function updateFile(
+        int $mediaId,
+        string $storagePath,
+        string $mime,
+        int $width,
+        int $height,
+        int $bytes,
+        string $checksum,
+        ?string $originalName,
+    ): void {
+        $statement = $this->pdo->prepare(
+            'UPDATE media
+                SET storage_path = :path, mime = :mime, width = :width, height = :height,
+                    bytes = :bytes, checksum = :checksum, original_name = :original,
+                    focal_x = NULL, focal_y = NULL
+              WHERE id = :id'
+        );
+
+        $statement->execute([
+            'path' => $storagePath,
+            'mime' => $mime,
+            'width' => $width,
+            'height' => $height,
+            'bytes' => $bytes,
+            'checksum' => $checksum,
+            'original' => $originalName,
+            'id' => $mediaId,
+        ]);
+    }
+
+    /**
      * Point d'interet, pour que le recadrage en vignette ne coupe pas le sujet.
      */
     public function updateFocalPoint(int $mediaId, ?int $x, ?int $y): void
@@ -227,6 +265,20 @@ final class MediaAdminRepository
         );
 
         $statement->execute(['x' => $x, 'y' => $y, 'id' => $mediaId]);
+    }
+
+    /**
+     * Mention de credit, une par image (04-back-office §7).
+     *
+     * Une chaine vide est ramenee a NULL : « sans credit » et « credit vide »
+     * sont le meme etat, on n'en garde qu'une representation.
+     */
+    public function updateCopyright(int $mediaId, ?string $copyright): void
+    {
+        $copyright = $copyright !== null && trim($copyright) !== '' ? trim($copyright) : null;
+
+        $statement = $this->pdo->prepare('UPDATE media SET copyright = :copyright WHERE id = :id');
+        $statement->execute(['copyright' => $copyright, 'id' => $mediaId]);
     }
 
     public function delete(int $mediaId): void
@@ -253,6 +305,7 @@ final class MediaAdminRepository
             'bytes' => (int) $row['bytes'],
             'checksum' => (string) $row['checksum'],
             'original_name' => $row['original_name'] === null ? null : (string) $row['original_name'],
+            'copyright' => $row['copyright'] === null ? null : (string) $row['copyright'],
             'focal_x' => $row['focal_x'] === null ? null : (int) $row['focal_x'],
             'focal_y' => $row['focal_y'] === null ? null : (int) $row['focal_y'],
             'created_at' => (string) $row['created_at'],

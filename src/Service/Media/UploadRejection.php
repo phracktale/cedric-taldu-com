@@ -25,6 +25,7 @@ enum UploadRejection: string
     case TooLarge = 'too_large';
     case TooManyPixels = 'too_many_pixels';
     case Corrupt = 'corrupt';
+    case Duplicate = 'duplicate';
 
     public function message(): string
     {
@@ -37,6 +38,7 @@ enum UploadRejection: string
             self::TooLarge => 'Cette image dépasse 12 000 pixels de côté.',
             self::TooManyPixels => 'Cette image est trop grande pour être traitée. Réduisez-la avant de l’envoyer.',
             self::Corrupt => 'Ce fichier est illisible : il est probablement incomplet ou abîmé.',
+            self::Duplicate => 'Cette image est déjà présente dans la médiathèque sous un autre média.',
         };
     }
 }

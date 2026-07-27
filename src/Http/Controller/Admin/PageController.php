@@ -11,6 +11,8 @@ use App\Core\Response;
 use App\Domain\Locale;
 use App\Repository\Admin\PageAdminRepository;
 use App\Service\Content\TranslationInput;
+use App\Service\Media\CoverUpload;
+use App\Service\Media\Exception\UploadRejected;
 use App\Service\View\AdminChrome;
 
 /**
@@ -38,6 +40,7 @@ final class PageController
         private readonly AdminChrome $chrome,
         private readonly PageAdminRepository $pages,
         private readonly TranslationInput $translations,
+        private readonly CoverUpload $covers,
     ) {
     }
 
@@ -63,12 +66,18 @@ final class PageController
             return $this->form($request, $existing, 'Le titre en français est obligatoire.', 422);
         }
 
+        try {
+            $cover = $this->covers->resolve($request, 'couverture_fichier', 'couverture');
+        } catch (UploadRejected $exception) {
+            return $this->form($request, $existing, $exception->reason()->message(), 422);
+        }
+
         $id = (int) $existing['id'];
 
         $this->pages->update(
             $id,
             $this->withPreservedSlugs($translations, $existing),
-            self::mediaId($request->input('couverture')),
+            $cover,
             $this->chrome->now(),
         );
 
@@ -160,8 +169,4 @@ final class PageController
         return $page ?? throw new NotFoundException('Page introuvable.');
     }
 
-    private static function mediaId(?string $value): ?int
-    {
-        return $value !== null && ctype_digit($value) && (int) $value > 0 ? (int) $value : null;
-    }
 }

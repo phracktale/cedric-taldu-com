@@ -216,7 +216,10 @@ return [
     // Mediatheque
     new Route('admin.media.index', 'GET', '/admin/medias', [MediaController::class, 'index']),
     new Route('admin.media.upload', 'POST', '/admin/medias', [MediaController::class, 'upload']),
+    new Route('admin.media.edit', 'GET', '/admin/medias/{id}', [MediaController::class, 'edit'], requirements: $id),
     new Route('admin.media.update', 'POST', '/admin/medias/{id}', [MediaController::class, 'update'], requirements: $id),
+    new Route('admin.media.replace', 'POST', '/admin/medias/{id}/remplacement', [MediaController::class, 'replace'], requirements: $id),
+    new Route('admin.media.crop', 'POST', '/admin/medias/{id}/recadrage', [MediaController::class, 'crop'], requirements: $id),
     new Route('admin.media.delete', 'POST', '/admin/medias/{id}/suppression', [MediaController::class, 'delete'], requirements: $id),
 
     // Reproductions et variantes, rattachees a une œuvre.
