@@ -104,6 +104,62 @@ final class MediaStore
     }
 
     /**
+     * Remplace l'image d'un media par un nouveau televersement.
+     *
+     * Le media garde son identifiant et sa place : les couvertures qui pointent
+     * vers lui restent valides. On refuse si la nouvelle image existe deja SOUS
+     * UN AUTRE media — la contrainte d'unicite de l'empreinte l'interdirait de
+     * toute facon, autant le dire clairement.
+     *
+     * @throws Exception\UploadRejected
+     */
+    public function replace(int $mediaId, UploadedFile $file): void
+    {
+        $row = $this->media->findById($mediaId);
+
+        if ($row === null) {
+            return;
+        }
+
+        $validated = $this->validator->validate($file);
+        $temporary = $this->temporaryPath($validated->extension());
+        $processed = $this->processor->reencode($validated, $temporary);
+
+        $this->guardAgainstForeignDuplicate($processed->checksum, $mediaId, $temporary);
+
+        $this->swapFile($row, $processed, $temporary, $this->displayName($validated->clientName));
+    }
+
+    /**
+     * Recadre l'image existante d'un media et regenere ses derives.
+     *
+     * La zone arrive en fractions ; c'est ImageProcessor qui la convertit en
+     * pixels contre les dimensions reelles de l'original. Le format est conserve.
+     *
+     * @throws Exception\UploadRejected
+     */
+    public function crop(int $mediaId, CropRegion $region): void
+    {
+        $row = $this->media->findById($mediaId);
+
+        if ($row === null) {
+            return;
+        }
+
+        $original = dirname($this->storagePath) . '/' . $row['storage_path'];
+        $extension = pathinfo((string) $row['storage_path'], PATHINFO_EXTENSION);
+        $temporary = $this->temporaryPath($extension === '' ? 'jpg' : $extension);
+
+        $processed = $this->processor->crop($original, $region, $temporary);
+
+        $this->guardAgainstForeignDuplicate($processed->checksum, $mediaId, $temporary);
+
+        // Le recadrage ne touche pas au nom d'origine : c'est la meme image, cadree.
+        $originalName = $row['original_name'] === null ? null : (string) $row['original_name'];
+        $this->swapFile($row, $processed, $temporary, $originalName);
+    }
+
+    /**
      * Efface un media et tous ses fichiers.
      *
      * Les derives d'abord, l'original ensuite, la ligne en dernier : si
@@ -130,6 +186,83 @@ final class MediaStore
     }
 
     // -------------------------------------------------------------- interne
+
+    /**
+     * Echange le fichier d'un media en place : regenere les derives, purge les
+     * orphelins, range le nouvel original, met a jour la ligne.
+     *
+     * Partage par replace() et crop(). L'ordre — derives d'abord, original
+     * ensuite, ligne en dernier — suit la meme logique que store() : jamais de
+     * ligne qui pointe un fichier absent.
+     *
+     * @param array<string, mixed> $row
+     */
+    private function swapFile(array $row, ProcessedImage $processed, string $temporary, ?string $originalName): void
+    {
+        $mediaId = (int) $row['id'];
+        $basename = (string) $row['public_basename'];
+
+        // 1. Regenerer les derives depuis le nouvel original (memes noms, ecrases).
+        try {
+            $fresh = $this->processor->derivatives($temporary, $this->publicPath, $basename);
+        } catch (Throwable $exception) {
+            $this->discard($temporary);
+
+            throw $exception;
+        }
+
+        // 2. Purger les orphelins : une image devenue plus petite ne produit plus
+        //    les grandes largeurs, dont les derives n'ont alors plus de source.
+        $keep = array_map('basename', $fresh);
+
+        foreach (glob($this->publicPath . '/' . $basename . '-*') ?: [] as $derivative) {
+            if (!in_array(basename($derivative), $keep, true)) {
+                $this->discard($derivative);
+            }
+        }
+
+        // 3. Ranger le nouvel original ; retirer l'ancien s'il changeait d'extension.
+        $newStorage = $this->storageFileFor($basename, $processed->extension);
+        $oldStorage = dirname($this->storagePath) . '/' . $row['storage_path'];
+
+        if ($oldStorage !== $newStorage) {
+            $this->discard($oldStorage);
+        }
+
+        // rename() refuse une destination existante sous Windows : on l'efface d'abord.
+        $this->discard($newStorage);
+        $this->moveIntoPlace($temporary, $newStorage);
+
+        // 4. Mettre a jour la ligne (le depot reinitialise le point focal).
+        $this->media->updateFile(
+            mediaId: $mediaId,
+            storagePath: $this->relativeStoragePath($basename, $processed->extension),
+            mime: $processed->mime,
+            width: $processed->width,
+            height: $processed->height,
+            bytes: $processed->bytes,
+            checksum: $processed->checksum,
+            originalName: $originalName,
+        );
+    }
+
+    /**
+     * Refuse une image deja presente sous un AUTRE media.
+     *
+     * L'empreinte est unique en base : deux medias ne peuvent pas partager le
+     * meme visuel. On le dit clairement plutot que de laisser la contrainte SQL
+     * lever une erreur opaque.
+     */
+    private function guardAgainstForeignDuplicate(string $checksum, int $mediaId, string $temporary): void
+    {
+        $existing = $this->media->findByChecksum($checksum);
+
+        if ($existing !== null && (int) $existing['id'] !== $mediaId) {
+            $this->discard($temporary);
+
+            throw Exception\UploadRejected::because(UploadRejection::Duplicate);
+        }
+    }
 
     /**
      * Arborescence a deux niveaux (01-modele §2) : quelques milliers d'images

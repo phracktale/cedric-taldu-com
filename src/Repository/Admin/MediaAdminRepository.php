@@ -218,6 +218,44 @@ final class MediaAdminRepository
     }
 
     /**
+     * Remplace le FICHIER d'un media sans changer sa place.
+     *
+     * Remplacement et recadrage produisent une nouvelle image a l'identifiant
+     * inchange : les couvertures qui pointent vers lui restent valides. Le point
+     * focal, en revanche, designait l'ancienne image — il est remis au centre
+     * (NULL). Le nom de base public ne change pas : les URL des derives non plus.
+     */
+    public function updateFile(
+        int $mediaId,
+        string $storagePath,
+        string $mime,
+        int $width,
+        int $height,
+        int $bytes,
+        string $checksum,
+        ?string $originalName,
+    ): void {
+        $statement = $this->pdo->prepare(
+            'UPDATE media
+                SET storage_path = :path, mime = :mime, width = :width, height = :height,
+                    bytes = :bytes, checksum = :checksum, original_name = :original,
+                    focal_x = NULL, focal_y = NULL
+              WHERE id = :id'
+        );
+
+        $statement->execute([
+            'path' => $storagePath,
+            'mime' => $mime,
+            'width' => $width,
+            'height' => $height,
+            'bytes' => $bytes,
+            'checksum' => $checksum,
+            'original' => $originalName,
+            'id' => $mediaId,
+        ]);
+    }
+
+    /**
      * Point d'interet, pour que le recadrage en vignette ne coupe pas le sujet.
      */
     public function updateFocalPoint(int $mediaId, ?int $x, ?int $y): void
