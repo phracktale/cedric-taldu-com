@@ -18,6 +18,7 @@ final class MediaFactory extends Factory
     private ?int $focalX = null;
     private ?int $focalY = null;
     private ?string $basename = null;
+    private ?string $copyright = null;
 
     /** @var array<string, array{alt: string, caption: string|null}> */
     private array $translations = [];
@@ -45,6 +46,13 @@ final class MediaFactory extends Factory
         return $this;
     }
 
+    public function withCopyright(?string $copyright): self
+    {
+        $this->copyright = $copyright;
+
+        return $this;
+    }
+
     public function translated(string $locale, string $alt, ?string $caption = null): self
     {
         $this->translations[$locale] = ['alt' => $alt, 'caption' => $caption];
@@ -63,8 +71,8 @@ final class MediaFactory extends Factory
 
         $this->insert(
             'INSERT INTO media
-                (storage_path, public_basename, mime, width, height, bytes, checksum, focal_x, focal_y, created_at)
-             VALUES (:path, :base, :mime, :width, :height, :bytes, :checksum, :fx, :fy, NOW())',
+                (storage_path, public_basename, mime, width, height, bytes, checksum, copyright, focal_x, focal_y, created_at)
+             VALUES (:path, :base, :mime, :width, :height, :bytes, :checksum, :copyright, :fx, :fy, NOW())',
             [
                 'path' => 'storage/uploads/ab/cd/' . $basename . '.jpg',
                 'base' => $basename,
@@ -73,6 +81,7 @@ final class MediaFactory extends Factory
                 'height' => $this->height,
                 'bytes' => 123456,
                 'checksum' => str_pad((string) $n, 64, '0', STR_PAD_LEFT),
+                'copyright' => $this->copyright,
                 'fx' => $this->focalX,
                 'fy' => $this->focalY,
             ],
