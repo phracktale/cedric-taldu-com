@@ -18,6 +18,8 @@ use App\Repository\Admin\SeriesAdminRepository;
 use App\Service\Content\PreviewToken;
 use App\Service\Content\TranslationInput;
 use App\Service\I18n\UrlGenerator;
+use App\Service\Media\CoverUpload;
+use App\Service\Media\Exception\UploadRejected;
 use App\Service\View\AdminChrome;
 
 /**
@@ -64,6 +66,7 @@ final class ArtworkController
         private readonly PreviewToken $preview,
         private readonly UrlGenerator $url,
         private readonly \App\Service\Seo\SlugHistory $slugHistory,
+        private readonly CoverUpload $covers,
     ) {
     }
 
@@ -107,8 +110,14 @@ final class ArtworkController
             return $this->form($request, null, 'Le titre en français est obligatoire.', 422);
         }
 
+        try {
+            $fields = $this->fields($request);
+        } catch (UploadRejected $exception) {
+            return $this->form($request, null, $exception->reason()->message(), 422);
+        }
+
         $id = $this->artworks->insert(
-            $this->fields($request),
+            $fields,
             $this->withSlugs($translations, $request, null),
             $this->chrome->now(),
         );
@@ -149,7 +158,12 @@ final class ArtworkController
             return $this->form($request, $existing, 'Le titre en français est obligatoire.', 422);
         }
 
-        $fields = $this->fields($request);
+        try {
+            $fields = $this->fields($request);
+        } catch (UploadRejected $exception) {
+            return $this->form($request, $existing, $exception->reason()->message(), 422);
+        }
+
         $slugged = $this->withSlugs($translations, $request, $id);
 
         // 05-i18n-seo §5 : une œuvre publiée dont le slug change laisse une 301.
@@ -285,10 +299,13 @@ final class ArtworkController
 
     /**
      * @return array<string, mixed>
+     *
+     * @throws UploadRejected si un fichier de couverture joint est refuse
      */
     private function fields(Request $request): array
     {
         $vat = $request->input('tva') ?? 'original_artwork';
+        $cover = $this->covers->resolve($request, 'image_principale_fichier', 'image_principale');
 
         return [
             'category_id' => self::positiveInt($request->input('rubrique')),
@@ -305,7 +322,7 @@ final class ArtworkController
             'vat_category' => in_array($vat, self::VAT_CATEGORIES, true) ? $vat : 'original_artwork',
             'status' => (ArtworkStatus::tryFrom($request->input('statut') ?? '') ?? ArtworkStatus::Draft)->value,
             'weight_grams' => self::positiveInt($request->input('poids')),
-            'primary_media_id' => self::positiveInt($request->input('image_principale')),
+            'primary_media_id' => $cover,
         ];
     }
 

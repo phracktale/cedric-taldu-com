@@ -82,6 +82,7 @@ use App\Service\Content\PreviewToken;
 use App\Service\Content\TranslationInput;
 use App\Service\I18n\Translator;
 use App\Service\I18n\UrlGenerator;
+use App\Service\Media\CoverUpload;
 use App\Service\Media\ImageProcessor;
 use App\Service\Media\MediaStore;
 use App\Service\Media\UploadValidator;
@@ -307,6 +308,12 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(ClockInterface::class),
         $rootPath . '/storage/uploads',
         $rootPath . '/public/media',
+    ));
+
+    // Resout la couverture d'une entite : fichier joint enregistre dans la
+    // mediatheque, sinon identifiant saisi a la main (04-back-office §7).
+    $container->set(CoverUpload::class, static fn (Container $c): CoverUpload => new CoverUpload(
+        $c->get(MediaStore::class),
     ));
 
     // --- Authentification --------------------------------------------------
@@ -582,6 +589,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(PreviewToken::class),
             $c->get(UrlGenerator::class),
             $c->get(SlugHistory::class),
+            $c->get(CoverUpload::class),
         ),
     );
 
@@ -593,6 +601,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(SeriesAdminRepository::class),
             $c->get(TranslationInput::class),
             $c->get(SlugHistory::class),
+            $c->get(CoverUpload::class),
         ),
     );
 
@@ -603,6 +612,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(PostAdminRepository::class),
             $c->get(TranslationInput::class),
             $c->get(SlugHistory::class),
+            $c->get(CoverUpload::class),
         ),
     );
 
@@ -621,6 +631,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(AdminChrome::class),
             $c->get(PageAdminRepository::class),
             $c->get(TranslationInput::class),
+            $c->get(CoverUpload::class),
         ),
     );
 

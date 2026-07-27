@@ -13,6 +13,8 @@ use App\Domain\Locale;
 use App\Domain\Slug;
 use App\Repository\Admin\PostAdminRepository;
 use App\Service\Content\TranslationInput;
+use App\Service\Media\CoverUpload;
+use App\Service\Media\Exception\UploadRejected;
 use App\Service\View\AdminChrome;
 
 /**
@@ -47,6 +49,7 @@ final class PostController
         private readonly PostAdminRepository $posts,
         private readonly TranslationInput $translations,
         private readonly \App\Service\Seo\SlugHistory $slugHistory,
+        private readonly CoverUpload $covers,
     ) {
     }
 
@@ -75,10 +78,16 @@ final class PostController
             return $this->form($request, null, 'Le titre en français est obligatoire.', 422);
         }
 
+        try {
+            $cover = $this->covers->resolve($request, 'couverture_fichier', 'couverture');
+        } catch (UploadRejected $exception) {
+            return $this->form($request, null, $exception->reason()->message(), 422);
+        }
+
         $id = $this->posts->insert(
             $this->withSlugs($translations, $request, null),
             $this->chrome->currentUserId(),
-            self::mediaId($request->input('couverture')),
+            $cover,
             $request->input('date_evenement'),
             $request->input('lieu_evenement'),
             $this->chrome->now(),
@@ -112,6 +121,12 @@ final class PostController
             return $this->form($request, $existing, 'Le titre en français est obligatoire.', 422);
         }
 
+        try {
+            $cover = $this->covers->resolve($request, 'couverture_fichier', 'couverture');
+        } catch (UploadRejected $exception) {
+            return $this->form($request, $existing, $exception->reason()->message(), 422);
+        }
+
         $id = (int) $existing['id'];
         $slugged = $this->withSlugs($translations, $request, $id);
 
@@ -124,7 +139,7 @@ final class PostController
         $this->posts->update(
             $id,
             $slugged,
-            self::mediaId($request->input('couverture')),
+            $cover,
             $request->input('date_evenement'),
             $request->input('lieu_evenement'),
             $this->chrome->now(),
@@ -268,8 +283,4 @@ final class PostController
         return $post ?? throw new NotFoundException('Article introuvable.');
     }
 
-    private static function mediaId(?string $value): ?int
-    {
-        return $value !== null && ctype_digit($value) && (int) $value > 0 ? (int) $value : null;
-    }
 }
