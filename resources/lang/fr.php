@@ -19,6 +19,7 @@ return [
     'nav.news' => 'Actus',
     'nav.booklet' => 'Livret',
     'nav.contact' => 'Contact',
+    'nav.cart' => 'Panier',
     'nav.menu' => 'Menu',
     'nav.tagline' => 'artiste plasticien — Amiens',
     'nav.main_label' => 'Navigation principale',
@@ -49,6 +50,8 @@ return [
     'cart.subtotal' => 'Sous-total',
     'cart.reminder' => 'Les frais de port et la TVA éventuelle sont calculés à l’étape suivante.',
     'cart.checkout' => 'Passer la commande',
+    'cart.added' => 'Ajouté au panier.',
+    'cart.view' => 'Voir le panier',
 
     // Formulaires (éléments partagés)
     'form.do_not_fill' => 'Ne pas remplir',

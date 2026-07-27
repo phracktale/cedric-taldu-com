@@ -29,6 +29,9 @@ $rubriqueCourante = is_int($data['currentCategoryId'] ?? null) ? $data['currentC
 
 /** @var array<string, string> $localeSwitch URL équivalente par code de langue */
 $localeSwitch = is_array($data['localeSwitch'] ?? null) ? $data['localeSwitch'] : [];
+
+// Pastille du panier : fournie par Chrome, lue sans jamais créer de panier.
+$cartCount = is_int($data['cartCount'] ?? null) ? $data['cartCount'] : 0;
 ?>
 <header>
   <div class="nav">
@@ -66,6 +69,13 @@ $localeSwitch = is_array($data['localeSwitch'] ?? null) ? $data['localeSwitch'] 
         </li>
       </ul>
     </nav>
+
+    <?php // Accès au panier, présent sur tout le site. La pastille montre le
+          // nombre d'articles ; admin.js la met à jour après un ajout en fetch. ?>
+    <a class="panier-lien" href="<?= attr($url->route('cart.show', ['locale' => $locale->value])) ?>">
+      <?= $t('nav.cart') ?>
+      <span class="pastille-panier" data-cart-count<?php if ($cartCount === 0) : ?> hidden<?php endif; ?>><?= e($cartCount) ?></span>
+    </a>
 
     <?php // Sélecteur de langue : vers l'URL équivalente dans l'autre langue,
           // fournie par le contrôleur (05-i18n §2). Muet si l'équivalent manque. ?>

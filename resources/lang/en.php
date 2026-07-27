@@ -17,6 +17,7 @@ return [
     'nav.news' => 'News',
     'nav.booklet' => 'Booklet',
     'nav.contact' => 'Contact',
+    'nav.cart' => 'Cart',
     'nav.menu' => 'Menu',
     'nav.tagline' => 'visual artist — Amiens, France',
     'nav.main_label' => 'Main navigation',
@@ -47,6 +48,8 @@ return [
     'cart.subtotal' => 'Subtotal',
     'cart.reminder' => 'Shipping and any VAT are calculated at the next step.',
     'cart.checkout' => 'Proceed to checkout',
+    'cart.added' => 'Added to your cart.',
+    'cart.view' => 'View cart',
 
     // Forms (shared elements)
     'form.do_not_fill' => 'Do not fill',

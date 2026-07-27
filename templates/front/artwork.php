@@ -129,6 +129,13 @@ $media = $medias[$oeuvre->primaryMediaId] ?? null;
         <button type="submit" class="btn btn-plein">
           <?= $t('artwork.acquire') ?>
         </button>
+        <?php // Confirmation révélée par admin.js après un ajout en fetch. Sans
+              // JavaScript, l'ajout redirige vers le panier : cette ligne reste
+              // masquée et n'est jamais nécessaire. ?>
+        <p class="achat-confirme" role="status" data-cart-confirm hidden>
+          <?= $t('cart.added') ?>
+          <a href="<?= attr($url->route('cart.show', ['locale' => $locale->value])) ?>"><?= $t('cart.view') ?></a>
+        </p>
       </form>
     </div>
     <?php endif; ?>
@@ -169,6 +176,10 @@ $media = $medias[$oeuvre->primaryMediaId] ?? null;
                 <button type="submit" class="btn btn-vide">
                   <?= $t('artwork.add_to_cart') ?>
                 </button>
+                <p class="achat-confirme" role="status" data-cart-confirm hidden>
+                  <?= $t('cart.added') ?>
+                  <a href="<?= attr($url->route('cart.show', ['locale' => $locale->value])) ?>"><?= $t('cart.view') ?></a>
+                </p>
               </form>
             </li>
             <?php endforeach; ?>

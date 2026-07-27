@@ -98,6 +98,35 @@ final class CartRepositoryTest extends DatabaseTestCase
         $this->assertSame($artwork, $retrouve->lines[0]->targetId);
     }
 
+    // ------------------------------------------------- compte pour l'en-tete
+
+    public function test_le_compte_par_jeton_somme_les_quantites_sans_creer_de_panier(): void
+    {
+        // La pastille de l'en-tete lit ce compte a CHAQUE page : il ne doit
+        // jamais creer de panier, sans quoi le moindre robot en semerait un par
+        // vue.
+        $panier = $this->repository->open(null, Locale::Fr);
+        $artwork = $this->creerOeuvre();
+        $variante = $this->creerVariante();
+        $this->repository->save(
+            $panier->add(LineKind::Original, $artwork, 1)->add(LineKind::Reproduction, $variante, 3)
+        );
+
+        $avant = $this->compter('carts');
+
+        $this->assertSame(4, $this->repository->countByToken($panier->token));
+        $this->assertSame($avant, $this->compter('carts'), 'Lire le compte ne doit créer aucun panier.');
+    }
+
+    public function test_le_compte_d_un_jeton_absent_ou_inconnu_est_zero(): void
+    {
+        $this->assertSame(0, $this->repository->countByToken(null));
+        $this->assertSame(0, $this->repository->countByToken(str_repeat('f', 64)));
+        // Un jeton mal formé ne déclenche aucune requête douteuse.
+        $this->assertSame(0, $this->repository->countByToken('pas-un-jeton'));
+        $this->assertSame(0, $this->compter('carts'));
+    }
+
     // ------------------------------------------------------- enregistrement
 
     public function test_les_lignes_ajoutees_sont_enregistrees(): void

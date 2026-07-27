@@ -403,5 +403,4 @@ final class CategoryController
 
         return $category ?? throw new NotFoundException('Rubrique introuvable.');
     }
-
 }

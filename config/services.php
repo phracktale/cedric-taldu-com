@@ -416,6 +416,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $config,
         $c->get(ClockInterface::class),
         $c->get(Csrf::class),
+        $c->get(CartRepository::class),
     ));
 
     $container->set(AdminChrome::class, static fn (Container $c): AdminChrome => new AdminChrome(
