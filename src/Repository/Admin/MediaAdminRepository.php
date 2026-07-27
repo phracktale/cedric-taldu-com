@@ -19,7 +19,7 @@ final class MediaAdminRepository
 {
     private const SELECT = <<<'SQL'
         SELECT m.id, m.storage_path, m.public_basename, m.mime, m.width, m.height,
-               m.bytes, m.checksum, m.original_name, m.focal_x, m.focal_y, m.created_at
+               m.bytes, m.checksum, m.original_name, m.copyright, m.focal_x, m.focal_y, m.created_at
         FROM media m
         SQL;
 
@@ -229,6 +229,20 @@ final class MediaAdminRepository
         $statement->execute(['x' => $x, 'y' => $y, 'id' => $mediaId]);
     }
 
+    /**
+     * Mention de credit, une par image (04-back-office §7).
+     *
+     * Une chaine vide est ramenee a NULL : « sans credit » et « credit vide »
+     * sont le meme etat, on n'en garde qu'une representation.
+     */
+    public function updateCopyright(int $mediaId, ?string $copyright): void
+    {
+        $copyright = $copyright !== null && trim($copyright) !== '' ? trim($copyright) : null;
+
+        $statement = $this->pdo->prepare('UPDATE media SET copyright = :copyright WHERE id = :id');
+        $statement->execute(['copyright' => $copyright, 'id' => $mediaId]);
+    }
+
     public function delete(int $mediaId): void
     {
         $statement = $this->pdo->prepare('DELETE FROM media WHERE id = :id');
@@ -253,6 +267,7 @@ final class MediaAdminRepository
             'bytes' => (int) $row['bytes'],
             'checksum' => (string) $row['checksum'],
             'original_name' => $row['original_name'] === null ? null : (string) $row['original_name'],
+            'copyright' => $row['copyright'] === null ? null : (string) $row['copyright'],
             'focal_x' => $row['focal_x'] === null ? null : (int) $row['focal_x'],
             'focal_y' => $row['focal_y'] === null ? null : (int) $row['focal_y'],
             'created_at' => (string) $row['created_at'],
