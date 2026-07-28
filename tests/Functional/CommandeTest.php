@@ -53,6 +53,19 @@ final class CommandeTest extends FunctionalTestCase
         $this->assertStringContainsString('name="cgv"', $reponse->body);
     }
 
+    public function test_la_case_cgv_pointe_le_pdf_dans_la_langue_du_tunnel(): void
+    {
+        // La case doit permettre de LIRE les CGV avant de les accepter : un lien
+        // vers le PDF, dans la langue courante.
+        $cookie = $this->panierAvecOeuvre();
+
+        $fr = $this->requete('GET', '/cedric-taldu/fr/commande', cookies: [self::COOKIE => $cookie])->body;
+        $en = $this->requete('GET', '/cedric-taldu/en/checkout', cookies: [self::COOKIE => $cookie])->body;
+
+        $this->assertStringContainsString('documents/cgv-cedric-taldu-fr.pdf', $fr);
+        $this->assertStringContainsString('documents/cgv-cedric-taldu-en.pdf', $en);
+    }
+
     public function test_un_panier_vide_renvoie_au_panier(): void
     {
         $reponse = $this->requete('GET', '/cedric-taldu/fr/commande');

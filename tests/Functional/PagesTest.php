@@ -63,4 +63,44 @@ final class PagesTest extends FunctionalTestCase
 
         $this->assertSame(404, $this->get('/cedric-taldu/fr/a-propos')->status);
     }
+
+    // ------------------------------------------------------------------ CGV
+
+    public function test_la_page_cgv_porte_le_texte_integral_en_francais(): void
+    {
+        // Migration 0009 : le corps n'est plus un texte d'attente mais les CGV
+        // complètes. On vérifie quelques ancres réparties dans le document.
+        $corps = $this->get('/cedric-taldu/fr/conditions-generales-de-vente')->body;
+
+        $this->assertStringContainsString('Article 1', $corps);
+        $this->assertStringContainsString('Droit de rétractation', $corps);
+        $this->assertStringContainsString('médiation', $corps);
+        $this->assertStringNotContainsString('À compléter en back-office', $corps);
+    }
+
+    public function test_la_page_cgv_est_traduite_en_anglais(): void
+    {
+        $corps = $this->get('/cedric-taldu/en/terms')->body;
+
+        $this->assertStringContainsString('Right of withdrawal', $corps);
+        $this->assertStringNotContainsString('To be completed in the back office', $corps);
+    }
+
+    public function test_la_page_cgv_propose_le_pdf_dans_la_bonne_langue(): void
+    {
+        $fr = $this->get('/cedric-taldu/fr/conditions-generales-de-vente')->body;
+        $en = $this->get('/cedric-taldu/en/terms')->body;
+
+        $this->assertStringContainsString('documents/cgv-cedric-taldu-fr.pdf', $fr);
+        $this->assertStringContainsString('documents/cgv-cedric-taldu-en.pdf', $en);
+    }
+
+    public function test_les_autres_pages_fixes_n_affichent_pas_le_lien_cgv_pdf(): void
+    {
+        // Le lien PDF est réservé aux CGV : une autre page fixe ne le porte pas.
+        $this->assertStringNotContainsString(
+            'documents/cgv-cedric-taldu',
+            $this->get('/cedric-taldu/fr/mentions-legales')->body,
+        );
+    }
 }
