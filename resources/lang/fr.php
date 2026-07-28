@@ -75,6 +75,8 @@ return [
     'checkout.note' => 'Note (facultative)',
     'checkout.accept_terms' => 'J’accepte les conditions générales de vente',
     'checkout.read' => '(lire)',
+    'checkout.pdf' => '(PDF)',
+    'page.download_pdf' => 'Télécharger les CGV en PDF',
     'checkout.pay' => 'Procéder au paiement',
 
     // Confirmation de commande

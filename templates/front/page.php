@@ -32,4 +32,14 @@ $page = $data['page'];
   <div class="page-corps">
     <?= richText($page->body($locale)) ?>
   </div>
+
+  <?php // Version PDF téléchargeable des CGV (page à code fixe « terms »). ?>
+  <?php if ($page->code === 'terms') : ?>
+  <p class="page-pdf">
+    <a class="btn btn-vide" target="_blank" rel="noopener"
+       href="<?= attr($url->asset('documents/cgv-cedric-taldu-' . $locale->value . '.pdf')) ?>">
+      <?= $t('page.download_pdf') ?>
+    </a>
+  </p>
+  <?php endif; ?>
 </article>

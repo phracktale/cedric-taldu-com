@@ -32,6 +32,8 @@ $csrfToken = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
 $error = is_string($data['error'] ?? null) ? $data['error'] : null;
 
 $cgvUrl = $url->route('page.terms', ['locale' => $locale->value]);
+// Version PDF des CGV, par langue (servie sous public/assets/documents/).
+$cgvPdfUrl = $url->asset('documents/cgv-cedric-taldu-' . $locale->value . '.pdf');
 ?>
 <main class="commande" id="contenu">
   <div class="wrap">
@@ -114,8 +116,11 @@ $cgvUrl = $url->route('page.terms', ['locale' => $locale->value]);
 
       <label class="commande-cgv">
         <input type="checkbox" name="cgv" value="on" required>
-        <?= $t('checkout.accept_terms') ?>
-        <a href="<?= attr($cgvUrl) ?>"><?= $t('checkout.read') ?></a>
+        <span>
+          <?= $t('checkout.accept_terms') ?>
+          <a href="<?= attr($cgvUrl) ?>"><?= $t('checkout.read') ?></a>
+          <a href="<?= attr($cgvPdfUrl) ?>" target="_blank" rel="noopener"><?= $t('checkout.pdf') ?></a>
+        </span>
       </label>
 
       <button type="submit" class="btn btn-plein">

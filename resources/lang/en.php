@@ -73,6 +73,8 @@ return [
     'checkout.note' => 'Note (optional)',
     'checkout.accept_terms' => 'I accept the terms and conditions',
     'checkout.read' => '(read)',
+    'checkout.pdf' => '(PDF)',
+    'page.download_pdf' => 'Download the terms as PDF',
     'checkout.pay' => 'Proceed to payment',
 
     // Order confirmation
