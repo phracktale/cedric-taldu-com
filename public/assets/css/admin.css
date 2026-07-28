@@ -43,6 +43,12 @@
   --filet: #D8D4CB;
   --alerte: #8C2F1F;
   --max: 1180px;
+  /* Coins adoucis : assez pour un rendu moderne, assez discrets pour rester
+     dans la sobriété éditoriale de la charte. */
+  --rayon: 10px;
+  --rayon-petit: 6px;
+  /* Halo de focus : une encre très diluée, cohérente avec l'outline clavier. */
+  --anneau: 0 0 0 3px rgba(22, 21, 19, .10);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -120,33 +126,58 @@ a:hover { text-decoration-color: var(--encre); }
 .aide { color: var(--encre-70); max-width: 62ch; margin-bottom: 1.2rem; }
 .aide--attention {
   background: var(--papier); border-left: 3px solid var(--alerte);
+  border-radius: 0 var(--rayon-petit) var(--rayon-petit) 0;
   padding: .9rem 1.1rem; max-width: none;
 }
 
 .erreur {
   background: var(--papier); border-left: 3px solid var(--alerte);
-  color: var(--alerte); padding: .8rem 1rem; margin-bottom: 1.2rem;
+  border-radius: 0 var(--rayon-petit) var(--rayon-petit) 0;
+  color: var(--alerte); padding: .9rem 1.1rem; margin-bottom: 1.2rem;
 }
 
 .succes {
   background: var(--papier); border-left: 3px solid var(--encre);
-  padding: .8rem 1rem; margin-bottom: 1.2rem;
+  border-radius: 0 var(--rayon-petit) var(--rayon-petit) 0;
+  padding: .9rem 1.1rem; margin-bottom: 1.2rem;
 }
 
 /* -------------------------------------------------------------- connexion */
 
 .admin-connexion {
   max-width: 24rem; margin: clamp(2rem, 10vh, 6rem) auto;
-  background: var(--papier); border: 1px solid var(--filet);
+  background: var(--papier); border: 1px solid var(--filet); border-radius: var(--rayon);
   padding: clamp(1.5rem, 5vw, 2.5rem);
 }
 
 /* ------------------------------------------------------------ formulaires */
 
-.formulaire .champ { margin-bottom: 1.1rem; }
+/* Les grands formulaires d'édition (marqués data-surveiller) sont une carte à
+   part entière : fond, bordure, coins et padding généreux. Les petits
+   formulaires utilitaires (ajout de série, remplacement, micro-actions) restent
+   nus, sans double encadré. */
+.formulaire[data-surveiller] {
+  background: var(--papier); border: 1px solid var(--filet); border-radius: var(--rayon);
+  padding: clamp(1.5rem, 4vw, 2.75rem);
+}
+
+/* Dans cette carte, les fieldsets deviennent des sections : plus de boîte
+   imbriquée, un simple filet sépare deux sections consécutives. */
+.formulaire[data-surveiller] fieldset {
+  border: 0; background: transparent; border-radius: 0; padding: 0; margin: 0 0 1.75rem;
+}
+.formulaire[data-surveiller] fieldset + fieldset,
+.formulaire[data-surveiller] [data-onglets-langue] + fieldset {
+  border-top: 1px solid var(--filet); padding-top: 1.75rem;
+}
+.formulaire[data-surveiller] legend { margin-bottom: 1.1rem; padding: 0; }
+
+.formulaire .champ { margin-bottom: 1.6rem; }
+.formulaire .champ:last-child { margin-bottom: 0; }
+
 .formulaire label {
-  display: block; font-size: .78rem; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--encre-70); margin-bottom: .35rem;
+  display: block; font-size: .74rem; font-weight: 500; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--encre-70); margin-bottom: .55rem;
 }
 
 .formulaire input[type='text'],
@@ -157,42 +188,79 @@ a:hover { text-decoration-color: var(--encre); }
 .formulaire input[type='file'],
 .formulaire select,
 .formulaire textarea {
-  width: 100%; padding: .55rem .7rem; font: inherit;
+  width: 100%; min-height: 3.25rem; padding: .9rem 1.05rem;
+  font: inherit; font-size: 1rem;
   background: var(--papier); color: var(--encre);
-  border: 1px solid var(--filet);
+  border: 1px solid var(--filet); border-radius: var(--rayon);
+  transition: border-color .15s ease, box-shadow .15s ease;
 }
 
-.formulaire textarea { min-height: 9rem; resize: vertical; line-height: 1.55; }
+.formulaire input::placeholder, .formulaire textarea::placeholder { color: var(--encre-40); }
+
+.formulaire textarea { min-height: 11rem; resize: vertical; line-height: 1.6; }
+
+.formulaire input:hover, .formulaire select:hover, .formulaire textarea:hover {
+  border-color: var(--encre-40);
+}
 .formulaire input:focus, .formulaire select:focus, .formulaire textarea:focus {
-  border-color: var(--encre);
+  outline: none; border-color: var(--encre); box-shadow: var(--anneau);
 }
 
-.champ-inline { display: flex; align-items: center; gap: .5rem; }
-.champ-inline label { text-transform: none; letter-spacing: 0; margin: 0; font-size: .95rem; }
+/* Chevron du menu déroulant, en data URI (CSP : img-src autorise data:). */
+.formulaire select {
+  appearance: none; -webkit-appearance: none;
+  padding-right: 2.75rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4.5l4 4 4-4' fill='none' stroke='%234A4843' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 1.05rem center; background-size: .8rem;
+}
 
-.champ-aide { font-size: .8rem; color: var(--encre-40); margin-top: .3rem; }
-.champ-erreur { font-size: .82rem; color: var(--alerte); margin-top: .3rem; }
+/* Le sélecteur de fichier : le bouton natif prend la charte, l'ensemble s'aligne. */
+.formulaire input[type='file'] { padding: .7rem 1.05rem; cursor: pointer; }
+.formulaire input[type='file']::file-selector-button {
+  font: inherit; font-size: .85rem; cursor: pointer; margin-right: 1rem;
+  padding: .5rem 1.1rem; border: 1px solid var(--encre); border-radius: var(--rayon-petit);
+  background: var(--encre); color: var(--papier); transition: background .15s ease;
+}
+.formulaire input[type='file']::file-selector-button:hover { background: var(--encre-70); }
 
-.grille-champs { display: grid; gap: 0 1.2rem; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
+.champ-inline { display: flex; align-items: center; gap: .65rem; }
+.champ-inline label { text-transform: none; letter-spacing: 0; margin: 0; font-size: .95rem; font-weight: 300; }
+.champ-inline input[type='checkbox'], .champ-inline input[type='radio'] {
+  width: 1.2rem; height: 1.2rem; min-height: 0; accent-color: var(--encre); cursor: pointer;
+}
 
-fieldset { border: 1px solid var(--filet); padding: 1.2rem; margin-bottom: 1.5rem; background: var(--papier); }
+.champ-aide { font-size: .82rem; color: var(--encre-40); margin-top: .45rem; line-height: 1.5; }
+.champ-erreur { font-size: .82rem; color: var(--alerte); margin-top: .45rem; }
+
+.grille-champs { display: grid; gap: 0 1.5rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+
+fieldset {
+  border: 1px solid var(--filet); border-radius: var(--rayon);
+  padding: 1.6rem 1.5rem 1.75rem; margin-bottom: 1.75rem; background: var(--papier);
+}
 legend {
-  font-size: .78rem; letter-spacing: .12em; text-transform: uppercase;
-  color: var(--encre-70); padding: 0 .5rem;
+  font-size: .74rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--encre); padding: 0 .6rem;
 }
 
-.actions { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; margin-top: 1.2rem; }
+.actions {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .9rem;
+  margin-top: 1.75rem; padding-top: 1.5rem; border-top: 1px solid var(--filet);
+}
 
 .bouton {
-  display: inline-block; background: var(--encre); color: var(--papier);
-  border: 1px solid var(--encre); padding: .55rem 1.4rem;
-  font: inherit; font-size: .9rem; letter-spacing: .04em;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--encre); color: var(--papier);
+  border: 1px solid var(--encre); border-radius: var(--rayon);
+  padding: .85rem 1.7rem; font: inherit; font-size: .92rem; letter-spacing: .03em;
   cursor: pointer; text-decoration: none;
+  transition: background .15s ease, border-color .15s ease, transform .05s ease;
 }
 .bouton:hover { background: var(--encre-70); border-color: var(--encre-70); }
-.bouton--secondaire { background: none; color: var(--encre); }
-.bouton--secondaire:hover { background: var(--mur); }
-.bouton--danger { background: var(--alerte); border-color: var(--alerte); }
+.bouton:active { transform: translateY(1px); }
+.bouton--secondaire { background: transparent; color: var(--encre); border-color: var(--filet); }
+.bouton--secondaire:hover { background: var(--papier-chaud); border-color: var(--encre-40); }
+.bouton--danger { background: var(--alerte); border-color: var(--alerte); color: var(--papier); }
 .bouton--danger:hover { background: #6f2518; border-color: #6f2518; }
 
 /* ---------------------------------------------------------------- tableaux */
@@ -219,14 +287,14 @@ legend {
   display: grid; gap: 1rem; margin-bottom: 2.5rem;
   grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
 }
-.carte { background: var(--papier); border: 1px solid var(--filet); padding: 1.2rem; }
+.carte { background: var(--papier); border: 1px solid var(--filet); border-radius: var(--rayon-petit); padding: 1.4rem; }
 .carte-nombre { font-family: 'Marcellus', Georgia, serif; font-size: 2.2rem; line-height: 1; }
 .carte-libelle { letter-spacing: .1em; text-transform: uppercase; font-size: .78rem; color: var(--encre-70); }
 .carte-detail { font-size: .85rem; color: var(--encre-40); margin: .4rem 0 .8rem; }
 
 /* --------------------------------------------------------- double facteur */
 
-.secret { background: var(--papier); border: 1px solid var(--filet); padding: 1rem; margin-bottom: 1.2rem; }
+.secret { background: var(--papier); border: 1px solid var(--filet); border-radius: var(--rayon-petit); padding: 1.1rem; margin-bottom: 1.2rem; }
 .secret-libelle {
   display: block; font-size: .72rem; letter-spacing: .12em;
   text-transform: uppercase; color: var(--encre-70); margin-bottom: .3rem;
@@ -238,7 +306,7 @@ legend {
   display: grid; gap: .5rem; list-style: none; margin-bottom: 1.5rem;
   grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
 }
-.codes-de-secours li { background: var(--papier); border: 1px solid var(--filet); padding: .5rem .8rem; text-align: center; }
+.codes-de-secours li { background: var(--papier); border: 1px solid var(--filet); border-radius: var(--rayon-petit); padding: .6rem .8rem; text-align: center; }
 
 /* ------------------------------------------------------------- médiathèque */
 

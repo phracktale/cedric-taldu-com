@@ -51,6 +51,7 @@
   --encre-70: #4A4843;
   --encre-40: #8C8983;
   --filet: #D8D4CB;
+  --alerte: #8C2F1F;
   --max: 1180px;
 }
 
@@ -249,6 +250,40 @@ nav a.boutique:hover, nav a.boutique:focus-visible { background: var(--encre); c
 .btn-plein:hover, .btn-plein:focus-visible { background: transparent; color: var(--encre); }
 .btn-vide { color: var(--encre); }
 .btn-vide:hover, .btn-vide:focus-visible { background: var(--encre); color: var(--papier); }
+button.btn { font-family: inherit; cursor: pointer; }
+
+/* ---------------------------------------------------------------- champs */
+
+/* Contrôles de saisie du site public : grands, aérés, alignés — dans le
+   vocabulaire éditorial de la vitrine (angles francs, comme les boutons). */
+.contact-form input[type='text'],
+.contact-form input[type='email'],
+.contact-form textarea,
+.panier-quantite input[type='number'] {
+  width: 100%; padding: .95rem 1.1rem; font: inherit; font-size: 1rem;
+  background: var(--papier); color: var(--encre); border: 1px solid var(--filet);
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.contact-form input:hover, .contact-form textarea:hover,
+.panier-quantite input:hover { border-color: var(--encre-40); }
+.contact-form input:focus, .contact-form textarea:focus,
+.panier-quantite input:focus {
+  outline: none; border-color: var(--encre); box-shadow: 0 0 0 3px rgba(22, 21, 19, .10);
+}
+.contact-form input::placeholder, .contact-form textarea::placeholder { color: var(--encre-40); }
+.panier-quantite input[type='number'] { width: 5.5rem; text-align: center; padding: .7rem .6rem; }
+
+/* ---------------------------------------------------------------- contact form */
+
+.contact-form { max-width: 36rem; margin: 0 auto; text-align: left; }
+.contact-form label {
+  display: block; font-size: .72rem; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--encre-70); margin: 1.7rem 0 .55rem;
+}
+.contact-form input[type='text'], .contact-form input[type='email'] { min-height: 3.4rem; }
+.contact-form textarea { min-height: 12rem; resize: vertical; line-height: 1.6; }
+.contact-form .btn { margin-top: 2.2rem; }
+.contact-form .champ-erreur { display: block; font-size: .82rem; color: var(--alerte); margin-top: .5rem; }
 
 /* ------------------------------------------------------------------- hero */
 
