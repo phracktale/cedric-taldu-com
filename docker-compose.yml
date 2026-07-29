@@ -46,6 +46,23 @@ services:
       DB_TEST_HOST: db
       DB_TEST_PORT: "3306"
       SECURITY_PEPPER: ${SECURITY_PEPPER:-developpement-uniquement-a-remplacer-hors-local}
+      # Paiement et e-mail : injectes ICI (interpolés depuis le `.env` au `up`),
+      # comme SECURITY_PEPPER. Le process web tourne en www-data et ne peut pas
+      # lire un `.env` en 0600 ; ces secrets doivent donc passer par l'environnement,
+      # pas par le fichier. Après modification du `.env` : `docker compose up -d`
+      # (un simple `restart` ne réinjecte pas l'environnement).
+      STRIPE_ENV: ${STRIPE_ENV:-test}
+      STRIPE_TEST_SECRET_KEY: ${STRIPE_TEST_SECRET_KEY:-}
+      STRIPE_TEST_WEBHOOK_SECRET: ${STRIPE_TEST_WEBHOOK_SECRET:-}
+      STRIPE_LIVE_SECRET_KEY: ${STRIPE_LIVE_SECRET_KEY:-}
+      STRIPE_LIVE_WEBHOOK_SECRET: ${STRIPE_LIVE_WEBHOOK_SECRET:-}
+      MAIL_HOST: ${MAIL_HOST:-mailhog}
+      MAIL_PORT: ${MAIL_PORT:-1025}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_ENCRYPTION: ${MAIL_ENCRYPTION:-}
+      MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-commandes@cedrictaldu.com}
+      MAIL_FROM_NAME: "${MAIL_FROM_NAME:-Cédric Taldu}"
     depends_on:
       db:
         condition: service_healthy
