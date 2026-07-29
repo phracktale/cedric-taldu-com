@@ -78,6 +78,15 @@ return [
     'checkout.pdf' => '(PDF)',
     'page.download_pdf' => 'Télécharger les CGV en PDF',
     'checkout.pay' => 'Procéder au paiement',
+    'checkout.delivery' => 'Livraison',
+    'checkout.free' => 'Gratuit',
+    'checkout.on_request' => 'Sur devis',
+    'checkout.shipping_cost' => 'Frais de port',
+    'checkout.total' => 'Total',
+    'checkout.delivery_estimate' => 'Réception estimée entre le :from et le :to.',
+    'checkout.pickup_notice' => 'Retrait à l’atelier sur rendez-vous, après confirmation du paiement.',
+    'checkout.shipping_note' => 'Tarif pour la France ; ajusté selon la destination.',
+    'checkout.payment_secure' => 'Paiement sécurisé par carte bancaire via Stripe.',
 
     // Confirmation de commande
     'confirmation.pending_title' => 'Paiement en cours de confirmation',

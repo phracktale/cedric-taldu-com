@@ -259,19 +259,26 @@ button.btn { font-family: inherit; cursor: pointer; }
 .contact-form input[type='text'],
 .contact-form input[type='email'],
 .contact-form textarea,
+.commande-form input[type='text'],
+.commande-form input[type='email'],
+.commande-form input[type='tel'],
+.commande-form textarea,
 .panier-quantite input[type='number'] {
-  width: 100%; padding: .95rem 1.1rem; font: inherit; font-size: 1rem;
+  width: 100%; min-height: 3.4rem; padding: .95rem 1.1rem; font: inherit; font-size: 1rem;
   background: var(--papier); color: var(--encre); border: 1px solid var(--filet);
   transition: border-color .15s ease, box-shadow .15s ease;
 }
 .contact-form input:hover, .contact-form textarea:hover,
+.commande-form input:hover, .commande-form textarea:hover,
 .panier-quantite input:hover { border-color: var(--encre-40); }
 .contact-form input:focus, .contact-form textarea:focus,
+.commande-form input:focus, .commande-form textarea:focus,
 .panier-quantite input:focus {
   outline: none; border-color: var(--encre); box-shadow: 0 0 0 3px rgba(22, 21, 19, .10);
 }
-.contact-form input::placeholder, .contact-form textarea::placeholder { color: var(--encre-40); }
-.panier-quantite input[type='number'] { width: 5.5rem; text-align: center; padding: .7rem .6rem; }
+.contact-form input::placeholder, .contact-form textarea::placeholder,
+.commande-form input::placeholder, .commande-form textarea::placeholder { color: var(--encre-40); }
+.panier-quantite input[type='number'] { width: 5.5rem; min-height: 0; text-align: center; padding: .7rem .6rem; }
 
 /* ---------------------------------------------------------------- contact form */
 
@@ -284,6 +291,132 @@ button.btn { font-family: inherit; cursor: pointer; }
 .contact-form textarea { min-height: 12rem; resize: vertical; line-height: 1.6; }
 .contact-form .btn { margin-top: 2.2rem; }
 .contact-form .champ-erreur { display: block; font-size: .82rem; color: var(--alerte); margin-top: .5rem; }
+
+/* --------------------------------------------------------------- commande */
+
+.commande { padding: clamp(2.5rem, 6vh, 4.5rem) 0; }
+.commande > .wrap { max-width: 60rem; }
+.commande h1 { margin-bottom: 2rem; }
+.pot-de-miel { position: absolute; left: -9999px; top: -9999px; }
+
+.commande-erreur {
+  background: var(--papier); border-left: 3px solid var(--alerte); color: var(--alerte);
+  padding: .95rem 1.15rem; margin-bottom: 1.8rem;
+}
+
+/* Trois sections en cartes ; sur grand écran, le bilan colle à droite. */
+.commande-section {
+  background: var(--papier); border: 1px solid var(--filet);
+  padding: clamp(1.4rem, 3.5vw, 2rem); margin-bottom: 1.4rem;
+}
+.commande-section h2 {
+  display: flex; align-items: center; gap: .7rem; margin-bottom: 1.5rem;
+  font-family: 'Jost', sans-serif; font-size: .8rem; font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--encre);
+}
+.commande-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.7rem; height: 1.7rem; flex: none; border: 1px solid var(--encre);
+  border-radius: 50%; font-size: .85rem;
+}
+
+.commande-form label {
+  display: block; font-size: .72rem; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--encre-70); margin: 1.3rem 0 .5rem;
+}
+.commande-section > label:first-of-type,
+.commande-adresse > label:first-of-type { margin-top: 0; }
+
+/* Modes de remise : des lignes cliquables, prix à droite. */
+.commande-modes { display: grid; gap: .7rem; margin-bottom: 1.6rem; }
+.commande-mode {
+  display: flex; align-items: center; gap: .8rem; margin: 0;
+  padding: 1rem 1.15rem; border: 1px solid var(--filet); cursor: pointer;
+  text-transform: none; letter-spacing: 0;
+}
+.commande-mode:has(input:checked) { border-color: var(--encre); box-shadow: inset 0 0 0 1px var(--encre); }
+.commande-mode input[type='radio'] { flex: none; width: 1.15rem; height: 1.15rem; accent-color: var(--encre); }
+.commande-mode-nom { flex: 1; font-size: 1rem; color: var(--encre); }
+.commande-mode-prix { font-variant-numeric: tabular-nums; color: var(--encre-70); }
+.commande-mode:has(input:checked) .commande-mode-prix { color: var(--encre); font-weight: 500; }
+
+.commande-adresse[hidden] { display: none; }
+.commande-ligne { display: grid; grid-template-columns: 8rem 1fr 6rem; gap: 0 1rem; }
+.commande-ligne .champ label { margin-top: 1.3rem; }
+.commande-adresse .champ-aide { font-size: .82rem; color: var(--encre-40); margin-top: .9rem; }
+
+/* Bilan : lignes, sous-total, port, total. */
+.commande-lignes { list-style: none; margin-bottom: 1rem; }
+.commande-lignes li {
+  display: flex; justify-content: space-between; gap: 1.2rem;
+  padding: .6rem 0; border-bottom: 1px solid var(--filet); font-size: .95rem;
+}
+.commande-lignes li span:last-child { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.commande-detail {
+  display: flex; justify-content: space-between; gap: 1.2rem;
+  padding: .35rem 0; color: var(--encre-70); font-size: .95rem;
+}
+.commande-detail span:last-child { font-variant-numeric: tabular-nums; }
+.commande-total {
+  display: flex; justify-content: space-between; gap: 1.2rem; align-items: baseline;
+  margin-top: .7rem; padding-top: .9rem; border-top: 1px solid var(--filet); font-size: 1.3rem;
+}
+.commande-total span:first-child {
+  font-family: 'Jost', sans-serif; font-size: .74rem; font-weight: 500;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--encre-70);
+}
+.commande-total span:last-child { font-variant-numeric: tabular-nums; font-weight: 500; }
+
+.commande-reception {
+  margin-top: 1.2rem; padding: .9rem 1.1rem; background: var(--papier-chaud);
+  font-size: .9rem; color: var(--encre-70);
+}
+.commande-reception[hidden] { display: none; }
+
+.commande-cgv {
+  display: flex; align-items: flex-start; gap: .7rem; margin: 1.5rem 0 0;
+  padding-top: 1.4rem; border-top: 1px solid var(--filet);
+  font-size: .92rem; color: var(--encre-70); line-height: 1.5;
+}
+.commande-cgv input[type='checkbox'] {
+  flex: none; width: 1.25rem; height: 1.25rem; margin-top: .1rem; accent-color: var(--encre); cursor: pointer;
+}
+.commande-cgv a { text-underline-offset: 3px; }
+.commande-paiement { margin: 1.2rem 0 0; font-size: .82rem; color: var(--encre-40); }
+.commande-payer { display: block; width: 100%; text-align: center; margin-top: 1.2rem; font-variant-numeric: tabular-nums; }
+.commande-bilan > label[for='note'] { margin-top: 1.6rem; }
+
+@media (min-width: 60rem) {
+  .commande-form {
+    display: grid; grid-template-columns: minmax(0, 1fr) 22rem;
+    column-gap: 2rem; align-items: start;
+  }
+  .commande-section { grid-column: 1; }
+  .commande-bilan { grid-column: 2; grid-row: 1 / -1; position: sticky; top: 5.5rem; margin-bottom: 0; }
+}
+
+/* ----------------------------------------------------------- confirmation */
+
+.confirmation { padding: clamp(3rem, 8vh, 6rem) 0; }
+.confirmation > .wrap { max-width: 38rem; }
+.confirmation h1 { margin-bottom: 1rem; }
+.confirmation > .wrap > p { color: var(--encre-70); }
+.confirmation-attente {
+  background: var(--papier-chaud); padding: 1rem 1.2rem; margin-bottom: 1.5rem;
+}
+.confirmation-reference, .confirmation-total {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 1.5rem;
+  background: var(--papier); border: 1px solid var(--filet);
+  padding: 1rem 1.2rem; margin: 1.4rem 0 0;
+}
+.confirmation-reference strong, .confirmation-total strong {
+  font-family: 'Jost', sans-serif; font-weight: 500; font-size: .74rem;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--encre-70);
+}
+.confirmation-reference { font-variant-numeric: tabular-nums; }
+.confirmation-total { font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.confirmation-tva { font-size: .85rem; color: var(--encre-40); margin-top: 1rem; }
+.confirmation .wrap > p:last-child { margin-top: 2rem; }
 
 /* ------------------------------------------------------------------- hero */
 

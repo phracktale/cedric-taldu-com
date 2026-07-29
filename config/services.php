@@ -651,6 +651,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(CheckoutService::class),
         $c->get(UrlGenerator::class),
         $c->get(LoggerInterface::class),
+        $c->get(ShippingRepository::class),
     ));
 
     $container->set(PageController::class, static fn (Container $c): PageController => new PageController(

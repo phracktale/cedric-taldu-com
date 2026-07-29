@@ -76,6 +76,15 @@ return [
     'checkout.pdf' => '(PDF)',
     'page.download_pdf' => 'Download the terms as PDF',
     'checkout.pay' => 'Proceed to payment',
+    'checkout.delivery' => 'Delivery',
+    'checkout.free' => 'Free',
+    'checkout.on_request' => 'On request',
+    'checkout.shipping_cost' => 'Shipping',
+    'checkout.total' => 'Total',
+    'checkout.delivery_estimate' => 'Estimated delivery between :from and :to.',
+    'checkout.pickup_notice' => 'Pickup at the studio by appointment, after payment is confirmed.',
+    'checkout.shipping_note' => 'Rate for France; adjusted to your destination.',
+    'checkout.payment_secure' => 'Secure card payment via Stripe.',
 
     // Order confirmation
     'confirmation.pending_title' => 'Payment being confirmed',
