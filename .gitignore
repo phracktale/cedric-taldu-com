@@ -58,6 +58,10 @@ Thumbs.db
 !/vendor/stripe/
 /vendor/stripe/stripe-php/*
 !/vendor/stripe/stripe-php/lib/
+# Bundle CA de Stripe : requis à l'exécution par CurlClient pour vérifier le TLS.
+# Absent, cURL rend « errno 77 : error setting certificate file » et toute
+# commande finit en 500. Il n'est PAS sous lib/, il faut donc l'inclure à part.
+!/vendor/stripe/stripe-php/data/
 !/vendor/stripe/stripe-php/composer.json
 !/vendor/stripe/stripe-php/VERSION
 !/vendor/stripe/stripe-php/LICENSE
