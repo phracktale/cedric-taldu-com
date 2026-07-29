@@ -53,6 +53,23 @@ final class CommandeTest extends FunctionalTestCase
         $this->assertStringContainsString('name="cgv"', $reponse->body);
     }
 
+    public function test_le_tunnel_affiche_le_port_le_total_la_reception_et_le_paiement(): void
+    {
+        // 03-boutique §3 : le récapitulatif éclaire l'acheteur avant paiement —
+        // frais de port, total, fenêtre de réception estimée, moyen de paiement.
+        $cookie = $this->panierAvecOeuvre();
+
+        $corps = $this->requete('GET', '/cedric-taldu/fr/commande', cookies: [self::COOKIE => $cookie])->body;
+
+        $this->assertStringContainsString('Frais de port', $corps);
+        $this->assertStringContainsString('Réception estimée entre le', $corps);
+        $this->assertStringContainsString('Paiement sécurisé par carte', $corps);
+        // Les deux modes portent leur total, pour la mise à jour côté client.
+        $this->assertStringContainsString('value="shipping"', $corps);
+        $this->assertStringContainsString('value="pickup"', $corps);
+        $this->assertStringContainsString('data-total=', $corps);
+    }
+
     public function test_la_case_cgv_pointe_le_pdf_dans_la_langue_du_tunnel(): void
     {
         // La case doit permettre de LIRE les CGV avant de les accepter : un lien
