@@ -16,11 +16,14 @@ use App\Domain\Exception\InvalidAddress;
 use App\Domain\Locale;
 use App\Domain\Order\Address;
 use App\Domain\Order\OrderReference;
+use App\Domain\Shipping\DeliveryEstimate;
 use App\Domain\Shipping\ShippingMethod;
 use App\Domain\Shop\Cart;
+use App\Domain\Shop\CartValuation;
 use App\Domain\Shop\PricingPolicy;
 use App\Repository\CartRepository;
 use App\Repository\OrderRepository;
+use App\Repository\ShippingRepository;
 use App\Service\I18n\UrlGenerator;
 use App\Service\Payment\CheckoutOutcome;
 use App\Service\Payment\CheckoutRequest;
@@ -58,6 +61,7 @@ final class CheckoutController
         private readonly CheckoutService $checkout,
         private readonly UrlGenerator $url,
         private readonly LoggerInterface $logger,
+        private readonly ShippingRepository $shipping,
     ) {
     }
 
@@ -74,14 +78,11 @@ final class CheckoutController
             return $this->toCart($locale);
         }
 
-        return Response::html($this->view->render('front/checkout', [
-            ...$this->chrome->base($request, $locale),
-            'metaTitle' => 'Commande',
-            'localeSwitch' => $this->url->localeAlternates('checkout.form'),
-            'valuation' => $valuation,
-            'submitUrl' => $this->url->route('checkout.submit', ['locale' => $locale->value]),
-            'honeypot' => self::HONEYPOT,
-        ], layout: 'layouts/public'));
+        return Response::html($this->view->render(
+            'front/checkout',
+            $this->viewData($request, $locale, $valuation),
+            layout: 'layouts/public',
+        ));
     }
 
     public function submit(Request $request): Response
@@ -193,15 +194,52 @@ final class CheckoutController
         $cart = $this->cart($request, $locale);
         $valuation = PricingPolicy::value($cart, $this->carts->catalogueFor($cart, new DateTimeImmutable()));
 
-        return Response::html($this->view->render('front/checkout', [
+        return Response::html($this->view->render(
+            'front/checkout',
+            [...$this->viewData($request, $locale, $valuation), 'error' => $message],
+            layout: 'layouts/public',
+        ), 422);
+    }
+
+    /**
+     * Données communes à l'affichage du tunnel : récapitulatif, port estimé,
+     * total, fenêtre de réception.
+     *
+     * Ces montants sont AFFICHÉS pour éclairer l'acheteur ; ils ne servent
+     * jamais à débiter. Le total réel est recalculé au paiement (03-boutique
+     * §8.2). Le port dépend de la destination : on montre le tarif France par
+     * défaut, ajusté ensuite selon le pays saisi.
+     *
+     * @return array<string, mixed>
+     */
+    private function viewData(Request $request, Locale $locale, CartValuation $valuation): array
+    {
+        $quote = $this->shipping->calculator()->quote(
+            ShippingMethod::Shipping,
+            'FR',
+            $valuation->weightGrams,
+            $valuation->subtotal,
+        );
+
+        // Total pour le mode par défaut (expédition). Null si le port est sur
+        // devis : on ne compose pas un total qu'on ne connaît pas.
+        $totalShipping = $quote->price === null ? null : $valuation->subtotal->plus($quote->price);
+
+        [$deliveryFrom, $deliveryTo] = DeliveryEstimate::range(new DateTimeImmutable());
+
+        return [
             ...$this->chrome->base($request, $locale),
             'metaTitle' => 'Commande',
             'localeSwitch' => $this->url->localeAlternates('checkout.form'),
             'valuation' => $valuation,
             'submitUrl' => $this->url->route('checkout.submit', ['locale' => $locale->value]),
             'honeypot' => self::HONEYPOT,
-            'error' => $message,
-        ], layout: 'layouts/public'), 422);
+            'shippingPrice' => $quote->price,
+            'shippingOnRequest' => $quote->isOnRequest(),
+            'totalShipping' => $totalShipping,
+            'deliveryFrom' => $deliveryFrom,
+            'deliveryTo' => $deliveryTo,
+        ];
     }
 
     private function cart(Request $request, Locale $locale): Cart
