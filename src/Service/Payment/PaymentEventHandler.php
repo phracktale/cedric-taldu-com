@@ -13,6 +13,7 @@ use App\Repository\OrderRepository;
 use App\Repository\PersistedOrder;
 use App\Repository\StockRepository;
 use App\Repository\StripeEventRepository;
+use App\Service\Fulfillment\FulfillmentService;
 use App\Service\Mail\OrderMailer;
 use DateTimeImmutable;
 use PDO;
@@ -53,6 +54,11 @@ final class PaymentEventHandler
         private readonly ?OrderMailer $mailer = null,
         /** @var (callable(PersistedOrder): string)|null */
         private readonly mixed $consultationUrl = null,
+        /**
+         * Facultatif comme le courriel : sans lui, la commande est traitée sans
+         * soumission à Prodigi — dégradation acceptable, jamais un paiement perdu.
+         */
+        private readonly ?FulfillmentService $fulfillment = null,
     ) {
     }
 
@@ -91,6 +97,9 @@ final class PaymentEventHandler
             // transaction ferait annuler un encaissement pour une panne SMTP.
             if ($outcome === WebhookOutcome::Processed && $event->type === 'checkout.session.completed') {
                 $this->notify($event);
+                // Soumission Prodigi APRÈS commit, comme les courriels : une panne
+                // du fournisseur ne remet jamais en cause un encaissement.
+                $this->submitFulfillment($event, $now);
             }
 
             return $outcome;
@@ -134,6 +143,31 @@ final class PaymentEventHandler
             $this->mailer->sendConfirmation($order, ($this->consultationUrl)($order));
         } catch (Throwable $e) {
             $this->logger->log(LogLevel::Error, 'Envoi des courriels de commande échoué', [
+                'event_id' => $event->id,
+                'exception' => $e::class,
+            ]);
+        }
+    }
+
+    /**
+     * Soumet les reproductions à Prodigi, sans jamais remettre en cause la
+     * commande : le service avale déjà ses propres erreurs ; on se protège ici
+     * du seul aléa restant (une localisation qui échoue).
+     */
+    private function submitFulfillment(WebhookEvent $event, DateTimeImmutable $now): void
+    {
+        if ($this->fulfillment === null) {
+            return;
+        }
+
+        try {
+            $order = $this->locate($event);
+
+            if ($order !== null) {
+                $this->fulfillment->submit($order, $now);
+            }
+        } catch (Throwable $e) {
+            $this->logger->log(LogLevel::Error, 'Soumission Prodigi interrompue', [
                 'event_id' => $event->id,
                 'exception' => $e::class,
             ]);

@@ -84,8 +84,12 @@ use App\Service\I18n\Translator;
 use App\Service\I18n\UrlGenerator;
 use App\Http\Controller\Front\PrintAssetController;
 use App\Repository\FulfillmentRepository;
+use App\Service\Fulfillment\FulfillmentService;
 use App\Service\Fulfillment\PrintAssetStore;
 use App\Service\Fulfillment\PrintAssetUrl;
+use App\Service\Fulfillment\ProdigiClient;
+use App\Service\Fulfillment\ProdigiClientInterface;
+use App\Service\Fulfillment\ProdigiConfig;
 use App\Service\Media\CoverUpload;
 use App\Service\Media\ImageProcessor;
 use App\Service\Media\MediaStore;
@@ -147,6 +151,17 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             'testWebhook' => $env->getOptional('STRIPE_TEST_WEBHOOK_SECRET', '') ?? '',
             'liveKey' => $env->getOptional('STRIPE_LIVE_SECRET_KEY', '') ?? '',
             'liveWebhook' => $env->getOptional('STRIPE_LIVE_WEBHOOK_SECRET', '') ?? '',
+        ],
+    );
+
+    // Meme logique pour Prodigi : PRODIGI_ENV choisit la cle (sandbox | live),
+    // et le live est refuse hors production (impressions reellement facturees).
+    $prodigiConfig = ProdigiConfig::resolve(
+        $env->getOptional('PRODIGI_ENV', ProdigiConfig::MODE_SANDBOX) ?? ProdigiConfig::MODE_SANDBOX,
+        $config->env,
+        [
+            'sandboxKey' => $env->getOptional('PRODIGI_SANDBOX_API_KEY', '') ?? '',
+            'liveKey' => $env->getOptional('PRODIGI_LIVE_API_KEY', '') ?? '',
         ],
     );
 
@@ -338,6 +353,21 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(PrintAssetStore::class),
     ));
 
+    // Client Prodigi (config resolue au demarrage) et service de soumission.
+    $container->instance(ProdigiConfig::class, $prodigiConfig);
+    $container->set(
+        ProdigiClientInterface::class,
+        static fn (Container $c): ProdigiClientInterface => new ProdigiClient($c->get(ProdigiConfig::class)),
+    );
+    $container->set(FulfillmentService::class, static fn (Container $c): FulfillmentService => new FulfillmentService(
+        $c->get(ProdigiClientInterface::class),
+        $c->get(ProdigiConfig::class),
+        $c->get(FulfillmentRepository::class),
+        $c->get(PrintAssetUrl::class),
+        $c->get(UrlGenerator::class),
+        $c->get(LoggerInterface::class),
+    ));
+
     // --- Authentification --------------------------------------------------
     //
     // Le poivre de .env sert a TROIS usages distincts, chacun avec son propre
@@ -527,6 +557,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
                 'checkout.confirmation',
                 ['locale' => $order->locale->value, 'reference' => $order->reference],
             ) . '?t=' . $order->accessToken,
+            $c->get(FulfillmentService::class),
         ));
 
     $container->set(CheckoutService::class, static fn (Container $c): CheckoutService => new CheckoutService(

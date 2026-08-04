@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use DateTimeImmutable;
 use PDO;
 
 /**
@@ -44,5 +45,68 @@ final class FulfillmentRepository
                 ? 'application/octet-stream'
                 : (string) $row['print_asset_mime'],
         ];
+    }
+
+    /**
+     * Lignes REPRODUCTION d'une commande, prêtes pour Prodigi.
+     *
+     * Jointe jusqu'à l'œuvre pour ramener le SKU Prodigi, le cadrage, la
+     * quantité, l'identifiant d'œuvre (pour l'URL du fichier) et le chemin du
+     * fichier d'impression. Une variante supprimée depuis (variant_id NULL) sort
+     * de la jointure : la ligne n'est alors pas soumissible, et c'est visible.
+     *
+     * @return list<array{sku: string, sizing: string, copies: int, artworkId: int, printAssetPath: string|null}>
+     */
+    public function reproductionLinesFor(int $orderId): array
+    {
+        $statement = $this->pdo->prepare(
+            'SELECT oi.qty, pv.prodigi_sku, pv.prodigi_sizing, p.artwork_id, a.print_asset_path
+               FROM order_items oi
+               JOIN product_variants pv ON pv.id = oi.variant_id
+               JOIN products p ON p.id = pv.product_id
+               JOIN artworks a ON a.id = p.artwork_id
+              WHERE oi.order_id = :id AND oi.kind = :kind'
+        );
+        $statement->execute(['id' => $orderId, 'kind' => 'reproduction']);
+
+        $lines = [];
+
+        /** @var array<string, mixed> $row */
+        foreach ($statement->fetchAll() as $row) {
+            $lines[] = [
+                'sku' => $row['prodigi_sku'] === null ? '' : (string) $row['prodigi_sku'],
+                'sizing' => (string) $row['prodigi_sizing'],
+                'copies' => (int) $row['qty'],
+                'artworkId' => (int) $row['artwork_id'],
+                'printAssetPath' => $row['print_asset_path'] === null ? null : (string) $row['print_asset_path'],
+            ];
+        }
+
+        return $lines;
+    }
+
+    public function alreadySubmitted(int $orderId): bool
+    {
+        $statement = $this->pdo->prepare('SELECT prodigi_order_id FROM orders WHERE id = :id');
+        $statement->execute(['id' => $orderId]);
+
+        $value = $statement->fetchColumn();
+
+        return $value !== false && $value !== null;
+    }
+
+    public function markSubmitted(int $orderId, string $prodigiOrderId, string $stage, DateTimeImmutable $now): void
+    {
+        $statement = $this->pdo->prepare(
+            'UPDATE orders
+                SET prodigi_order_id = :pid, prodigi_status = :stage, prodigi_submitted_at = :now
+              WHERE id = :id'
+        );
+        $statement->execute([
+            'pid' => $prodigiOrderId,
+            'stage' => $stage,
+            'now' => $now->format('Y-m-d H:i:s'),
+            'id' => $orderId,
+        ]);
     }
 }
