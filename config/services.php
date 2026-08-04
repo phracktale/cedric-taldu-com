@@ -82,7 +82,10 @@ use App\Service\Content\PreviewToken;
 use App\Service\Content\TranslationInput;
 use App\Service\I18n\Translator;
 use App\Service\I18n\UrlGenerator;
+use App\Http\Controller\Front\PrintAssetController;
+use App\Repository\FulfillmentRepository;
 use App\Service\Fulfillment\PrintAssetStore;
+use App\Service\Fulfillment\PrintAssetUrl;
 use App\Service\Media\CoverUpload;
 use App\Service\Media\ImageProcessor;
 use App\Service\Media\MediaStore;
@@ -322,6 +325,17 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
     $container->set(PrintAssetStore::class, static fn (Container $c): PrintAssetStore => new PrintAssetStore(
         $c->get(RandomInterface::class),
         $rootPath . '/storage/print',
+    ));
+
+    // Lectures/écritures du fulfillment Prodigi + jeton d'accès au fichier
+    // d'impression (poivre applicatif, domaine dédié).
+    $container->set(FulfillmentRepository::class, static fn (Container $c): FulfillmentRepository
+        => new FulfillmentRepository($c->get(PDO::class)));
+    $container->set(PrintAssetUrl::class, static fn (): PrintAssetUrl => new PrintAssetUrl($config->securityPepper));
+    $container->set(PrintAssetController::class, static fn (Container $c): PrintAssetController => new PrintAssetController(
+        $c->get(PrintAssetUrl::class),
+        $c->get(FulfillmentRepository::class),
+        $c->get(PrintAssetStore::class),
     ));
 
     // --- Authentification --------------------------------------------------
