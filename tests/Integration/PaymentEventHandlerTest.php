@@ -19,9 +19,19 @@ use App\Domain\Shop\ItemCatalogue;
 use App\Domain\Shop\LineKind;
 use App\Domain\Shop\PricingPolicy;
 use App\Domain\Shop\PurchasableItem;
+use App\Core\Config;
+use App\Core\Env;
+use App\Core\Router;
+use App\Repository\FulfillmentRepository;
 use App\Repository\OrderRepository;
 use App\Repository\StockRepository;
 use App\Repository\StripeEventRepository;
+use App\Service\Fulfillment\Exception\ProdigiException;
+use App\Service\Fulfillment\FakeProdigiClient;
+use App\Service\Fulfillment\FulfillmentService;
+use App\Service\Fulfillment\PrintAssetUrl;
+use App\Service\Fulfillment\ProdigiConfig;
+use App\Service\I18n\UrlGenerator;
 use App\Service\Payment\FakeGateway;
 use App\Service\Payment\PaymentEventHandler;
 use App\Service\Payment\WebhookOutcome;
@@ -330,6 +340,143 @@ final class PaymentEventHandlerTest extends DatabaseTestCase
     }
 
     // ------------------------------------------------------------- assistance
+
+    // ---------------------------------------------------- soumission Prodigi
+
+    public function test_une_reproduction_mappee_est_soumise_a_prodigi(): void
+    {
+        $client = new FakeProdigiClient();
+        $this->activerFulfillment($client);
+        $this->mapperVariante('GLOBAL-HGE-16X20');
+
+        $commande = $this->creerCommande();
+        $this->adresser($commande->id);
+
+        $this->traiter($commande->reference, $commande->id);
+
+        $this->assertCount(1, $client->orders);
+        $charge = $client->lastOrder();
+        $this->assertNotNull($charge);
+        $this->assertSame('GLOBAL-HGE-16X20', $charge['items'][0]['sku']);
+        $this->assertSame(2, $charge['items'][0]['copies']);
+        $this->assertNotNull($this->valeur("SELECT prodigi_order_id FROM orders WHERE id = {$commande->id}"));
+    }
+
+    public function test_une_reproduction_sans_sku_prodigi_n_est_pas_soumise(): void
+    {
+        $client = new FakeProdigiClient();
+        $this->activerFulfillment($client);
+        // Pas de mapping : la variante n'a pas de SKU Prodigi.
+
+        $commande = $this->creerCommande();
+        $this->adresser($commande->id);
+
+        $this->traiter($commande->reference, $commande->id);
+
+        $this->assertCount(0, $client->orders);
+        $this->assertNull($this->valeur("SELECT prodigi_order_id FROM orders WHERE id = {$commande->id}"));
+    }
+
+    public function test_un_echec_prodigi_ne_perd_pas_le_paiement(): void
+    {
+        // L'invariant capital : Prodigi tombe, la commande reste PAYÉE.
+        $client = new FakeProdigiClient();
+        $client->failWith(new ProdigiException('panne'));
+        $this->activerFulfillment($client);
+        $this->mapperVariante();
+
+        $commande = $this->creerCommande();
+        $this->adresser($commande->id);
+
+        $this->traiter($commande->reference, $commande->id);
+
+        $this->assertSame('paid', $this->valeur("SELECT status FROM orders WHERE id = {$commande->id}"));
+        $this->assertNull($this->valeur("SELECT prodigi_order_id FROM orders WHERE id = {$commande->id}"));
+    }
+
+    public function test_une_commande_deja_soumise_n_est_pas_resoumise(): void
+    {
+        $client = new FakeProdigiClient();
+        $service = $this->activerFulfillment($client);
+        $this->mapperVariante();
+
+        $commande = $this->creerCommande();
+        $this->adresser($commande->id);
+        $frais = $this->orders->findById($commande->id);
+        $this->assertNotNull($frais);
+
+        $service->submit($frais, new DateTimeImmutable(self::MAINTENANT));
+        $service->submit($frais, new DateTimeImmutable(self::MAINTENANT));
+
+        $this->assertCount(1, $client->orders);
+    }
+
+    private function activerFulfillment(FakeProdigiClient $client, string $cle = 'sk-sandbox'): FulfillmentService
+    {
+        $racine = dirname(__DIR__, 2);
+        /** @var list<\App\Core\Route> $routes */
+        $routes = require $racine . '/config/routes.php';
+
+        $url = new UrlGenerator(
+            new Router($routes),
+            Config::fromEnv(Env::fromArray([
+                'APP_ENV' => 'preprod',
+                'APP_DEBUG' => '0',
+                'APP_URL' => 'https://example.test',
+                'APP_BASE_PATH' => '',
+                'APP_DEFAULT_LOCALE' => 'fr',
+                'APP_LOCALES' => 'fr,en',
+                'TRUSTED_PROXIES' => '',
+                'SECURITY_PEPPER' => str_repeat('a', 64),
+            ])),
+            '',
+            $racine . '/public',
+        );
+
+        $service = new FulfillmentService(
+            $client,
+            ProdigiConfig::resolve('sandbox', 'preprod', ['sandboxKey' => $cle, 'liveKey' => '']),
+            new FulfillmentRepository($this->pdo),
+            new PrintAssetUrl('secret-impression'),
+            $url,
+            $this->logger,
+        );
+
+        // Le handler par défaut n'a pas de fulfillment : on le remplace par un
+        // handler qui le porte, sans toucher aux autres tests.
+        $this->handler = new PaymentEventHandler(
+            $this->pdo,
+            new StripeEventRepository($this->pdo),
+            $this->orders,
+            new StockRepository($this->pdo),
+            $this->logger,
+            null,
+            null,
+            $service,
+        );
+
+        return $service;
+    }
+
+    private function mapperVariante(string $sku = 'GLOBAL-HGE-16X20'): void
+    {
+        $this->pdo->prepare('UPDATE product_variants SET prodigi_sku = :sku WHERE id = :id')
+            ->execute(['sku' => $sku, 'id' => $this->variant]);
+        $this->pdo->prepare(
+            "UPDATE artworks SET print_asset_path = 'print/aa/bb/x.jpg', print_asset_mime = 'image/jpeg' WHERE id = :id"
+        )->execute(['id' => $this->artwork]);
+    }
+
+    private function adresser(int $orderId): void
+    {
+        $adresse = json_encode([
+            'line1' => '1 rue Test', 'line2' => null,
+            'postal_code' => '75001', 'city' => 'Paris', 'country' => 'FR',
+        ], JSON_THROW_ON_ERROR);
+
+        $this->pdo->prepare("UPDATE orders SET shipping_method = 'shipping', shipping_address = :a WHERE id = :id")
+            ->execute(['a' => $adresse, 'id' => $orderId]);
+    }
 
     private function traiter(
         string $reference,
