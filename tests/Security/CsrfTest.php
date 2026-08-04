@@ -80,15 +80,15 @@ final class CsrfTest extends AdminTestCase
         $this->assertContains($reponse->status, self::STATUTS_DE_REFUS, $methode . ' ' . $chemin);
     }
 
-    public function test_le_webhook_stripe_est_la_seule_route_exemptee(): void
+    public function test_les_webhooks_sont_les_seules_routes_exemptees(): void
     {
-        // 06-securite §3 : « Seule exemption : /webhooks/stripe, protege par
-        // signature cryptographique. » La liste est fermee et nommee : toute
-        // exemption ajoutee sans passer par ce test est un defaut.
-        //
-        // Ce test compte pour ce qu'il INTERDIT, pas pour ce qu'il autorise :
-        // la vraie protection du webhook est verifiee par WebhookStripeTest,
-        // qui refuse un corps mal signe.
+        // 06-securite §3 : les seules exemptions CSRF sont des webhooks de
+        // fournisseurs, qui n'ont pas de session et ne peuvent pas porter de
+        // jeton. Chacune est authentifiee autrement :
+        //   - /webhooks/stripe : signature cryptographique du corps (WebhookStripeTest) ;
+        //   - /webhooks/prodigi/{secret} : secret partage dans l'URL (ProdigiWebhookTest).
+        // La liste est fermee et nommee : toute exemption ajoutee sans passer par
+        // ce test est un defaut.
         /** @var list<Route> $routes */
         $routes = require dirname(__DIR__, 2) . '/config/routes.php';
 
@@ -97,7 +97,7 @@ final class CsrfTest extends AdminTestCase
             array_filter($routes, static fn (Route $route): bool => $route->csrfExempt),
         ));
 
-        $this->assertSame(['POST /webhooks/stripe'], $exemptees);
+        $this->assertSame(['POST /webhooks/stripe', 'POST /webhooks/prodigi/{secret}'], $exemptees);
     }
 
     public function test_la_route_exemptee_n_est_ni_localisee_ni_ouverte_au_back_office(): void

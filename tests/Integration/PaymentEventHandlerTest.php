@@ -359,6 +359,7 @@ final class PaymentEventHandlerTest extends DatabaseTestCase
         $this->assertNotNull($charge);
         $this->assertSame('GLOBAL-HGE-16X20', $charge['items'][0]['sku']);
         $this->assertSame(2, $charge['items'][0]['copies']);
+        $this->assertStringContainsString('/webhooks/prodigi/', (string) $charge['callbackUrl']);
         $this->assertNotNull($this->valeur("SELECT prodigi_order_id FROM orders WHERE id = {$commande->id}"));
     }
 
@@ -440,6 +441,7 @@ final class PaymentEventHandlerTest extends DatabaseTestCase
             new PrintAssetUrl('secret-impression'),
             $url,
             $this->logger,
+            str_repeat('a', 32),
         );
 
         // Le handler par défaut n'a pas de fulfillment : on le remplace par un
