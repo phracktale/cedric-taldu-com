@@ -40,15 +40,38 @@ $reproUrl = $base . '/admin/oeuvres/' . $artworkId . '/reproductions';
       </header>
 
       <table class="admin-table">
-        <thead><tr><th>SKU</th><th>Taille</th><th>Prix</th><th>Stock</th><th></th></tr></thead>
+        <thead><tr><th>SKU</th><th>SKU Prodigi</th><th>Taille</th><th>Prix</th><th>Stock</th><th></th></tr></thead>
         <tbody>
           <?php foreach ($repro['variants'] as $variant) : ?>
+            <?php $sizing = (string) ($variant['prodigi_sizing'] ?? 'fillPrintArea'); ?>
             <tr>
               <td><?= e((string) $variant['sku']) ?></td>
+              <td><?= e((string) ($variant['prodigi_sku'] ?? '—')) ?></td>
               <td><?= e((string) $variant['size_label']) ?><?php if ($variant['is_framed']) : ?> · encadré<?php endif; ?></td>
               <td><?= e(money(App\Domain\Money::fromCents((int) $variant['price_cents']), App\Domain\Locale::Fr)) ?></td>
               <td><?= e((string) $variant['stock_qty']) ?></td>
-              <td>
+              <td class="admin-repro-var-actions">
+                <details>
+                  <summary>Modifier</summary>
+                  <form method="post" action="<?= attr($base) ?>/admin/variantes/<?= attr($variant['id']) ?>">
+                    <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
+                    <label>SKU <input type="text" name="sku" required maxlength="60" value="<?= attr($variant['sku']) ?>"></label>
+                    <label>Taille <input type="text" name="taille" required maxlength="60" value="<?= attr($variant['size_label']) ?>"></label>
+                    <label>Encadré <input type="checkbox" name="encadre" value="1"<?php if ($variant['is_framed']) : ?> checked<?php endif; ?>></label>
+                    <label>Prix (€) <input type="text" name="prix" required inputmode="decimal" value="<?= attr(sprintf('%d.%02d', intdiv((int) $variant['price_cents'], 100), (int) $variant['price_cents'] % 100)) ?>"></label>
+                    <label>Stock <input type="number" name="stock" min="0" required value="<?= attr($variant['stock_qty']) ?>"></label>
+                    <label>Poids (g) <input type="number" name="poids" min="0" required value="<?= attr($variant['weight_grams']) ?>"></label>
+                    <label>SKU Prodigi <input type="text" name="prodigi_sku" maxlength="60" value="<?= attr($variant['prodigi_sku'] ?? '') ?>" placeholder="ex. GLOBAL-FAP-16X24"></label>
+                    <label>Cadrage
+                      <select name="prodigi_sizing">
+                        <option value="fillPrintArea"<?php if ($sizing === 'fillPrintArea') : ?> selected<?php endif; ?>>Remplir (recadre)</option>
+                        <option value="fitPrintArea"<?php if ($sizing === 'fitPrintArea') : ?> selected<?php endif; ?>>Contenir (marge)</option>
+                        <option value="stretchToPrintArea"<?php if ($sizing === 'stretchToPrintArea') : ?> selected<?php endif; ?>>Étirer</option>
+                      </select>
+                    </label>
+                    <button type="submit">Enregistrer</button>
+                  </form>
+                </details>
                 <form method="post" action="<?= attr($base) ?>/admin/variantes/<?= attr($variant['id']) ?>/suppression">
                   <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
                   <button type="submit">Supprimer</button>
@@ -69,6 +92,14 @@ $reproUrl = $base . '/admin/oeuvres/' . $artworkId . '/reproductions';
           <label>Prix (€) <input type="text" name="prix" required inputmode="decimal"></label>
           <label>Stock <input type="number" name="stock" min="0" value="0" required></label>
           <label>Poids (g) <input type="number" name="poids" min="0" value="300" required></label>
+          <label>SKU Prodigi <input type="text" name="prodigi_sku" maxlength="60" placeholder="ex. GLOBAL-FAP-16X24"></label>
+          <label>Cadrage
+            <select name="prodigi_sizing">
+              <option value="fillPrintArea">Remplir (recadre)</option>
+              <option value="fitPrintArea">Contenir (marge)</option>
+              <option value="stretchToPrintArea">Étirer</option>
+            </select>
+          </label>
           <button type="submit">Ajouter</button>
         </form>
       </details>

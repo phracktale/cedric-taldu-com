@@ -85,7 +85,8 @@ final class ProductAdminRepository
     private function variantsOf(int $productId): array
     {
         $statement = $this->pdo->prepare(
-            'SELECT id, sku, size_label, is_framed, price_cents, stock_qty, weight_grams, is_active
+            'SELECT id, sku, prodigi_sku, prodigi_sizing, size_label, is_framed, price_cents,
+                    stock_qty, weight_grams, is_active
              FROM product_variants WHERE product_id = :prod ORDER BY position ASC, id ASC'
         );
         $statement->execute(['prod' => $productId]);
@@ -96,6 +97,8 @@ final class ProductAdminRepository
             $variants[] = [
                 'id' => (int) $row['id'],
                 'sku' => (string) $row['sku'],
+                'prodigi_sku' => $row['prodigi_sku'] === null ? null : (string) $row['prodigi_sku'],
+                'prodigi_sizing' => (string) $row['prodigi_sizing'],
                 'size_label' => (string) $row['size_label'],
                 'is_framed' => (int) $row['is_framed'] === 1,
                 'price_cents' => (int) $row['price_cents'],
@@ -182,18 +185,22 @@ final class ProductAdminRepository
         int $priceCents,
         int $stockQty,
         int $weightGrams,
+        ?string $prodigiSku,
+        string $prodigiSizing,
         DateTimeImmutable $now,
     ): bool {
         try {
             $statement = $this->pdo->prepare(
                 'INSERT INTO product_variants
-                    (product_id, sku, size_label, is_framed, price_cents, stock_qty, weight_grams,
-                     created_at, updated_at)
-                 VALUES (:prod, :sku, :size, :framed, :price, :stock, :weight, :created, :updated)'
+                    (product_id, sku, prodigi_sku, prodigi_sizing, size_label, is_framed, price_cents,
+                     stock_qty, weight_grams, created_at, updated_at)
+                 VALUES (:prod, :sku, :psku, :sizing, :size, :framed, :price, :stock, :weight, :created, :updated)'
             );
             $statement->execute([
                 'prod' => $productId,
                 'sku' => $sku,
+                'psku' => $prodigiSku,
+                'sizing' => $prodigiSizing,
                 'size' => $sizeLabel,
                 'framed' => $isFramed ? 1 : 0,
                 'price' => $priceCents,
@@ -231,18 +238,23 @@ final class ProductAdminRepository
         int $priceCents,
         int $stockQty,
         int $weightGrams,
+        ?string $prodigiSku,
+        string $prodigiSizing,
         DateTimeImmutable $now,
     ): bool {
         try {
             $statement = $this->pdo->prepare(
                 'UPDATE product_variants
-                    SET sku = :sku, size_label = :size, is_framed = :framed, price_cents = :price,
-                        stock_qty = :stock, weight_grams = :weight, updated_at = :now
+                    SET sku = :sku, prodigi_sku = :psku, prodigi_sizing = :sizing, size_label = :size,
+                        is_framed = :framed, price_cents = :price, stock_qty = :stock,
+                        weight_grams = :weight, updated_at = :now
                   WHERE id = :id'
             );
             $statement->execute([
                 'id' => $variantId,
                 'sku' => $sku,
+                'psku' => $prodigiSku,
+                'sizing' => $prodigiSizing,
                 'size' => $sizeLabel,
                 'framed' => $isFramed ? 1 : 0,
                 'price' => $priceCents,
