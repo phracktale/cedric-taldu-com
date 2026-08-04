@@ -18,6 +18,9 @@ use App\Repository\Admin\SeriesAdminRepository;
 use App\Service\Content\PreviewToken;
 use App\Service\Content\TranslationInput;
 use App\Service\I18n\UrlGenerator;
+use App\Service\Fulfillment\Exception\PrintAssetRejected;
+use App\Service\Fulfillment\PrintAsset;
+use App\Service\Fulfillment\PrintAssetStore;
 use App\Service\Media\CoverUpload;
 use App\Service\Media\Exception\UploadRejected;
 use App\Service\View\AdminChrome;
@@ -67,6 +70,7 @@ final class ArtworkController
         private readonly UrlGenerator $url,
         private readonly \App\Service\Seo\SlugHistory $slugHistory,
         private readonly CoverUpload $covers,
+        private readonly PrintAssetStore $printAssets,
     ) {
     }
 
@@ -112,8 +116,11 @@ final class ArtworkController
 
         try {
             $fields = $this->fields($request);
+            $print = $this->printAsset($request);
         } catch (UploadRejected $exception) {
             return $this->form($request, null, $exception->reason()->message(), 422);
+        } catch (PrintAssetRejected $exception) {
+            return $this->form($request, null, $exception->getMessage(), 422);
         }
 
         $id = $this->artworks->insert(
@@ -121,6 +128,10 @@ final class ArtworkController
             $this->withSlugs($translations, $request, null),
             $this->chrome->now(),
         );
+
+        if ($print !== null) {
+            $this->artworks->setPrintAsset($id, $print->relativePath, $print->mime, $this->chrome->now());
+        }
 
         $this->chrome->audit()->record(
             $this->chrome->currentUserId(),
@@ -160,8 +171,20 @@ final class ArtworkController
 
         try {
             $fields = $this->fields($request);
+            $print = $this->printAsset($request);
         } catch (UploadRejected $exception) {
             return $this->form($request, $existing, $exception->reason()->message(), 422);
+        } catch (PrintAssetRejected $exception) {
+            return $this->form($request, $existing, $exception->getMessage(), 422);
+        }
+
+        if ($print !== null) {
+            $this->artworks->setPrintAsset($id, $print->relativePath, $print->mime, $this->chrome->now());
+            // Le fichier précédent, s'il existait, n'a plus de référence : on l'efface.
+            $ancien = $existing['print_asset_path'] ?? null;
+            if (is_string($ancien) && $ancien !== '') {
+                $this->printAssets->remove($ancien);
+            }
         }
 
         $slugged = $this->withSlugs($translations, $request, $id);
@@ -324,6 +347,18 @@ final class ArtworkController
             'weight_grams' => self::positiveInt($request->input('poids')),
             'primary_media_id' => $cover,
         ];
+    }
+
+    /**
+     * Fichier d'impression téléversé, rangé hors webroot, ou null si aucun.
+     *
+     * @throws PrintAssetRejected
+     */
+    private function printAsset(Request $request): ?PrintAsset
+    {
+        $file = $request->file('fichier_impression');
+
+        return $file === null ? null : $this->printAssets->store($file);
     }
 
     /**

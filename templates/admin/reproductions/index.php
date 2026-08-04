@@ -61,7 +61,7 @@ $reproUrl = $base . '/admin/oeuvres/' . $artworkId . '/reproductions';
                     <label>Prix (€) <input type="text" name="prix" required inputmode="decimal" value="<?= attr(sprintf('%d.%02d', intdiv((int) $variant['price_cents'], 100), (int) $variant['price_cents'] % 100)) ?>"></label>
                     <label>Stock <input type="number" name="stock" min="0" required value="<?= attr($variant['stock_qty']) ?>"></label>
                     <label>Poids (g) <input type="number" name="poids" min="0" required value="<?= attr($variant['weight_grams']) ?>"></label>
-                    <label>SKU Prodigi <input type="text" name="prodigi_sku" maxlength="60" value="<?= attr($variant['prodigi_sku'] ?? '') ?>" placeholder="ex. GLOBAL-FAP-16X24"></label>
+                    <label>SKU Prodigi <input type="text" name="prodigi_sku" maxlength="60" list="prodigi-skus" value="<?= attr($variant['prodigi_sku'] ?? '') ?>" placeholder="ex. GLOBAL-HGE-16X20"></label>
                     <label>Cadrage
                       <select name="prodigi_sizing">
                         <option value="fillPrintArea"<?php if ($sizing === 'fillPrintArea') : ?> selected<?php endif; ?>>Remplir (recadre)</option>
@@ -92,7 +92,7 @@ $reproUrl = $base . '/admin/oeuvres/' . $artworkId . '/reproductions';
           <label>Prix (€) <input type="text" name="prix" required inputmode="decimal"></label>
           <label>Stock <input type="number" name="stock" min="0" value="0" required></label>
           <label>Poids (g) <input type="number" name="poids" min="0" value="300" required></label>
-          <label>SKU Prodigi <input type="text" name="prodigi_sku" maxlength="60" placeholder="ex. GLOBAL-FAP-16X24"></label>
+          <label>SKU Prodigi <input type="text" name="prodigi_sku" maxlength="60" list="prodigi-skus" placeholder="ex. GLOBAL-HGE-16X20"></label>
           <label>Cadrage
             <select name="prodigi_sizing">
               <option value="fillPrintArea">Remplir (recadre)</option>
@@ -130,4 +130,11 @@ $reproUrl = $base . '/admin/oeuvres/' . $artworkId . '/reproductions';
     <label>Taille d’édition (si limitée) <input type="number" name="taille_edition" min="1"></label>
     <button type="submit" class="btn btn-plein">Créer</button>
   </form>
+
+  <?php // Suggestions de SKU Prodigi (Hahnemühle German Etching), cliquables dans les champs ci-dessus. ?>
+  <datalist id="prodigi-skus">
+    <option value="GLOBAL-HGE-12X16"></option>
+    <option value="GLOBAL-HGE-16X20"></option>
+    <option value="GLOBAL-HGE-24X36"></option>
+  </datalist>
 </section>

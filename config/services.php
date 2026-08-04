@@ -82,6 +82,7 @@ use App\Service\Content\PreviewToken;
 use App\Service\Content\TranslationInput;
 use App\Service\I18n\Translator;
 use App\Service\I18n\UrlGenerator;
+use App\Service\Fulfillment\PrintAssetStore;
 use App\Service\Media\CoverUpload;
 use App\Service\Media\ImageProcessor;
 use App\Service\Media\MediaStore;
@@ -314,6 +315,13 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
     // mediatheque, sinon identifiant saisi a la main (04-back-office §7).
     $container->set(CoverUpload::class, static fn (Container $c): CoverUpload => new CoverUpload(
         $c->get(MediaStore::class),
+    ));
+
+    // Fichier d'impression haute definition par oeuvre (Prodigi) : range hors
+    // webroot, SANS re-encodage (source artiste de confiance, pleine resolution).
+    $container->set(PrintAssetStore::class, static fn (Container $c): PrintAssetStore => new PrintAssetStore(
+        $c->get(RandomInterface::class),
+        $rootPath . '/storage/print',
     ));
 
     // --- Authentification --------------------------------------------------
@@ -591,6 +599,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(UrlGenerator::class),
             $c->get(SlugHistory::class),
             $c->get(CoverUpload::class),
+            $c->get(PrintAssetStore::class),
         ),
     );
 
