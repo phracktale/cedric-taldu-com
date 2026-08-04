@@ -39,6 +39,8 @@ final class FulfillmentService
         private readonly PrintAssetUrl $printUrls,
         private readonly UrlGenerator $url,
         private readonly LoggerInterface $logger,
+        /** Secret du callback Prodigi, glissé dans l'URL de rappel de chaque commande. */
+        private readonly string $callbackSecret,
     ) {
     }
 
@@ -72,6 +74,7 @@ final class FulfillmentService
         $payload = [
             'merchantReference' => $order->reference,
             'shippingMethod' => self::SHIPPING_METHOD,
+            'callbackUrl' => $this->url->absolute('prodigi.webhook', ['secret' => $this->callbackSecret]),
             'recipient' => [
                 'name' => $order->customerName,
                 'email' => $order->customerEmail,

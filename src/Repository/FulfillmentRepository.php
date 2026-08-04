@@ -109,4 +109,23 @@ final class FulfillmentRepository
             'id' => $orderId,
         ]);
     }
+
+    /**
+     * Retrouve la commande locale à partir de l'identifiant Prodigi (callback).
+     */
+    public function orderIdByProdigiOrderId(string $prodigiOrderId): ?int
+    {
+        $statement = $this->pdo->prepare('SELECT id FROM orders WHERE prodigi_order_id = :pid LIMIT 1');
+        $statement->execute(['pid' => $prodigiOrderId]);
+
+        $value = $statement->fetchColumn();
+
+        return $value === false ? null : (int) $value;
+    }
+
+    public function updateProdigiStatus(int $orderId, string $status): void
+    {
+        $statement = $this->pdo->prepare('UPDATE orders SET prodigi_status = :status WHERE id = :id');
+        $statement->execute(['status' => $status, 'id' => $orderId]);
+    }
 }

@@ -39,6 +39,7 @@ use App\Http\Controller\Front\HomeController;
 use App\Http\Controller\Front\PageController;
 use App\Http\Controller\Front\SitemapController;
 use App\Http\Controller\Front\PrintAssetController;
+use App\Http\Controller\Front\ProdigiWebhookController;
 use App\Http\Controller\Front\StripeWebhookController;
 
 $slug = ['slug' => Route::SLUG];
@@ -157,6 +158,17 @@ return [
         '/impression/{token}',
         [PrintAssetController::class, 'serve'],
         requirements: ['token' => '[0-9]+\.[0-9a-f]+'],
+    ),
+
+    // Callbacks de statut Prodigi. Le secret dans le chemin authentifie l'appel
+    // (Prodigi ne signe pas) : exempt CSRF, comme le webhook Stripe.
+    new Route(
+        'prodigi.webhook',
+        'POST',
+        '/webhooks/prodigi/{secret}',
+        [ProdigiWebhookController::class, 'handle'],
+        requirements: ['secret' => '[0-9a-f]{32}'],
+        csrfExempt: true,
     ),
 
     // ----------------------------------------------------------- back-office

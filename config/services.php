@@ -83,6 +83,7 @@ use App\Service\Content\TranslationInput;
 use App\Service\I18n\Translator;
 use App\Service\I18n\UrlGenerator;
 use App\Http\Controller\Front\PrintAssetController;
+use App\Http\Controller\Front\ProdigiWebhookController;
 use App\Repository\FulfillmentRepository;
 use App\Service\Fulfillment\FulfillmentService;
 use App\Service\Fulfillment\PrintAssetStore;
@@ -359,6 +360,10 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         ProdigiClientInterface::class,
         static fn (Container $c): ProdigiClientInterface => new ProdigiClient($c->get(ProdigiConfig::class)),
     );
+    // Secret du callback Prodigi, derive du poivre (aucune variable en plus) :
+    // il vit dans l'URL de rappel et authentifie POST /webhooks/prodigi/{secret}.
+    $prodigiCallbackSecret = substr(hash_hmac('sha256', 'prodigi-callback', $config->securityPepper), 0, 32);
+
     $container->set(FulfillmentService::class, static fn (Container $c): FulfillmentService => new FulfillmentService(
         $c->get(ProdigiClientInterface::class),
         $c->get(ProdigiConfig::class),
@@ -366,7 +371,19 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(PrintAssetUrl::class),
         $c->get(UrlGenerator::class),
         $c->get(LoggerInterface::class),
+        $prodigiCallbackSecret,
     ));
+
+    $container->set(ProdigiWebhookController::class, static fn (Container $c): ProdigiWebhookController
+        => new ProdigiWebhookController(
+            $prodigiCallbackSecret,
+            $c->get(FulfillmentRepository::class),
+            $c->get(OrderRepository::class),
+            $c->get(ClockInterface::class),
+            $c->get(LoggerInterface::class),
+            $c->get(OrderMailer::class),
+            $c->get(UrlGenerator::class),
+        ));
 
     // --- Authentification --------------------------------------------------
     //
