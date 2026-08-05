@@ -178,6 +178,52 @@ final class ReproductionsTest extends AdminTestCase
         return '/cedric-taldu/admin/oeuvres/' . $this->artwork . '/reproductions';
     }
 
+    // ------------------------------------------------------ mapping Prodigi
+
+    public function test_une_variante_porte_son_mapping_prodigi(): void
+    {
+        // Le SKU Prodigi et le sizing disent quoi imprimer et comment le cadrer.
+        $product = $this->creerProduit();
+
+        $this->postAvecJeton($this->reproduction($product) . '/variantes', [
+            'sku' => 'ART-3040', 'taille' => '30 × 40 cm', 'prix' => '60', 'stock' => '5', 'poids' => '300',
+            'prodigi_sku' => 'GLOBAL-FAP-16X24', 'prodigi_sizing' => 'fitPrintArea',
+        ]);
+
+        $this->assertSame('GLOBAL-FAP-16X24', $this->valeur('SELECT prodigi_sku FROM product_variants'));
+        $this->assertSame('fitPrintArea', $this->valeur('SELECT prodigi_sizing FROM product_variants'));
+    }
+
+    public function test_un_sizing_prodigi_inconnu_retombe_sur_le_defaut(): void
+    {
+        // Liste close : le sizing finit dans un appel API, une valeur inventée y
+        // serait rejetée par Prodigi. On la ramène au défaut.
+        $product = $this->creerProduit();
+
+        $this->postAvecJeton($this->reproduction($product) . '/variantes', [
+            'sku' => 'ART-A', 'taille' => 'A', 'prix' => '60', 'stock' => '5', 'poids' => '300',
+            'prodigi_sku' => 'X', 'prodigi_sizing' => 'bidon',
+        ]);
+
+        $this->assertSame('fillPrintArea', $this->valeur('SELECT prodigi_sizing FROM product_variants'));
+    }
+
+    public function test_le_mapping_prodigi_d_une_variante_existante_se_modifie(): void
+    {
+        $product = $this->creerProduit();
+        $variant = $this->creerVariante($product, 'ART-3040', '30 × 40 cm');
+
+        $this->postAvecJeton('/cedric-taldu/admin/variantes/' . $variant, [
+            'sku' => 'ART-3040', 'taille' => '30 × 40 cm', 'prix' => '60', 'stock' => '5', 'poids' => '300',
+            'prodigi_sku' => 'GLOBAL-CFPM-16X20', 'prodigi_sizing' => 'fillPrintArea',
+        ]);
+
+        $this->assertSame(
+            'GLOBAL-CFPM-16X20',
+            $this->valeur("SELECT prodigi_sku FROM product_variants WHERE id = {$variant}"),
+        );
+    }
+
     private function reproduction(int $product): string
     {
         return '/cedric-taldu/admin/reproductions/' . $product;

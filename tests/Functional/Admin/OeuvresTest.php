@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace Tests\Functional\Admin;
 
+use App\Core\Csrf;
+use App\Service\Fulfillment\PrintAssetStore;
 use PDO;
 use Tests\Support\AdminTestCase;
+use Tests\Support\Doubles\SequenceRandom;
 use Tests\Support\Factory\ArtworkFactory;
 use Tests\Support\Factory\CategoryFactory;
 use Tests\Support\Factory\MediaFactory;
 use Tests\Support\Factory\UserFactory;
+use Tests\Support\ImageFixtures;
 
 /**
  * 04-back-office §5 : CRUD des œuvres.
@@ -383,6 +387,50 @@ final class OeuvresTest extends AdminTestCase
     }
 
     // --------------------------------------------------------------- outils
+
+    public function test_un_fichier_d_impression_est_range_pour_l_oeuvre(): void
+    {
+        // Le fichier haute définition part hors webroot, avec son type réel, pour
+        // que Prodigi l'imprime. PrintAssetStore est mis en bac à sable.
+        $fixtures = new ImageFixtures();
+        $racine = $fixtures->path('impr');
+        mkdir($racine . '/storage/print', 0o775, true);
+
+        $valeurs = [];
+        for ($i = 1; $i <= 6; $i++) {
+            $valeurs[] = str_pad(dechex($i), 32, '0', STR_PAD_LEFT);
+        }
+        $this->withService(
+            PrintAssetStore::class,
+            fn (): PrintAssetStore => new PrintAssetStore(new SequenceRandom($valeurs), $racine . '/storage/print'),
+        );
+
+        $chemin = $fixtures->jpeg(2400, 1800, 'print.jpg');
+        $this->requete('POST', self::OEUVRES, post: [
+            Csrf::FIELD => $this->jetonCsrf(),
+            'rubrique' => (string) $this->rubrique,
+            'reference' => 'CT-IMP-001',
+            'titre_fr' => 'Impression',
+        ], files: [
+            'fichier_impression' => [
+                'name' => 'print.jpg',
+                'tmp_name' => $chemin,
+                'size' => (int) filesize($chemin),
+                'error' => UPLOAD_ERR_OK,
+            ],
+        ]);
+
+        $path = $this->valeur("SELECT print_asset_path FROM artworks WHERE reference = 'CT-IMP-001'");
+        $this->assertNotNull($path);
+        $this->assertStringStartsWith('print/', (string) $path);
+        $this->assertSame(
+            'image/jpeg',
+            $this->valeur("SELECT print_asset_mime FROM artworks WHERE reference = 'CT-IMP-001'"),
+        );
+        $this->assertFileExists($racine . '/storage/' . $path);
+
+        $fixtures->cleanup();
+    }
 
     /**
      * @param array<string, string> $champs

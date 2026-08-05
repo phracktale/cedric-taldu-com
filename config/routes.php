@@ -38,6 +38,8 @@ use App\Http\Controller\Front\ContactController;
 use App\Http\Controller\Front\HomeController;
 use App\Http\Controller\Front\PageController;
 use App\Http\Controller\Front\SitemapController;
+use App\Http\Controller\Front\PrintAssetController;
+use App\Http\Controller\Front\ProdigiWebhookController;
 use App\Http\Controller\Front\StripeWebhookController;
 
 $slug = ['slug' => Route::SLUG];
@@ -148,6 +150,27 @@ return [
     // xhtml:link). En prod il repond a la racine, en preprod sous le prefixe.
     new Route('sitemap', 'GET', '/sitemap.xml', [SitemapController::class, 'show']),
 
+    // Fichier d'impression Prodigi : route machine (non localisee), a jeton
+    // signe. Sert l'image prete-a-imprimer, rangee hors webroot, au robot Prodigi.
+    new Route(
+        'print.asset',
+        'GET',
+        '/impression/{token}',
+        [PrintAssetController::class, 'serve'],
+        requirements: ['token' => '[0-9]+\.[0-9a-f]+'],
+    ),
+
+    // Callbacks de statut Prodigi. Le secret dans le chemin authentifie l'appel
+    // (Prodigi ne signe pas) : exempt CSRF, comme le webhook Stripe.
+    new Route(
+        'prodigi.webhook',
+        'POST',
+        '/webhooks/prodigi/{secret}',
+        [ProdigiWebhookController::class, 'handle'],
+        requirements: ['secret' => '[0-9a-f]{32}'],
+        csrfExempt: true,
+    ),
+
     // ----------------------------------------------------------- back-office
     //
     // Non localise : l'interface d'administration est en francais seulement
@@ -238,4 +261,5 @@ return [
     new Route('admin.order.index', 'GET', '/admin/commandes', [AdminOrderController::class, 'index']),
     new Route('admin.order.show', 'GET', '/admin/commandes/{id}', [AdminOrderController::class, 'show'], requirements: $id),
     new Route('admin.order.ship', 'POST', '/admin/commandes/{id}/expedition', [AdminOrderController::class, 'ship'], requirements: $id),
+    new Route('admin.order.prodigi', 'POST', '/admin/commandes/{id}/prodigi', [AdminOrderController::class, 'submitProdigi'], requirements: $id),
 ];

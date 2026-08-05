@@ -120,6 +120,8 @@ final class ProductController
                 $variant['price'],
                 $variant['stock'],
                 $variant['weight'],
+                $variant['prodigi_sku'],
+                $variant['prodigi_sizing'],
                 $this->chrome->now(),
             );
             $this->audit($request, 'variant.create', $productId);
@@ -149,6 +151,8 @@ final class ProductController
                 $variant['price'],
                 $variant['stock'],
                 $variant['weight'],
+                $variant['prodigi_sku'],
+                $variant['prodigi_sizing'],
                 $this->chrome->now(),
             );
             $this->audit($request, 'variant.update', $variantId);
@@ -176,7 +180,7 @@ final class ProductController
     // ------------------------------------------------------------ assistance
 
     /**
-     * @return array{sku: string, size: string, framed: bool, price: int, stock: int, weight: int}|null
+     * @return array{sku: string, size: string, framed: bool, price: int, stock: int, weight: int, prodigi_sku: string|null, prodigi_sizing: string}|null
      */
     private static function variantInput(Request $request): ?array
     {
@@ -190,6 +194,8 @@ final class ProductController
             return null;
         }
 
+        $prodigiSku = trim((string) $request->input('prodigi_sku'));
+
         return [
             'sku' => $sku,
             'size' => $size,
@@ -197,7 +203,19 @@ final class ProductController
             'price' => $price,
             'stock' => max(0, $stock),
             'weight' => max(0, $weight),
+            'prodigi_sku' => $prodigiSku === '' ? null : $prodigiSku,
+            'prodigi_sizing' => self::prodigiSizing($request->input('prodigi_sizing')),
         ];
+    }
+
+    /** Modes de mise à l'échelle Prodigi. Liste close : une valeur inventée serait rejetée par l'API. */
+    private const PRODIGI_SIZINGS = ['fillPrintArea', 'fitPrintArea', 'stretchToPrintArea'];
+
+    private static function prodigiSizing(?string $value): string
+    {
+        $value = $value === null ? '' : trim($value);
+
+        return in_array($value, self::PRODIGI_SIZINGS, true) ? $value : 'fillPrintArea';
     }
 
     /**

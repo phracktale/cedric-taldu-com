@@ -11,8 +11,10 @@ use App\Core\Response;
 use App\Domain\Locale;
 use App\Domain\Order\OrderStatus;
 use App\Repository\Admin\OrderAdminRepository;
+use App\Repository\FulfillmentRepository;
 use App\Repository\OrderRepository;
 use App\Service\Export\CsvWriter;
+use App\Service\Fulfillment\FulfillmentService;
 use App\Service\Mail\OrderMailer;
 use App\Service\View\AdminChrome;
 use App\Service\I18n\UrlGenerator;
@@ -38,6 +40,8 @@ final class OrderController
         private readonly OrderRepository $orders,
         private readonly OrderMailer $mailer,
         private readonly UrlGenerator $url,
+        private readonly FulfillmentRepository $fulfillment,
+        private readonly FulfillmentService $fulfillmentService,
     ) {
     }
 
@@ -61,7 +65,41 @@ final class OrderController
         return $this->chrome->page($request, 'admin/commandes/fiche', [
             'titre' => 'Commande ' . $order->reference,
             'order' => $order,
+            // Fulfillment Prodigi : bloc affiché seulement si la commande porte
+            // une reproduction ; statut/identifiant pour le suivi.
+            'prodigi' => $this->fulfillment->hasReproductions($order->id)
+                ? $this->fulfillment->statusOf($order->id)
+                : null,
         ]);
+    }
+
+    /**
+     * Soumission (ou relance) manuelle de la commande à Prodigi.
+     *
+     * Filet quand l'envoi automatique au paiement a échoué, ou pour une commande
+     * mappée après coup. Idempotent : une commande déjà soumise n'est pas
+     * renvoyée (garde dans FulfillmentService).
+     */
+    public function submitProdigi(Request $request): Response
+    {
+        $id = self::id($request);
+        $order = $this->orders->findById($id);
+
+        if ($order === null) {
+            throw new NotFoundException('Commande introuvable.');
+        }
+
+        $this->fulfillmentService->submit($order, $this->chrome->now());
+
+        $this->chrome->audit()->record(
+            $this->chrome->currentUserId(),
+            'order.prodigi_submit',
+            $request,
+            'order',
+            $id,
+        );
+
+        return RedirectResponse::to($request->basePath . '/admin/commandes/' . $id);
     }
 
     public function ship(Request $request): Response

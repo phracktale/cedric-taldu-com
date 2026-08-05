@@ -63,6 +63,11 @@ services:
       MAIL_ENCRYPTION: ${MAIL_ENCRYPTION:-}
       MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-commandes@cedrictaldu.com}
       MAIL_FROM_NAME: "${MAIL_FROM_NAME:-Cédric Taldu}"
+      # Impression à la demande (Prodigi) : mêmes contraintes que Stripe — les
+      # secrets passent par l'environnement, pas par le .env (www-data ne le lit pas).
+      PRODIGI_ENV: ${PRODIGI_ENV:-sandbox}
+      PRODIGI_SANDBOX_API_KEY: ${PRODIGI_SANDBOX_API_KEY:-}
+      PRODIGI_LIVE_API_KEY: ${PRODIGI_LIVE_API_KEY:-}
     depends_on:
       db:
         condition: service_healthy

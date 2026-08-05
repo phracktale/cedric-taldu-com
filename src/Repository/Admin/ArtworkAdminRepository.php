@@ -36,6 +36,7 @@ final class ArtworkAdminRepository
         SELECT a.id, a.category_id, a.series_id, a.reference, a.year, a.technique,
                a.width_mm, a.height_mm, a.is_signed, a.price_cents, a.vat_category,
                a.status, a.weight_grams, a.primary_media_id, a.position,
+               a.print_asset_path, a.print_asset_mime,
                a.is_published, a.published_at,
                t.locale, t.slug, t.eyebrow, t.title, t.description, t.detail,
                t.meta_title, t.meta_description
@@ -338,6 +339,25 @@ final class ArtworkAdminRepository
     }
 
     /**
+     * Fichier d'impression haute définition de l'œuvre (Prodigi).
+     *
+     * NULL retire la référence (le fichier lui-même est effacé par le service).
+     */
+    public function setPrintAsset(int $artworkId, ?string $path, ?string $mime, DateTimeImmutable $now): void
+    {
+        $statement = $this->pdo->prepare(
+            'UPDATE artworks SET print_asset_path = :path, print_asset_mime = :mime, updated_at = :now
+              WHERE id = :id'
+        );
+        $statement->execute([
+            'path' => $path,
+            'mime' => $mime,
+            'now' => $now->format('Y-m-d H:i:s'),
+            'id' => $artworkId,
+        ]);
+    }
+
+    /**
      * @return list<int>
      */
     private function orderedIds(int $categoryId): array
@@ -390,6 +410,8 @@ final class ArtworkAdminRepository
                 'status' => (string) $row['status'],
                 'weight_grams' => $row['weight_grams'] === null ? null : (int) $row['weight_grams'],
                 'primary_media_id' => $row['primary_media_id'] === null ? null : (int) $row['primary_media_id'],
+                'print_asset_path' => self::nullableString($row['print_asset_path']),
+                'print_asset_mime' => self::nullableString($row['print_asset_mime']),
                 'position' => (int) $row['position'],
                 'is_published' => (bool) $row['is_published'],
                 'published_at' => self::nullableString($row['published_at']),

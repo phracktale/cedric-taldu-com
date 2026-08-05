@@ -82,6 +82,15 @@ use App\Service\Content\PreviewToken;
 use App\Service\Content\TranslationInput;
 use App\Service\I18n\Translator;
 use App\Service\I18n\UrlGenerator;
+use App\Http\Controller\Front\PrintAssetController;
+use App\Http\Controller\Front\ProdigiWebhookController;
+use App\Repository\FulfillmentRepository;
+use App\Service\Fulfillment\FulfillmentService;
+use App\Service\Fulfillment\PrintAssetStore;
+use App\Service\Fulfillment\PrintAssetUrl;
+use App\Service\Fulfillment\ProdigiClient;
+use App\Service\Fulfillment\ProdigiClientInterface;
+use App\Service\Fulfillment\ProdigiConfig;
 use App\Service\Media\CoverUpload;
 use App\Service\Media\ImageProcessor;
 use App\Service\Media\MediaStore;
@@ -143,6 +152,17 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             'testWebhook' => $env->getOptional('STRIPE_TEST_WEBHOOK_SECRET', '') ?? '',
             'liveKey' => $env->getOptional('STRIPE_LIVE_SECRET_KEY', '') ?? '',
             'liveWebhook' => $env->getOptional('STRIPE_LIVE_WEBHOOK_SECRET', '') ?? '',
+        ],
+    );
+
+    // Meme logique pour Prodigi : PRODIGI_ENV choisit la cle (sandbox | live),
+    // et le live est refuse hors production (impressions reellement facturees).
+    $prodigiConfig = ProdigiConfig::resolve(
+        $env->getOptional('PRODIGI_ENV', ProdigiConfig::MODE_SANDBOX) ?? ProdigiConfig::MODE_SANDBOX,
+        $config->env,
+        [
+            'sandboxKey' => $env->getOptional('PRODIGI_SANDBOX_API_KEY', '') ?? '',
+            'liveKey' => $env->getOptional('PRODIGI_LIVE_API_KEY', '') ?? '',
         ],
     );
 
@@ -315,6 +335,55 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
     $container->set(CoverUpload::class, static fn (Container $c): CoverUpload => new CoverUpload(
         $c->get(MediaStore::class),
     ));
+
+    // Fichier d'impression haute definition par oeuvre (Prodigi) : range hors
+    // webroot, SANS re-encodage (source artiste de confiance, pleine resolution).
+    $container->set(PrintAssetStore::class, static fn (Container $c): PrintAssetStore => new PrintAssetStore(
+        $c->get(RandomInterface::class),
+        $rootPath . '/storage/print',
+    ));
+
+    // Lectures/écritures du fulfillment Prodigi + jeton d'accès au fichier
+    // d'impression (poivre applicatif, domaine dédié).
+    $container->set(FulfillmentRepository::class, static fn (Container $c): FulfillmentRepository
+        => new FulfillmentRepository($c->get(PDO::class)));
+    $container->set(PrintAssetUrl::class, static fn (): PrintAssetUrl => new PrintAssetUrl($config->securityPepper));
+    $container->set(PrintAssetController::class, static fn (Container $c): PrintAssetController => new PrintAssetController(
+        $c->get(PrintAssetUrl::class),
+        $c->get(FulfillmentRepository::class),
+        $c->get(PrintAssetStore::class),
+    ));
+
+    // Client Prodigi (config resolue au demarrage) et service de soumission.
+    $container->instance(ProdigiConfig::class, $prodigiConfig);
+    $container->set(
+        ProdigiClientInterface::class,
+        static fn (Container $c): ProdigiClientInterface => new ProdigiClient($c->get(ProdigiConfig::class)),
+    );
+    // Secret du callback Prodigi, derive du poivre (aucune variable en plus) :
+    // il vit dans l'URL de rappel et authentifie POST /webhooks/prodigi/{secret}.
+    $prodigiCallbackSecret = substr(hash_hmac('sha256', 'prodigi-callback', $config->securityPepper), 0, 32);
+
+    $container->set(FulfillmentService::class, static fn (Container $c): FulfillmentService => new FulfillmentService(
+        $c->get(ProdigiClientInterface::class),
+        $c->get(ProdigiConfig::class),
+        $c->get(FulfillmentRepository::class),
+        $c->get(PrintAssetUrl::class),
+        $c->get(UrlGenerator::class),
+        $c->get(LoggerInterface::class),
+        $prodigiCallbackSecret,
+    ));
+
+    $container->set(ProdigiWebhookController::class, static fn (Container $c): ProdigiWebhookController
+        => new ProdigiWebhookController(
+            $prodigiCallbackSecret,
+            $c->get(FulfillmentRepository::class),
+            $c->get(OrderRepository::class),
+            $c->get(ClockInterface::class),
+            $c->get(LoggerInterface::class),
+            $c->get(OrderMailer::class),
+            $c->get(UrlGenerator::class),
+        ));
 
     // --- Authentification --------------------------------------------------
     //
@@ -505,6 +574,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
                 'checkout.confirmation',
                 ['locale' => $order->locale->value, 'reference' => $order->reference],
             ) . '?t=' . $order->accessToken,
+            $c->get(FulfillmentService::class),
         ));
 
     $container->set(CheckoutService::class, static fn (Container $c): CheckoutService => new CheckoutService(
@@ -591,6 +661,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(UrlGenerator::class),
             $c->get(SlugHistory::class),
             $c->get(CoverUpload::class),
+            $c->get(PrintAssetStore::class),
         ),
     );
 
@@ -729,6 +800,8 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(OrderRepository::class),
             $c->get(OrderMailer::class),
             $c->get(UrlGenerator::class),
+            $c->get(FulfillmentRepository::class),
+            $c->get(FulfillmentService::class),
         ));
 
     $container->set(

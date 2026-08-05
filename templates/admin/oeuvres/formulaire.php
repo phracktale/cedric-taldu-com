@@ -297,6 +297,19 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
                     Un fichier téléversé a la priorité. Sans image principale, l’œuvre ne peut pas être publiée.
                 </span>
             </p>
+
+            <p class="champ">
+                <label for="fichier_impression">Fichier d’impression (haute définition)</label>
+                <input type="file" id="fichier_impression" name="fichier_impression"
+                       accept="image/jpeg,image/png,application/pdf">
+                <span class="champ-aide">
+                    JPEG, PNG ou PDF haute définition, envoyé tel quel à Prodigi pour l’impression des
+                    reproductions (jamais ré-encodé, jamais public).
+                    <?php if (is_string($oeuvre['print_asset_path'] ?? null) && $oeuvre['print_asset_path'] !== '') : ?>
+                    <strong>Un fichier est déjà enregistré</strong> ; en téléverser un nouveau le remplace.
+                    <?php endif; ?>
+                </span>
+            </p>
         </fieldset>
 
         <p class="actions">

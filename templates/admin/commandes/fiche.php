@@ -22,6 +22,8 @@ $base = is_string($data['basePath'] ?? null) ? $data['basePath'] : '';
 $jeton = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
 /** @var PersistedOrder $order */
 $order = $data['order'];
+/** @var array{prodigiOrderId: string|null, status: string|null, submittedAt: string|null}|null $prodigi */
+$prodigi = $data['prodigi'] ?? null;
 ?>
 <section class="admin-commande">
   <p><a href="<?= attr($base) ?>/admin/commandes">← Toutes les commandes</a></p>
@@ -77,6 +79,29 @@ $order = $data['order'];
 
   <?php if ($order->legalMention() !== null) : ?>
     <p class="admin-mention"><?= e($order->legalMention()) ?></p>
+  <?php endif; ?>
+
+  <?php if ($prodigi !== null) : ?>
+    <h2>Impression Prodigi</h2>
+    <?php if ($prodigi['prodigiOrderId'] !== null) : ?>
+      <p class="admin-prodigi">
+        Commande Prodigi <strong><?= e($prodigi['prodigiOrderId']) ?></strong>,
+        statut <strong><?= e($prodigi['status'] ?? '—') ?></strong>
+        <?php if ($prodigi['submittedAt'] !== null) : ?>
+          (soumise le <?= e($prodigi['submittedAt']) ?>)
+        <?php endif; ?>.
+      </p>
+      <p class="admin-note">
+        Le suivi et le passage en « expédiée » sont mis à jour automatiquement par
+        les callbacks Prodigi.
+      </p>
+    <?php else : ?>
+      <p class="admin-prodigi">Cette commande n'a pas encore été soumise à Prodigi.</p>
+      <form method="post" action="<?= attr($base) ?>/admin/commandes/<?= attr($order->id) ?>/prodigi">
+        <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
+        <button type="submit" class="btn btn-plein">Soumettre à Prodigi</button>
+      </form>
+    <?php endif; ?>
   <?php endif; ?>
 
   <?php if ($order->status === OrderStatus::Paid) : ?>
