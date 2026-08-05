@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Functional\Admin;
 
+use App\Domain\Shop\ManagedReproductions;
 use Tests\Support\AdminTestCase;
 use Tests\Support\Factory\ArtworkFactory;
 use Tests\Support\Factory\CategoryFactory;
@@ -43,41 +44,61 @@ final class ReproductionsTest extends AdminTestCase
         $this->assertStringContainsString('Articulation', $reponse->body);
     }
 
-    public function test_une_reproduction_se_cree(): void
+    public function test_l_ajout_de_tirages_geres_cree_le_produit_et_les_variantes(): void
     {
+        // L'artiste ne saisit qu'un prix par taille : le SKU Prodigi, le cadrage,
+        // le libellé et le poids viennent du catalogue. Le produit standard est
+        // créé à la volée, sans titre à saisir.
         $reponse = $this->postAvecJeton($this->base(), [
-            'titre' => 'Tirage d’art limité',
-            'genre' => 'limited',
-            'taille_edition' => '30',
+            ManagedReproductions::field('GLOBAL-HGE-12X16') => '60',
+            ManagedReproductions::field('GLOBAL-HGE-16X20') => '90',
         ]);
 
         $this->assertSame(302, $reponse->status);
         $this->assertSame(1, (int) $this->valeur("SELECT COUNT(*) FROM products WHERE artwork_id = {$this->artwork}"));
-        $this->assertSame('limited', $this->valeur('SELECT kind FROM products'));
-        $this->assertSame(30, (int) $this->valeur('SELECT edition_size FROM products'));
+        $this->assertSame(2, (int) $this->valeur('SELECT COUNT(*) FROM product_variants'));
+        $this->assertSame(
+            'GLOBAL-HGE-16X20',
+            $this->valeur("SELECT prodigi_sku FROM product_variants WHERE price_cents = 9000"),
+        );
+        $this->assertSame(
+            'fillPrintArea',
+            $this->valeur("SELECT prodigi_sizing FROM product_variants WHERE price_cents = 9000"),
+        );
+        $this->assertSame('40 × 50 cm', $this->valeur("SELECT size_label FROM product_variants WHERE price_cents = 9000"));
     }
 
-    public function test_une_reproduction_nait_en_tva_a_vingt_pourcent(): void
+    public function test_l_ajout_sans_aucun_prix_ne_cree_rien(): void
+    {
+        $this->postAvecJeton($this->base(), []);
+
+        $this->assertSame(0, (int) $this->valeur('SELECT COUNT(*) FROM products'));
+        $this->assertSame(0, (int) $this->valeur('SELECT COUNT(*) FROM product_variants'));
+    }
+
+    public function test_une_taille_deja_proposee_n_est_pas_dupliquee(): void
+    {
+        $this->postAvecJeton($this->base(), [ManagedReproductions::field('GLOBAL-HGE-12X16') => '60']);
+        $this->postAvecJeton($this->base(), [ManagedReproductions::field('GLOBAL-HGE-12X16') => '75']);
+
+        // Une seule reproduction, une seule taille : le second ajout est ignoré.
+        $this->assertSame(1, (int) $this->valeur("SELECT COUNT(*) FROM products WHERE artwork_id = {$this->artwork}"));
+        $this->assertSame(1, (int) $this->valeur('SELECT COUNT(*) FROM product_variants'));
+    }
+
+    public function test_un_tirage_ajoute_nait_en_tva_a_vingt_pourcent(): void
     {
         // Decision du 2026-07-21 : standard_goods par defaut.
-        $this->postAvecJeton($this->base(), ['titre' => 'Tirage', 'genre' => 'standard']);
+        $this->postAvecJeton($this->base(), [ManagedReproductions::field('GLOBAL-HGE-12X16') => '60']);
 
         $this->assertSame('standard_goods', $this->valeur('SELECT vat_category FROM products'));
     }
 
-    public function test_une_reproduction_nait_non_publiee(): void
+    public function test_un_tirage_ajoute_nait_non_publie(): void
     {
-        $this->postAvecJeton($this->base(), ['titre' => 'Tirage', 'genre' => 'standard']);
+        $this->postAvecJeton($this->base(), [ManagedReproductions::field('GLOBAL-HGE-12X16') => '60']);
 
         $this->assertSame('0', $this->valeur('SELECT is_published FROM products'));
-    }
-
-    public function test_un_tirage_limite_sans_taille_d_edition_est_refuse(): void
-    {
-        // 01-modele : edition_size obligatoire si kind='limited'.
-        $this->postAvecJeton($this->base(), ['titre' => 'Tirage', 'genre' => 'limited', 'taille_edition' => '']);
-
-        $this->assertSame(0, (int) $this->valeur('SELECT COUNT(*) FROM products'));
     }
 
     public function test_une_variante_s_ajoute_a_une_reproduction(): void
@@ -163,9 +184,11 @@ final class ReproductionsTest extends AdminTestCase
         $this->assertSame(0, (int) $this->valeur('SELECT COUNT(*) FROM product_variants'));
     }
 
-    public function test_la_creation_sans_jeton_csrf_est_refusee(): void
+    public function test_l_ajout_sans_jeton_csrf_est_refuse(): void
     {
-        $reponse = $this->requete('POST', $this->base(), post: ['titre' => 'Tirage', 'genre' => 'standard']);
+        $reponse = $this->requete('POST', $this->base(), post: [
+            ManagedReproductions::field('GLOBAL-HGE-12X16') => '60',
+        ]);
 
         $this->assertContains($reponse->status, [403, 419]);
         $this->assertSame(0, (int) $this->valeur('SELECT COUNT(*) FROM products'));
