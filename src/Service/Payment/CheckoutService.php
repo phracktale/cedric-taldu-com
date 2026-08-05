@@ -16,7 +16,6 @@ use App\Domain\Shop\LineKind;
 use App\Domain\Shop\PricingPolicy;
 use App\Repository\CartRepository;
 use App\Repository\OrderRepository;
-use App\Repository\ShippingRepository;
 use App\Repository\StockRepository;
 use App\Repository\VatRepository;
 use DateTimeImmutable;
@@ -50,7 +49,7 @@ final class CheckoutService
         private readonly OrderRepository $orders,
         private readonly StockRepository $stock,
         private readonly VatRepository $vat,
-        private readonly ShippingRepository $shipping,
+        private readonly ShippingPricer $shipping,
         private readonly PaymentGateway $gateway,
         private readonly \App\Service\I18n\UrlGenerator $url,
         private readonly LoggerInterface $logger,
@@ -117,11 +116,15 @@ final class CheckoutService
         $address = $request->shippingAddress;
         $country = $address === null ? '' : $address->country;
 
-        $quote = $this->shipping->calculator()->quote(
+        // Devis Prodigi RÉEL pour les reproductions ($live = true), combiné au
+        // barème atelier des originaux. C'est ce montant — jamais celui affiché —
+        // qui figera le port de la commande.
+        $quote = $this->shipping->price(
+            $valuation->lines,
             $request->shippingMethod,
             $country,
-            $valuation->weightGrams,
             $valuation->subtotal,
+            true,
         );
 
         if ($quote->isOnRequest() || $quote->price === null) {

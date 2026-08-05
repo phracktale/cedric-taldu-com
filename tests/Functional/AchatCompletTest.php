@@ -72,7 +72,7 @@ final class AchatCompletTest extends FunctionalTestCase
         $variant = $this->reproduction(stock: 5);
         $cookie = $this->ajouter('reproduction', $variant);
 
-        $this->commander($cookie);
+        $this->commanderExpedition($cookie);
         $this->webhook((string) $this->valeur('SELECT reference FROM orders'));
 
         $this->assertSame('paid', $this->valeur('SELECT status FROM orders'));
@@ -140,7 +140,7 @@ final class AchatCompletTest extends FunctionalTestCase
     {
         $variant = $this->reproduction(stock: 5);
         $cookie = $this->ajouter('reproduction', $variant);
-        $this->commander($cookie);
+        $this->commanderExpedition($cookie);
         $reference = (string) $this->valeur('SELECT reference FROM orders');
 
         $this->webhook($reference, 'evt_1');
@@ -191,6 +191,25 @@ final class AchatCompletTest extends FunctionalTestCase
             'nom' => 'Acheteur',
             'email' => 'acheteur@example.test',
             'mode' => 'pickup',
+            'cgv' => 'on',
+            Csrf::FIELD => $this->jeton(),
+        ]);
+    }
+
+    /**
+     * Commande en EXPEDITION, avec adresse : le seul mode possible pour une
+     * reproduction (Prodigi l'expedie, elle ne se retire pas).
+     */
+    private function commanderExpedition(string $cookie): Response
+    {
+        return $this->requete('POST', '/cedric-taldu/fr/commande', cookies: [self::COOKIE => $cookie], post: [
+            'nom' => 'Acheteur',
+            'email' => 'acheteur@example.test',
+            'mode' => 'shipping',
+            'adresse' => '12 rue des Trois-Cailloux',
+            'code_postal' => '80000',
+            'ville' => 'Amiens',
+            'pays' => 'FR',
             'cgv' => 'on',
             Csrf::FIELD => $this->jeton(),
         ]);

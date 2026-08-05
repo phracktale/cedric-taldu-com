@@ -107,14 +107,40 @@ final class CommandeTest extends FunctionalTestCase
 
     public function test_la_commande_fige_les_bons_montants(): void
     {
-        // 60 € de tirage, sous le franco : port France 9 €.
+        // Un tirage est expedie par Prodigi : son port suit le devis Prodigi.
+        // Prodigi n'etant pas configure en test, c'est le FORFAIT de secours qui
+        // s'applique (7,90 € par copie), figé sur la commande.
         $cookie = $this->panierAvecReproduction();
 
         $this->commander($cookie);
 
         $this->assertSame(6000, (int) $this->valeur('SELECT subtotal_cents FROM orders'));
-        $this->assertSame(900, (int) $this->valeur('SELECT shipping_cents FROM orders'));
-        $this->assertSame(6900, (int) $this->valeur('SELECT total_cents FROM orders'));
+        $this->assertSame(790, (int) $this->valeur('SELECT shipping_cents FROM orders'));
+        $this->assertSame(6790, (int) $this->valeur('SELECT total_cents FROM orders'));
+    }
+
+    public function test_le_retrait_n_est_pas_propose_pour_une_reproduction(): void
+    {
+        // Une reproduction est expediee par Prodigi : la remise en main propre
+        // disparait du formulaire.
+        $cookie = $this->panierAvecReproduction();
+
+        $reponse = $this->requete('GET', '/cedric-taldu/fr/commande', cookies: [self::COOKIE => $cookie]);
+
+        $this->assertSame(200, $reponse->status);
+        $this->assertStringNotContainsString('value="pickup"', $reponse->body);
+    }
+
+    public function test_le_retrait_est_refuse_au_paiement_pour_une_reproduction(): void
+    {
+        // Meme si le mode « pickup » est forcé cote client, le serveur refuse :
+        // aucune commande n'est creee.
+        $cookie = $this->panierAvecReproduction();
+
+        $reponse = $this->commander($cookie, ['mode' => 'pickup']);
+
+        $this->assertSame(422, $reponse->status);
+        $this->assertSame(0, (int) $this->valeur('SELECT COUNT(*) FROM orders'));
     }
 
     public function test_l_oeuvre_est_reservee_par_la_commande(): void

@@ -9,14 +9,20 @@ use App\Domain\Order\Address;
 use App\Domain\Shipping\ShippingMethod;
 use App\Domain\Shop\LineKind;
 use App\Repository\CartRepository;
+use App\Repository\FulfillmentRepository;
 use App\Repository\OrderRepository;
 use App\Repository\ShippingRepository;
 use App\Repository\StockRepository;
 use App\Repository\VatRepository;
+use App\Service\Fulfillment\Exception\ProdigiException;
+use App\Service\Fulfillment\FakeProdigiClient;
+use App\Service\Fulfillment\ProdigiConfig;
+use App\Service\Fulfillment\ReproductionShipping;
 use App\Service\Payment\CheckoutOutcome;
 use App\Service\Payment\CheckoutRequest;
 use App\Service\Payment\CheckoutService;
 use App\Service\Payment\FakeGateway;
+use App\Service\Payment\ShippingPricer;
 use DateTimeImmutable;
 use Tests\Support\DatabaseTestCase;
 use Tests\Support\Doubles\RecordingLogger;
@@ -36,9 +42,13 @@ final class CheckoutServiceTest extends DatabaseTestCase
 {
     private const MAINTENANT = '2026-07-22 10:00:00';
 
+    /** Forfait de secours du port des reproductions, par copie (centimes). */
+    private const FORFAIT_REPRO = 790;
+
     private CheckoutService $service;
     private FakeGateway $gateway;
     private CartRepository $carts;
+    private FakeProdigiClient $prodigi;
 
     private int $artwork;
     private int $variant;
@@ -50,13 +60,27 @@ final class CheckoutServiceTest extends DatabaseTestCase
         $this->gateway = new FakeGateway('whsec_test');
         $this->carts = new CartRepository($this->pdo);
 
+        // Prodigi configuré (clé sandbox) : les reproductions sont chiffrées par
+        // devis. Par défaut le devis répond 495 centimes en EUR ; chaque test le
+        // règle à sa guise (respondQuoteWith / failQuoteWith).
+        $this->prodigi = new FakeProdigiClient();
+        $this->prodigi->respondQuoteWith(495, 'EUR');
+
+        $reproductions = new ReproductionShipping(
+            $this->prodigi,
+            ProdigiConfig::resolve('sandbox', 'preprod', ['sandboxKey' => 'sk-sandbox', 'liveKey' => '']),
+            new FulfillmentRepository($this->pdo),
+            new RecordingLogger(),
+            self::FORFAIT_REPRO,
+        );
+
         $this->service = new CheckoutService(
             $this->pdo,
             $this->carts,
             new OrderRepository($this->pdo),
             new StockRepository($this->pdo),
             new VatRepository($this->pdo),
-            new ShippingRepository($this->pdo),
+            new ShippingPricer(new ShippingRepository($this->pdo), $reproductions),
             $this->gateway,
             self::urlGenerator(),
             new RecordingLogger(),
@@ -84,22 +108,55 @@ final class CheckoutServiceTest extends DatabaseTestCase
         $resultat = $this->commander();
 
         $this->assertNotNull($resultat->order);
-        // Original 45 000 + deux tirages a 6 000 = 57 000 centimes. Le franco
-        // France est a 30 000 : le port est offert.
+        // Original 45 000 + deux tirages a 6 000 = 57 000 centimes. Le sous-total
+        // depasse le franco France (30 000) : la part ATELIER (l'original) est
+        // offerte. La part PRODIGI (les tirages) reste due — le franco de
+        // l'artiste ne couvre pas l'expedition de l'imprimeur : 495 de devis.
         $this->assertSame(57000, $resultat->order->subtotal->cents);
-        $this->assertSame(0, $resultat->order->shipping->cents);
-        $this->assertSame(57000, $resultat->order->total->cents);
+        $this->assertSame(495, $resultat->order->shipping->cents);
+        $this->assertSame(57495, $resultat->order->total->cents);
     }
 
-    public function test_sous_le_seuil_de_franco_le_port_est_facture(): void
+    public function test_le_port_d_une_reproduction_vient_du_devis_prodigi(): void
     {
-        // Un seul tirage a 6 000 centimes : 60 €, loin des 300 € du franco.
+        // Une reproduction est imprimee et expediee par Prodigi : son port suit
+        // le devis en direct, pas le bareme au poids de l'atelier.
+        $this->prodigi->respondQuoteWith(650, 'EUR');
+
         $resultat = $this->commanderPanier([[LineKind::Reproduction, $this->variant, 1]]);
 
         $this->assertNotNull($resultat->order);
         $this->assertSame(6000, $resultat->order->subtotal->cents);
-        $this->assertSame(900, $resultat->order->shipping->cents);
-        $this->assertSame(6900, $resultat->order->total->cents);
+        $this->assertSame(650, $resultat->order->shipping->cents);
+        $this->assertSame(6650, $resultat->order->total->cents);
+    }
+
+    public function test_un_devis_prodigi_en_panne_retombe_sur_le_forfait(): void
+    {
+        // Prodigi injoignable : on ne perd pas la vente et on n'expedie pas
+        // gratis — le forfait de secours (par copie) prend le relais.
+        $this->prodigi->failQuoteWith(new ProdigiException('panne'));
+
+        $resultat = $this->commanderPanier([[LineKind::Reproduction, $this->variant, 2]]);
+
+        $this->assertNotNull($resultat->order);
+        $this->assertSame(2 * self::FORFAIT_REPRO, $resultat->order->shipping->cents);
+    }
+
+    public function test_un_panier_mixte_additionne_atelier_et_prodigi(): void
+    {
+        // Sous le franco : la part atelier (original, 900) s'ajoute au devis
+        // Prodigi (500) des reproductions.
+        $this->pdo->exec("UPDATE artworks SET price_cents = 20000 WHERE id = {$this->artwork}");
+        $this->prodigi->respondQuoteWith(500, 'EUR');
+
+        $resultat = $this->commanderPanier(
+            [[LineKind::Original, $this->artwork, 1], [LineKind::Reproduction, $this->variant, 1]],
+        );
+
+        $this->assertNotNull($resultat->order);
+        // 20 000 + 6 000 = 26 000 (< franco 30 000) : atelier 900 + Prodigi 500.
+        $this->assertSame(1400, $resultat->order->shipping->cents);
     }
 
     public function test_un_prix_modifie_en_back_office_s_applique_immediatement(): void
@@ -304,9 +361,14 @@ final class CheckoutServiceTest extends DatabaseTestCase
 
     public function test_la_remise_en_main_propre_ignore_le_poids_et_ne_coute_rien(): void
     {
+        // Panier d'originaux seuls : le retrait reste possible et gratuit, quel
+        // que soit le poids.
         $this->pdo->exec("UPDATE artworks SET weight_grams = 40000 WHERE id = {$this->artwork}");
 
-        $resultat = $this->commander($this->demande(mode: ShippingMethod::Pickup));
+        $resultat = $this->commanderPanier(
+            [[LineKind::Original, $this->artwork, 1]],
+            $this->demande(mode: ShippingMethod::Pickup),
+        );
 
         $this->assertSame(CheckoutOutcome::Redirect, $resultat->outcome);
         $this->assertNotNull($resultat->order);
@@ -314,16 +376,34 @@ final class CheckoutServiceTest extends DatabaseTestCase
         $this->assertNull($this->valeur('SELECT shipping_address FROM orders'));
     }
 
+    public function test_le_retrait_est_refuse_quand_le_panier_contient_une_reproduction(): void
+    {
+        // Une reproduction est expediee par Prodigi : elle ne peut pas etre
+        // remise en main propre. Le tunnel renvoie « sur devis » plutot que de
+        // creer une commande qui ne pourrait pas etre honoree.
+        $resultat = $this->commanderPanier(
+            [[LineKind::Reproduction, $this->variant, 1]],
+            $this->demande(mode: ShippingMethod::Pickup),
+        );
+
+        $this->assertSame(CheckoutOutcome::ShippingOnRequest, $resultat->outcome);
+        $this->assertSame(0, $this->compter('orders'));
+    }
+
     public function test_le_franco_bascule_au_centime_pres(): void
     {
-        // Seuil France a 30 000 centimes. Un tirage a 29 999 reste facture,
-        // a 30 000 le port tombe : c'est la borne exacte qui compte, et une
-        // comparaison stricte de trop la deplacerait d'un centime.
-        $this->pdo->exec("UPDATE product_variants SET price_cents = 29999 WHERE id = {$this->variant}");
-        $sous = $this->commanderPanier([[LineKind::Reproduction, $this->variant, 1]]);
+        // Seuil France a 30 000 centimes, sur la part ATELIER (les originaux).
+        // Un original a 29 999 reste facture, a 30 000 le port tombe : c'est la
+        // borne exacte qui compte, une comparaison stricte de trop la deplacerait.
+        $this->pdo->exec("UPDATE artworks SET price_cents = 29999 WHERE id = {$this->artwork}");
+        $sous = $this->commanderPanier([[LineKind::Original, $this->artwork, 1]]);
 
-        $this->pdo->exec("UPDATE product_variants SET price_cents = 30000 WHERE id = {$this->variant}");
-        $atteint = $this->commanderPanier([[LineKind::Reproduction, $this->variant, 1]]);
+        // L'original a ete reserve : on le libere pour pouvoir le recommander.
+        $this->pdo->exec(
+            "UPDATE artworks SET status = 'available', reserved_until = NULL, price_cents = 30000"
+            . " WHERE id = {$this->artwork}"
+        );
+        $atteint = $this->commanderPanier([[LineKind::Original, $this->artwork, 1]]);
 
         $this->assertNotNull($sous->order);
         $this->assertNotNull($atteint->order);
@@ -434,11 +514,16 @@ final class CheckoutServiceTest extends DatabaseTestCase
         )->execute(['id' => $productId, 'l' => 'fr', 't' => 'Tirage d’art']);
 
         $variant = $this->pdo->prepare(
-            'INSERT INTO product_variants (product_id, sku, size_label, price_cents, stock_qty, weight_grams,
-                                           created_at, updated_at)
-             VALUES (:prod, :sku, :size, 6000, 10, 300, NOW(), NOW())'
+            'INSERT INTO product_variants (product_id, sku, prodigi_sku, size_label, price_cents, stock_qty,
+                                           weight_grams, created_at, updated_at)
+             VALUES (:prod, :sku, :psku, :size, 6000, 10, 300, NOW(), NOW())'
         );
-        $variant->execute(['prod' => $productId, 'sku' => 'ART-3040', 'size' => '30 × 40 cm']);
+        $variant->execute([
+            'prod' => $productId,
+            'sku' => 'ART-3040',
+            'psku' => 'GLOBAL-HGE-16X20',
+            'size' => '30 × 40 cm',
+        ]);
         $this->variant = (int) $this->pdo->lastInsertId();
     }
 

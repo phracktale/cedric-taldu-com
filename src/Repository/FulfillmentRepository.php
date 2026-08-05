@@ -85,6 +85,54 @@ final class FulfillmentRepository
         return $lines;
     }
 
+    /**
+     * SKU Prodigi et cadrage des variantes données, pour un devis avant commande.
+     *
+     * Les variantes sans SKU Prodigi renseigné sont omises du résultat : le
+     * service de devis en déduit qu'il ne peut pas chiffrer par Prodigi et
+     * retombe sur le forfait.
+     *
+     * @param  list<int> $variantIds
+     * @return array<int, array{sku: string, sizing: string}>
+     */
+    public function prodigiVariants(array $variantIds): array
+    {
+        if ($variantIds === []) {
+            return [];
+        }
+
+        $placeholders = [];
+        $parameters = [];
+
+        foreach (array_values($variantIds) as $index => $id) {
+            $key = 'v' . $index;
+            $placeholders[] = ':' . $key;
+            $parameters[$key] = $id;
+        }
+
+        $statement = $this->pdo->prepare(
+            'SELECT id, prodigi_sku, prodigi_sizing FROM product_variants WHERE id IN ('
+            . implode(', ', $placeholders) . ')'
+        );
+        $statement->execute($parameters);
+
+        $map = [];
+
+        /** @var array<string, mixed> $row */
+        foreach ($statement->fetchAll() as $row) {
+            if ($row['prodigi_sku'] === null || (string) $row['prodigi_sku'] === '') {
+                continue;
+            }
+
+            $map[(int) $row['id']] = [
+                'sku' => (string) $row['prodigi_sku'],
+                'sizing' => (string) $row['prodigi_sizing'],
+            ];
+        }
+
+        return $map;
+    }
+
     public function alreadySubmitted(int $orderId): bool
     {
         $statement = $this->pdo->prepare('SELECT prodigi_order_id FROM orders WHERE id = :id');

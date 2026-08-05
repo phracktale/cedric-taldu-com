@@ -20,14 +20,15 @@ use App\Domain\Shipping\DeliveryEstimate;
 use App\Domain\Shipping\ShippingMethod;
 use App\Domain\Shop\Cart;
 use App\Domain\Shop\CartValuation;
+use App\Domain\Shop\LineKind;
 use App\Domain\Shop\PricingPolicy;
 use App\Repository\CartRepository;
 use App\Repository\OrderRepository;
-use App\Repository\ShippingRepository;
 use App\Service\I18n\UrlGenerator;
 use App\Service\Payment\CheckoutOutcome;
 use App\Service\Payment\CheckoutRequest;
 use App\Service\Payment\CheckoutService;
+use App\Service\Payment\ShippingPricer;
 use App\Service\View\Chrome;
 use DateTimeImmutable;
 
@@ -61,7 +62,7 @@ final class CheckoutController
         private readonly CheckoutService $checkout,
         private readonly UrlGenerator $url,
         private readonly LoggerInterface $logger,
-        private readonly ShippingRepository $shipping,
+        private readonly ShippingPricer $shipping,
     ) {
     }
 
@@ -102,6 +103,25 @@ final class CheckoutController
         // Case CGV obligatoire (03-boutique §3, étape 2).
         if ($request->input('cgv') === null) {
             return $this->rejectForm($request, $locale, 'Vous devez accepter les conditions générales de vente.');
+        }
+
+        // Retrait interdit dès qu'une reproduction est au panier : Prodigi
+        // l'expédie, elle ne peut pas être remise en main propre. ShippingPricer
+        // le refuse aussi côté calcul ; ce garde-fou donne un message clair.
+        if ($method === ShippingMethod::Pickup) {
+            $valuation = PricingPolicy::value(
+                $this->cart($request, $locale),
+                $this->carts->catalogueFor($this->cart($request, $locale), new DateTimeImmutable()),
+            );
+
+            if (self::hasReproduction($valuation)) {
+                return $this->rejectForm(
+                    $request,
+                    $locale,
+                    'La remise en main propre n’est pas disponible pour les reproductions, '
+                    . 'expédiées par notre imprimeur.',
+                );
+            }
         }
 
         try {
@@ -214,11 +234,15 @@ final class CheckoutController
      */
     private function viewData(Request $request, Locale $locale, CartValuation $valuation): array
     {
-        $quote = $this->shipping->calculator()->quote(
+        // Estimation d'affichage : port France, mode expédition, en $live = false
+        // — le forfait tient lieu de devis Prodigi, sans appel réseau à chaque
+        // affichage. Le port réel est chiffré au paiement (03-boutique §8.2).
+        $quote = $this->shipping->price(
+            $valuation->lines,
             ShippingMethod::Shipping,
             'FR',
-            $valuation->weightGrams,
             $valuation->subtotal,
+            false,
         );
 
         // Total pour le mode par défaut (expédition). Null si le port est sur
@@ -239,7 +263,21 @@ final class CheckoutController
             'totalShipping' => $totalShipping,
             'deliveryFrom' => $deliveryFrom,
             'deliveryTo' => $deliveryTo,
+            // La remise en main propre disparaît dès qu'une reproduction est au
+            // panier : Prodigi l'expédie, elle ne peut pas être retirée.
+            'pickupAllowed' => !self::hasReproduction($valuation),
         ];
+    }
+
+    private static function hasReproduction(CartValuation $valuation): bool
+    {
+        foreach ($valuation->lines as $line) {
+            if ($line->item->kind === LineKind::Reproduction) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function cart(Request $request, Locale $locale): Cart

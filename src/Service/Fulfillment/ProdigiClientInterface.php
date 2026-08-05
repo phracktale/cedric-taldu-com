@@ -23,4 +23,13 @@ interface ProdigiClientInterface
      * @throws ProdigiException en cas d'échec réseau, de réponse invalide ou de statut d'erreur
      */
     public function createOrder(array $payload): ProdigiOrderResult;
+
+    /**
+     * Demande un devis d'expédition.
+     *
+     * @param array<string, mixed> $payload corps conforme à POST /v4.0/quotes
+     *
+     * @throws ProdigiException en cas d'échec réseau, de réponse invalide ou de statut d'erreur
+     */
+    public function quote(array $payload): ProdigiQuoteResult;
 }

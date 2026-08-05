@@ -38,6 +38,8 @@ $shippingPrice = $data['shippingPrice'] ?? null;
 $shippingOnRequest = ($data['shippingOnRequest'] ?? false) === true;
 /** @var Money|null $totalShipping */
 $totalShipping = $data['totalShipping'] ?? null;
+// Retrait masqué dès qu'une reproduction est au panier (expédiée par Prodigi).
+$pickupAllowed = ($data['pickupAllowed'] ?? true) === true;
 /** @var DateTimeImmutable $deliveryFrom */
 $deliveryFrom = $data['deliveryFrom'];
 /** @var DateTimeImmutable $deliveryTo */
@@ -110,12 +112,14 @@ $jour = static function (DateTimeImmutable $d) use ($mois, $estFr): string {
             <span class="commande-mode-nom"><?= $t('checkout.shipping') ?></span>
             <span class="commande-mode-prix"><?= e($shippingText) ?></span>
           </label>
+          <?php if ($pickupAllowed) : ?>
           <label class="commande-mode">
             <input type="radio" name="mode" value="pickup"
                    data-prix="<?= attr($pickupText) ?>" data-total="<?= attr($totalPickupText) ?>" data-mode="pickup">
             <span class="commande-mode-nom"><?= $t('checkout.pickup') ?></span>
             <span class="commande-mode-prix"><?= e($pickupText) ?></span>
           </label>
+          <?php endif; ?>
         </div>
 
         <div class="commande-adresse" data-commande-adresse>
