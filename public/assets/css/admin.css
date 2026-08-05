@@ -292,6 +292,21 @@ legend {
 .carte-libelle { letter-spacing: .1em; text-transform: uppercase; font-size: .78rem; color: var(--encre-70); }
 .carte-detail { font-size: .85rem; color: var(--encre-40); margin: .4rem 0 .8rem; }
 
+/* ------------------------------------------------------- blocs de section */
+
+.admin-bloc {
+  background: var(--papier); border: 1px solid var(--filet);
+  border-radius: var(--rayon-petit); padding: 1.6rem; margin-bottom: 1.6rem;
+}
+.admin-bloc > h2:first-child,
+.admin-bloc-tete h2 { margin-top: 0; }
+.admin-bloc-tete {
+  display: flex; flex-wrap: wrap; gap: .8rem 1.2rem;
+  align-items: baseline; justify-content: space-between; margin-bottom: 1rem;
+}
+.admin-bloc-tete .actions { margin: 0; }
+.admin-variante-edition { margin-top: 1rem; }
+
 /* --------------------------------------------------------- double facteur */
 
 .secret { background: var(--papier); border: 1px solid var(--filet); border-radius: var(--rayon-petit); padding: 1.1rem; margin-bottom: 1.2rem; }

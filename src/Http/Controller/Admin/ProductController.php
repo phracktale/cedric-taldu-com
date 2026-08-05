@@ -8,7 +8,7 @@ use App\Core\Exception\NotFoundException;
 use App\Core\RedirectResponse;
 use App\Core\Request;
 use App\Core\Response;
-use App\Domain\Shop\ProductKind;
+use App\Domain\Shop\ManagedReproductions;
 use App\Repository\Admin\ProductAdminRepository;
 
 /**
@@ -45,6 +45,15 @@ final class ProductController
         ]);
     }
 
+    /**
+     * Ajoute automatiquement les tirages gérés (SKU Prodigi) à une œuvre.
+     *
+     * L'artiste ne saisit qu'un prix par taille : le SKU Prodigi, le cadrage, le
+     * libellé de taille et le poids viennent du catalogue en dur. La reproduction
+     * (produit standard) est créée à la volée si l'œuvre n'en a pas encore, sans
+     * titre à saisir — il est repris de l'œuvre. Idempotent : une taille déjà
+     * présente est ignorée par la contrainte d'unicité (createVariant → false).
+     */
     public function store(Request $request): Response
     {
         $artworkId = self::id($request);
@@ -53,19 +62,46 @@ final class ProductController
             throw new NotFoundException('Œuvre introuvable.');
         }
 
-        $title = trim((string) $request->input('titre'));
-        $kind = $request->input('genre') === 'limited' ? ProductKind::Limited : ProductKind::Standard;
-        $editionSize = self::intOrNull($request->input('taille_edition'));
+        $title = $this->products->artworkTitle($artworkId);
+        $title = $title === '' ? 'Tirage d’art' : $title;
 
-        // Un titre vide, ou une edition limitee sans taille, est un formulaire
-        // incomplet (contrainte 01-modele ck_edition) : on revient sans creer.
-        if ($title === '' || ($kind === ProductKind::Limited && ($editionSize === null || $editionSize < 1))) {
-            return $this->backToArtwork($request, $artworkId);
+        $now = $this->chrome->now();
+        $productId = null;
+        $created = 0;
+
+        foreach (ManagedReproductions::all() as $tirage) {
+            $price = self::eurosToCents($request->input($tirage['field']));
+
+            // Pas de prix (ou prix nul) : la taille n'est pas proposée.
+            if ($price === null || $price <= 0) {
+                continue;
+            }
+
+            // Le produit n'est créé qu'au premier prix valable : pas de
+            // reproduction vide si le formulaire est soumis à blanc.
+            $productId ??= $this->products->standardProductFor($artworkId, $title, $now);
+
+            $ajoutee = $this->products->createVariant(
+                $productId,
+                ManagedReproductions::shopSku($artworkId, $tirage['sku']),
+                $tirage['size'],
+                false,
+                $price,
+                ManagedReproductions::STOCK,
+                $tirage['weight'],
+                $tirage['sku'],
+                ManagedReproductions::SIZING,
+                $now,
+            );
+
+            if ($ajoutee) {
+                $created++;
+            }
         }
 
-        $this->products->createProduct($artworkId, $title, $kind, $editionSize, $this->chrome->now());
-
-        $this->audit($request, 'product.create', $artworkId);
+        if ($created > 0) {
+            $this->audit($request, 'variant.create', $artworkId);
+        }
 
         return $this->backToArtwork($request, $artworkId);
     }
