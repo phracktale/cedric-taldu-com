@@ -1,10 +1,13 @@
 <?php
 
 /**
- * Reproductions d'une œuvre (04-back-office, lot 3).
+ * Reproductions d'une œuvre (04-back-office).
  *
- * Chaque reproduction porte ses variantes (taille, encadrement, prix, stock).
- * Le prix est saisi en euros ; le controleur le convertit en centimes entiers.
+ * L'artiste propose des tirages en choisissant, dans la liste des SKU Prodigi
+ * gérés, les tailles qu'il vend et leur prix. Le SKU Prodigi, le cadrage, le
+ * libellé de taille et le poids viennent du catalogue : aucune saisie technique,
+ * aucun titre. Les variantes existantes se corrigent (prix, stock) ou se
+ * suppriment ligne à ligne.
  *
  * @var array<string, mixed>          $data
  * @var App\Service\I18n\UrlGenerator $url
@@ -12,6 +15,10 @@
  */
 
 declare(strict_types=1);
+
+use App\Domain\Locale;
+use App\Domain\Money;
+use App\Domain\Shop\ManagedReproductions;
 
 $base = is_string($data['basePath'] ?? null) ? $data['basePath'] : '';
 $jeton = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
@@ -21,120 +28,193 @@ $artworkTitle = is_string($data['artworkTitle'] ?? null) ? $data['artworkTitle']
 $reproductions = is_array($data['reproductions'] ?? null) ? $data['reproductions'] : [];
 
 $reproUrl = $base . '/admin/oeuvres/' . $artworkId . '/reproductions';
+
+// Tailles déjà proposées (par SKU Prodigi), pour ne pas les reproposer.
+$dejaProposes = [];
+foreach ($reproductions as $repro) {
+    foreach ($repro['variants'] as $variant) {
+        if (is_string($variant['prodigi_sku'] ?? null) && $variant['prodigi_sku'] !== '') {
+            $dejaProposes[$variant['prodigi_sku']] = true;
+        }
+    }
+}
+
+$prixEuros = static fn (int $cents): string => sprintf('%d.%02d', intdiv($cents, 100), $cents % 100);
 ?>
-<section class="admin-reproductions">
-  <p><a href="<?= attr($base) ?>/admin/oeuvres/<?= attr($artworkId) ?>">← Retour à l’œuvre</a></p>
-  <h1>Reproductions — <?= e($artworkTitle) ?></h1>
+<div class="admin-page">
+    <p class="actions">
+        <a class="bouton bouton--secondaire" href="<?= attr($base) ?>/admin/oeuvres/<?= attr($artworkId) ?>">
+            ← Retour à l’œuvre
+        </a>
+    </p>
 
-  <?php foreach ($reproductions as $repro) : ?>
-    <article class="admin-repro">
-      <header>
-        <h2><?= e((string) $repro['title']) ?></h2>
-        <p>
-          <?= e($repro['kind'] === 'limited' ? 'Édition limitée' : 'Tirage courant') ?>
-          <?php if ($repro['edition_size'] !== null) : ?>
-            — <?= e((string) $repro['editions_sold']) ?>/<?= e((string) $repro['edition_size']) ?> vendus
-          <?php endif; ?>
-          — <?= e($repro['is_published'] ? 'Publiée' : 'Brouillon') ?>
+    <h1>Reproductions — <?= e($artworkTitle) ?></h1>
+
+    <section class="admin-bloc">
+        <h2>Ajouter des tirages</h2>
+        <p class="aide">
+            Cochez une taille en indiquant son prix TTC : le tirage est créé et envoyé à
+            l’imprimeur au format correspondant. Laissez vide pour ne pas la proposer.
         </p>
-      </header>
 
-      <table class="admin-table">
-        <thead><tr><th>SKU</th><th>SKU Prodigi</th><th>Taille</th><th>Prix</th><th>Stock</th><th></th></tr></thead>
-        <tbody>
-          <?php foreach ($repro['variants'] as $variant) : ?>
-            <?php $sizing = (string) ($variant['prodigi_sizing'] ?? 'fillPrintArea'); ?>
-            <tr>
-              <td><?= e((string) $variant['sku']) ?></td>
-              <td><?= e((string) ($variant['prodigi_sku'] ?? '—')) ?></td>
-              <td><?= e((string) $variant['size_label']) ?><?php if ($variant['is_framed']) : ?> · encadré<?php endif; ?></td>
-              <td><?= e(money(App\Domain\Money::fromCents((int) $variant['price_cents']), App\Domain\Locale::Fr)) ?></td>
-              <td><?= e((string) $variant['stock_qty']) ?></td>
-              <td class="admin-repro-var-actions">
-                <details>
-                  <summary>Modifier</summary>
-                  <form method="post" action="<?= attr($base) ?>/admin/variantes/<?= attr($variant['id']) ?>">
-                    <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
-                    <label>SKU <input type="text" name="sku" required maxlength="60" value="<?= attr($variant['sku']) ?>"></label>
-                    <label>Taille <input type="text" name="taille" required maxlength="60" value="<?= attr($variant['size_label']) ?>"></label>
-                    <label>Encadré <input type="checkbox" name="encadre" value="1"<?php if ($variant['is_framed']) : ?> checked<?php endif; ?>></label>
-                    <label>Prix (€) <input type="text" name="prix" required inputmode="decimal" value="<?= attr(sprintf('%d.%02d', intdiv((int) $variant['price_cents'], 100), (int) $variant['price_cents'] % 100)) ?>"></label>
-                    <label>Stock <input type="number" name="stock" min="0" required value="<?= attr($variant['stock_qty']) ?>"></label>
-                    <label>Poids (g) <input type="number" name="poids" min="0" required value="<?= attr($variant['weight_grams']) ?>"></label>
-                    <label>SKU Prodigi <input type="text" name="prodigi_sku" maxlength="60" list="prodigi-skus" value="<?= attr($variant['prodigi_sku'] ?? '') ?>" placeholder="ex. GLOBAL-HGE-16X20"></label>
-                    <label>Cadrage
-                      <select name="prodigi_sizing">
-                        <option value="fillPrintArea"<?php if ($sizing === 'fillPrintArea') : ?> selected<?php endif; ?>>Remplir (recadre)</option>
-                        <option value="fitPrintArea"<?php if ($sizing === 'fitPrintArea') : ?> selected<?php endif; ?>>Contenir (marge)</option>
-                        <option value="stretchToPrintArea"<?php if ($sizing === 'stretchToPrintArea') : ?> selected<?php endif; ?>>Étirer</option>
-                      </select>
-                    </label>
-                    <button type="submit">Enregistrer</button>
-                  </form>
-                </details>
-                <form method="post" action="<?= attr($base) ?>/admin/variantes/<?= attr($variant['id']) ?>/suppression">
-                  <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
-                  <button type="submit">Supprimer</button>
-                </form>
-              </td>
-            </tr>
-          <?php endforeach; ?>
-        </tbody>
-      </table>
+        <form method="post" action="<?= attr($reproUrl) ?>" class="formulaire">
+            <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
 
-      <details>
-        <summary>Ajouter une variante</summary>
-        <form method="post" action="<?= attr($base) ?>/admin/reproductions/<?= attr($repro['id']) ?>/variantes">
-          <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
-          <label>SKU <input type="text" name="sku" required maxlength="60"></label>
-          <label>Taille <input type="text" name="taille" required maxlength="60"></label>
-          <label>Encadré <input type="checkbox" name="encadre" value="1"></label>
-          <label>Prix (€) <input type="text" name="prix" required inputmode="decimal"></label>
-          <label>Stock <input type="number" name="stock" min="0" value="0" required></label>
-          <label>Poids (g) <input type="number" name="poids" min="0" value="300" required></label>
-          <label>SKU Prodigi <input type="text" name="prodigi_sku" maxlength="60" list="prodigi-skus" placeholder="ex. GLOBAL-HGE-16X20"></label>
-          <label>Cadrage
-            <select name="prodigi_sizing">
-              <option value="fillPrintArea">Remplir (recadre)</option>
-              <option value="fitPrintArea">Contenir (marge)</option>
-              <option value="stretchToPrintArea">Étirer</option>
-            </select>
-          </label>
-          <button type="submit">Ajouter</button>
+            <div class="grille-champs">
+                <?php foreach (ManagedReproductions::all() as $tirage) : ?>
+                    <?php $ajoute = isset($dejaProposes[$tirage['sku']]); ?>
+                    <p class="champ">
+                        <label for="<?= attr($tirage['field']) ?>">
+                            <?= e($tirage['size']) ?>
+                            <span class="champ-aide"><?= e($tirage['sku']) ?></span>
+                        </label>
+                        <?php if ($ajoute) : ?>
+                            <input type="text" id="<?= attr($tirage['field']) ?>" value="Déjà proposé" disabled>
+                        <?php else : ?>
+                            <input type="text" id="<?= attr($tirage['field']) ?>" name="<?= attr($tirage['field']) ?>"
+                                   inputmode="decimal" placeholder="prix TTC en euros">
+                        <?php endif; ?>
+                    </p>
+                <?php endforeach; ?>
+            </div>
+
+            <p class="actions">
+                <button type="submit" class="bouton">Ajouter les tirages</button>
+            </p>
         </form>
-      </details>
+    </section>
 
-      <div class="admin-repro-actions">
-        <form method="post" action="<?= attr($base) ?>/admin/reproductions/<?= attr($repro['id']) ?>/publication">
-          <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
-          <button type="submit"><?= e($repro['is_published'] ? 'Dépublier' : 'Publier') ?></button>
-        </form>
-        <form method="post" action="<?= attr($base) ?>/admin/reproductions/<?= attr($repro['id']) ?>/suppression">
-          <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
-          <button type="submit">Supprimer la reproduction</button>
-        </form>
-      </div>
-    </article>
-  <?php endforeach; ?>
+    <?php if ($reproductions === []) : ?>
+        <p class="aide">Aucun tirage pour cette œuvre. Ajoutez-en une taille ci-dessus.</p>
+    <?php endif; ?>
 
-  <h2>Nouvelle reproduction</h2>
-  <form method="post" action="<?= attr($reproUrl) ?>">
-    <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
-    <label>Titre <input type="text" name="titre" required maxlength="200"></label>
-    <label>Genre
-      <select name="genre">
-        <option value="standard">Tirage courant</option>
-        <option value="limited">Édition limitée</option>
-      </select>
-    </label>
-    <label>Taille d’édition (si limitée) <input type="number" name="taille_edition" min="1"></label>
-    <button type="submit" class="btn btn-plein">Créer</button>
-  </form>
+    <?php foreach ($reproductions as $repro) : ?>
+        <section class="admin-bloc">
+            <div class="admin-bloc-tete">
+                <h2>
+                    <?= e((string) $repro['title']) ?>
+                    <?php if ($repro['is_published']) : ?>
+                        <span class="pastille pastille--publie">Publiée</span>
+                    <?php else : ?>
+                        <span class="pastille pastille--brouillon">Non publiée</span>
+                    <?php endif; ?>
+                </h2>
+                <div class="actions">
+                    <form method="post" action="<?= attr($base) ?>/admin/reproductions/<?= attr($repro['id']) ?>/publication">
+                        <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
+                        <button type="submit" class="bouton bouton--secondaire">
+                            <?= e($repro['is_published'] ? 'Dépublier' : 'Publier') ?>
+                        </button>
+                    </form>
+                    <form method="post" action="<?= attr($base) ?>/admin/reproductions/<?= attr($repro['id']) ?>/suppression"
+                          data-confirmation="Supprimer ce tirage et toutes ses tailles ?">
+                        <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
+                        <button type="submit" class="lien-bouton">Supprimer le tirage</button>
+                    </form>
+                </div>
+            </div>
 
-  <?php // Suggestions de SKU Prodigi (Hahnemühle German Etching), cliquables dans les champs ci-dessus. ?>
-  <datalist id="prodigi-skus">
-    <option value="GLOBAL-HGE-12X16"></option>
-    <option value="GLOBAL-HGE-16X20"></option>
-    <option value="GLOBAL-HGE-24X36"></option>
-  </datalist>
-</section>
+            <?php if ($repro['variants'] === []) : ?>
+                <p class="aide">Aucune taille. Ajoutez-en une ci-dessus.</p>
+            <?php else : ?>
+            <table class="tableau">
+                <thead>
+                    <tr>
+                        <th scope="col">Taille</th>
+                        <th scope="col">SKU Prodigi</th>
+                        <th scope="col">Prix</th>
+                        <th scope="col">Stock</th>
+                        <th scope="col" class="colonne-actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($repro['variants'] as $variant) : ?>
+                        <?php $sizing = (string) ($variant['prodigi_sizing'] ?? 'fillPrintArea'); ?>
+                        <tr>
+                            <td>
+                                <?= e((string) $variant['size_label']) ?>
+                                <?php if ($variant['is_framed']) : ?> · encadré<?php endif; ?>
+                            </td>
+                            <td><code><?= e((string) ($variant['prodigi_sku'] ?? '—')) ?></code></td>
+                            <td><?= e(money(Money::fromCents((int) $variant['price_cents']), Locale::Fr)) ?></td>
+                            <td><?= e((string) $variant['stock_qty']) ?></td>
+                            <td class="colonne-actions">
+                                <details>
+                                    <summary class="lien-bouton">Modifier</summary>
+                                    <form method="post" action="<?= attr($base) ?>/admin/variantes/<?= attr($variant['id']) ?>"
+                                          class="formulaire admin-variante-edition">
+                                        <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
+                                        <div class="grille-champs">
+                                            <p class="champ">
+                                                <label>Taille
+                                                    <input type="text" name="taille" required maxlength="60"
+                                                           value="<?= attr($variant['size_label']) ?>">
+                                                </label>
+                                            </p>
+                                            <p class="champ">
+                                                <label>SKU boutique
+                                                    <input type="text" name="sku" required maxlength="60"
+                                                           value="<?= attr($variant['sku']) ?>">
+                                                </label>
+                                            </p>
+                                            <p class="champ">
+                                                <label>Prix (€)
+                                                    <input type="text" name="prix" required inputmode="decimal"
+                                                           value="<?= attr($prixEuros((int) $variant['price_cents'])) ?>">
+                                                </label>
+                                            </p>
+                                            <p class="champ">
+                                                <label>Stock
+                                                    <input type="number" name="stock" min="0" required
+                                                           value="<?= attr($variant['stock_qty']) ?>">
+                                                </label>
+                                            </p>
+                                            <p class="champ">
+                                                <label>Poids (g)
+                                                    <input type="number" name="poids" min="0" required
+                                                           value="<?= attr($variant['weight_grams']) ?>">
+                                                </label>
+                                            </p>
+                                            <p class="champ">
+                                                <label>SKU Prodigi
+                                                    <input type="text" name="prodigi_sku" maxlength="60" list="prodigi-skus"
+                                                           value="<?= attr($variant['prodigi_sku'] ?? '') ?>">
+                                                </label>
+                                            </p>
+                                            <p class="champ">
+                                                <label>Cadrage
+                                                    <select name="prodigi_sizing">
+                                                        <option value="fillPrintArea"<?php if ($sizing === 'fillPrintArea') : ?> selected<?php endif; ?>>Remplir (recadre)</option>
+                                                        <option value="fitPrintArea"<?php if ($sizing === 'fitPrintArea') : ?> selected<?php endif; ?>>Contenir (marge)</option>
+                                                        <option value="stretchToPrintArea"<?php if ($sizing === 'stretchToPrintArea') : ?> selected<?php endif; ?>>Étirer</option>
+                                                    </select>
+                                                </label>
+                                            </p>
+                                        </div>
+                                        <p class="actions">
+                                            <button type="submit" class="bouton">Enregistrer</button>
+                                        </p>
+                                    </form>
+                                    <form method="post"
+                                          action="<?= attr($base) ?>/admin/variantes/<?= attr($variant['id']) ?>/suppression"
+                                          data-confirmation="Supprimer cette taille ?">
+                                        <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
+                                        <button type="submit" class="lien-bouton">Supprimer la taille</button>
+                                    </form>
+                                </details>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            <?php endif; ?>
+        </section>
+    <?php endforeach; ?>
+
+    <?php // SKU Prodigi gérés (Hahnemühle German Etching), suggérés à l'édition d'une variante. ?>
+    <datalist id="prodigi-skus">
+        <?php foreach (ManagedReproductions::all() as $tirage) : ?>
+            <option value="<?= attr($tirage['sku']) ?>"></option>
+        <?php endforeach; ?>
+    </datalist>
+</div>

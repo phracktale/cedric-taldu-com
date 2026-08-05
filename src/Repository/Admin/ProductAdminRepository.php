@@ -158,6 +158,28 @@ final class ProductAdminRepository
         return $id;
     }
 
+    /**
+     * Produit STANDARD de l'œuvre (le tirage courant), créé s'il n'existe pas.
+     *
+     * Point d'entrée de l'ajout automatique de tirages : une œuvre n'a qu'une
+     * offre de tirage courant, à laquelle on rattache une variante par taille.
+     */
+    public function standardProductFor(int $artworkId, string $title, DateTimeImmutable $now): int
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT id FROM products WHERE artwork_id = :art AND kind = 'standard' ORDER BY id ASC LIMIT 1"
+        );
+        $statement->execute(['art' => $artworkId]);
+
+        $existing = $statement->fetchColumn();
+
+        if ($existing !== false) {
+            return (int) $existing;
+        }
+
+        return $this->createProduct($artworkId, $title, ProductKind::Standard, null, $now);
+    }
+
     public function togglePublication(int $productId, DateTimeImmutable $now): void
     {
         $statement = $this->pdo->prepare(
