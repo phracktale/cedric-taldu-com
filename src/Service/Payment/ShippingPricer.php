@@ -1,0 +1,116 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Service\Payment;
+
+use App\Domain\Money;
+use App\Domain\Shipping\ShippingMethod;
+use App\Domain\Shipping\ShippingQuote;
+use App\Domain\Shop\LineKind;
+use App\Domain\Shop\ValuedLine;
+use App\Repository\ShippingRepository;
+use App\Service\Fulfillment\ReproductionShipping;
+
+/**
+ * Frais de port d'un panier, éventuellement mixte (03-boutique §4, intégration Prodigi).
+ *
+ * Deux circuits d'expédition coexistent :
+ *   - les ORIGINAUX partent de l'atelier → barème au poids (ShippingCalculator) ;
+ *   - les REPRODUCTIONS partent de chez Prodigi → devis en direct (ReproductionShipping).
+ *
+ * Le port total est la SOMME des deux. Une pièce sur devis (zone/poids hors
+ * barème) met tout le panier en « sur devis » : on ne compose pas un total qu'on
+ * ne connaît pas. La remise en main propre est refusée dès qu'une reproduction
+ * est présente — Prodigi l'expédie, elle ne peut pas être retirée à Amiens.
+ *
+ * Le calcul est fait côté serveur, exclusivement (03-boutique §8.1).
+ */
+final class ShippingPricer
+{
+    public function __construct(
+        private readonly ShippingRepository $shipping,
+        private readonly ReproductionShipping $reproductions,
+    ) {
+    }
+
+    /**
+     * @param list<ValuedLine> $lines lignes du panier valorisé
+     * @param bool             $live  true au paiement (devis Prodigi réel), false
+     *                                à l'affichage (forfait, aucun appel réseau)
+     */
+    public function price(
+        array $lines,
+        ShippingMethod $method,
+        string $countryCode,
+        Money $subtotal,
+        bool $live,
+    ): ShippingQuote {
+        $originals = array_values(array_filter(
+            $lines,
+            static fn (ValuedLine $line): bool => $line->item->kind === LineKind::Original,
+        ));
+        $reproductions = array_values(array_filter(
+            $lines,
+            static fn (ValuedLine $line): bool => $line->item->kind === LineKind::Reproduction,
+        ));
+
+        if ($method === ShippingMethod::Pickup) {
+            // Une reproduction ne se retire pas : Prodigi l'expédie. Un panier qui
+            // en contient ne peut pas être « remis en main propre ».
+            if ($reproductions !== []) {
+                return ShippingQuote::onRequest(null);
+            }
+
+            return ShippingQuote::free(null);
+        }
+
+        // Part atelier : barème au poids des seuls originaux. Le franco reste
+        // apprécié sur le sous-total complet, comme aujourd'hui.
+        $artist = Money::zero();
+
+        if ($originals !== []) {
+            $quote = $this->shipping->calculator()->quote(
+                ShippingMethod::Shipping,
+                $countryCode,
+                self::weightOf($originals),
+                $subtotal,
+            );
+
+            if ($quote->price === null) {
+                return ShippingQuote::onRequest($quote->zone);
+            }
+
+            $artist = $quote->price;
+        }
+
+        // Part Prodigi : devis (ou forfait) des reproductions.
+        $prodigi = $reproductions === []
+            ? Money::zero()
+            : $this->reproductions->quoteFor($reproductions, $countryCode, $live);
+
+        return ShippingQuote::priced($artist->plus($prodigi), null);
+    }
+
+    /**
+     * Poids cumulé de lignes, ou null dès qu'une ligne n'a pas de poids déclaré.
+     *
+     * @param list<ValuedLine> $lines
+     */
+    private static function weightOf(array $lines): ?int
+    {
+        $total = 0;
+
+        foreach ($lines as $line) {
+            $weight = $line->weightGrams();
+
+            if ($weight === null) {
+                return null;
+            }
+
+            $total += $weight;
+        }
+
+        return $total;
+    }
+}

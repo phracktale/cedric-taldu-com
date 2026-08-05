@@ -105,8 +105,10 @@ use App\Repository\PersistedOrder;
 use App\Service\Mail\MailerInterface;
 use App\Service\Mail\OrderMailer;
 use App\Service\Mail\SmtpMailer;
+use App\Service\Fulfillment\ReproductionShipping;
 use App\Service\Payment\CheckoutService;
 use App\Service\Payment\PaymentEventHandler;
+use App\Service\Payment\ShippingPricer;
 use App\Service\Payment\PaymentGateway;
 use App\Service\Payment\StripeCheckoutGateway;
 use App\Service\Payment\StripeConfig;
@@ -165,6 +167,11 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             'liveKey' => $env->getOptional('PRODIGI_LIVE_API_KEY', '') ?? '',
         ],
     );
+
+    // Forfait de secours du port des reproductions (par copie, en centimes) :
+    // il prend le relais dès que le devis Prodigi est indisponible (affichage,
+    // non configuré, panne, devise inattendue). Défaut 790 = 7,90 €.
+    $prodigiFallbackShippingCents = max(0, (int) ($env->getOptional('PRODIGI_FALLBACK_SHIPPING_CENTS', '790') ?? '790'));
 
     $container = new Container();
 
@@ -372,6 +379,21 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(UrlGenerator::class),
         $c->get(LoggerInterface::class),
         $prodigiCallbackSecret,
+    ));
+
+    // Port des reproductions (devis Prodigi, forfait de secours) et combinaison
+    // avec le barème atelier des originaux pour les paniers mixtes.
+    $container->set(ReproductionShipping::class, static fn (Container $c): ReproductionShipping
+        => new ReproductionShipping(
+            $c->get(ProdigiClientInterface::class),
+            $c->get(ProdigiConfig::class),
+            $c->get(FulfillmentRepository::class),
+            $c->get(LoggerInterface::class),
+            $prodigiFallbackShippingCents,
+        ));
+    $container->set(ShippingPricer::class, static fn (Container $c): ShippingPricer => new ShippingPricer(
+        $c->get(ShippingRepository::class),
+        $c->get(ReproductionShipping::class),
     ));
 
     $container->set(ProdigiWebhookController::class, static fn (Container $c): ProdigiWebhookController
@@ -583,7 +605,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(OrderRepository::class),
         $c->get(StockRepository::class),
         $c->get(VatRepository::class),
-        $c->get(ShippingRepository::class),
+        $c->get(ShippingPricer::class),
         $c->get(PaymentGateway::class),
         $c->get(UrlGenerator::class),
         $c->get(LoggerInterface::class),
@@ -722,7 +744,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(CheckoutService::class),
         $c->get(UrlGenerator::class),
         $c->get(LoggerInterface::class),
-        $c->get(ShippingRepository::class),
+        $c->get(ShippingPricer::class),
     ));
 
     $container->set(PageController::class, static fn (Container $c): PageController => new PageController(
