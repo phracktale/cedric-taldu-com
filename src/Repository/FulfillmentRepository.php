@@ -128,4 +128,44 @@ final class FulfillmentRepository
         $statement = $this->pdo->prepare('UPDATE orders SET prodigi_status = :status WHERE id = :id');
         $statement->execute(['status' => $status, 'id' => $orderId]);
     }
+
+    /**
+     * État de fulfillment d'une commande, pour l'affichage back-office.
+     *
+     * @return array{prodigiOrderId: string|null, status: string|null, submittedAt: string|null}
+     */
+    public function statusOf(int $orderId): array
+    {
+        $statement = $this->pdo->prepare(
+            'SELECT prodigi_order_id, prodigi_status, prodigi_submitted_at FROM orders WHERE id = :id'
+        );
+        $statement->execute(['id' => $orderId]);
+
+        /** @var array<string, mixed>|false $row */
+        $row = $statement->fetch();
+
+        if ($row === false) {
+            return ['prodigiOrderId' => null, 'status' => null, 'submittedAt' => null];
+        }
+
+        return [
+            'prodigiOrderId' => $row['prodigi_order_id'] === null ? null : (string) $row['prodigi_order_id'],
+            'status' => $row['prodigi_status'] === null ? null : (string) $row['prodigi_status'],
+            'submittedAt' => $row['prodigi_submitted_at'] === null ? null : (string) $row['prodigi_submitted_at'],
+        ];
+    }
+
+    /**
+     * Une commande a-t-elle au moins une ligne reproduction ? (afficher ou non le
+     * bloc Prodigi en back-office).
+     */
+    public function hasReproductions(int $orderId): bool
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT 1 FROM order_items WHERE order_id = :id AND kind = 'reproduction' LIMIT 1"
+        );
+        $statement->execute(['id' => $orderId]);
+
+        return $statement->fetchColumn() !== false;
+    }
 }

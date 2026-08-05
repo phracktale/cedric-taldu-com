@@ -800,6 +800,8 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(OrderRepository::class),
             $c->get(OrderMailer::class),
             $c->get(UrlGenerator::class),
+            $c->get(FulfillmentRepository::class),
+            $c->get(FulfillmentService::class),
         ));
 
     $container->set(
