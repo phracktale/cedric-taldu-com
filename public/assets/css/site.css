@@ -292,6 +292,86 @@ button.btn { font-family: inherit; cursor: pointer; }
 .contact-form .btn { margin-top: 2.2rem; }
 .contact-form .champ-erreur { display: block; font-size: .82rem; color: var(--alerte); margin-top: .5rem; }
 
+/* ----------------------------------------------------------------- panier */
+
+.panier { padding: clamp(2.5rem, 6vh, 4.5rem) 0; }
+.panier > .wrap { max-width: 58rem; }
+.panier h1 { margin-bottom: 2rem; }
+
+.panier-message {
+  background: var(--papier); border-left: 3px solid var(--encre);
+  padding: .95rem 1.15rem; margin-bottom: 1.4rem; color: var(--encre-70);
+}
+.panier-vide { color: var(--encre-70); font-size: 1.05rem; }
+
+.panier-lignes { width: 100%; border-collapse: collapse; }
+.panier-lignes thead th {
+  text-align: left; font-family: 'Jost', sans-serif; font-weight: 500;
+  font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: var(--encre-70);
+  padding: 0 1rem .8rem; border-bottom: 1px solid var(--filet);
+}
+.panier-lignes tbody td { padding: 1.1rem 1rem; border-bottom: 1px solid var(--filet); vertical-align: middle; }
+.panier-article { font-size: 1.05rem; }
+.panier-lignes th:nth-child(3), .panier-lignes th:last-child,
+.panier-montant, .panier-retrait { text-align: right; }
+.panier-montant { font-family: 'Marcellus', Georgia, serif; font-size: 1.2rem; white-space: nowrap; }
+.panier-quantite { white-space: nowrap; }
+.panier-form { display: flex; align-items: center; gap: .55rem; }
+
+/* Petits boutons texte du panier (mettre à jour / retirer). */
+.panier-form button, .panier-retrait button {
+  background: none; border: none; font: inherit; font-size: .76rem; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--encre-70); cursor: pointer; padding: .3rem 0;
+  border-bottom: 1px solid transparent; transition: color .15s ease, border-color .15s ease;
+}
+.panier-form button:hover, .panier-retrait button:hover,
+.panier-form button:focus-visible, .panier-retrait button:focus-visible {
+  color: var(--encre); border-bottom-color: var(--encre); outline: none;
+}
+
+.panier-lignes tfoot th {
+  padding: 1.3rem 1rem 0; text-align: left; font-family: 'Jost', sans-serif; font-weight: 500;
+  font-size: .74rem; letter-spacing: .14em; text-transform: uppercase; color: var(--encre-70); border: none;
+}
+.panier-lignes tfoot td {
+  padding: 1.3rem 1rem 0; text-align: right; border: none;
+  font-family: 'Marcellus', Georgia, serif; font-size: 1.35rem; color: var(--encre);
+}
+
+.panier-rappel { color: var(--encre-40); font-size: .9rem; margin: 1.6rem 0 0; max-width: 54ch; }
+.panier-actions { display: flex; justify-content: flex-end; margin-top: 2rem; }
+
+@media (max-width: 34rem) {
+  .panier-lignes thead { display: none; }
+  .panier-lignes tbody tr { display: block; padding: .6rem 0; border-bottom: 1px solid var(--filet); }
+  .panier-lignes tbody td { display: flex; justify-content: space-between; align-items: center; border: none; padding: .45rem 0; }
+  .panier-montant, .panier-retrait { text-align: left; }
+  .panier-lignes tfoot th, .panier-lignes tfoot td { display: inline-block; padding-top: 1rem; }
+}
+
+/* ------------------------------------------------------- page éditoriale */
+
+.page-editoriale { max-width: 46rem; padding-top: clamp(2.5rem, 6vh, 4.5rem); padding-bottom: clamp(3rem, 8vh, 5rem); }
+.page-tete { margin-bottom: 2.5rem; }
+.page-tete h1 { font-size: clamp(1.9rem, 4.4vw, 3rem); }
+.page-langue { color: var(--encre-40); font-style: italic; margin-bottom: 1.5rem; }
+
+.page-corps { color: var(--encre-70); line-height: 1.75; font-size: 1.02rem; }
+.page-corps > :first-child { margin-top: 0; }
+.page-corps h2 { font-size: 1.55rem; margin: 2.6rem 0 1rem; color: var(--encre); }
+.page-corps h3 { font-size: 1.2rem; margin: 2rem 0 .7rem; color: var(--encre); }
+.page-corps p { margin-bottom: 1.3rem; }
+.page-corps ul, .page-corps ol { margin: 0 0 1.3rem 1.4rem; }
+.page-corps li { margin-bottom: .5rem; }
+.page-corps a { color: var(--encre); text-decoration: underline; text-underline-offset: .2em; }
+.page-corps a:hover, .page-corps a:focus-visible { color: var(--encre-70); }
+.page-corps blockquote {
+  border-left: 3px solid var(--filet); padding-left: 1.2rem; margin: 1.6rem 0;
+  color: var(--encre-40); font-style: italic;
+}
+.page-corps img { max-width: 100%; height: auto; }
+.page-pdf { margin-top: 2.6rem; }
+
 /* --------------------------------------------------------------- commande */
 
 .commande { padding: clamp(2.5rem, 6vh, 4.5rem) 0; }
