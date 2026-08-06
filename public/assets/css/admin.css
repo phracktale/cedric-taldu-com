@@ -280,6 +280,10 @@ legend {
 }
 .pastille--publie { border-color: var(--encre); }
 .pastille--brouillon { color: var(--encre-40); }
+.pastille--alerte { border-color: var(--alerte); color: var(--alerte); }
+
+.tableau .ligne-alerte { background: rgba(140, 47, 31, .06); }
+.tableau td code { font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace; font-size: .88em; }
 
 /* ------------------------------------------------------------------ cartes */
 

@@ -21,45 +21,51 @@ $base = is_string($data['basePath'] ?? null) ? $data['basePath'] : '';
 $commandes = is_array($data['commandes'] ?? null) ? $data['commandes'] : [];
 $anomalies = is_int($data['anomalies'] ?? null) ? $data['anomalies'] : 0;
 ?>
-<section class="admin-commandes">
-  <div class="admin-entete">
+<div class="admin-page">
+  <div class="admin-bloc-tete">
     <h1>Commandes</h1>
-    <a class="btn" href="<?= attr($base) ?>/admin/commandes/export.csv">Exporter en CSV</a>
+    <p class="actions">
+      <a class="bouton bouton--secondaire" href="<?= attr($base) ?>/admin/commandes/export.csv">Exporter en CSV</a>
+    </p>
   </div>
 
   <?php if ($anomalies > 0) : ?>
-    <p class="admin-anomalie" role="alert">
+    <p class="aide aide--attention" role="alert">
       <?= e($anomalies) ?> commande(s) en <strong>anomalie</strong> — remboursement à vérifier.
     </p>
   <?php endif; ?>
 
   <?php if ($commandes === []) : ?>
-    <p>Aucune commande pour le moment.</p>
+    <p class="aide">Aucune commande pour le moment.</p>
   <?php else : ?>
-    <table class="admin-table">
+    <table class="tableau">
       <thead>
         <tr>
-          <th>Référence</th><th>Date</th><th>Client</th><th>Statut</th><th>Total</th>
+          <th scope="col">Référence</th>
+          <th scope="col">Date</th>
+          <th scope="col">Client</th>
+          <th scope="col">Statut</th>
+          <th scope="col" class="colonne-actions">Total</th>
         </tr>
       </thead>
       <tbody>
         <?php foreach ($commandes as $commande) : ?>
-          <tr<?php if ($commande->hasAnomaly) : ?> class="ligne-anomalie"<?php endif; ?>>
+          <tr<?php if ($commande->hasAnomaly) : ?> class="ligne-alerte"<?php endif; ?>>
             <td>
               <a href="<?= attr($base) ?>/admin/commandes/<?= attr($commande->id) ?>">
-                <?= e($commande->reference) ?>
+                <code><?= e($commande->reference) ?></code>
               </a>
               <?php if ($commande->hasAnomaly) : ?>
-                <span class="badge-anomalie" title="Anomalie">⚠ anomalie</span>
+                <span class="pastille pastille--alerte">Anomalie</span>
               <?php endif; ?>
             </td>
             <td><?= e($commande->createdAt) ?></td>
             <td><?= e($commande->customerName) ?> — <?= e($commande->customerEmail) ?></td>
             <td><?= e($commande->status->label(Locale::Fr)) ?></td>
-            <td><?= e(money($commande->total, Locale::Fr)) ?></td>
+            <td class="colonne-actions"><?= e(money($commande->total, Locale::Fr)) ?></td>
           </tr>
         <?php endforeach; ?>
       </tbody>
     </table>
   <?php endif; ?>
-</section>
+</div>
