@@ -363,6 +363,24 @@ final class PaymentEventHandlerTest extends DatabaseTestCase
         $this->assertNotNull($this->valeur("SELECT prodigi_order_id FROM orders WHERE id = {$commande->id}"));
     }
 
+    public function test_une_edition_limitee_n_est_pas_soumise_meme_mappee(): void
+    {
+        // Circuit manuel (rehaussée à l'atelier) : jamais transmise en auto, même
+        // si un SKU Prodigi a été renseigné par erreur sur la variante.
+        $client = new FakeProdigiClient();
+        $this->activerFulfillment($client);
+        $this->mapperVariante('GLOBAL-HGE-16X20');
+        $this->pdo->exec("UPDATE products SET processing_mode = 'artist_manual' WHERE id = {$this->product}");
+
+        $commande = $this->creerCommande();
+        $this->adresser($commande->id);
+
+        $this->traiter($commande->reference, $commande->id);
+
+        $this->assertCount(0, $client->orders);
+        $this->assertNull($this->valeur("SELECT prodigi_order_id FROM orders WHERE id = {$commande->id}"));
+    }
+
     public function test_une_reproduction_sans_sku_prodigi_n_est_pas_soumise(): void
     {
         $client = new FakeProdigiClient();
