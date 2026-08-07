@@ -6,6 +6,7 @@ namespace App\Service\Fulfillment;
 
 use App\Core\LoggerInterface;
 use App\Core\LogLevel;
+use App\Domain\Shop\ProcessingMode;
 use App\Repository\FulfillmentRepository;
 use App\Repository\PersistedOrder;
 use App\Service\I18n\UrlGenerator;
@@ -110,6 +111,13 @@ final class FulfillmentService
         $items = [];
 
         foreach ($this->fulfillment->reproductionLinesFor($order->id) as $line) {
+            // Circuit manuel (édition limitée rehaussée à l'atelier) : jamais
+            // transmis automatiquement, même si un SKU Prodigi a été renseigné.
+            // La ligne est préparée à la main par l'artiste (back-office).
+            if ($line['processingMode'] !== ProcessingMode::ProdigiAuto->value) {
+                continue;
+            }
+
             if ($line['sku'] === '' || $line['printAssetPath'] === null) {
                 $this->logger->log(LogLevel::Warning, 'Ligne reproduction non soumise à Prodigi', [
                     'reference' => $order->reference,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository\Admin;
 
+use App\Domain\Shop\ProcessingMode;
 use App\Domain\Shop\ProductKind;
 use App\Domain\Order\VatCategory;
 use DateTimeImmutable;
@@ -136,13 +137,16 @@ final class ProductAdminRepository
         DateTimeImmutable $now,
     ): int {
         $statement = $this->pdo->prepare(
-            'INSERT INTO products (artwork_id, kind, edition_size, vat_category, is_published,
+            'INSERT INTO products (artwork_id, kind, processing_mode, edition_size, vat_category, is_published,
                                    created_at, updated_at)
-             VALUES (:art, :kind, :size, :vat, 0, :created, :updated)'
+             VALUES (:art, :kind, :mode, :size, :vat, 0, :created, :updated)'
         );
         $statement->execute([
             'art' => $artworkId,
             'kind' => $kind->value,
+            // Circuit déduit de la nature : Fine Art → Prodigi auto, édition
+            // limitée → traitement manuel à l'atelier (jamais transmise en auto).
+            'mode' => ProcessingMode::forKind($kind)->value,
             'size' => $editionSize,
             // Decision du 2026-07-21 : un tirage est en standard_goods.
             'vat' => VatCategory::defaultForProduct()->value,

@@ -55,12 +55,12 @@ final class FulfillmentRepository
      * fichier d'impression. Une variante supprimée depuis (variant_id NULL) sort
      * de la jointure : la ligne n'est alors pas soumissible, et c'est visible.
      *
-     * @return list<array{sku: string, sizing: string, copies: int, artworkId: int, printAssetPath: string|null}>
+     * @return list<array{sku: string, sizing: string, copies: int, artworkId: int, printAssetPath: string|null, processingMode: string}>
      */
     public function reproductionLinesFor(int $orderId): array
     {
         $statement = $this->pdo->prepare(
-            'SELECT oi.qty, pv.prodigi_sku, pv.prodigi_sizing, p.artwork_id, a.print_asset_path
+            'SELECT oi.qty, pv.prodigi_sku, pv.prodigi_sizing, p.artwork_id, p.processing_mode, a.print_asset_path
                FROM order_items oi
                JOIN product_variants pv ON pv.id = oi.variant_id
                JOIN products p ON p.id = pv.product_id
@@ -79,6 +79,7 @@ final class FulfillmentRepository
                 'copies' => (int) $row['qty'],
                 'artworkId' => (int) $row['artwork_id'],
                 'printAssetPath' => $row['print_asset_path'] === null ? null : (string) $row['print_asset_path'],
+                'processingMode' => (string) $row['processing_mode'],
             ];
         }
 
