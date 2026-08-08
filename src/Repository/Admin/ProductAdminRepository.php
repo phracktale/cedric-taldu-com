@@ -52,8 +52,8 @@ final class ProductAdminRepository
     public function findForArtwork(int $artworkId): array
     {
         $statement = $this->pdo->prepare(
-            'SELECT p.id, p.kind, p.edition_size, p.editions_sold, p.vat_category, p.is_published,
-                    t.title
+            'SELECT p.id, p.kind, p.processing_mode, p.edition_size, p.editions_sold, p.vat_category,
+                    p.is_published, t.title
              FROM products p
              LEFT JOIN product_translations t ON t.product_id = p.id AND t.locale = :locale
              WHERE p.artwork_id = :artwork
@@ -68,6 +68,7 @@ final class ProductAdminRepository
             $products[] = [
                 'id' => $id,
                 'kind' => (string) $row['kind'],
+                'processing_mode' => (string) $row['processing_mode'],
                 'edition_size' => $row['edition_size'] === null ? null : (int) $row['edition_size'],
                 'editions_sold' => (int) $row['editions_sold'],
                 'vat_category' => (string) $row['vat_category'],
@@ -182,6 +183,72 @@ final class ProductAdminRepository
         }
 
         return $this->createProduct($artworkId, $title, ProductKind::Standard, null, $now);
+    }
+
+    /**
+     * Crée une édition limitée : produit `limited` (traitement manuel atelier) et
+     * son unique variante numérotable. Le stock de la variante est calé sur la
+     * taille d'édition ; la disponibilité réelle est ensuite gouvernée par
+     * editions_sold (StockPolicy).
+     *
+     * Produit et variante dans une même transaction : jamais d'édition sans
+     * taille ni de taille orpheline. Suit le motif « own transaction » pour
+     * cohabiter avec la transaction d'un test.
+     *
+     * @return int|null identifiant du produit, ou null si le SKU est déjà pris
+     */
+    public function createLimitedEdition(
+        int $artworkId,
+        string $title,
+        int $editionSize,
+        string $sizeLabel,
+        int $priceCents,
+        int $weightGrams,
+        string $sku,
+        DateTimeImmutable $now,
+    ): ?int {
+        $own = !$this->pdo->inTransaction();
+
+        if ($own) {
+            $this->pdo->beginTransaction();
+        }
+
+        try {
+            $productId = $this->createProduct($artworkId, $title, ProductKind::Limited, $editionSize, $now);
+
+            $created = $this->createVariant(
+                $productId,
+                $sku,
+                $sizeLabel,
+                false,
+                $priceCents,
+                $editionSize,
+                $weightGrams,
+                null,
+                'fillPrintArea',
+                $now,
+            );
+
+            if (!$created) {
+                if ($own) {
+                    $this->pdo->rollBack();
+                }
+
+                return null;
+            }
+
+            if ($own) {
+                $this->pdo->commit();
+            }
+
+            return $productId;
+        } catch (PDOException $e) {
+            if ($own && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $e;
+        }
     }
 
     public function togglePublication(int $productId, DateTimeImmutable $now): void

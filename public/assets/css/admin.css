@@ -310,6 +310,11 @@ legend {
 }
 .admin-bloc-tete .actions { margin: 0; }
 .admin-variante-edition { margin-top: 1rem; }
+.admin-bloc-meta {
+  display: flex; flex-wrap: wrap; gap: .5rem .8rem; align-items: center;
+  margin: -.4rem 0 1rem; font-size: .85rem;
+}
+.admin-meta-edition { color: var(--encre-40); }
 
 /* --------------------------------------------------------- double facteur */
 
