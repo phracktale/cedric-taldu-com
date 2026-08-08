@@ -101,6 +101,54 @@ final class ReproductionsTest extends AdminTestCase
         $this->assertSame('0', $this->valeur('SELECT is_published FROM products'));
     }
 
+    // ----------------------------------------------------- édition limitée
+
+    public function test_une_edition_limitee_se_cree_en_circuit_manuel(): void
+    {
+        // Format + prix + taille d'édition, sans titre ni SKU technique. Le
+        // circuit est manuel (rehaussée à l'atelier), jamais Prodigi auto.
+        $reponse = $this->postAvecJeton($this->base() . '/edition-limitee', [
+            'format' => '40 × 50 cm',
+            'prix' => '250',
+            'taille_edition' => '30',
+            'poids' => '600',
+        ]);
+
+        $this->assertSame(302, $reponse->status);
+        $this->assertSame('limited', $this->valeur('SELECT kind FROM products'));
+        $this->assertSame('artist_manual', $this->valeur('SELECT processing_mode FROM products'));
+        $this->assertSame(30, (int) $this->valeur('SELECT edition_size FROM products'));
+        // Une variante numérotable, prix en centimes, stock calé sur l'édition.
+        $this->assertSame(25000, (int) $this->valeur('SELECT price_cents FROM product_variants'));
+        $this->assertSame(30, (int) $this->valeur('SELECT stock_qty FROM product_variants'));
+        $this->assertSame('40 × 50 cm', $this->valeur('SELECT size_label FROM product_variants'));
+    }
+
+    public function test_une_edition_limitee_sans_taille_est_refusee(): void
+    {
+        $this->postAvecJeton($this->base() . '/edition-limitee', [
+            'format' => '40 × 50 cm',
+            'prix' => '250',
+            'taille_edition' => '',
+        ]);
+
+        $this->assertSame(0, (int) $this->valeur('SELECT COUNT(*) FROM products'));
+    }
+
+    public function test_la_page_affiche_la_nature_et_le_circuit(): void
+    {
+        $this->postAvecJeton($this->base() . '/edition-limitee', [
+            'format' => '40 × 50 cm',
+            'prix' => '250',
+            'taille_edition' => '30',
+        ]);
+
+        $reponse = $this->requete('GET', $this->base());
+
+        $this->assertStringContainsString('Édition limitée', $reponse->body);
+        $this->assertStringContainsString('atelier', $reponse->body);
+    }
+
     public function test_une_variante_s_ajoute_a_une_reproduction(): void
     {
         $product = $this->creerProduit();

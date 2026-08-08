@@ -106,6 +106,55 @@ final class ProductController
         return $this->backToArtwork($request, $artworkId);
     }
 
+    /**
+     * Crée une édition limitée rehaussée pour une œuvre.
+     *
+     * L'artiste saisit un format, un prix et une taille d'édition — pas de titre
+     * (repris de l'œuvre), pas de SKU technique. Le produit naît en circuit
+     * manuel (rehaussé/signé/numéroté à l'atelier) : il ne part jamais en
+     * impression automatique.
+     */
+    public function storeLimitedEdition(Request $request): Response
+    {
+        $artworkId = self::id($request);
+
+        if (!$this->products->artworkExists($artworkId)) {
+            throw new NotFoundException('Œuvre introuvable.');
+        }
+
+        $format = trim((string) $request->input('format'));
+        $price = self::eurosToCents($request->input('prix'));
+        $editionSize = self::intOrNull($request->input('taille_edition'));
+        $weight = self::intOrNull($request->input('poids'));
+
+        // Format, prix et taille d'édition (≥ 1) obligatoires : sans eux, l'offre
+        // est incomplète (contrainte 01-modele ck_edition). On revient sans créer.
+        if ($format === '' || $price === null || $price <= 0 || $editionSize === null || $editionSize < 1) {
+            return $this->backToArtwork($request, $artworkId);
+        }
+
+        $title = $this->products->artworkTitle($artworkId);
+        $title = $title === '' ? 'Tirage d’art' : $title;
+        $sku = 'CT' . $artworkId . '-EL-' . strtoupper(bin2hex(random_bytes(4)));
+
+        $productId = $this->products->createLimitedEdition(
+            $artworkId,
+            $title,
+            $editionSize,
+            $format,
+            $price,
+            max(0, $weight ?? 500),
+            $sku,
+            $this->chrome->now(),
+        );
+
+        if ($productId !== null) {
+            $this->audit($request, 'product.create', $productId);
+        }
+
+        return $this->backToArtwork($request, $artworkId);
+    }
+
     public function togglePublication(Request $request): Response
     {
         $productId = self::id($request);

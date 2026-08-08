@@ -19,6 +19,9 @@ declare(strict_types=1);
 use App\Domain\Locale;
 use App\Domain\Money;
 use App\Domain\Shop\ManagedReproductions;
+use App\Domain\Shop\ProcessingMode;
+use App\Domain\Shop\ProductKind;
+use App\Domain\Shop\SaleNature;
 
 $base = is_string($data['basePath'] ?? null) ? $data['basePath'] : '';
 $jeton = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
@@ -51,10 +54,10 @@ $prixEuros = static fn (int $cents): string => sprintf('%d.%02d', intdiv($cents,
     <h1>Reproductions — <?= e($artworkTitle) ?></h1>
 
     <section class="admin-bloc">
-        <h2>Ajouter des tirages</h2>
+        <h2>Ajouter des tirages Fine Art</h2>
         <p class="aide">
-            Cochez une taille en indiquant son prix TTC : le tirage est créé et envoyé à
-            l’imprimeur au format correspondant. Laissez vide pour ne pas la proposer.
+            Impression à la demande, expédiée par l’imprimeur. Indiquez un prix TTC par
+            taille pour la proposer ; laissez vide sinon.
         </p>
 
         <form method="post" action="<?= attr($reproUrl) ?>" class="formulaire">
@@ -80,6 +83,44 @@ $prixEuros = static fn (int $cents): string => sprintf('%d.%02d', intdiv($cents,
 
             <p class="actions">
                 <button type="submit" class="bouton">Ajouter les tirages</button>
+            </p>
+        </form>
+    </section>
+
+    <section class="admin-bloc">
+        <h2>Ajouter une édition limitée</h2>
+        <p class="aide">
+            Tirage numéroté, rehaussé et signé à l’atelier : imprimé chez votre
+            imprimeur, il passe par l’atelier avant expédition (jamais envoyé en
+            impression automatique).
+        </p>
+
+        <form method="post" action="<?= attr($reproUrl) ?>/edition-limitee" class="formulaire">
+            <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
+
+            <div class="grille-champs">
+                <p class="champ">
+                    <label for="el_format">Format</label>
+                    <input type="text" id="el_format" name="format" maxlength="60" required
+                           placeholder="40 × 50 cm">
+                </p>
+                <p class="champ">
+                    <label for="el_prix">Prix TTC (€)</label>
+                    <input type="text" id="el_prix" name="prix" inputmode="decimal" required placeholder="250">
+                </p>
+                <p class="champ">
+                    <label for="el_taille">Taille d’édition</label>
+                    <input type="number" id="el_taille" name="taille_edition" min="1" required placeholder="30">
+                    <span class="champ-aide">Nombre total d’exemplaires numérotés.</span>
+                </p>
+                <p class="champ">
+                    <label for="el_poids">Poids (g)</label>
+                    <input type="number" id="el_poids" name="poids" min="0" value="500">
+                </p>
+            </div>
+
+            <p class="actions">
+                <button type="submit" class="bouton bouton--secondaire">Créer l’édition limitée</button>
             </p>
         </form>
     </section>
@@ -113,6 +154,21 @@ $prixEuros = static fn (int $cents): string => sprintf('%d.%02d', intdiv($cents,
                     </form>
                 </div>
             </div>
+
+            <?php
+            $nature = SaleNature::fromProductKind(ProductKind::from((string) $repro['kind']));
+            $circuit = ProcessingMode::from((string) $repro['processing_mode']);
+            ?>
+            <p class="admin-bloc-meta">
+                <span class="pastille"><?= e($nature->label(Locale::Fr)) ?></span>
+                <span class="pastille"><?= e($circuit->label(Locale::Fr)) ?></span>
+                <?php if ($repro['edition_size'] !== null) : ?>
+                    <span class="admin-meta-edition">
+                        <?= e((string) $repro['editions_sold']) ?> / <?= e((string) $repro['edition_size']) ?>
+                        exemplaires vendus
+                    </span>
+                <?php endif; ?>
+            </p>
 
             <?php if ($repro['variants'] === []) : ?>
                 <p class="aide">Aucune taille. Ajoutez-en une ci-dessus.</p>

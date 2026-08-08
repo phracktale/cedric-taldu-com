@@ -248,6 +248,7 @@ return [
     // Reproductions et variantes, rattachees a une œuvre.
     new Route('admin.product.index', 'GET', '/admin/oeuvres/{id}/reproductions', [AdminProductController::class, 'index'], requirements: $id),
     new Route('admin.product.store', 'POST', '/admin/oeuvres/{id}/reproductions', [AdminProductController::class, 'store'], requirements: $id),
+    new Route('admin.product.limited', 'POST', '/admin/oeuvres/{id}/reproductions/edition-limitee', [AdminProductController::class, 'storeLimitedEdition'], requirements: $id),
     new Route('admin.product.publish', 'POST', '/admin/reproductions/{id}/publication', [AdminProductController::class, 'togglePublication'], requirements: $id),
     new Route('admin.product.delete', 'POST', '/admin/reproductions/{id}/suppression', [AdminProductController::class, 'delete'], requirements: $id),
     new Route('admin.variant.store', 'POST', '/admin/reproductions/{id}/variantes', [AdminProductController::class, 'storeVariant'], requirements: $id),
