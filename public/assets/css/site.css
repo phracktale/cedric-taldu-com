@@ -729,7 +729,36 @@ a.oeuvre:hover .cadre, a.oeuvre:focus-visible .cadre {
 .dispo.vendue { background: var(--mur); }
 .texte p { margin-bottom: 1rem; color: var(--encre-70); }
 .texte p.forte { color: var(--encre); }
-.achat { margin: 2rem 0 2.4rem; display: flex; gap: .8rem; flex-wrap: wrap; }
+.achat { margin: 1.2rem 0 0; display: flex; gap: .8rem; flex-wrap: wrap; }
+
+/* Zone commerciale : les trois natures, clairement séparées. */
+.achat-oeuvre { margin: 1.5rem 0 2rem; }
+.achat-oeuvre h2 { font-size: 1.2rem; margin-bottom: .8rem; }
+.achat-oeuvre .prix, .achat-oeuvre .dispo { margin-bottom: .6rem; }
+
+.reproductions { border-top: 1px solid var(--filet); padding-top: 1.8rem; }
+.reproductions > h2 { font-size: 1.2rem; margin-bottom: 1.2rem; }
+.repro-groupe { margin-bottom: 1.8rem; }
+.repro-groupe:last-child { margin-bottom: 0; }
+.repro-groupe h3 { font-family: 'Marcellus', Georgia, serif; font-size: 1.05rem; margin-bottom: .2rem; }
+.repro-desc { font-size: .9rem; color: var(--encre-40); margin-bottom: .9rem; }
+.edition { font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: var(--encre-70); margin-bottom: .6rem; }
+
+.variantes { list-style: none; }
+.variante {
+  display: flex; align-items: center; gap: .9rem; flex-wrap: wrap;
+  padding: .7rem 0; border-bottom: 1px solid var(--filet);
+}
+.variante-taille { flex: 1 1 7rem; font-size: .95rem; }
+.variante-prix { font-family: 'Marcellus', Georgia, serif; font-size: 1.15rem; }
+.variante form { margin: 0; }
+
+.poser-question { margin-top: 1.8rem; }
+.lien-question {
+  font-size: .9rem; color: var(--encre-70);
+  text-decoration: underline; text-underline-offset: .2em;
+}
+.lien-question:hover, .lien-question:focus-visible { color: var(--encre); }
 
 .garanties { border-top: 1px solid var(--filet); padding-top: 1.6rem; }
 .garanties ul { list-style: none; }

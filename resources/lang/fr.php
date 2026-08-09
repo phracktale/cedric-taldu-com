@@ -120,6 +120,14 @@ return [
     'artwork.add_to_cart' => 'Ajouter au panier',
     'artwork.related' => 'De la même recherche',
     'artwork.available_in_shop' => 'Disponible en boutique',
+    'artwork.original_available' => 'Original disponible',
+    'artwork.original_heading' => 'Œuvre originale — pièce unique',
+    'artwork.acquire_original' => 'Acquérir l’œuvre originale',
+    'artwork.prints_heading' => 'Tirages de cette œuvre',
+    'artwork.fine_art_heading' => 'Tirage Fine Art',
+    'artwork.fine_art_desc' => 'Impression d’art à la demande — choix du format.',
+    'artwork.limited_heading' => 'Édition limitée rehaussée à la main',
+    'artwork.limited_desc' => 'Numérotée, signée et reprise à l’encre par l’artiste.',
 
     // Rubrique
     'category.series' => 'Séries',
