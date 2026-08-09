@@ -46,7 +46,7 @@ final class SpamTest extends FunctionalTestCase
         // Réponse d'apparence normale (pas d'erreur affichée au robot).
         $this->assertSame(303, $response->status);
         $this->assertSame(0, $this->messageCount());
-        $this->assertNull($this->mailer->lastTo('cedric@cedrictaldu.com'));
+        $this->assertNull($this->mailer->lastTo('contact@cedrictaldu.com'));
     }
 
     public function test_une_soumission_en_moins_de_trois_secondes_est_rejetee(): void

@@ -79,6 +79,40 @@ final class PageAccueilTest extends FunctionalTestCase
         $this->assertStringContainsString('/cedric-taldu/fr/a-propos', $corps);
     }
 
+    public function test_le_module_boutique_offre_un_cta_vers_les_oeuvres(): void
+    {
+        $this->reglage('home.shop', json_encode(['fr' => ['title' => 'Acquérir une œuvre']], JSON_THROW_ON_ERROR));
+
+        $corps = $this->get('/cedric-taldu/fr/')->body;
+
+        $this->assertStringContainsString('Voir les œuvres disponibles', $corps);
+        $this->assertStringContainsString('href="#galeries"', $corps);
+    }
+
+    public function test_le_module_contact_offre_un_bouton_de_contact(): void
+    {
+        $this->reglage('home.contact', json_encode(['fr' => ['title' => 'Rester en lien']], JSON_THROW_ON_ERROR));
+
+        $corps = $this->get('/cedric-taldu/fr/')->body;
+
+        $this->assertStringContainsString('Me contacter', $corps);
+        $this->assertStringContainsString('/cedric-taldu/fr/contact', $corps);
+    }
+
+    public function test_l_entree_actus_du_menu_est_masquee_sans_article(): void
+    {
+        // Une page Actus sans article donne un site inachevé : l'entrée disparaît.
+        $this->assertStringNotContainsString('href="/cedric-taldu/fr/actus"', $this->get('/cedric-taldu/fr/')->body);
+    }
+
+    public function test_l_entree_actus_du_menu_apparait_avec_un_article(): void
+    {
+        (new PostFactory($this->pdo))->publishedAt('2026-06-01 09:00:00')
+            ->translated('fr', 'mon-expo', 'Mon exposition')->create();
+
+        $this->assertStringContainsString('href="/cedric-taldu/fr/actus"', $this->get('/cedric-taldu/fr/')->body);
+    }
+
     public function test_la_page_charge_la_feuille_de_style_et_le_module_js(): void
     {
         $corps = $this->get('/cedric-taldu/fr/')->body;
