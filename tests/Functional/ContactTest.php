@@ -76,7 +76,7 @@ final class ContactTest extends FunctionalTestCase
         $this->assertSame('new', (string) $this->valeur("SELECT status FROM contact_messages"));
         $this->assertSame('camille@example.com', (string) $this->valeur('SELECT sender_email FROM contact_messages'));
 
-        $this->assertNotNull($this->mailer->lastTo('cedric@cedrictaldu.com'));
+        $this->assertNotNull($this->mailer->lastTo('contact@cedrictaldu.com'));
     }
 
     public function test_une_question_sur_une_oeuvre_conserve_le_lien(): void
@@ -107,7 +107,7 @@ final class ContactTest extends FunctionalTestCase
         // Réponse d'apparence normale, mais rien n'est enregistré ni notifié.
         $this->assertSame(303, $response->status);
         $this->assertSame(0, (int) $this->valeur('SELECT COUNT(*) FROM contact_messages'));
-        $this->assertNull($this->mailer->lastTo('cedric@cedrictaldu.com'));
+        $this->assertNull($this->mailer->lastTo('contact@cedrictaldu.com'));
     }
 
     public function test_un_champ_manquant_reaffiche_le_formulaire_en_erreur(): void

@@ -32,6 +32,9 @@ $localeSwitch = is_array($data['localeSwitch'] ?? null) ? $data['localeSwitch'] 
 
 // Pastille du panier : fournie par Chrome, lue sans jamais créer de panier.
 $cartCount = is_int($data['cartCount'] ?? null) ? $data['cartCount'] : 0;
+
+// « Actus » n'apparaît que s'il existe au moins un article publié.
+$hasNews = ($data['hasNews'] ?? false) === true;
 ?>
 <header>
   <div class="nav">
@@ -58,9 +61,11 @@ $cartCount = is_int($data['cartCount'] ?? null) ? $data['cartCount'] : 0;
             <?php endforeach; ?>
           </ul>
         </li>
+        <?php if ($hasNews) : ?>
         <li>
           <a href="<?= attr($url->route('blog.index', ['locale' => $locale->value])) ?>"><?= $t('nav.news') ?></a>
         </li>
+        <?php endif; ?>
         <li>
           <a href="<?= attr($url->route('page.booklet', ['locale' => $locale->value])) ?>"><?= $t('nav.booklet') ?></a>
         </li>
