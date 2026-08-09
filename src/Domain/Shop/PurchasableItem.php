@@ -36,11 +36,29 @@ final class PurchasableItem
         public readonly ?int $stockQty,
         /** Null si l'edition n'est pas limitee (products.kind = 'standard'). */
         public readonly ?int $editionsRemaining,
+        /**
+         * Circuit logistique de la reproduction ; null pour un original (toujours
+         * traité à l'atelier). Détermine le mode d'expédition : impression à la
+         * demande (Prodigi) ou atelier (barème au poids).
+         */
+        public readonly ?ProcessingMode $processingMode = null,
     ) {
     }
 
     public function matches(LineKind $kind, int $targetId): bool
     {
         return $this->kind === $kind && $this->targetId === $targetId;
+    }
+
+    /**
+     * Article imprimé et expédié à la demande par le prestataire (Prodigi).
+     *
+     * Les originaux et les éditions limitées (rehaussées à l'atelier) sont, eux,
+     * expédiés depuis l'atelier : leur port suit le barème au poids.
+     */
+    public function isPrintOnDemand(): bool
+    {
+        return $this->kind === LineKind::Reproduction
+            && $this->processingMode === ProcessingMode::ProdigiAuto;
     }
 }

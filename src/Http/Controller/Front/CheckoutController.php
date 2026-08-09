@@ -20,7 +20,6 @@ use App\Domain\Shipping\DeliveryEstimate;
 use App\Domain\Shipping\ShippingMethod;
 use App\Domain\Shop\Cart;
 use App\Domain\Shop\CartValuation;
-use App\Domain\Shop\LineKind;
 use App\Domain\Shop\PricingPolicy;
 use App\Repository\CartRepository;
 use App\Repository\OrderRepository;
@@ -105,21 +104,23 @@ final class CheckoutController
             return $this->rejectForm($request, $locale, 'Vous devez accepter les conditions générales de vente.');
         }
 
-        // Retrait interdit dès qu'une reproduction est au panier : Prodigi
-        // l'expédie, elle ne peut pas être remise en main propre. ShippingPricer
-        // le refuse aussi côté calcul ; ce garde-fou donne un message clair.
+        // Retrait interdit dès qu'un tirage Fine Art (à la demande) est au panier :
+        // le prestataire l'expédie, il ne peut pas être remis en main propre. Un
+        // original ou une édition limitée (traités à l'atelier) restent retirables.
+        // ShippingPricer le refuse aussi côté calcul ; ce garde-fou donne un
+        // message clair.
         if ($method === ShippingMethod::Pickup) {
             $valuation = PricingPolicy::value(
                 $this->cart($request, $locale),
                 $this->carts->catalogueFor($this->cart($request, $locale), new DateTimeImmutable()),
             );
 
-            if (self::hasReproduction($valuation)) {
+            if (self::hasPrintOnDemand($valuation)) {
                 return $this->rejectForm(
                     $request,
                     $locale,
-                    'La remise en main propre n’est pas disponible pour les reproductions, '
-                    . 'expédiées par notre imprimeur.',
+                    'La remise en main propre n’est pas disponible pour les tirages Fine Art, '
+                    . 'expédiés par notre imprimeur.',
                 );
             }
         }
@@ -265,14 +266,14 @@ final class CheckoutController
             'deliveryTo' => $deliveryTo,
             // La remise en main propre disparaît dès qu'une reproduction est au
             // panier : Prodigi l'expédie, elle ne peut pas être retirée.
-            'pickupAllowed' => !self::hasReproduction($valuation),
+            'pickupAllowed' => !self::hasPrintOnDemand($valuation),
         ];
     }
 
-    private static function hasReproduction(CartValuation $valuation): bool
+    private static function hasPrintOnDemand(CartValuation $valuation): bool
     {
         foreach ($valuation->lines as $line) {
-            if ($line->item->kind === LineKind::Reproduction) {
+            if ($line->item->isPrintOnDemand()) {
                 return true;
             }
         }
