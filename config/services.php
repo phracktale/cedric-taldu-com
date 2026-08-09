@@ -77,6 +77,7 @@ use App\Service\Auth\Authenticator;
 use App\Service\Auth\BackupCodes;
 use App\Service\Auth\PasswordHasher;
 use App\Service\Auth\Totp;
+use App\Service\Content\BlockSanitizer;
 use App\Service\Content\HtmlSanitizer;
 use App\Service\Content\PreviewToken;
 use App\Service\Content\TranslationInput;
@@ -317,6 +318,10 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         TranslationInput::class,
         static fn (Container $c): TranslationInput => new TranslationInput($c->get(HtmlSanitizer::class)),
     );
+    $container->set(BlockSanitizer::class, static fn (Container $c): BlockSanitizer => new BlockSanitizer(
+        $c->get(HtmlSanitizer::class),
+        $c->get(RandomInterface::class),
+    ));
 
     // --- Televersement d'images --------------------------------------------
     //
@@ -727,6 +732,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(PageAdminRepository::class),
             $c->get(TranslationInput::class),
             $c->get(CoverUpload::class),
+            $c->get(BlockSanitizer::class),
         ),
     );
 

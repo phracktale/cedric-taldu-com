@@ -316,6 +316,35 @@ legend {
 }
 .admin-meta-edition { color: var(--encre-40); }
 
+/* --------------------------------------------------- éditeur de blocs */
+
+.editeur-blocs { margin-top: .6rem; display: flex; flex-direction: column; gap: .9rem; }
+.eb-liste { display: flex; flex-direction: column; gap: .9rem; }
+.eb-bloc { border: 1px solid var(--filet); border-radius: var(--rayon-petit); background: var(--papier); }
+.eb-entete {
+  display: flex; align-items: center; gap: .4rem; padding: .5rem .7rem;
+  border-bottom: 1px solid var(--filet); background: var(--mur);
+}
+.eb-type { flex: 1; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--encre-70); }
+.eb-btn {
+  border: 1px solid var(--filet); background: var(--papier); cursor: pointer;
+  width: 1.9rem; height: 1.9rem; line-height: 1; border-radius: var(--rayon-petit); color: var(--encre-70);
+}
+.eb-btn:hover { border-color: var(--encre-40); color: var(--encre); }
+.eb-corps { padding: .8rem; display: flex; flex-direction: column; gap: .7rem; }
+.eb-champ { display: flex; flex-direction: column; gap: .25rem; }
+.eb-champ > span { font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--encre-70); }
+.eb-champ input, .eb-champ select, .eb-champ textarea {
+  padding: .5rem .6rem; border: 1px solid var(--filet); background: var(--papier); font: inherit; font-size: .92rem;
+}
+.eb-enfants { margin: 0 .8rem .8rem; padding-left: .8rem; border-left: 2px solid var(--filet); }
+.eb-ajout { display: flex; gap: .5rem; align-items: center; }
+.eb-btn-ajout {
+  border: 1px solid var(--filet); background: var(--papier); cursor: pointer;
+  padding: .35rem .8rem; border-radius: var(--rayon-petit); font: inherit; font-size: .85rem; color: var(--encre);
+}
+.eb-btn-ajout:hover { border-color: var(--encre-40); }
+
 /* --------------------------------------------------------- double facteur */
 
 .secret { background: var(--papier); border: 1px solid var(--filet); border-radius: var(--rayon-petit); padding: 1.1rem; margin-bottom: 1.2rem; }
