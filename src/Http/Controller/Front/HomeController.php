@@ -10,6 +10,7 @@ use App\Core\Response;
 use App\Core\View;
 use App\Domain\Catalog\Artwork;
 use App\Domain\Catalog\Media;
+use App\Domain\Editorial\HomeLayout;
 use App\Domain\Editorial\Post;
 use App\Domain\Locale;
 use App\Repository\ArtworkRepository;
@@ -93,6 +94,8 @@ final class HomeController
                 ['locale' => $locale->value, 'slug' => $post->slug($locale)->value],
             ),
             'newsIndexUrl' => $this->url->route('blog.index', ['locale' => $locale->value]),
+            // Ordre + activation des sections (réglage administrable home.layout).
+            'homeSections' => HomeLayout::fromStored($this->settings->json('home.layout'))->enabledOrder(),
         ];
 
         return Response::html($this->view->render('front/home', $data, layout: 'layouts/public'));

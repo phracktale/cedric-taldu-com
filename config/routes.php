@@ -26,6 +26,7 @@ use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Admin\MediaController;
 use App\Http\Controller\Admin\MessageController as AdminMessageController;
 use App\Http\Controller\Admin\OrderController as AdminOrderController;
+use App\Http\Controller\Admin\HomeController as AdminHomeController;
 use App\Http\Controller\Admin\PageController as AdminPageController;
 use App\Http\Controller\Admin\PostController as AdminPostController;
 use App\Http\Controller\Admin\ProductController as AdminProductController;
@@ -225,6 +226,9 @@ return [
     // Pages éditoriales à code fixe : édition seule, ni création ni suppression.
     // On les adresse par id (comme le reste du back-office) ; le code reste la
     // clef métier, porté par la ligne.
+    new Route('admin.home.edit', 'GET', '/admin/accueil', [AdminHomeController::class, 'edit']),
+    new Route('admin.home.update', 'POST', '/admin/accueil', [AdminHomeController::class, 'update']),
+
     new Route('admin.page.index', 'GET', '/admin/pages', [AdminPageController::class, 'index']),
     new Route('admin.page.edit', 'GET', '/admin/pages/{id}', [AdminPageController::class, 'edit'], requirements: $id),
     new Route('admin.page.update', 'POST', '/admin/pages/{id}', [AdminPageController::class, 'update'], requirements: $id),

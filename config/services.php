@@ -41,6 +41,7 @@ use App\Http\Controller\Admin\AuthController;
 use App\Http\Controller\Admin\ArtworkController as AdminArtworkController;
 use App\Http\Controller\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controller\Admin\DashboardController;
+use App\Http\Controller\Admin\HomeController as AdminHomeController;
 use App\Http\Controller\Admin\MediaController;
 use App\Http\Controller\Admin\OrderController as AdminOrderController;
 use App\Http\Controller\Admin\ProductController as AdminProductController;
@@ -62,6 +63,7 @@ use App\Repository\Admin\MediaAdminRepository;
 use App\Repository\Admin\OrderAdminRepository;
 use App\Repository\Admin\ProductAdminRepository;
 use App\Repository\Admin\SeriesAdminRepository;
+use App\Repository\Admin\SettingsAdminRepository;
 use App\Repository\ArtworkRepository;
 use App\Repository\AuditLogRepository;
 use App\Repository\CategoryRepository;
@@ -735,6 +737,14 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(BlockSanitizer::class),
         ),
     );
+
+    $container->set(SettingsAdminRepository::class, static fn (Container $c): SettingsAdminRepository
+        => new SettingsAdminRepository($c->get(PDO::class)));
+    $container->set(AdminHomeController::class, static fn (Container $c): AdminHomeController => new AdminHomeController(
+        $c->get(AdminChrome::class),
+        $c->get(SettingRepository::class),
+        $c->get(SettingsAdminRepository::class),
+    ));
 
     $container->set(MediaController::class, static fn (Container $c): MediaController => new MediaController(
         $c->get(AdminChrome::class),
