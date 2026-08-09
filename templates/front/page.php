@@ -30,7 +30,12 @@ $page = $data['page'];
   <?php endif; ?>
 
   <div class="page-corps">
-    <?= richText($page->body($locale)) ?>
+    <?php if ($page->hasBlocks($locale)) : ?>
+      <?php // Page composée par blocs (editor-core). Repli sur l'HTML sinon. ?>
+      <?= $partial('partials/blocks', ['blocks' => $page->blocks($locale), 'locale' => $locale]) ?>
+    <?php else : ?>
+      <?= richText($page->body($locale)) ?>
+    <?php endif; ?>
   </div>
 
   <?php // Version PDF téléchargeable des CGV (page à code fixe « terms »). ?>

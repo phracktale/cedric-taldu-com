@@ -372,6 +372,48 @@ button.btn { font-family: inherit; cursor: pointer; }
 .page-corps img { max-width: 100%; height: auto; }
 .page-pdf { margin-top: 2.6rem; }
 
+/* --------------------------------------------------- blocs éditoriaux */
+
+.bloc { margin: 0 0 1.6rem; }
+.bloc:last-child { margin-bottom: 0; }
+.bloc-titre { font-family: 'Marcellus', Georgia, serif; margin: 2.4rem 0 1rem; }
+.bloc-texte { color: var(--encre-70); line-height: 1.75; }
+.bloc-texte p { margin-bottom: 1.1rem; }
+
+.bloc-image { margin: 2rem 0; }
+.bloc-image img { display: block; width: 100%; height: auto; }
+.bloc-image figcaption { margin-top: .6rem; font-size: .85rem; color: var(--encre-40); }
+
+.bloc-citation {
+  border-left: 3px solid var(--filet); padding-left: 1.4rem; margin: 2rem 0;
+  font-family: 'Marcellus', Georgia, serif; font-size: 1.3rem; color: var(--encre);
+}
+.bloc-citation cite { display: block; margin-top: .8rem; font-family: 'Jost', sans-serif; font-size: .85rem; font-style: normal; color: var(--encre-40); }
+
+.bloc-separateur { border: 0; margin: 2.6rem 0; }
+.bloc-separateur--line { border-top: 1px solid var(--filet); }
+.bloc-separateur--dots { border-top: 2px dotted var(--filet); }
+.bloc-separateur--space { margin: 1.6rem 0; }
+
+.bloc-cta { margin: 2rem 0; }
+
+.bloc-colonnes { display: grid; gap: 1.6rem; }
+.bloc-colonnes--2 { grid-template-columns: repeat(2, 1fr); }
+.bloc-colonnes--3 { grid-template-columns: repeat(3, 1fr); }
+.bloc-colonnes--4 { grid-template-columns: repeat(4, 1fr); }
+.bloc-gap--sm { gap: .8rem; }
+.bloc-gap--lg { gap: 2.6rem; }
+@media (max-width: 700px) { .bloc-colonnes { grid-template-columns: 1fr; } }
+
+.bloc-section { margin: 2rem 0; }
+.bloc-pad--sm { padding: 1rem; }
+.bloc-pad--md { padding: 2rem; }
+.bloc-pad--lg { padding: 3rem; }
+.bloc-pad--xl { padding: 4.5rem; }
+.bloc-max--content { max-width: 960px; margin-inline: auto; }
+.bloc-max--wide { max-width: 1200px; margin-inline: auto; }
+.bloc-max--full { max-width: none; }
+
 /* --------------------------------------------------------------- commande */
 
 .commande { padding: clamp(2.5rem, 6vh, 4.5rem) 0; }
