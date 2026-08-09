@@ -7,7 +7,6 @@ namespace App\Service\Payment;
 use App\Domain\Money;
 use App\Domain\Shipping\ShippingMethod;
 use App\Domain\Shipping\ShippingQuote;
-use App\Domain\Shop\LineKind;
 use App\Domain\Shop\ValuedLine;
 use App\Repository\ShippingRepository;
 use App\Service\Fulfillment\ReproductionShipping;
@@ -46,34 +45,38 @@ final class ShippingPricer
         Money $subtotal,
         bool $live,
     ): ShippingQuote {
-        $originals = array_values(array_filter(
+        // Deux circuits d'expédition, selon le TRAITEMENT de chaque ligne :
+        //   - atelier : originaux ET éditions limitées (rehaussées à l'atelier),
+        //     expédiés par l'artiste → barème au poids ;
+        //   - Prodigi : tirages Fine Art à la demande → devis prestataire.
+        $studio = array_values(array_filter(
             $lines,
-            static fn (ValuedLine $line): bool => $line->item->kind === LineKind::Original,
+            static fn (ValuedLine $line): bool => !$line->item->isPrintOnDemand(),
         ));
-        $reproductions = array_values(array_filter(
+        $printOnDemand = array_values(array_filter(
             $lines,
-            static fn (ValuedLine $line): bool => $line->item->kind === LineKind::Reproduction,
+            static fn (ValuedLine $line): bool => $line->item->isPrintOnDemand(),
         ));
 
         if ($method === ShippingMethod::Pickup) {
-            // Une reproduction ne se retire pas : Prodigi l'expédie. Un panier qui
-            // en contient ne peut pas être « remis en main propre ».
-            if ($reproductions !== []) {
+            // Un tirage à la demande ne se retire pas : le prestataire l'expédie.
+            // Un original ou une édition limitée (à l'atelier), si.
+            if ($printOnDemand !== []) {
                 return ShippingQuote::onRequest(null);
             }
 
             return ShippingQuote::free(null);
         }
 
-        // Part atelier : barème au poids des seuls originaux. Le franco reste
-        // apprécié sur le sous-total complet, comme aujourd'hui.
+        // Part atelier : barème au poids des lignes expédiées de l'atelier. Le
+        // franco reste apprécié sur le sous-total complet, comme aujourd'hui.
         $artist = Money::zero();
 
-        if ($originals !== []) {
+        if ($studio !== []) {
             $quote = $this->shipping->calculator()->quote(
                 ShippingMethod::Shipping,
                 $countryCode,
-                self::weightOf($originals),
+                self::weightOf($studio),
                 $subtotal,
             );
 
@@ -84,10 +87,10 @@ final class ShippingPricer
             $artist = $quote->price;
         }
 
-        // Part Prodigi : devis (ou forfait) des reproductions.
-        $prodigi = $reproductions === []
+        // Part Prodigi : devis (ou forfait) des tirages à la demande.
+        $prodigi = $printOnDemand === []
             ? Money::zero()
-            : $this->reproductions->quoteFor($reproductions, $countryCode, $live);
+            : $this->reproductions->quoteFor($printOnDemand, $countryCode, $live);
 
         return ShippingQuote::priced($artist->plus($prodigi), null);
     }
