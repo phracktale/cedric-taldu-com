@@ -10,6 +10,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Domain\Locale;
 use App\Repository\Admin\PageAdminRepository;
+use App\Service\Content\BlockSanitizer;
 use App\Service\Content\TranslationInput;
 use App\Service\Media\CoverUpload;
 use App\Service\Media\Exception\UploadRejected;
@@ -41,6 +42,7 @@ final class PageController
         private readonly PageAdminRepository $pages,
         private readonly TranslationInput $translations,
         private readonly CoverUpload $covers,
+        private readonly BlockSanitizer $blocks,
     ) {
     }
 
@@ -61,6 +63,14 @@ final class PageController
     {
         $existing = $this->page($request);
         $translations = $this->collect($request);
+
+        // Blocs éditoriaux : un document JSON par langue, ASSAINI ici (à
+        // l'écriture). Vide → NULL, la page suit alors son HTML historique.
+        foreach ($translations as $locale => $fields) {
+            $raw = $request->post['blocs_' . $locale] ?? '';
+            $clean = $this->blocks->sanitizeJson(is_string($raw) ? $raw : '');
+            $translations[$locale]['blocks'] = $clean === '[]' ? null : $clean;
+        }
 
         if ($translations === []) {
             return $this->form($request, $existing, 'Le titre en français est obligatoire.', 422);

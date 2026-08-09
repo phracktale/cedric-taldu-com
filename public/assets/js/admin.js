@@ -13,6 +13,8 @@
  * Module ES sans étape de construction, chargé avec le nonce de la CSP.
  */
 
+import { monterEditeursDeBlocs } from './block-editor.js';
+
 /* ------------------------------------------------------------- onglets FR/EN */
 
 /**
@@ -244,6 +246,7 @@ document.querySelectorAll('[data-onglets-langue]').forEach(activerOnglets);
 document.querySelectorAll('form[data-surveiller]').forEach(surveillerLesModifications);
 confirmerLesSuppressions(document);
 document.querySelectorAll('[data-cropper]').forEach(activerRecadrage);
+monterEditeursDeBlocs(document);
 
 document.querySelectorAll('[data-slug-depuis]').forEach((slug) => {
   const titre = document.getElementById(slug.dataset.slugDepuis);
