@@ -80,10 +80,25 @@ final class FicheAchatTest extends FunctionalTestCase
 
         $reponse = $this->requete('GET', '/cedric-taldu/fr/oeuvre/articulation');
 
-        $this->assertStringContainsString('Tirage d’art', $reponse->body);
+        // Le client voit la NATURE (« Tirage Fine Art »), pas le titre interne.
+        $this->assertStringContainsString('Tirage Fine Art', $reponse->body);
         $this->assertStringContainsString('30 × 40 cm', $reponse->body);
         $this->assertStringContainsString('60,00', $reponse->body);
         $this->assertStringContainsString('90,00', $reponse->body);
+        $this->assertStringContainsString('name="kind" value="reproduction"', $reponse->body);
+    }
+
+    public function test_une_edition_limitee_apparait_dans_son_propre_bloc(): void
+    {
+        // Les trois natures sont séparées : une édition limitée s'affiche sous
+        // « Édition limitée », distincte des tirages Fine Art.
+        $artwork = $this->oeuvre();
+        $this->editionLimitee($artwork, prix: 25000, size: '40 × 50 cm', editionSize: 30);
+
+        $reponse = $this->requete('GET', '/cedric-taldu/fr/oeuvre/articulation');
+
+        $this->assertStringContainsString('Édition limitée', $reponse->body);
+        $this->assertStringContainsString('40 × 50 cm', $reponse->body);
         $this->assertStringContainsString('name="kind" value="reproduction"', $reponse->body);
     }
 
@@ -106,7 +121,9 @@ final class FicheAchatTest extends FunctionalTestCase
 
         $reponse = $this->requete('GET', '/cedric-taldu/fr/oeuvre/articulation');
 
-        $this->assertStringNotContainsString('Tirage d’art', $reponse->body);
+        // Non publiée : rien à vendre, donc ni bloc tirages ni bouton d'ajout.
+        $this->assertStringNotContainsString('name="kind" value="reproduction"', $reponse->body);
+        $this->assertStringNotContainsString('Tirage Fine Art', $reponse->body);
     }
 
     public function test_une_oeuvre_non_vendable_mais_avec_reproductions_reste_achetable(): void
@@ -138,6 +155,38 @@ final class FicheAchatTest extends FunctionalTestCase
         return (new ArtworkFactory($this->pdo))->published()->notForSale()
             ->translated('fr', 'articulation', 'Articulation')
             ->create($this->categoryId);
+    }
+
+    private function editionLimitee(
+        int $artwork,
+        int $prix = 25000,
+        string $size = '40 × 50 cm',
+        int $editionSize = 30,
+    ): int {
+        $this->pdo->prepare(
+            'INSERT INTO products (artwork_id, kind, processing_mode, edition_size, is_published,
+                                   created_at, updated_at)
+             VALUES (:art, :kind, :mode, :size, 1, NOW(), NOW())'
+        )->execute(['art' => $artwork, 'kind' => 'limited', 'mode' => 'artist_manual', 'size' => $editionSize]);
+        $product = (int) $this->pdo->lastInsertId();
+
+        $this->pdo->prepare(
+            'INSERT INTO product_translations (product_id, locale, title) VALUES (:id, :l, :t)'
+        )->execute(['id' => $product, 'l' => 'fr', 't' => 'Tirage d’art']);
+
+        $this->pdo->prepare(
+            'INSERT INTO product_variants (product_id, sku, size_label, price_cents, stock_qty, weight_grams,
+                                           created_at, updated_at)
+             VALUES (:prod, :sku, :label, :price, :stock, 500, NOW(), NOW())'
+        )->execute([
+            'prod' => $product,
+            'sku' => 'EL-' . bin2hex(random_bytes(4)),
+            'label' => $size,
+            'price' => $prix,
+            'stock' => $editionSize,
+        ]);
+
+        return $product;
     }
 
     private function reproduction(

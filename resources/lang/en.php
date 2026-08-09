@@ -118,6 +118,14 @@ return [
     'artwork.add_to_cart' => 'Add to cart',
     'artwork.related' => 'From the same research',
     'artwork.available_in_shop' => 'Available in the shop',
+    'artwork.original_available' => 'Original available',
+    'artwork.original_heading' => 'Original artwork — unique piece',
+    'artwork.acquire_original' => 'Acquire the original',
+    'artwork.prints_heading' => 'Prints of this work',
+    'artwork.fine_art_heading' => 'Fine art print',
+    'artwork.fine_art_desc' => 'Fine art print on demand — choose the size.',
+    'artwork.limited_heading' => 'Hand-finished limited edition',
+    'artwork.limited_desc' => 'Numbered, signed and finished in ink by the artist.',
 
     // Category
     'category.series' => 'Series',
