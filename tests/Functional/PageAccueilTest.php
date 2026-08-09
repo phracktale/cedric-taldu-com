@@ -199,7 +199,8 @@ final class PageAccueilTest extends FunctionalTestCase
 
         $this->reglage('home.showcase', json_encode(['fr' => ['artwork_ids' => [$id]]], JSON_THROW_ON_ERROR));
 
-        $this->assertStringContainsString('Disponible en boutique', $this->get('/cedric-taldu/fr/')->body);
+        // Marqueur clarifié : « Original disponible » (l'œuvre unique se vend).
+        $this->assertStringContainsString('Original disponible', $this->get('/cedric-taldu/fr/')->body);
     }
 
     public function test_une_œuvre_vendue_ne_porte_pas_le_marqueur_de_boutique(): void
@@ -210,7 +211,7 @@ final class PageAccueilTest extends FunctionalTestCase
 
         $this->reglage('home.showcase', json_encode(['fr' => ['artwork_ids' => [$id]]], JSON_THROW_ON_ERROR));
 
-        $this->assertStringNotContainsString('Disponible en boutique', $this->get('/cedric-taldu/fr/')->body);
+        $this->assertStringNotContainsString('Original disponible', $this->get('/cedric-taldu/fr/')->body);
     }
 
     // ------------------------------------------------------------ réglages
