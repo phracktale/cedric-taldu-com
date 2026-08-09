@@ -48,6 +48,34 @@ final class FicheOeuvreTest extends FunctionalTestCase
         $this->assertSame(404, $this->get('/cedric-taldu/fr/oeuvre/inexistante')->status);
     }
 
+    public function test_la_fiche_porte_les_metadonnees_open_graph(): void
+    {
+        // Partage social : titre, image absolue, carte large.
+        $media = (new MediaFactory($this->pdo))->sized(2400, 1600)
+            ->translated('fr', 'Articulation, encre sur papier')->create();
+        $this->oeuvre()->available()->withPrimaryMedia($media)
+            ->translated('fr', 'articulation', 'Articulation')->create($this->rubrique);
+
+        $corps = $this->get('/cedric-taldu/fr/oeuvre/articulation')->body;
+
+        $this->assertStringContainsString('property="og:title"', $corps);
+        $this->assertStringContainsString('property="og:image"', $corps);
+        $this->assertMatchesRegularExpression('#property="og:image" content="https?://[^"]+/media/#', $corps);
+        $this->assertStringContainsString('name="twitter:card" content="summary_large_image"', $corps);
+    }
+
+    public function test_une_image_sans_texte_alternatif_emprunte_le_titre(): void
+    {
+        // Accessibilité + partage : une image muette reprend le titre de l'œuvre.
+        $media = (new MediaFactory($this->pdo))->sized(1600, 1200)->translated('fr', '')->create();
+        $this->oeuvre()->available()->withPrimaryMedia($media)
+            ->translated('fr', 'articulation', 'Articulation')->create($this->rubrique);
+
+        $corps = $this->get('/cedric-taldu/fr/oeuvre/articulation')->body;
+
+        $this->assertStringContainsString('alt="Articulation"', $corps);
+    }
+
     public function test_la_fiche_offre_de_poser_une_question_rattachee_a_l_oeuvre(): void
     {
         // 02-front §4.6 : sans JavaScript, un lien vers le contact pré-rempli du
