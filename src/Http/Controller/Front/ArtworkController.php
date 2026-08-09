@@ -76,6 +76,11 @@ final class ArtworkController
 
         $category = $this->categories->findById($artwork->categoryId);
         $related = $this->artworks->findRelated($artwork, self::LIEES);
+        $medias = $this->medias->findByIds($this->mediaIds($artwork, $related));
+
+        // Image de partage / données structurées : le visuel principal, en URL
+        // absolue. Un aperçu de brouillon n'est pas partageable.
+        $ogImage = $isPreview ? null : $this->primaryImageUrl($artwork, $medias);
 
         $data = [
             ...$this->chrome->base($request, $locale),
@@ -88,12 +93,13 @@ final class ArtworkController
             'alternates' => $this->alternates($artwork, $locale),
             'localeSwitch' => $this->alternatePaths($artwork),
             // Un aperçu de brouillon n'est pas indexable : pas de données structurées.
-            'jsonLd' => $isPreview ? null : $this->artworkGraph($artwork, $category, $locale),
+            'jsonLd' => $isPreview ? null : $this->artworkGraph($artwork, $category, $locale, $ogImage),
+            'ogImage' => $ogImage,
             'currentCategoryId' => $artwork->categoryId,
             'artwork' => $artwork,
             'category' => $category,
             'related' => $related,
-            'medias' => $this->medias->findByIds($this->mediaIds($artwork, $related)),
+            'medias' => $medias,
             'isTranslated' => $artwork->isTranslatedIn($locale),
             'isPreview' => $isPreview,
             // Reproductions publiees de cette œuvre. Un apercu de brouillon
@@ -118,8 +124,12 @@ final class ArtworkController
      *
      * @return list<array<string, mixed>>
      */
-    private function artworkGraph(Artwork $artwork, ?\App\Domain\Catalog\Category $category, Locale $locale): array
-    {
+    private function artworkGraph(
+        Artwork $artwork,
+        ?\App\Domain\Catalog\Category $category,
+        Locale $locale,
+        ?string $image,
+    ): array {
         $url = $this->url->absolute('artwork.show', [
             'locale' => $locale->value,
             'slug' => $artwork->slug($locale)->value,
@@ -133,7 +143,7 @@ final class ArtworkController
             'heightMm' => $artwork->dimensions?->heightMm,
             'priceDecimal' => $artwork->price?->decimal(),
             'availability' => $artwork->status->schemaAvailability(),
-            'image' => null,
+            'image' => $image,
         ]);
 
         $trail = [['name' => self::home($locale), 'url' => $this->url->absolute('home', ['locale' => $locale->value])]];
@@ -173,6 +183,31 @@ final class ArtworkController
         }
 
         return $ids;
+    }
+
+    /**
+     * URL absolue du visuel principal, dans son plus grand dérivé JPEG, ou null.
+     *
+     * Sert au partage social (og:image) et aux données structurées (Schema
+     * image), qui exigent une URL complète et un format universel.
+     *
+     * @param array<int, \App\Domain\Catalog\Media> $medias
+     */
+    private function primaryImageUrl(Artwork $artwork, array $medias): ?string
+    {
+        $media = $artwork->primaryMediaId === null ? null : ($medias[$artwork->primaryMediaId] ?? null);
+
+        if (!$media instanceof \App\Domain\Catalog\Media) {
+            return null;
+        }
+
+        $widths = $media->availableWidths();
+
+        if ($widths === []) {
+            return null;
+        }
+
+        return $this->url->absoluteMedia($media->derivativeFilename($widths[count($widths) - 1], 'jpg'));
     }
 
     /**

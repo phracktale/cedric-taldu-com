@@ -27,6 +27,13 @@ $canonique = is_string($data['canonical'] ?? null) ? $data['canonical'] : null;
 /** @var array<string, string> $alternates */
 $alternates = is_array($data['alternates'] ?? null) ? $data['alternates'] : [];
 
+// Open Graph : image absolue fournie par les pages qui en ont une (fiche œuvre) ;
+// ailleurs, carte texte simple. La locale OG suit la langue de la page.
+$ogImage = is_string($data['ogImage'] ?? null) ? $data['ogImage'] : null;
+$ogType = is_string($data['ogType'] ?? null) ? $data['ogType'] : 'website';
+$ogLocale = $locale->value === 'en' ? 'en_GB' : 'fr_FR';
+$ogCard = $ogImage !== null ? 'summary_large_image' : 'summary';
+
 ?>
 <!DOCTYPE html>
 <html lang="<?= attr($locale->htmlLang()) ?>">
@@ -43,6 +50,21 @@ $alternates = is_array($data['alternates'] ?? null) ? $data['alternates'] : [];
 <?php foreach ($alternates as $code => $href) : ?>
 <link rel="alternate" hreflang="<?= attr($code) ?>" href="<?= attr($href) ?>">
 <?php endforeach; ?>
+<?php // Open Graph + Twitter : carte propre au partage d'une œuvre. ?>
+<meta property="og:type" content="<?= attr($ogType) ?>">
+<meta property="og:site_name" content="Cédric Taldu">
+<meta property="og:locale" content="<?= attr($ogLocale) ?>">
+<meta property="og:title" content="<?= attr($titre) ?>">
+<?php if ($description !== null) : ?>
+<meta property="og:description" content="<?= attr($description) ?>">
+<?php endif; ?>
+<?php if ($canonique !== null) : ?>
+<meta property="og:url" content="<?= attr($canonique) ?>">
+<?php endif; ?>
+<?php if ($ogImage !== null) : ?>
+<meta property="og:image" content="<?= attr($ogImage) ?>">
+<?php endif; ?>
+<meta name="twitter:card" content="<?= attr($ogCard) ?>">
 <?= jsonLd(is_array($data['jsonLd'] ?? null) ? $data['jsonLd'] : null, $nonce) ?>
 <link rel="preload" href="<?= attr($url->asset('fonts/Marcellus-Regular.woff2')) ?>" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="<?= attr($url->asset('css/site.css')) ?>">

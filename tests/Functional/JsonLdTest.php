@@ -6,6 +6,7 @@ namespace Tests\Functional;
 
 use Tests\Support\Factory\ArtworkFactory;
 use Tests\Support\Factory\CategoryFactory;
+use Tests\Support\Factory\MediaFactory;
 use Tests\Support\Factory\PostFactory;
 use Tests\Support\FunctionalTestCase;
 
@@ -38,6 +39,20 @@ final class JsonLdTest extends FunctionalTestCase
         $this->assertStringContainsString('"@type":"Product"', $corps);
         $this->assertStringContainsString('"@type":"BreadcrumbList"', $corps);
         $this->assertStringContainsString('schema.org/InStock', $corps);
+    }
+
+    public function test_le_product_porte_une_image_absolue_quand_l_oeuvre_en_a_une(): void
+    {
+        // Google recommande une image sur les pages Product : le visuel principal,
+        // en URL absolue.
+        $categorie = (new CategoryFactory($this->pdo))->published()->translated('fr', 'encres', 'Encres')->create();
+        $media = (new MediaFactory($this->pdo))->sized(2400, 1600)->translated('fr', 'Articulation')->create();
+        (new ArtworkFactory($this->pdo))->available()->priced(45000)->withPrimaryMedia($media)
+            ->translated('fr', 'articulation', 'Articulation')->create($categorie);
+
+        $corps = $this->get('/cedric-taldu/fr/oeuvre/articulation')->body;
+
+        $this->assertMatchesRegularExpression('#"image":"https?://[^"]+/media/#', $corps);
     }
 
     public function test_l_article_date_porte_un_evenement(): void

@@ -46,6 +46,14 @@ $srcset = static function (Media $media, string $format) use ($url): string {
     return implode(', ', $sources);
 };
 
+// Repli d'accessibilité : une image sans texte alternatif emprunte le libellé de
+// l'œuvre plutôt que de rester muette pour les lecteurs d'écran et le partage.
+$texteAlternatif = static function (Media $media) use ($locale, $etiquette): string {
+    $alt = trim($media->alt($locale));
+
+    return $alt !== '' ? $alt : $etiquette;
+};
+
 ?>
 <div class="dessin"<?php if ($media instanceof Media) : ?> style="aspect-ratio: <?= attr($media->aspectRatio()) ?>"<?php endif; ?>>
 <?php if ($media instanceof Media) : ?>
@@ -57,7 +65,7 @@ $srcset = static function (Media $media, string $format) use ($url): string {
       sizes="<?= attr($sizes) ?>"
       width="<?= attr($media->width) ?>"
       height="<?= attr($media->height) ?>"
-      alt="<?= attr($media->alt($locale)) ?>"
+      alt="<?= attr($texteAlternatif($media)) ?>"
       style="object-position: <?= attr($media->objectPosition()) ?>"
       decoding="async"
       <?php if ($prioritaire) : ?>fetchpriority="high"<?php else : ?>loading="lazy"<?php endif; ?>

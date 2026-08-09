@@ -135,6 +135,22 @@ final class UrlGenerator
     }
 
     /**
+     * URL ABSOLUE d'un dérivé d'image, pour le partage social et les données
+     * structurées (Open Graph, Schema image exigent une URL complète).
+     *
+     * `config->url` porte déjà l'origine ET le préfixe de chemin : on y ajoute
+     * le segment média, sans repasser par le préfixe relatif de media().
+     */
+    public function absoluteMedia(string $filename): string
+    {
+        if (preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*\.(avif|webp|jpg|jpeg|png)$/D', $filename) !== 1) {
+            throw AssetNotFound::forPath($filename);
+        }
+
+        return $this->config->url . '/media/' . $filename;
+    }
+
+    /**
      * @param array<string, string|int> $parameters
      */
     private function pathFor(string $name, array $parameters): string
