@@ -22,7 +22,7 @@ final class PageRepository
 {
     private const SELECT = <<<'SQL'
         SELECT p.id, p.code, p.cover_media_id, p.attachment_path,
-               t.locale, t.slug, t.title, t.body, t.meta_title, t.meta_description
+               t.locale, t.slug, t.title, t.body, t.blocks, t.meta_title, t.meta_description
         FROM pages p
         INNER JOIN page_translations t ON t.page_id = p.id
         SQL;
@@ -85,6 +85,7 @@ final class PageRepository
                 body: self::nullableString($row['body']),
                 metaTitle: self::nullableString($row['meta_title']),
                 metaDescription: self::nullableString($row['meta_description']),
+                blocksJson: self::nullableString($row['blocks']),
             );
         }
 

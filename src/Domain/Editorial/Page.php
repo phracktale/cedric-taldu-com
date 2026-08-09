@@ -45,6 +45,21 @@ final class Page
         return $this->translations->for($locale)->body;
     }
 
+    /**
+     * Blocs éditoriaux de la page dans cette langue, ou [] si elle suit son HTML.
+     *
+     * @return list<Block>
+     */
+    public function blocks(Locale $locale): array
+    {
+        return $this->translations->for($locale)->blocks();
+    }
+
+    public function hasBlocks(Locale $locale): bool
+    {
+        return $this->translations->for($locale)->hasBlocks();
+    }
+
     public function isTranslatedIn(Locale $locale): bool
     {
         return $this->translations->isAvailableIn($locale);

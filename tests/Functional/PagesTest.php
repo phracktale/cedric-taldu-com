@@ -36,6 +36,63 @@ final class PagesTest extends FunctionalTestCase
         $this->assertStringContainsString('<h1>' . $titre . '</h1>', $reponse->body);
     }
 
+    public function test_une_page_composee_de_blocs_rend_les_blocs(): void
+    {
+        $this->composer('about', [
+            ['type' => 'heading', 'props' => ['text' => 'Mon parcours', 'level' => '2']],
+            ['type' => 'text', 'props' => ['content' => '<p>Texte de présentation.</p>']],
+            ['type' => 'quote', 'props' => ['text' => 'Une citation', 'author' => 'Cédric']],
+            ['type' => 'button', 'props' => ['label' => 'Me contacter', 'url' => '/fr/contact']],
+        ]);
+
+        $corps = $this->get('/cedric-taldu/fr/a-propos')->body;
+
+        $this->assertStringContainsString('class="bloc bloc-titre">Mon parcours</h2>', $corps);
+        $this->assertStringContainsString('Texte de présentation.', $corps);
+        $this->assertStringContainsString('bloc-citation', $corps);
+        $this->assertStringContainsString('href="/fr/contact"', $corps);
+    }
+
+    public function test_un_bloc_colonnes_rend_ses_enfants(): void
+    {
+        $this->composer('about', [
+            ['type' => 'columns', 'props' => ['count' => '2'], 'children' => [
+                ['type' => 'text', 'props' => ['content' => '<p>Gauche</p>']],
+                ['type' => 'text', 'props' => ['content' => '<p>Droite</p>']],
+            ]],
+        ]);
+
+        $corps = $this->get('/cedric-taldu/fr/a-propos')->body;
+
+        $this->assertStringContainsString('bloc-colonnes--2', $corps);
+        $this->assertStringContainsString('Gauche', $corps);
+        $this->assertStringContainsString('Droite', $corps);
+    }
+
+    public function test_une_url_de_bouton_hostile_est_neutralisee(): void
+    {
+        // Un href « javascript: » est ramené à un lien inerte (#).
+        $this->composer('about', [
+            ['type' => 'button', 'props' => ['label' => 'Piège', 'url' => 'javascript:alert(1)']],
+        ]);
+
+        $corps = $this->get('/cedric-taldu/fr/a-propos')->body;
+
+        $this->assertStringNotContainsString('javascript:alert(1)', $corps);
+        $this->assertStringContainsString('href="#"', $corps);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $blocks
+     */
+    private function composer(string $code, array $blocks): void
+    {
+        $this->pdo->prepare(
+            "UPDATE page_translations SET blocks = :b
+              WHERE locale = 'fr' AND page_id = (SELECT id FROM pages WHERE code = :code)"
+        )->execute(['b' => json_encode($blocks, JSON_THROW_ON_ERROR), 'code' => $code]);
+    }
+
     public function test_la_page_anglaise_repond_aussi(): void
     {
         $reponse = $this->get('/cedric-taldu/en/about');
