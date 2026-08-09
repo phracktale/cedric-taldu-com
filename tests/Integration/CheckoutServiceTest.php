@@ -411,6 +411,36 @@ final class CheckoutServiceTest extends DatabaseTestCase
         $this->assertSame(0, $atteint->order->shipping->cents);
     }
 
+    public function test_une_edition_limitee_paie_le_port_atelier_pas_prodigi(): void
+    {
+        // Édition limitée = traitement atelier : port au barème poids (comme un
+        // original), jamais le devis/forfait Prodigi. Aucun devis n'est demandé.
+        $variante = $this->creerEditionLimitee(prix: 25000);
+
+        $resultat = $this->commanderPanier([[LineKind::Reproduction, $variante, 1]]);
+
+        $this->assertNotNull($resultat->order);
+        // France ≤ 10 kg, sous le franco : 900 (barème atelier), pas 790 (forfait).
+        $this->assertSame(900, $resultat->order->shipping->cents);
+        $this->assertSame([], $this->prodigi->quotes, 'Aucun devis Prodigi pour une ligne atelier.');
+    }
+
+    public function test_le_retrait_est_possible_pour_une_edition_limitee(): void
+    {
+        // Rehaussée à l'atelier d'Amiens : elle peut être remise en main propre,
+        // contrairement à un tirage Fine Art expédié par le prestataire.
+        $variante = $this->creerEditionLimitee();
+
+        $resultat = $this->commanderPanier(
+            [[LineKind::Reproduction, $variante, 1]],
+            $this->demande(mode: ShippingMethod::Pickup),
+        );
+
+        $this->assertSame(CheckoutOutcome::Redirect, $resultat->outcome);
+        $this->assertNotNull($resultat->order);
+        $this->assertSame(0, $resultat->order->shipping->cents);
+    }
+
     // ------------------------------------------------------------------- TVA
 
     public function test_en_franchise_la_commande_porte_une_tva_nulle(): void
@@ -525,6 +555,38 @@ final class CheckoutServiceTest extends DatabaseTestCase
             'size' => '30 × 40 cm',
         ]);
         $this->variant = (int) $this->pdo->lastInsertId();
+    }
+
+    /**
+     * Édition limitée (circuit atelier) rattachée à l'œuvre ; renvoie l'id de sa
+     * variante numérotable.
+     */
+    private function creerEditionLimitee(int $prix = 25000, int $editionSize = 20): int
+    {
+        $this->pdo->prepare(
+            'INSERT INTO products (artwork_id, kind, processing_mode, edition_size, is_published,
+                                   created_at, updated_at)
+             VALUES (:art, :kind, :mode, :size, 1, NOW(), NOW())'
+        )->execute(['art' => $this->artwork, 'kind' => 'limited', 'mode' => 'artist_manual', 'size' => $editionSize]);
+        $product = (int) $this->pdo->lastInsertId();
+
+        $this->pdo->prepare(
+            'INSERT INTO product_translations (product_id, locale, title) VALUES (:id, :l, :t)'
+        )->execute(['id' => $product, 'l' => 'fr', 't' => 'Édition limitée']);
+
+        $this->pdo->prepare(
+            'INSERT INTO product_variants (product_id, sku, size_label, price_cents, stock_qty, weight_grams,
+                                           created_at, updated_at)
+             VALUES (:prod, :sku, :label, :price, :stock, 600, NOW(), NOW())'
+        )->execute([
+            'prod' => $product,
+            'sku' => 'EL-' . bin2hex(random_bytes(4)),
+            'label' => '40 × 50 cm',
+            'price' => $prix,
+            'stock' => $editionSize,
+        ]);
+
+        return (int) $this->pdo->lastInsertId();
     }
 
     private static function urlGenerator(): \App\Service\I18n\UrlGenerator
