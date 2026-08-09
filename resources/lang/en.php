@@ -105,6 +105,8 @@ return [
     'home.gallery_link' => 'View :name',
     'home.studio_portrait' => 'Studio portrait',
     'home.studio_cta' => 'Path and approach',
+    'home.shop_cta' => 'See available works',
+    'home.contact_cta' => 'Contact me',
     'home.news_eyebrow' => 'News',
     'home.news_title' => 'Exhibitions and work in progress',
     'home.all_news' => 'All news',

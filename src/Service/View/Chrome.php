@@ -13,6 +13,7 @@ use App\Domain\Locale;
 use App\Http\Middleware\SecurityHeaders;
 use App\Repository\CartRepository;
 use App\Repository\CategoryRepository;
+use App\Repository\PostRepository;
 
 /**
  * Contexte commun a toutes les pages publiques.
@@ -36,6 +37,7 @@ final class Chrome
         private readonly ClockInterface $clock,
         private readonly Csrf $csrf,
         private readonly CartRepository $carts,
+        private readonly PostRepository $posts,
     ) {
     }
 
@@ -51,6 +53,9 @@ final class Chrome
             'env' => $this->config->env,
             'isProduction' => $this->config->isProduction(),
             'menuCategories' => $this->categories->findPublished(),
+            // L'entrée « Actus » du menu disparaît tant qu'aucun article n'est
+            // publié : un lien vers une page vide donne un site inachevé.
+            'hasNews' => $this->posts->countPublished($this->clock->now()) > 0,
             // Pastille du panier dans l'en-tete : lecture seule, sans jamais
             // creer de panier (voir CartRepository::countByToken).
             'cartCount' => $this->carts->countByToken($request->cookie(self::CART_COOKIE)),

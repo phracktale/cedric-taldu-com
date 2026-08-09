@@ -668,11 +668,13 @@ a.oeuvre:hover .cadre, a.oeuvre:focus-visible .cadre {
 .page-head .intro { max-width: 58ch; margin: 0 auto; color: var(--encre-70); }
 .page-head .intro p { margin-bottom: 1rem; }
 
-.fil { font-size: .78rem; letter-spacing: .1em; text-transform: uppercase; color: var(--encre-70); margin-bottom: 1.4rem; }
-.fil ol { list-style: none; display: flex; gap: .5rem; justify-content: center; flex-wrap: wrap; }
-.fil li + li::before { content: '·'; margin-right: .5rem; }
-.fil a { text-decoration: none; }
-.fil a:hover { text-decoration: underline; }
+/* Fil d'Ariane : à gauche, discret, en casse naturelle. Les niveaux parents
+   sont soulignés et cliquables ; le niveau courant reste texte simple. */
+.fil { font-size: .8rem; letter-spacing: .01em; text-transform: none; color: var(--encre-40); margin-bottom: 1.4rem; }
+.fil ol { list-style: none; display: flex; gap: .5rem; justify-content: flex-start; flex-wrap: wrap; }
+.fil li + li::before { content: '/'; margin-right: .5rem; color: var(--encre-40); }
+.fil a { color: var(--encre-70); text-decoration: underline; text-underline-offset: .18em; }
+.fil a:hover, .fil a:focus-visible { color: var(--encre); }
 
 .series { display: flex; gap: .7rem; justify-content: center; flex-wrap: wrap; margin: 2.4rem 0 0; }
 .serie {

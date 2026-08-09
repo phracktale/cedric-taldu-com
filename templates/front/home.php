@@ -135,6 +135,10 @@ $newsIndexUrl = is_string($data['newsIndexUrl'] ?? null) ? $data['newsIndexUrl']
     <h2><?= e($texte($shop, 'title')) ?></h2>
     <hr class="stipple">
     <?php if ($texte($shop, 'text') !== null) : ?><p><?= e($texte($shop, 'text')) ?></p><?php endif; ?>
+    <?php // Porte d'entrée vers les œuvres à acheter (02-front §2, module 5). ?>
+    <p class="cta-row">
+      <a class="btn btn-plein" href="#galeries"><?= $t('home.shop_cta') ?></a>
+    </p>
   </div>
 </section>
 <?php endif; ?>
@@ -195,5 +199,11 @@ $newsIndexUrl = is_string($data['newsIndexUrl'] ?? null) ? $data['newsIndexUrl']
   <p class="eyebrow"><?php if ($texte($contact, 'eyebrow') !== null) : ?><?= e($texte($contact, 'eyebrow')) ?><?php else : ?><?= $t('nav.contact') ?><?php endif; ?></p>
   <h2><?= e($texte($contact, 'title')) ?></h2>
   <?php if ($texte($contact, 'text') !== null) : ?><p><?= e($texte($contact, 'text')) ?></p><?php endif; ?>
+  <?php // Une porte de sortie claire vers le formulaire de contact. ?>
+  <p class="cta-row">
+    <a class="btn btn-vide" href="<?= attr($url->route('contact.form', ['locale' => $locale->value])) ?>">
+      <?= $t('home.contact_cta') ?>
+    </a>
+  </p>
 </section>
 <?php endif; ?>

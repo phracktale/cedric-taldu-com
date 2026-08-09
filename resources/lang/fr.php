@@ -107,6 +107,8 @@ return [
     'home.gallery_link' => 'Voir :name',
     'home.studio_portrait' => 'Portrait d’atelier',
     'home.studio_cta' => 'Parcours et démarche',
+    'home.shop_cta' => 'Voir les œuvres disponibles',
+    'home.contact_cta' => 'Me contacter',
     'home.news_eyebrow' => 'Actualités',
     'home.news_title' => 'Expositions et travail en cours',
     'home.all_news' => 'Toutes les actus',

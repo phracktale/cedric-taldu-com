@@ -508,6 +508,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(ClockInterface::class),
         $c->get(Csrf::class),
         $c->get(CartRepository::class),
+        $c->get(PostRepository::class),
     ));
 
     $container->set(AdminChrome::class, static fn (Container $c): AdminChrome => new AdminChrome(
@@ -571,14 +572,14 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
     $container->set(OrderMailer::class, static fn (Container $c): OrderMailer => new OrderMailer(
         $c->get(View::class),
         $c->get(MailerInterface::class),
-        $env->getOptional('ARTIST_EMAIL', 'cedric@cedrictaldu.com') ?? 'cedric@cedrictaldu.com',
+        $env->getOptional('ARTIST_EMAIL', 'contact@cedrictaldu.com') ?? 'contact@cedrictaldu.com',
         $env->getOptional('ARTIST_NAME', 'Cédric Taldu') ?? 'Cédric Taldu',
     ));
 
     $container->set(ContactMailer::class, static fn (Container $c): ContactMailer => new ContactMailer(
         $c->get(View::class),
         $c->get(MailerInterface::class),
-        $env->getOptional('ARTIST_EMAIL', 'cedric@cedrictaldu.com') ?? 'cedric@cedrictaldu.com',
+        $env->getOptional('ARTIST_EMAIL', 'contact@cedrictaldu.com') ?? 'contact@cedrictaldu.com',
         $env->getOptional('ARTIST_NAME', 'Cédric Taldu') ?? 'Cédric Taldu',
     ));
 
