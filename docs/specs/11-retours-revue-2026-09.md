@@ -97,7 +97,20 @@ au contact, newsletter opt-in avec preuve et désinscription signée (0017) ;
 espace client par lien e-mail à usage unique (0018) — historique, détail
 (adresses, transaction), newsletter ; facture PDF sans dépendance, identité du
 vendeur réglable (0019). Choix : connexion sans mot de passe (lien de
-20 minutes envoyé à l'adresse des commandes). Reste : Matomo (service sur Thor).
+20 minutes envoyé à l'adresse des commandes). Matomo côté application livré
+(`feature/matomo`) : inactif tant que `MATOMO_URL` / `MATOMO_SITE_ID` sont
+vides. Reste : installer l'instance Matomo sur Thor (sous-domaine, vhost
+Heimdall, certificat) — en attente de validation.
+
+## Reste à faire après les incréments 0 à 6
+
+- Instance Matomo sur Thor, puis `MATOMO_URL` / `MATOMO_SITE_ID` dans le `.env`.
+- Client de l'API Colissimo (étiquettes, points de retrait) à l'arrivée du contrat.
+- Poids des œuvres et taille maximale d'un colis (données de l'artiste).
+- Section d'accueil « libre » composée de blocs (les blocs existent sur les pages
+  et les actualités, pas encore comme section de l'accueil).
+- Recette visuelle en navigateur de l'ensemble (les tests vérifient la
+  structure HTML et les règles CSS, pas le rendu).
 
 - Comptes clients : **revient sur une décision du lot 0** (`0001_init.sql` :
   « aucun compte client »). Périmètre à fixer (voir plus bas).
