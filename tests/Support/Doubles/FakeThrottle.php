@@ -18,8 +18,20 @@ final class FakeThrottle implements Throttle
     /** @var array<string, int> */
     private array $hits = [];
 
+    private bool $denyAll = false;
+
+    /** Simule une limite déjà atteinte : tout appel est refusé. */
+    public function deny(): void
+    {
+        $this->denyAll = true;
+    }
+
     public function allow(string $scope, string $identifier, int $limit, int $window): bool
     {
+        if ($this->denyAll) {
+            return false;
+        }
+
         $key = $scope . "\0" . $identifier;
         $this->hits[$key] = ($this->hits[$key] ?? 0) + 1;
 

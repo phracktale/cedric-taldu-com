@@ -946,3 +946,15 @@ footer a:hover { text-decoration: underline; }
 @media (prefers-reduced-motion: reduce) {
   .zoom img { transition: none; }
 }
+
+/* ---------------------------------------------------- espace client (2026-09) */
+
+.compte-lien { margin-left: auto; margin-right: 1.2rem; }
+.compte-bloc { margin: 2.5rem 0 0; }
+.compte-bloc h2 { font-size: 1.2rem; margin-bottom: 1rem; }
+.compte-adresses { display: grid; gap: 2rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+.adresse-bloc { white-space: pre-line; }
+.compte-commandes { width: 100%; }
+@media (max-width: 900px) {
+  .compte-lien { margin-right: .6rem; }
+}

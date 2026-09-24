@@ -18,6 +18,7 @@ use App\Service\Fulfillment\FulfillmentService;
 use App\Service\Mail\OrderMailer;
 use App\Service\View\AdminChrome;
 use App\Service\I18n\UrlGenerator;
+use App\Service\Invoice\InvoiceDownload;
 use App\Service\Shipping\CarrierRegistry;
 
 /**
@@ -44,6 +45,7 @@ final class OrderController
         private readonly FulfillmentRepository $fulfillment,
         private readonly FulfillmentService $fulfillmentService,
         private readonly CarrierRegistry $carriers,
+        private readonly InvoiceDownload $invoices,
     ) {
     }
 
@@ -74,6 +76,7 @@ final class OrderController
                 : null,
             // Transporteurs branchés (revue du 2026-09-24) et lien de suivi public.
             'transporteurs' => $this->carriers->names(),
+            'facturable' => InvoiceDownload::isInvoiceable($order),
             'lienSuivi' => $order->trackingNumber === null
                 ? null
                 : $this->carriers->byName($order->trackingCarrier)?->trackingUrl($order->trackingNumber),
@@ -156,6 +159,20 @@ final class OrderController
         }
 
         return RedirectResponse::to($request->basePath . '/admin/commandes/' . $id);
+    }
+
+    /**
+     * Facture PDF de la commande (revue du 2026-09-24).
+     */
+    public function invoice(Request $request): Response
+    {
+        $order = $this->orders->findById(self::id($request));
+
+        if ($order === null) {
+            throw new NotFoundException('Commande introuvable.');
+        }
+
+        return $this->invoices->response($order);
     }
 
     public function export(Request $request): Response

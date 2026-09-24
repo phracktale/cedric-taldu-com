@@ -28,10 +28,12 @@ use App\Http\Controller\Admin\MessageController as AdminMessageController;
 use App\Http\Controller\Admin\OrderController as AdminOrderController;
 use App\Http\Controller\Admin\HomeController as AdminHomeController;
 use App\Http\Controller\Admin\AppearanceController;
+use App\Http\Controller\Admin\BillingController;
 use App\Http\Controller\Admin\DeliveryController;
 use App\Http\Controller\Admin\MenuController;
 use App\Http\Controller\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controller\Front\NewsletterController;
+use App\Http\Controller\Front\AccountController as CustomerAccountController;
 use App\Http\Controller\Admin\PageController as AdminPageController;
 use App\Http\Controller\Admin\PostController as AdminPostController;
 use App\Http\Controller\Admin\ProductController as AdminProductController;
@@ -93,6 +95,22 @@ return [
 
     // Contact — général ou rattaché à une œuvre (?oeuvre={slug}). Le POST est
     // protégé par CSRF (défaut) ET par le SpamGuard.
+    // Espace client par lien e-mail (revue du 2026-09-24).
+    new Route('account.index', 'GET', '/fr/compte', [CustomerAccountController::class, 'index'], locale: 'fr'),
+    new Route('account.index', 'GET', '/en/account', [CustomerAccountController::class, 'index'], locale: 'en'),
+    new Route('account.request', 'POST', '/fr/compte/connexion', [CustomerAccountController::class, 'requestLink'], locale: 'fr'),
+    new Route('account.request', 'POST', '/en/account/sign-in', [CustomerAccountController::class, 'requestLink'], locale: 'en'),
+    new Route('account.login', 'GET', '/fr/compte/connexion/{token}', [CustomerAccountController::class, 'signIn'], locale: 'fr', requirements: ['token' => '[0-9a-f]{64}']),
+    new Route('account.login', 'GET', '/en/account/sign-in/{token}', [CustomerAccountController::class, 'signIn'], locale: 'en', requirements: ['token' => '[0-9a-f]{64}']),
+    new Route('account.logout', 'POST', '/fr/compte/deconnexion', [CustomerAccountController::class, 'signOut'], locale: 'fr'),
+    new Route('account.logout', 'POST', '/en/account/sign-out', [CustomerAccountController::class, 'signOut'], locale: 'en'),
+    new Route('account.newsletter', 'POST', '/fr/compte/newsletter', [CustomerAccountController::class, 'newsletter'], locale: 'fr'),
+    new Route('account.newsletter', 'POST', '/en/account/newsletter', [CustomerAccountController::class, 'newsletter'], locale: 'en'),
+    new Route('account.order', 'GET', '/fr/compte/commandes/{reference}', [CustomerAccountController::class, 'order'], locale: 'fr', requirements: ['reference' => 'CT-[0-9]{4}-[0-9]+']),
+    new Route('account.order', 'GET', '/en/account/orders/{reference}', [CustomerAccountController::class, 'order'], locale: 'en', requirements: ['reference' => 'CT-[0-9]{4}-[0-9]+']),
+    new Route('account.invoice', 'GET', '/fr/compte/commandes/{reference}/facture', [CustomerAccountController::class, 'invoice'], locale: 'fr', requirements: ['reference' => 'CT-[0-9]{4}-[0-9]+']),
+    new Route('account.invoice', 'GET', '/en/account/orders/{reference}/invoice', [CustomerAccountController::class, 'invoice'], locale: 'en', requirements: ['reference' => 'CT-[0-9]{4}-[0-9]+']),
+
     // Désinscription de la newsletter par lien signé (revue du 2026-09-24).
     new Route('newsletter.unsubscribe.confirm', 'GET', '/fr/newsletter/desinscription', [NewsletterController::class, 'confirm'], locale: 'fr'),
     new Route('newsletter.unsubscribe.confirm', 'GET', '/en/newsletter/unsubscribe', [NewsletterController::class, 'confirm'], locale: 'en'),
@@ -301,5 +319,9 @@ return [
     new Route('admin.order.index', 'GET', '/admin/commandes', [AdminOrderController::class, 'index']),
     new Route('admin.order.show', 'GET', '/admin/commandes/{id}', [AdminOrderController::class, 'show'], requirements: $id),
     new Route('admin.order.ship', 'POST', '/admin/commandes/{id}/expedition', [AdminOrderController::class, 'ship'], requirements: $id),
+    new Route('admin.order.invoice', 'GET', '/admin/commandes/{id}/facture', [AdminOrderController::class, 'invoice'], requirements: $id),
+    // Identité du vendeur sur les factures (revue du 2026-09-24).
+    new Route('admin.billing.edit', 'GET', '/admin/facturation', [BillingController::class, 'edit']),
+    new Route('admin.billing.update', 'POST', '/admin/facturation', [BillingController::class, 'update']),
     new Route('admin.order.prodigi', 'POST', '/admin/commandes/{id}/prodigi', [AdminOrderController::class, 'submitProdigi'], requirements: $id),
 ];

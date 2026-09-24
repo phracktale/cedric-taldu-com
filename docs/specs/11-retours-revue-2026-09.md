@@ -90,7 +90,14 @@ client de l'API Colissimo (étiquettes, points de retrait).
 - Interface `Carrier` (comme `PaymentGateway`) : Colissimo en premier, d'autres
   transporteurs branchables ensuite.
 
-## Incrément 6 — Comptes clients et consentements `feature/comptes-clients`
+## Incrément 6 — Comptes clients et consentements
+
+Livré (`feature/rgpd-newsletter`, `feature/espace-client`) : consentement RGPD
+au contact, newsletter opt-in avec preuve et désinscription signée (0017) ;
+espace client par lien e-mail à usage unique (0018) — historique, détail
+(adresses, transaction), newsletter ; facture PDF sans dépendance, identité du
+vendeur réglable (0019). Choix : connexion sans mot de passe (lien de
+20 minutes envoyé à l'adresse des commandes). Reste : Matomo (service sur Thor).
 
 - Comptes clients : **revient sur une décision du lot 0** (`0001_init.sql` :
   « aucun compte client »). Périmètre à fixer (voir plus bas).

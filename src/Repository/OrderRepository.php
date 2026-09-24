@@ -302,7 +302,57 @@ final class OrderRepository
             trackingCarrier: $row['tracking_carrier'] === null ? null : (string) $row['tracking_carrier'],
             trackingNumber: $row['tracking_number'] === null ? null : (string) $row['tracking_number'],
             lines: $this->linesOf($id),
+            createdAt: self::utc($row['created_at'] ?? null),
+            paidAt: self::utc($row['paid_at'] ?? null),
+            paymentReference: is_string($row['stripe_payment_intent_id'] ?? null) ? $row['stripe_payment_intent_id'] : null,
         );
+    }
+
+    /**
+     * Commandes d'un client, par son adresse (espace client, revue du
+     * 2026-09-24) : plus récentes d'abord, sans les paniers jamais payés.
+     *
+     * @return list<PersistedOrder>
+     */
+    public function findForCustomer(string $email): array
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT * FROM orders
+              WHERE LOWER(customer_email) = :email AND status NOT IN ('pending', 'failed')
+              ORDER BY created_at DESC, id DESC"
+        );
+        $statement->execute(['email' => mb_strtolower(trim($email))]);
+
+        $orders = [];
+
+        foreach ($statement->fetchAll() as $row) {
+            $order = $this->hydrate($row);
+
+            if ($order !== null) {
+                $orders[] = $order;
+            }
+        }
+
+        return $orders;
+    }
+
+    /**
+     * L'adresse a-t-elle passé au moins une commande ? Conditionne l'envoi d'un
+     * lien de connexion (le site ne relaie pas d'e-mails vers n'importe qui).
+     */
+    public function hasOrders(string $email): bool
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM orders WHERE LOWER(customer_email) = :email AND status NOT IN ('pending', 'failed')"
+        );
+        $statement->execute(['email' => mb_strtolower(trim($email))]);
+
+        return (int) $statement->fetchColumn() > 0;
+    }
+
+    private static function utc(mixed $value): ?DateTimeImmutable
+    {
+        return is_string($value) ? new DateTimeImmutable($value, new \DateTimeZone('UTC')) : null;
     }
 
     private static function decodeAddress(mixed $raw): ?Address
