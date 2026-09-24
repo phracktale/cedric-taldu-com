@@ -562,6 +562,28 @@ button.btn { font-family: inherit; cursor: pointer; }
 .hero h1 { font-size: clamp(2.1rem, 5.2vw, 3.6rem); max-width: 20ch; margin: 0 auto 1.6rem; }
 .hero .baseline { max-width: 52ch; margin: 0 auto 2.4rem; font-size: 1.1rem; color: var(--encre-70); }
 .cta-row { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+/* CTA paramétrable : alignement choisi en back-office. */
+.cta-row--gauche { justify-content: flex-start; }
+.cta-row--droite { justify-content: flex-end; }
+.article-cta { margin: 3rem 0 1rem; }
+
+/* Hero habillé : image de la médiathèque et/ou couleur (--hero-fond, servie
+   par le <style> à nonce), texte sombre ou clair selon data-ton. */
+.hero--fond {
+  position: relative; overflow: hidden; isolation: isolate;
+  background: var(--hero-fond, var(--papier-chaud));
+}
+.hero-fond { position: absolute; inset: 0; z-index: -1; }
+.hero-fond picture, .hero-fond img { width: 100%; height: 100%; }
+.hero-fond img { object-fit: cover; }
+.hero--fond[data-ton="papier"] { color: var(--papier); }
+.hero--fond[data-ton="papier"] .baseline,
+.hero--fond[data-ton="papier"] .eyebrow { color: rgba(250, 249, 246, .86); }
+.hero--fond[data-ton="papier"] .hero-fond::after {
+  content: ''; position: absolute; inset: 0; background: rgba(22, 21, 19, .38);
+}
+.hero--fond[data-ton="papier"] .btn-plein { background: var(--papier); color: var(--encre); border-color: var(--papier); }
+.hero--fond[data-ton="papier"] .btn-vide { color: var(--papier); border-color: var(--papier); }
 
 /* --------------------------------------------------------- œuvres, cadres */
 

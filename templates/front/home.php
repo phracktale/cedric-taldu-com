@@ -79,6 +79,10 @@ $bag = [
     'rubriques' => $rubriques,
     'vitrine' => $vitrine,
     'medias' => $medias,
+    // Paramétrage de la revue du 2026-09-24 : boutons, fond du hero, portrait.
+    'ctas' => is_array($data['ctas'] ?? null) ? $data['ctas'] : [],
+    'heroBackground' => is_array($data['heroBackground'] ?? null) ? $data['heroBackground'] : [],
+    'studioPortrait' => $data['studioPortrait'] ?? null,
 ];
 ?>
 <?php foreach ($sectionsAffichees as $section) : ?>

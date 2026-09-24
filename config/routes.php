@@ -27,6 +27,7 @@ use App\Http\Controller\Admin\MediaController;
 use App\Http\Controller\Admin\MessageController as AdminMessageController;
 use App\Http\Controller\Admin\OrderController as AdminOrderController;
 use App\Http\Controller\Admin\HomeController as AdminHomeController;
+use App\Http\Controller\Admin\AppearanceController;
 use App\Http\Controller\Admin\PageController as AdminPageController;
 use App\Http\Controller\Admin\PostController as AdminPostController;
 use App\Http\Controller\Admin\ProductController as AdminProductController;
@@ -45,6 +46,8 @@ use App\Http\Controller\Front\StripeWebhookController;
 
 $slug = ['slug' => Route::SLUG];
 $id = ['id' => Route::ID];
+// Clef de section : validée sur liste blanche par le contrôleur (404 sinon).
+$section = ['section' => '[a-z0-9]{1,20}'];
 $idEtSerie = ['id' => Route::ID, 'serie' => Route::ID];
 
 return [
@@ -228,6 +231,12 @@ return [
     // clef métier, porté par la ligne.
     new Route('admin.home.edit', 'GET', '/admin/accueil', [AdminHomeController::class, 'edit']),
     new Route('admin.home.update', 'POST', '/admin/accueil', [AdminHomeController::class, 'update']),
+    new Route('admin.home.section.edit', 'GET', '/admin/accueil/{section}', [AdminHomeController::class, 'editSection'], requirements: $section),
+    new Route('admin.home.section.update', 'POST', '/admin/accueil/{section}', [AdminHomeController::class, 'updateSection'], requirements: $section),
+
+    // Apparence du site (revue du 2026-09-24) : entrée active, CTA de fin d'actualité.
+    new Route('admin.appearance.edit', 'GET', '/admin/apparence', [AppearanceController::class, 'edit']),
+    new Route('admin.appearance.update', 'POST', '/admin/apparence', [AppearanceController::class, 'update']),
 
     new Route('admin.page.index', 'GET', '/admin/pages', [AdminPageController::class, 'index']),
     new Route('admin.page.edit', 'GET', '/admin/pages/{id}', [AdminPageController::class, 'edit'], requirements: $id),

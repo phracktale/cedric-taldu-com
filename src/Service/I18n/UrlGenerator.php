@@ -49,6 +49,14 @@ final class UrlGenerator
     }
 
     /**
+     * Chemin interne saisi tel quel (lien d'un CTA), préfixe de chemin ajouté.
+     */
+    public function path(string $path): string
+    {
+        return $this->basePath . $path;
+    }
+
+    /**
      * URL équivalente de la même route dans CHAQUE langue, pour le sélecteur de
      * langue (05-i18n-seo §2). Une route à segment fixe n'a pas de paramètre
      * propre ; une route à slug traduit reçoit son slug par langue via

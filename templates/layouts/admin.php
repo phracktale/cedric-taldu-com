@@ -33,6 +33,7 @@ $utilisateur = ($data['utilisateur'] ?? null) instanceof AdminUser ? $data['util
 $entrees = $utilisateur === null ? [] : [
     ['chemin' => '/admin', 'libelle' => 'Tableau de bord'],
     ['chemin' => '/admin/accueil', 'libelle' => 'Accueil'],
+    ['chemin' => '/admin/apparence', 'libelle' => 'Apparence'],
     ['chemin' => '/admin/rubriques', 'libelle' => 'Rubriques'],
     ['chemin' => '/admin/oeuvres', 'libelle' => 'Œuvres'],
     ['chemin' => '/admin/actus', 'libelle' => 'Actus'],

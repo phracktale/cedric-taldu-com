@@ -13,6 +13,8 @@
 
 declare(strict_types=1);
 
+use App\Domain\Editorial\HomeSectionForm;
+
 $base = is_string($data['basePath'] ?? null) ? $data['basePath'] : '';
 $jeton = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
 /** @var list<array{section: string, enabled: bool, label: string}> $sections */
@@ -24,7 +26,7 @@ $sections = is_array($data['sections'] ?? null) ? $data['sections'] : [];
     <p class="aide">
         Réglez l’ordre et les sections affichées sur la page d’accueil. La position
         donne l’ordre (1 = tout en haut) ; décochez une section pour la masquer. Le
-        contenu de chaque section se modifie dans ses réglages.
+        contenu de chaque section se modifie par son lien « modifier le contenu ».
     </p>
 
     <form method="post" action="<?= attr($base) ?>/admin/accueil" class="formulaire">
@@ -41,7 +43,12 @@ $sections = is_array($data['sections'] ?? null) ? $data['sections'] : [];
             <tbody>
                 <?php foreach ($sections as $rang => $section) : ?>
                 <tr>
-                    <td><?= e($section['label']) ?></td>
+                    <td>
+                        <?= e($section['label']) ?>
+                        <?php if (HomeSectionForm::isEditable($section['section'])) : ?>
+                        — <a href="<?= attr($base . '/admin/accueil/' . $section['section']) ?>">modifier le contenu</a>
+                        <?php endif; ?>
+                    </td>
                     <td>
                         <label class="visually-hidden" for="position_<?= attr($section['section']) ?>">
                             Position de <?= e($section['label']) ?>

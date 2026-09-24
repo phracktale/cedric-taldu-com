@@ -9,6 +9,7 @@ use App\Core\Config;
 use App\Core\CookieFactory;
 use App\Core\Csrf;
 use App\Core\Request;
+use App\Domain\Editorial\HomeSectionForm;
 use App\Domain\Locale;
 use App\Http\Middleware\SecurityHeaders;
 use App\Repository\CartRepository;
@@ -93,6 +94,9 @@ final class Chrome
             // Entrée de menu active, déduite de la route, et son style (réglage).
             'currentSection' => self::SECTIONS[$request->attribute('route') ?? ''] ?? null,
             'navActiveStyle' => $this->activeStyle(),
+            // Variables de thème choisies en back-office, servies dans un <style>
+            // à nonce (la CSP interdit les attributs style). Couleur #rrggbb seule.
+            'themeCss' => $this->themeCss(),
             'metaDescription' => null,
         ];
     }
@@ -108,5 +112,12 @@ final class Chrome
         $style = $this->settings->json('nav.active_style')['style'] ?? null;
 
         return in_array($style, self::ACTIVE_STYLES, true) ? $style : self::ACTIVE_STYLES[0];
+    }
+
+    private function themeCss(): string
+    {
+        $couleur = HomeSectionForm::color($this->settings->json('nav.active_style')['color'] ?? null);
+
+        return $couleur === null ? '' : ':root { --actif: ' . $couleur . '; }';
     }
 }
