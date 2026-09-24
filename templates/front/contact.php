@@ -95,6 +95,23 @@ $csrfToken = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
       <span class="champ-erreur" role="alert"><?= e($errors['message']) ?></span>
     <?php endif; ?>
 
+    <?php // Revue du 2026-09-24 : consentement explicite, newsletter facultative et non précochée. ?>
+    <label class="case">
+      <input type="checkbox" name="rgpd" value="1" required>
+      <span>
+        <?= $t('contact.consent') ?>
+        <a href="<?= attr($url->route('page.privacy', ['locale' => $locale->value])) ?>"><?= $t('contact.learn_more') ?></a>
+      </span>
+    </label>
+    <?php if (isset($errors['rgpd'])) : ?>
+      <span class="champ-erreur" role="alert"><?= e($errors['rgpd']) ?></span>
+    <?php endif; ?>
+
+    <label class="case">
+      <input type="checkbox" name="newsletter" value="1">
+      <span><?= $t('newsletter.consent') ?></span>
+    </label>
+
     <button type="submit" class="btn btn-plein">
       <?= $t('contact.send') ?>
     </button>

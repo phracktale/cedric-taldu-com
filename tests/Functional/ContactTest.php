@@ -79,6 +79,67 @@ final class ContactTest extends FunctionalTestCase
         $this->assertNotNull($this->mailer->lastTo('contact@cedrictaldu.com'));
     }
 
+    // ------------------------------------- RGPD et newsletter (revue 2026-09)
+
+    public function test_le_formulaire_demande_le_consentement_et_propose_la_newsletter(): void
+    {
+        $corps = $this->get('/cedric-taldu/fr/contact')->body;
+
+        $this->assertMatchesRegularExpression('~<input type="checkbox"[^>]*name="rgpd"[^>]*required~', $corps);
+        $this->assertMatchesRegularExpression('~<input type="checkbox"[^>]*name="newsletter"~', $corps);
+        // Newsletter : jamais précochée.
+        $this->assertDoesNotMatchRegularExpression('~name="newsletter"[^>]*checked~', $corps);
+    }
+
+    public function test_sans_consentement_le_message_n_est_pas_enregistre(): void
+    {
+        $response = $this->submit([
+            'rgpd' => null,
+            'nom' => 'Camille Dupont',
+            'email' => 'camille@example.com',
+            'message' => 'Bonjour, cette œuvre est-elle encore disponible ? Merci à vous.',
+        ]);
+
+        $this->assertSame(422, $response->status);
+        $this->assertSame(0, (int) $this->valeur('SELECT COUNT(*) FROM contact_messages'));
+    }
+
+    public function test_le_consentement_est_date_sur_le_message(): void
+    {
+        $this->submit([
+            'nom' => 'Camille Dupont',
+            'email' => 'camille@example.com',
+            'message' => 'Bonjour, cette œuvre est-elle encore disponible ? Merci à vous.',
+        ]);
+
+        $this->assertSame('2026-07-25 14:00:30', (string) $this->valeur('SELECT privacy_consented_at FROM contact_messages'));
+    }
+
+    public function test_cocher_la_newsletter_abonne_l_expediteur(): void
+    {
+        $this->submit([
+            'nom' => 'Camille Dupont',
+            'email' => 'camille@example.com',
+            'message' => 'Bonjour, cette œuvre est-elle encore disponible ? Merci à vous.',
+            'newsletter' => '1',
+        ]);
+
+        $this->assertSame('contact', (string) $this->valeur(
+            "SELECT source FROM newsletter_subscribers WHERE email = 'camille@example.com' AND unsubscribed_at IS NULL"
+        ));
+    }
+
+    public function test_sans_la_case_newsletter_personne_n_est_abonne(): void
+    {
+        $this->submit([
+            'nom' => 'Camille Dupont',
+            'email' => 'camille@example.com',
+            'message' => 'Bonjour, cette œuvre est-elle encore disponible ? Merci à vous.',
+        ]);
+
+        $this->assertSame(0, (int) $this->valeur('SELECT COUNT(*) FROM newsletter_subscribers'));
+    }
+
     public function test_une_question_sur_une_oeuvre_conserve_le_lien(): void
     {
         $categoryId = (new CategoryFactory($this->pdo))->published()->translated('fr', 'encres', 'Encres')->create();
@@ -146,11 +207,13 @@ final class ContactTest extends FunctionalTestCase
      */
     private function submit(array $champs): \App\Core\Response
     {
-        return $this->requete('POST', '/cedric-taldu/fr/contact', post: [
+        return $this->requete('POST', '/cedric-taldu/fr/contact', post: array_filter([
             Csrf::FIELD => $this->jeton(),
             'ts' => $this->validTimestamp(),
+            // Consentement RGPD coché par défaut (revue du 2026-09-24).
+            'rgpd' => '1',
             ...$champs,
-        ]);
+        ], static fn ($valeur): bool => $valeur !== null));
     }
 
     /** Horodatage émis 30 s avant l'horloge gelée : accepté. */

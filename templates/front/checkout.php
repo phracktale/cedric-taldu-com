@@ -209,7 +209,15 @@ $jour = static function (DateTimeImmutable $d) use ($mois, $estFr): string {
             <?= $t('checkout.accept_terms') ?>
             <a href="<?= attr($cgvUrl) ?>"><?= $t('checkout.read') ?></a>
             <a href="<?= attr($cgvPdfUrl) ?>" target="_blank" rel="noopener"><?= $t('checkout.pdf') ?></a>
+            <?php // Revue du 2026-09-24 : la commande renvoie aussi à la politique de confidentialité. ?>
+            <?= $t('checkout.privacy') ?>
+            <a href="<?= attr($url->route('page.privacy', ['locale' => $locale->value])) ?>"><?= $t('checkout.privacy_link') ?></a>
           </span>
+        </label>
+
+        <label class="commande-cgv">
+          <input type="checkbox" name="newsletter" value="1">
+          <span><?= $t('newsletter.consent') ?></span>
         </label>
 
         <p class="commande-paiement"><?= $t('checkout.payment_secure') ?> Visa · Mastercard · CB.</p>

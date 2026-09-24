@@ -30,6 +30,7 @@ use App\Service\Payment\CheckoutOutcome;
 use App\Service\Payment\CheckoutRequest;
 use App\Service\Payment\CheckoutService;
 use App\Service\Payment\ShippingPricer;
+use App\Service\Newsletter\Newsletter;
 use App\Service\Shipping\CarrierRegistry;
 use App\Service\Shipping\Geocoder;
 use App\Service\View\Chrome;
@@ -69,6 +70,7 @@ final class CheckoutController
         private readonly Geocoder $geocoder,
         private readonly SettingRepository $settings,
         private readonly CarrierRegistry $carriers,
+        private readonly Newsletter $newsletter,
     ) {
     }
 
@@ -170,6 +172,12 @@ final class CheckoutController
 
         $cart = $this->cart($request, $locale);
         $result = $this->checkout->checkout($cart, $checkoutRequest, new DateTimeImmutable());
+
+        // Newsletter (revue du 2026-09-24) : case facultative, non précochée ;
+        // on n'abonne qu'une commande effectivement créée.
+        if ($result->outcome === CheckoutOutcome::Redirect && $request->input('newsletter') !== null) {
+            $this->newsletter->subscribe($checkoutRequest->customerEmail, $locale, Newsletter::SOURCE_CHECKOUT);
+        }
 
         return match ($result->outcome) {
             // 303 vers Stripe : la seule issue qui quitte le site. L'URL vient
