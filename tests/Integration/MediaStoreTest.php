@@ -362,6 +362,72 @@ final class MediaStoreTest extends DatabaseTestCase
         $this->assertSame('Encre sur papier', $this->depot->translationsOf($resultat->id)['fr']['alt']);
     }
 
+    // ------------------------------------ recadrage réversible (revue 2026-09)
+
+    public function test_le_premier_recadrage_met_l_original_de_cote(): void
+    {
+        $resultat = $this->store->store($this->televerse($this->fixtures->jpeg(1600, 1200, 'entiere.jpg')));
+
+        $this->store->crop($resultat->id, \App\Service\Media\CropRegion::fromFractions(0.25, 0.25, 0.5, 0.5));
+
+        $media = $this->depot->findById($resultat->id);
+        $this->assertNotNull($media);
+        $this->assertIsString($media['source_storage_path']);
+        $this->assertFileExists($this->racine . '/storage/' . $media['source_storage_path']);
+    }
+
+    public function test_retablir_l_original_annule_le_recadrage(): void
+    {
+        $resultat = $this->store->store($this->televerse($this->fixtures->jpeg(1600, 1200, 'entiere.jpg')));
+        $this->store->crop($resultat->id, \App\Service\Media\CropRegion::fromFractions(0.25, 0.25, 0.5, 0.5));
+
+        $this->store->restoreOriginal($resultat->id);
+
+        $media = $this->depot->findById($resultat->id);
+        $this->assertNotNull($media);
+        $this->assertSame([1600, 1200], [$media['width'], $media['height']]);
+        $this->assertNull($media['source_storage_path']);
+        $taille = getimagesize($this->racine . '/public/media/' . $media['public_basename'] . '-1600.jpg');
+        $this->assertIsArray($taille);
+        $this->assertSame(1600, $taille[0]);
+    }
+
+    public function test_deux_recadrages_gardent_le_tout_premier_original(): void
+    {
+        $resultat = $this->store->store($this->televerse($this->fixtures->jpeg(1600, 1200, 'entiere.jpg')));
+        $this->store->crop($resultat->id, \App\Service\Media\CropRegion::fromFractions(0.0, 0.0, 0.5, 0.5));
+        $this->store->crop($resultat->id, \App\Service\Media\CropRegion::fromFractions(0.0, 0.0, 0.5, 0.5));
+
+        $this->store->restoreOriginal($resultat->id);
+
+        $media = $this->depot->findById($resultat->id);
+        $this->assertNotNull($media);
+        $this->assertSame(1600, $media['width']);
+    }
+
+    public function test_supprimer_un_media_efface_aussi_son_original_mis_de_cote(): void
+    {
+        $resultat = $this->store->store($this->televerse($this->fixtures->jpeg(1600, 1200, 'entiere.jpg')));
+        $this->store->crop($resultat->id, \App\Service\Media\CropRegion::fromFractions(0.25, 0.25, 0.5, 0.5));
+        $source = (string) ($this->depot->findById($resultat->id)['source_storage_path'] ?? '');
+
+        $this->store->remove($resultat->id);
+
+        $this->assertNotSame('', $source);
+        $this->assertFileDoesNotExist($this->racine . '/storage/' . $source);
+    }
+
+    public function test_retablir_sans_recadrage_prealable_est_sans_effet(): void
+    {
+        $resultat = $this->store->store($this->televerse($this->fixtures->jpeg(1600, 1200, 'entiere.jpg')));
+
+        $this->store->restoreOriginal($resultat->id);
+
+        $media = $this->depot->findById($resultat->id);
+        $this->assertNotNull($media);
+        $this->assertSame(1600, $media['width']);
+    }
+
     public function test_recadrer_un_media_inexistant_est_sans_effet(): void
     {
         $this->store->crop(999999, \App\Service\Media\CropRegion::fromFractions(0.0, 0.0, 0.5, 0.5));
