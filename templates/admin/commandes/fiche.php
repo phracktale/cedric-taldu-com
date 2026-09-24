@@ -57,7 +57,7 @@ $prodigi = $data['prodigi'] ?? null;
         <?= e($order->shippingAddress->country) ?>
       </p>
     <?php else : ?>
-      <p class="aide">Remise en main propre à Amiens.</p>
+      <p class="aide">Remise en main propre, adresse non collectée (commande antérieure au 2026-09-24).</p>
     <?php endif; ?>
   </section>
 

@@ -153,7 +153,7 @@ final class OrderMailer
                 'shipping' => 'Frais d’expédition',
                 'total' => 'Total',
                 'shippingAddress' => 'Adresse de livraison',
-                'pickup' => 'Remise en main propre à Amiens, sur rendez-vous',
+                'pickup' => 'Remise en main propre à l’adresse indiquée, sur rendez-vous',
                 'consult' => 'Consulter ma commande',
                 'withdrawal' => 'Vous disposez de 14 jours à compter de la réception pour '
                     . 'exercer votre droit de rétractation. Les frais de retour restent à votre charge.',
@@ -174,7 +174,7 @@ final class OrderMailer
                 'shipping' => 'Shipping',
                 'total' => 'Total',
                 'shippingAddress' => 'Shipping address',
-                'pickup' => 'Collection in person in Amiens, by appointment',
+                'pickup' => 'Hand delivery to the address given, by appointment',
                 'consult' => 'View my order',
                 'withdrawal' => 'You have 14 days from delivery to exercise your right of '
                     . 'withdrawal. Return shipping is at your expense.',

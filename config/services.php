@@ -141,6 +141,8 @@ use App\Http\Controller\Admin\MessageController as AdminMessageController;
 use App\Http\Controller\Admin\PageController as AdminPageController;
 use Stripe\StripeClient;
 use App\Service\View\AdminChrome;
+use App\Service\Shipping\BanGeocoder;
+use App\Service\Shipping\Geocoder;
 use App\Service\View\Chrome;
 use App\Service\View\CtaLinker;
 
@@ -800,7 +802,12 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(UrlGenerator::class),
         $c->get(LoggerInterface::class),
         $c->get(ShippingPricer::class),
+        $c->get(Geocoder::class),
+        $c->get(SettingRepository::class),
     ));
+
+    // Géocodage de la remise en main propre (Base Adresse Nationale, côté serveur).
+    $container->set(Geocoder::class, static fn (): Geocoder => new BanGeocoder());
 
     $container->set(PageController::class, static fn (Container $c): PageController => new PageController(
         $c->get(View::class),

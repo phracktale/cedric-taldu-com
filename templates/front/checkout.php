@@ -40,6 +40,9 @@ $shippingOnRequest = ($data['shippingOnRequest'] ?? false) === true;
 $totalShipping = $data['totalShipping'] ?? null;
 // Retrait masqué dès qu'une reproduction est au panier (expédiée par Prodigi).
 $pickupAllowed = ($data['pickupAllowed'] ?? true) === true;
+// Zone de remise en main propre réglée en back-office (lieu, rayon).
+/** @var array{place: string, radius: int} $zoneRemise */
+$zoneRemise = is_array($data['handDelivery'] ?? null) ? $data['handDelivery'] : ['place' => '', 'radius' => 0];
 /** @var DateTimeImmutable $deliveryFrom */
 $deliveryFrom = $data['deliveryFrom'];
 /** @var DateTimeImmutable $deliveryTo */
@@ -118,7 +121,7 @@ $jour = static function (DateTimeImmutable $d) use ($mois, $estFr): string {
           <label class="commande-mode">
             <input type="radio" name="mode" value="pickup"
                    data-prix="<?= attr($pickupText) ?>" data-total="<?= attr($totalPickupText) ?>" data-mode="pickup">
-            <span class="commande-mode-nom"><?= $t('checkout.pickup') ?></span>
+            <span class="commande-mode-nom"><?= $t('checkout.pickup', $zoneRemise) ?></span>
             <span class="commande-mode-prix"><?= e($pickupText) ?></span>
           </label>
           <?php endif; ?>
@@ -178,7 +181,7 @@ $jour = static function (DateTimeImmutable $d) use ($mois, $estFr): string {
         </p>
 
         <p class="commande-reception" data-quand-expedition><?= $t('checkout.delivery_estimate', ['from' => $jour($deliveryFrom), 'to' => $jour($deliveryTo)]) ?></p>
-        <p class="commande-reception" data-quand-retrait hidden><?= $t('checkout.pickup_notice') ?></p>
+        <p class="commande-reception" data-quand-retrait hidden><?= $t('checkout.pickup_notice', $zoneRemise) ?></p>
 
         <label for="note"><?= $t('checkout.note') ?></label>
         <textarea id="note" name="note" maxlength="500" rows="3"></textarea>

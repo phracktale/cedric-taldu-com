@@ -15,24 +15,25 @@ enum ShippingMethod: string
     case Shipping = 'shipping';
 
     /**
-     * La remise en main propre n'exige pas d'adresse de livraison
-     * (03-boutique §4) : demander une adresse qu'on n'utilisera pas, c'est
-     * collecter une donnee personnelle sans finalite (06-securite §9).
+     * Revue du 2026-09-24 : la remise en main propre n'est plus un retrait à
+     * l'atelier, l'artiste se déplace jusqu'à l'acheteur dans un rayon réglé.
+     * L'adresse a donc une finalité (06-securite §9) : mesurer la distance, puis
+     * savoir où se rendre. Les deux modes l'exigent.
      */
     public function requiresAddress(): bool
     {
-        return $this === self::Shipping;
+        return true;
     }
 
     public function label(Locale $locale): string
     {
         return match ($locale) {
             Locale::Fr => match ($this) {
-                self::Pickup => 'Remise en main propre à Amiens',
+                self::Pickup => 'Remise en main propre',
                 self::Shipping => 'Expédition',
             },
             Locale::En => match ($this) {
-                self::Pickup => 'Collection in person in Amiens',
+                self::Pickup => 'Hand delivery',
                 self::Shipping => 'Shipping',
             },
         };

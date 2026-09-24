@@ -69,7 +69,7 @@ return [
     'checkout.phone' => 'Téléphone (facultatif)',
     'checkout.delivery_method' => 'Mode de remise',
     'checkout.shipping' => 'Expédition',
-    'checkout.pickup' => 'Remise en main propre (Amiens et 30 km alentour)',
+    'checkout.pickup' => 'Remise en main propre (:place et :radius km alentour)',
     'checkout.shipping_address' => 'Adresse de livraison',
     'checkout.address' => 'Adresse',
     'checkout.address_line2' => 'Complément (facultatif)',
@@ -88,7 +88,7 @@ return [
     'checkout.shipping_cost' => 'Frais de port',
     'checkout.total' => 'Total',
     'checkout.delivery_estimate' => 'Réception estimée entre le :from et le :to.',
-    'checkout.pickup_notice' => 'Remise en main propre sur rendez-vous, après confirmation du paiement, dans un rayon de 30 km autour d’Amiens. Au-delà, choisissez l’expédition.',
+    'checkout.pickup_notice' => 'Remise en main propre sur rendez-vous, après confirmation du paiement, dans un rayon de :radius km autour de l’atelier (:place). Au-delà, choisissez l’expédition.',
     'checkout.shipping_note' => 'Tarif pour la France ; ajusté selon la destination.',
     'checkout.payment_secure' => 'Paiement sécurisé par carte bancaire via Stripe.',
 

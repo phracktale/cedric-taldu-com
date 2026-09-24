@@ -67,7 +67,7 @@ return [
     'checkout.phone' => 'Phone (optional)',
     'checkout.delivery_method' => 'Delivery method',
     'checkout.shipping' => 'Shipping',
-    'checkout.pickup' => 'Hand delivery (Amiens and within 30 km)',
+    'checkout.pickup' => 'Hand delivery (:place and within :radius km)',
     'checkout.shipping_address' => 'Shipping address',
     'checkout.address' => 'Address',
     'checkout.address_line2' => 'Address line 2 (optional)',
@@ -86,7 +86,7 @@ return [
     'checkout.shipping_cost' => 'Shipping',
     'checkout.total' => 'Total',
     'checkout.delivery_estimate' => 'Estimated delivery between :from and :to.',
-    'checkout.pickup_notice' => 'Hand delivery by appointment, after payment is confirmed, within 30 km of Amiens. Further away, please choose shipping.',
+    'checkout.pickup_notice' => 'Hand delivery by appointment, after payment is confirmed, within :radius km of :place. Further away, please choose shipping.',
     'checkout.shipping_note' => 'Rate for France; adjusted to your destination.',
     'checkout.payment_secure' => 'Secure card payment via Stripe.',
 
