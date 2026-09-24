@@ -42,6 +42,7 @@ use App\Http\Controller\Admin\ArtworkController as AdminArtworkController;
 use App\Http\Controller\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Admin\AppearanceController;
+use App\Http\Controller\Admin\MenuController;
 use App\Http\Controller\Admin\HomeController as AdminHomeController;
 use App\Http\Controller\Admin\MediaController;
 use App\Http\Controller\Admin\OrderController as AdminOrderController;
@@ -767,6 +768,12 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(CoverUpload::class),
         $c->get(ArtworkAdminRepository::class),
         $c->get(CategoryRepository::class),
+    ));
+
+    $container->set(MenuController::class, static fn (Container $c): MenuController => new MenuController(
+        $c->get(AdminChrome::class),
+        $c->get(SettingRepository::class),
+        $c->get(SettingsAdminRepository::class),
     ));
 
     $container->set(AppearanceController::class, static fn (Container $c): AppearanceController => new AppearanceController(

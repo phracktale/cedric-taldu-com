@@ -10,6 +10,7 @@ use App\Core\CookieFactory;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Domain\Editorial\HomeSectionForm;
+use App\Domain\Editorial\MainMenu;
 use App\Domain\Locale;
 use App\Http\Middleware\SecurityHeaders;
 use App\Repository\CartRepository;
@@ -44,7 +45,7 @@ final class Chrome
     private const SECTIONS = [
         'page.about' => 'about',
         'gallery.index' => 'gallery',
-        'artwork.index' => 'gallery',
+        'artwork.index' => 'works',
         'category.show' => 'gallery',
         'artwork.show' => 'gallery',
         'blog.index' => 'news',
@@ -96,6 +97,8 @@ final class Chrome
             // Entrée de menu active, déduite de la route, et son style (réglage).
             'currentSection' => self::SECTIONS[$request->attribute('route') ?? ''] ?? null,
             'navActiveStyle' => $this->activeStyle(),
+            // Menu principal composé en back-office (ordre, affichage, libellés).
+            'menuItems' => MainMenu::fromStored($this->settings->json(MainMenu::SETTING))->enabledItems(),
             // Variables de thème choisies en back-office, servies dans un <style>
             // à nonce (la CSP interdit les attributs style). Couleur #rrggbb seule.
             'themeCss' => $this->themeCss(),
