@@ -28,6 +28,7 @@ use App\Http\Controller\Admin\MessageController as AdminMessageController;
 use App\Http\Controller\Admin\OrderController as AdminOrderController;
 use App\Http\Controller\Admin\HomeController as AdminHomeController;
 use App\Http\Controller\Admin\AppearanceController;
+use App\Http\Controller\Admin\DeliveryController;
 use App\Http\Controller\Admin\MenuController;
 use App\Http\Controller\Admin\PageController as AdminPageController;
 use App\Http\Controller\Admin\PostController as AdminPostController;
@@ -244,6 +245,8 @@ return [
     // Apparence du site (revue du 2026-09-24) : entrée active, CTA de fin d'actualité.
     new Route('admin.appearance.edit', 'GET', '/admin/apparence', [AppearanceController::class, 'edit']),
     new Route('admin.appearance.update', 'POST', '/admin/apparence', [AppearanceController::class, 'update']),
+    new Route('admin.delivery.edit', 'GET', '/admin/livraison', [DeliveryController::class, 'edit']),
+    new Route('admin.delivery.update', 'POST', '/admin/livraison', [DeliveryController::class, 'update']),
     new Route('admin.menu.edit', 'GET', '/admin/menu', [MenuController::class, 'edit']),
     new Route('admin.menu.update', 'POST', '/admin/menu', [MenuController::class, 'update']),
 

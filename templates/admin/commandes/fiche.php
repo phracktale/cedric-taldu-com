@@ -24,6 +24,8 @@ $jeton = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
 $order = $data['order'];
 /** @var array{prodigiOrderId: string|null, status: string|null, submittedAt: string|null}|null $prodigi */
 $prodigi = $data['prodigi'] ?? null;
+/** @var list<string> $transporteurs transporteurs branchés, le premier par défaut */
+$transporteurs = is_array($data['transporteurs'] ?? null) ? $data['transporteurs'] : [];
 ?>
 <div class="admin-page">
   <p class="actions">
@@ -131,7 +133,13 @@ $prodigi = $data['prodigi'] ?? null;
         <div class="grille-champs">
           <p class="champ">
             <label for="transporteur">Transporteur</label>
-            <input type="text" id="transporteur" name="transporteur" required maxlength="60">
+            <input type="text" id="transporteur" name="transporteur" required maxlength="60"
+                   list="transporteurs" value="<?= attr($transporteurs[0] ?? '') ?>">
+            <datalist id="transporteurs">
+              <?php foreach ($transporteurs as $nom) : ?>
+              <option value="<?= attr($nom) ?>"></option>
+              <?php endforeach; ?>
+            </datalist>
           </p>
           <p class="champ">
             <label for="suivi">Numéro de suivi</label>
@@ -148,6 +156,9 @@ $prodigi = $data['prodigi'] ?? null;
         Expédiée par <?= e((string) $order->trackingCarrier) ?>,
         suivi <?= e((string) $order->trackingNumber) ?>.
       </p>
+      <?php if (is_string($data['lienSuivi'] ?? null)) : ?>
+      <p><a href="<?= attr($data['lienSuivi']) ?>" target="_blank" rel="noopener">Suivre le colis</a></p>
+      <?php endif; ?>
     </section>
   <?php endif; ?>
 </div>

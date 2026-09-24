@@ -18,6 +18,7 @@ use App\Service\Fulfillment\FulfillmentService;
 use App\Service\Mail\OrderMailer;
 use App\Service\View\AdminChrome;
 use App\Service\I18n\UrlGenerator;
+use App\Service\Shipping\CarrierRegistry;
 
 /**
  * Gestion des commandes en back-office (04-back-office, 03-boutique §7).
@@ -42,6 +43,7 @@ final class OrderController
         private readonly UrlGenerator $url,
         private readonly FulfillmentRepository $fulfillment,
         private readonly FulfillmentService $fulfillmentService,
+        private readonly CarrierRegistry $carriers,
     ) {
     }
 
@@ -70,6 +72,11 @@ final class OrderController
             'prodigi' => $this->fulfillment->hasReproductions($order->id)
                 ? $this->fulfillment->statusOf($order->id)
                 : null,
+            // Transporteurs branchés (revue du 2026-09-24) et lien de suivi public.
+            'transporteurs' => $this->carriers->names(),
+            'lienSuivi' => $order->trackingNumber === null
+                ? null
+                : $this->carriers->byName($order->trackingCarrier)?->trackingUrl($order->trackingNumber),
         ]);
     }
 

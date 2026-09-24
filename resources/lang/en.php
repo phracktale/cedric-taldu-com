@@ -66,7 +66,7 @@ return [
     'checkout.email' => 'Email address',
     'checkout.phone' => 'Phone (optional)',
     'checkout.delivery_method' => 'Delivery method',
-    'checkout.shipping' => 'Shipping',
+    'checkout.shipping' => 'Shipping via :carrier',
     'checkout.pickup' => 'Hand delivery (:place and within :radius km)',
     'checkout.appointment' => 'Delivery by appointment (oversized work)',
     'checkout.appointment_price' => 'To be agreed',

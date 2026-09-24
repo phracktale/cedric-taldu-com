@@ -45,6 +45,8 @@ $pickupAllowed = ($data['pickupAllowed'] ?? true) === true;
 $zoneRemise = is_array($data['handDelivery'] ?? null) ? $data['handDelivery'] : ['place' => '', 'radius' => 0];
 // Œuvre hors gabarit au panier : livraison sur rendez-vous uniquement.
 $horsGabarit = ($data['oversized'] ?? false) === true;
+// Transporteur par défaut (revue du 2026-09-24) : Colissimo.
+$transporteur = is_string($data['carrierName'] ?? null) ? $data['carrierName'] : '';
 /** @var DateTimeImmutable $deliveryFrom */
 $deliveryFrom = $data['deliveryFrom'];
 /** @var DateTimeImmutable $deliveryTo */
@@ -125,7 +127,7 @@ $jour = static function (DateTimeImmutable $d) use ($mois, $estFr): string {
           <label class="commande-mode">
             <input type="radio" name="mode" value="shipping" checked
                    data-prix="<?= attr($shippingText) ?>" data-total="<?= attr($totalShippingText) ?>" data-mode="shipping">
-            <span class="commande-mode-nom"><?= $t('checkout.shipping') ?></span>
+            <span class="commande-mode-nom"><?= $t('checkout.shipping', ['carrier' => $transporteur]) ?></span>
             <span class="commande-mode-prix"><?= e($shippingText) ?></span>
           </label>
           <?php endif; ?>

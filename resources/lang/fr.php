@@ -68,7 +68,7 @@ return [
     'checkout.email' => 'Adresse e-mail',
     'checkout.phone' => 'Téléphone (facultatif)',
     'checkout.delivery_method' => 'Mode de remise',
-    'checkout.shipping' => 'Expédition',
+    'checkout.shipping' => 'Expédition :carrier',
     'checkout.pickup' => 'Remise en main propre (:place et :radius km alentour)',
     'checkout.appointment' => 'Livraison sur rendez-vous (œuvre hors gabarit)',
     'checkout.appointment_price' => 'À convenir',

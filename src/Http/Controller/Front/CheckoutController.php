@@ -30,6 +30,7 @@ use App\Service\Payment\CheckoutOutcome;
 use App\Service\Payment\CheckoutRequest;
 use App\Service\Payment\CheckoutService;
 use App\Service\Payment\ShippingPricer;
+use App\Service\Shipping\CarrierRegistry;
 use App\Service\Shipping\Geocoder;
 use App\Service\View\Chrome;
 use DateTimeImmutable;
@@ -67,6 +68,7 @@ final class CheckoutController
         private readonly ShippingPricer $shipping,
         private readonly Geocoder $geocoder,
         private readonly SettingRepository $settings,
+        private readonly CarrierRegistry $carriers,
     ) {
     }
 
@@ -303,6 +305,7 @@ final class CheckoutController
             // panier : Prodigi l'expédie, elle ne peut pas être retirée.
             'pickupAllowed' => !self::hasPrintOnDemand($valuation),
             'handDelivery' => $this->handDelivery(),
+            'carrierName' => $this->carriers->default()->name(),
             // Œuvre hors gabarit au panier : livraison sur rendez-vous uniquement.
             'oversized' => array_filter(
                 $valuation->lines,
