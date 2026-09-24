@@ -246,6 +246,27 @@ final class CommandeTest extends FunctionalTestCase
         $this->assertSame(0, (int) $this->valeur('SELECT COUNT(*) FROM orders'));
     }
 
+    public function test_la_case_cgv_renvoie_aussi_a_la_politique_de_confidentialite(): void
+    {
+        $cookie = $this->panierAvecOeuvre();
+
+        $corps = $this->requete('GET', '/cedric-taldu/fr/commande', cookies: [self::COOKIE => $cookie])->body;
+
+        $this->assertStringContainsString('href="/cedric-taldu/fr/confidentialite"', $corps);
+        $this->assertMatchesRegularExpression('~<input type="checkbox"[^>]*name="newsletter"~', $corps);
+    }
+
+    public function test_cocher_la_newsletter_a_la_commande_abonne_l_acheteur(): void
+    {
+        $cookie = $this->panierAvecOeuvre();
+
+        $this->commander($cookie, ['newsletter' => '1']);
+
+        $this->assertSame('checkout', (string) $this->valeur(
+            "SELECT source FROM newsletter_subscribers WHERE email = 'acheteur@example.test'"
+        ));
+    }
+
     public function test_l_expedition_annonce_son_transporteur(): void
     {
         $cookie = $this->panierAvecOeuvre();

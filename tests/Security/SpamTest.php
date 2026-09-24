@@ -113,6 +113,7 @@ final class SpamTest extends FunctionalTestCase
             'nom' => 'Camille Dupont',
             'email' => 'camille@example.com',
             'message' => 'Bonjour, cette œuvre est-elle encore disponible ? Merci.',
+            'rgpd' => '1',
             ...$champs,
         ]);
     }
