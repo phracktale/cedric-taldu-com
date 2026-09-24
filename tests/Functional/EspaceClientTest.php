@@ -156,6 +156,53 @@ final class EspaceClientTest extends FunctionalTestCase
         ));
     }
 
+    // ------------------------------------------------------------ facture
+
+    public function test_la_facture_d_une_commande_payee_se_telecharge_en_pdf(): void
+    {
+        $this->pdo->exec(
+            "INSERT INTO settings (`key`, value, updated_at) VALUES ('shop.seller',
+             '{\"name\":\"Cédric Taldu\",\"address\":\"25 allée des Lilas\\\\n80470 Dreuil-lès-Amiens\",\"siret\":\"495 376 436 00046\"}', NOW())"
+        );
+        $this->seConnecter('camille@example.com');
+
+        $detail = $this->get(self::COMPTE . '/commandes/CT-2026-0001')->body;
+        $this->assertStringContainsString('href="' . self::COMPTE . '/commandes/CT-2026-0001/facture"', $detail);
+
+        $reponse = $this->get(self::COMPTE . '/commandes/CT-2026-0001/facture');
+
+        $this->assertSame(200, $reponse->status);
+        $this->assertSame('application/pdf', $reponse->header('Content-Type'));
+        $this->assertStringContainsString('facture-CT-2026-0001.pdf', (string) $reponse->header('Content-Disposition'));
+        $this->assertStringStartsWith('%PDF-1.4', $reponse->body);
+        $this->assertStringContainsString($this->cp1252('Facture n° CT-2026-0001'), $reponse->body);
+        $this->assertStringContainsString('495 376 436 00046', $reponse->body);
+        $this->assertStringContainsString($this->cp1252('Articulation — 2026'), $reponse->body);
+        $this->assertStringContainsString('pi_test_123', $reponse->body);
+    }
+
+    public function test_la_facture_d_un_autre_client_ou_sans_session_est_refusee(): void
+    {
+        $this->assertContains($this->get(self::COMPTE . '/commandes/CT-2026-0001/facture')->status, [302, 303]);
+
+        $this->seConnecter('camille@example.com');
+
+        $this->assertSame(404, $this->get(self::COMPTE . '/commandes/CT-2026-0002/facture')->status);
+    }
+
+    public function test_une_commande_annulee_n_a_pas_de_facture(): void
+    {
+        (new OrderFactory($this->pdo))->reference('CT-2026-0003')->status('cancelled')->forEmail('camille@example.com')->create();
+        $this->seConnecter('camille@example.com');
+
+        $this->assertSame(404, $this->get(self::COMPTE . '/commandes/CT-2026-0003/facture')->status);
+    }
+
+    private function cp1252(string $texte): string
+    {
+        return (string) mb_convert_encoding($texte, 'Windows-1252', 'UTF-8');
+    }
+
     public function test_l_espace_client_existe_en_anglais(): void
     {
         $this->assertSame(200, $this->get('/cedric-taldu/en/account')->status);
