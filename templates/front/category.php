@@ -45,6 +45,7 @@ $lienRubrique = static fn (?Series $serie): string => $url->route('category.show
   <nav class="fil" aria-label="<?= $t('nav.breadcrumb') ?>">
     <ol>
       <li><a href="<?= attr($url->route('home', ['locale' => $locale->value])) ?>"><?= $t('nav.home') ?></a></li>
+      <li><a href="<?= attr($url->route('gallery.index', ['locale' => $locale->value])) ?>"><?= $t('nav.gallery') ?></a></li>
       <li><?= e($rubrique->title($locale)) ?></li>
     </ol>
   </nav>

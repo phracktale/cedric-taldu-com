@@ -173,6 +173,10 @@ final class CategoryController
                     'name' => $locale === Locale::Fr ? 'Accueil' : 'Home',
                     'url' => $this->url->absolute('home', ['locale' => $locale->value]),
                 ],
+                [
+                    'name' => GalleryController::galleryName($locale),
+                    'url' => $this->url->absolute('gallery.index', ['locale' => $locale->value]),
+                ],
                 ['name' => $category->title($locale), 'url' => $url],
             ]),
         ];

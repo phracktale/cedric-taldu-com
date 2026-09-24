@@ -28,12 +28,14 @@ use App\Http\Controller\Admin\MessageController as AdminMessageController;
 use App\Http\Controller\Admin\OrderController as AdminOrderController;
 use App\Http\Controller\Admin\HomeController as AdminHomeController;
 use App\Http\Controller\Admin\AppearanceController;
+use App\Http\Controller\Admin\MenuController;
 use App\Http\Controller\Admin\PageController as AdminPageController;
 use App\Http\Controller\Admin\PostController as AdminPostController;
 use App\Http\Controller\Admin\ProductController as AdminProductController;
 use App\Http\Controller\Front\ArtworkController;
 use App\Http\Controller\Front\BlogController;
 use App\Http\Controller\Front\CategoryController;
+use App\Http\Controller\Front\GalleryController;
 use App\Http\Controller\Front\CartController;
 use App\Http\Controller\Front\CheckoutController;
 use App\Http\Controller\Front\ContactController;
@@ -56,6 +58,11 @@ return [
     new Route('home', 'GET', '/en/', [HomeController::class, 'show'], locale: 'en'),
 
     // Rubrique
+    // Page mère « Galerie » et toutes les œuvres (revue du 2026-09-24).
+    new Route('gallery.index', 'GET', '/fr/galerie', [GalleryController::class, 'index'], locale: 'fr'),
+    new Route('gallery.index', 'GET', '/en/gallery', [GalleryController::class, 'index'], locale: 'en'),
+    new Route('artwork.index', 'GET', '/fr/oeuvres', [GalleryController::class, 'works'], locale: 'fr'),
+    new Route('artwork.index', 'GET', '/en/works', [GalleryController::class, 'works'], locale: 'en'),
     new Route('category.show', 'GET', '/fr/galerie/{slug}', [CategoryController::class, 'show'], locale: 'fr', requirements: $slug),
     new Route('category.show', 'GET', '/en/gallery/{slug}', [CategoryController::class, 'show'], locale: 'en', requirements: $slug),
 
@@ -237,6 +244,8 @@ return [
     // Apparence du site (revue du 2026-09-24) : entrée active, CTA de fin d'actualité.
     new Route('admin.appearance.edit', 'GET', '/admin/apparence', [AppearanceController::class, 'edit']),
     new Route('admin.appearance.update', 'POST', '/admin/apparence', [AppearanceController::class, 'update']),
+    new Route('admin.menu.edit', 'GET', '/admin/menu', [MenuController::class, 'edit']),
+    new Route('admin.menu.update', 'POST', '/admin/menu', [MenuController::class, 'update']),
 
     new Route('admin.page.index', 'GET', '/admin/pages', [AdminPageController::class, 'index']),
     new Route('admin.page.edit', 'GET', '/admin/pages/{id}', [AdminPageController::class, 'edit'], requirements: $id),

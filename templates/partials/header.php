@@ -3,9 +3,9 @@
 /**
  * En-tête global.
  *
- * 02-front-public §1 : le menu Galerie n'est PAS cliquable et ouvre un
- * sous-menu listant les rubriques publiées, alimenté depuis la base — aucune
- * rubrique n'est écrite en dur.
+ * 02-front-public §1, revu le 2026-09-24 : « Galerie » mène à la page mère des
+ * galeries, et un bouton voisin ouvre le sous-menu listant les rubriques
+ * publiées, alimenté depuis la base — aucune rubrique n'est écrite en dur.
  *
  * Sans JavaScript, le sous-menu reste ouvrable et parcourable au clavier grâce
  * à `:focus-within` ; nav.js n'ajoute que le clic, les flèches et Échap.
@@ -39,6 +39,23 @@ $hasNews = ($data['hasNews'] ?? false) === true;
 // Rubrique active (déduite de la route par Chrome) et style choisi en réglage.
 $section = is_string($data['currentSection'] ?? null) ? $data['currentSection'] : null;
 $styleActif = is_string($data['navActiveStyle'] ?? null) ? $data['navActiveStyle'] : 'souligne';
+
+// Menu composé en back-office (revue du 2026-09-24) : ordre, affichage et
+// libellés. Sans réglage, le menu historique. Chaque rubrique : [URL, clef du
+// libellé par défaut] ; une entrée hors de cette table n'est jamais rendue.
+/** @var list<array{item: string, labels: array<string, string>}> $entrees */
+$entrees = is_array($data['menuItems'] ?? null)
+    ? $data['menuItems']
+    : App\Domain\Editorial\MainMenu::default()->enabledItems();
+$langue = ['locale' => $locale->value];
+$liens = [
+    'about' => [$url->route('page.about', $langue), 'nav.about'],
+    'gallery' => [$url->route('gallery.index', $langue), 'nav.gallery'],
+    'works' => [$url->route('artwork.index', $langue), 'gallery.all_works_title'],
+    'news' => [$url->route('blog.index', $langue), 'nav.news'],
+    'booklet' => [$url->route('page.booklet', $langue), 'nav.booklet'],
+    'contact' => [$url->route('contact.form', $langue), 'nav.contact'],
+];
 ?>
 <header class="site-tete">
   <div class="nav">
@@ -48,12 +65,17 @@ $styleActif = is_string($data['navActiveStyle'] ?? null) ? $data['navActiveStyle
 
     <nav aria-label="<?= $t('nav.main_label') ?>" data-actif="<?= attr($styleActif) ?>">
       <ul id="menu">
-        <li>
-          <a href="<?= attr($url->route('page.about', ['locale' => $locale->value])) ?>"<?php if ($section === 'about') : ?> aria-current="page"<?php endif; ?>><?= $t('nav.about') ?></a>
-        </li>
+        <?php foreach ($entrees as $entree) : ?>
+          <?php $cle = $entree['item']; ?>
+          <?php if ($cle === 'news' && !$hasNews) : continue; endif; ?>
+          <?php if (!isset($liens[$cle])) : continue; endif; ?>
+          <?php $libellePerso = $entree['labels'][$locale->value] ?? ''; ?>
+        <?php if ($cle === 'gallery') : ?>
         <li class="sous-menu">
-          <?php /* Non cliquable : c'est un ouvreur de sous-menu, pas une page. */ ?>
-          <button type="button" class="nav-bouton" aria-expanded="true"<?php if ($section === 'gallery') : ?> aria-current="true"<?php endif; ?>><?= $t('nav.gallery') ?></button>
+          <?php /* « Galerie » mène à la page mère (revue du 2026-09-24) ; le bouton
+                   voisin ouvre le sous-menu des rubriques. */ ?>
+          <a href="<?= attr($liens[$cle][0]) ?>"<?php if ($section === $cle) : ?> aria-current="page"<?php endif; ?>><?php if ($libellePerso !== '') : ?><?= e($libellePerso) ?><?php else : ?><?= $t($liens[$cle][1]) ?><?php endif; ?></a>
+          <button type="button" class="nav-bouton sous-menu-ouvrir" aria-expanded="true" aria-label="<?= $t('nav.gallery_open') ?>">▾</button>
           <ul>
             <?php foreach ($rubriques as $rubrique) : ?>
             <li>
@@ -65,17 +87,12 @@ $styleActif = is_string($data['navActiveStyle'] ?? null) ? $data['navActiveStyle
             <?php endforeach; ?>
           </ul>
         </li>
-        <?php if ($hasNews) : ?>
+        <?php else : ?>
         <li>
-          <a href="<?= attr($url->route('blog.index', ['locale' => $locale->value])) ?>"<?php if ($section === 'news') : ?> aria-current="page"<?php endif; ?>><?= $t('nav.news') ?></a>
+          <a href="<?= attr($liens[$cle][0]) ?>"<?php if ($section === $cle) : ?> aria-current="page"<?php endif; ?>><?php if ($libellePerso !== '') : ?><?= e($libellePerso) ?><?php else : ?><?= $t($liens[$cle][1]) ?><?php endif; ?></a>
         </li>
         <?php endif; ?>
-        <li>
-          <a href="<?= attr($url->route('page.booklet', ['locale' => $locale->value])) ?>"<?php if ($section === 'booklet') : ?> aria-current="page"<?php endif; ?>><?= $t('nav.booklet') ?></a>
-        </li>
-        <li>
-          <a href="<?= attr($url->route('contact.form', ['locale' => $locale->value])) ?>"<?php if ($section === 'contact') : ?> aria-current="page"<?php endif; ?>><?= $t('nav.contact') ?></a>
-        </li>
+        <?php endforeach; ?>
       </ul>
     </nav>
 

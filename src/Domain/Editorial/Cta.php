@@ -20,6 +20,7 @@ final class Cta
     /** Cibles proposées ; « category » et « url » portent une précision. */
     public const TARGETS = [
         'galleries' => 'Galeries',
+        'works' => 'Toutes les œuvres',
         'home' => 'Accueil',
         'about' => 'À propos',
         'booklet' => 'Livret',

@@ -21,6 +21,8 @@ final class CtaLinker
     /** Cibles fixes et route correspondante. */
     private const ROUTES = [
         'home' => 'home',
+        'galleries' => 'gallery.index',
+        'works' => 'artwork.index',
         'about' => 'page.about',
         'booklet' => 'page.booklet',
         'news' => 'blog.index',
@@ -91,7 +93,7 @@ final class CtaLinker
             return str_starts_with($cta->url, '/') ? $this->url->path($cta->url) : $cta->url;
         }
 
-        // Galeries, ou rubrique dépubliée depuis : la section Galeries de l'accueil.
-        return $this->url->route('home', $parametres) . '#galeries';
+        // Rubrique dépubliée depuis, ou adresse refusée : la page mère Galerie.
+        return $this->url->route('gallery.index', $parametres);
     }
 }

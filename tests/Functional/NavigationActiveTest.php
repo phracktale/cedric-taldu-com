@@ -45,7 +45,8 @@ final class NavigationActiveTest extends FunctionalTestCase
 
         $nav = $this->nav($this->get('/cedric-taldu/fr/galerie/encres')->body);
 
-        $this->assertMatchesRegularExpression('~<button[^>]*class="nav-bouton"[^>]*aria-current="true"~', $nav);
+        // « Galerie » est un lien vers la page mère (revue du 2026-09-24).
+        $this->assertMatchesRegularExpression('~<a href="/cedric-taldu/fr/galerie"\s+aria-current="page"~', $nav);
     }
 
     public function test_aucune_entree_n_est_active_sur_l_accueil(): void

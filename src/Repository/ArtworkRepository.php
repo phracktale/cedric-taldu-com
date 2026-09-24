@@ -87,6 +87,45 @@ final class ArtworkRepository
     }
 
     /**
+     * Page « Toutes les œuvres » (revue du 2026-09-24) : œuvres visibles de
+     * toutes les rubriques, paginées, dans l'ordre de la rubrique puis de l'œuvre.
+     *
+     * @return list<Artwork>
+     */
+    public function findPublished(int $limit, int $offset): array
+    {
+        $limit = max(0, $limit);
+
+        if ($limit === 0) {
+            return [];
+        }
+
+        $statement = $this->pdo->prepare(
+            'SELECT a.id FROM artworks a
+               JOIN categories c ON c.id = a.category_id
+              WHERE c.is_published = 1 AND ' . self::VISIBLE . '
+              ORDER BY a.position ASC, c.position ASC, a.id ASC
+              LIMIT :limit OFFSET :offset'
+        );
+        $statement->bindValue('limit', $limit, PDO::PARAM_INT);
+        $statement->bindValue('offset', max(0, $offset), PDO::PARAM_INT);
+        $statement->execute();
+
+        return $this->findByIds(self::identifiers($statement));
+    }
+
+    public function countPublished(): int
+    {
+        $statement = $this->pdo->query(
+            'SELECT COUNT(*) FROM artworks a
+               JOIN categories c ON c.id = a.category_id
+              WHERE c.is_published = 1 AND ' . self::VISIBLE
+        );
+
+        return $statement === false ? 0 : (int) $statement->fetchColumn();
+    }
+
+    /**
      * Toutes les œuvres visibles, tous rubriques confondues — pour le sitemap.
      *
      * @return list<Artwork>

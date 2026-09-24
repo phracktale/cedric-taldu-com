@@ -14,6 +14,10 @@ return [
     // Navigation and chrome
     'nav.about' => 'About',
     'nav.gallery' => 'Gallery',
+    'nav.gallery_open' => 'Show the galleries',
+    'gallery.intro' => 'The works, gathered by technique and by line of research.',
+    'gallery.all_works' => 'View all works',
+    'gallery.all_works_title' => 'All works',
     'nav.news' => 'News',
     'nav.booklet' => 'Booklet',
     'nav.contact' => 'Contact',

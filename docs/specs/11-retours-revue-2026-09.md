@@ -54,7 +54,7 @@ interdisant les attributs `style`. Reste pour l'incrément 2 : le CTA comme **bl
 - Blocs disponibles aussi sur les actualités et, à terme, sur l'accueil (une section
   « libre » composée de blocs, avec une fonction : informatif, CTA…).
 
-## Incrément 3 — Galerie et navigation `feature/galerie-index`
+## Incrément 3 — Galerie et navigation ✅ `feature/galerie-index`
 
 - Page mère **Galerie** (`/fr/galerie`, `/en/gallery`) listant les sous-galeries avec
   une vignette ; « Galerie » devient un lien, le sous-menu est conservé.

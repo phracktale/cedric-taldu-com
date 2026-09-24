@@ -47,6 +47,7 @@ $media = $medias[$oeuvre->primaryMediaId] ?? null;
   <nav class="fil" aria-label="<?= $t('nav.breadcrumb') ?>">
     <ol>
       <li><a href="<?= attr($url->route('home', ['locale' => $locale->value])) ?>"><?= $t('nav.home') ?></a></li>
+      <li><a href="<?= attr($url->route('gallery.index', ['locale' => $locale->value])) ?>"><?= $t('nav.gallery') ?></a></li>
       <?php if ($rubrique !== null) : ?>
       <li><a href="<?= attr($url->route('category.show', ['locale' => $locale->value, 'slug' => $rubrique->slug($locale)->value])) ?>"><?= e($rubrique->title($locale)) ?></a></li>
       <?php endif; ?>

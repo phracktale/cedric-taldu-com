@@ -146,7 +146,13 @@ final class ArtworkController
             'image' => $image,
         ]);
 
-        $trail = [['name' => self::home($locale), 'url' => $this->url->absolute('home', ['locale' => $locale->value])]];
+        $trail = [
+            ['name' => self::home($locale), 'url' => $this->url->absolute('home', ['locale' => $locale->value])],
+            [
+                'name' => GalleryController::galleryName($locale),
+                'url' => $this->url->absolute('gallery.index', ['locale' => $locale->value]),
+            ],
+        ];
 
         if ($category !== null) {
             $trail[] = [

@@ -429,3 +429,6 @@ legend {
 .eb-media-choix { padding: 0; border: 2px solid transparent; background: none; cursor: pointer; }
 .eb-media-choix:hover, .eb-media-choix:focus-visible { border-color: var(--encre); }
 .eb-media-choix img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+
+/* Champ numérique étroit (positions du menu). */
+.champ-court { width: 4rem; }

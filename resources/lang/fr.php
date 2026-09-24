@@ -16,6 +16,10 @@ return [
     // Navigation et ossature
     'nav.about' => 'À propos',
     'nav.gallery' => 'Galerie',
+    'nav.gallery_open' => 'Afficher les galeries',
+    'gallery.intro' => 'Les œuvres, rassemblées par technique et par recherche.',
+    'gallery.all_works' => 'Voir toutes les œuvres',
+    'gallery.all_works_title' => 'Toutes les œuvres',
     'nav.news' => 'Actus',
     'nav.booklet' => 'Livret',
     'nav.contact' => 'Contact',

@@ -42,6 +42,7 @@ use App\Http\Controller\Admin\ArtworkController as AdminArtworkController;
 use App\Http\Controller\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Admin\AppearanceController;
+use App\Http\Controller\Admin\MenuController;
 use App\Http\Controller\Admin\HomeController as AdminHomeController;
 use App\Http\Controller\Admin\MediaController;
 use App\Http\Controller\Admin\OrderController as AdminOrderController;
@@ -50,6 +51,7 @@ use App\Http\Controller\Front\ArtworkController;
 use App\Http\Controller\Front\CartController;
 use App\Http\Controller\Front\CheckoutController;
 use App\Http\Controller\Front\CategoryController;
+use App\Http\Controller\Front\GalleryController;
 use App\Http\Controller\Front\HomeController;
 use App\Http\Controller\Front\StripeWebhookController;
 use App\Http\Middleware\AuthGuard;
@@ -642,6 +644,15 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(UrlGenerator::class),
     ));
 
+    $container->set(GalleryController::class, static fn (Container $c): GalleryController => new GalleryController(
+        $c->get(View::class),
+        $c->get(Chrome::class),
+        $c->get(ArtworkRepository::class),
+        $c->get(MediaRepository::class),
+        $c->get(UrlGenerator::class),
+        $c->get(StructuredData::class),
+    ));
+
     $container->set(CategoryController::class, static fn (Container $c): CategoryController => new CategoryController(
         $c->get(View::class),
         $c->get(Chrome::class),
@@ -757,6 +768,12 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(CoverUpload::class),
         $c->get(ArtworkAdminRepository::class),
         $c->get(CategoryRepository::class),
+    ));
+
+    $container->set(MenuController::class, static fn (Container $c): MenuController => new MenuController(
+        $c->get(AdminChrome::class),
+        $c->get(SettingRepository::class),
+        $c->get(SettingsAdminRepository::class),
     ));
 
     $container->set(AppearanceController::class, static fn (Container $c): AppearanceController => new AppearanceController(
