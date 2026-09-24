@@ -51,6 +51,7 @@ use App\Repository\CustomerLoginRepository;
 use App\Service\Account\CustomerLogin;
 use App\Service\Account\CustomerSession;
 use App\Service\Mail\AccountMailer;
+use App\Service\Analytics\MatomoConfig;
 use App\Service\Invoice\InvoiceDownload;
 use App\Service\Invoice\InvoiceRenderer;
 use App\Http\Controller\Admin\BillingController;
@@ -197,6 +198,10 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
     // il prend le relais dès que le devis Prodigi est indisponible (affichage,
     // non configuré, panne, devise inattendue). Défaut 790 = 7,90 €.
     $prodigiFallbackShippingCents = max(0, (int) ($env->getOptional('PRODIGI_FALLBACK_SHIPPING_CENTS', '790') ?? '790'));
+
+    // Matomo auto-hébergé (revue du 2026-09-24) : null tant que MATOMO_URL et
+    // MATOMO_SITE_ID ne sont pas fournis — aucune origine tierce dans la CSP.
+    $matomo = MatomoConfig::fromEnv($env->getOptional('MATOMO_URL'), $env->getOptional('MATOMO_SITE_ID'));
 
     $container = new Container();
 
@@ -539,6 +544,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(CartRepository::class),
         $c->get(PostRepository::class),
         $c->get(SettingRepository::class),
+        $matomo,
     ));
 
     $container->set(AdminChrome::class, static fn (Container $c): AdminChrome => new AdminChrome(
@@ -1026,7 +1032,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         // debit de la connexion est appliquee par le controleur, sa limite etant
         // propre a l'action (06-securite §6.3).
         [
-            new SecurityHeaders($config, $c->get(RandomInterface::class)),
+            new SecurityHeaders($config, $c->get(RandomInterface::class), $matomo),
             new Locale($config),
             // Sur un 404 public, tente une redirection 301 d'un ancien slug avant
             // de rendre la page d'erreur (05-i18n-seo §5).
