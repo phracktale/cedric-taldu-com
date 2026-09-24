@@ -63,7 +63,7 @@ interdisant les attributs `style`. Reste pour l'incrément 2 : le CTA comme **bl
 - **Générateur de menu** : ordre, libellé et visibilité des entrées ; ajout de
   rubriques fixes (Actus, Boutique, Galerie) et de pages.
 
-## Incrément 4 — Images `feature/gabarits-images`
+## Incrément 4 — Images ✅ `feature/gabarits-images`
 
 - Constat : aucune règle CSS ne recadre. Les défauts viennent du recadrage **manuel**
   qui écrase l'original, et de l'**agrandissement** des sources de moins de 320 px
