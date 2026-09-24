@@ -12,6 +12,7 @@
 
 declare(strict_types=1);
 
+use App\Domain\Catalog\Media;
 use App\Domain\Editorial\Page;
 use App\Domain\Locale;
 
@@ -19,6 +20,8 @@ use App\Domain\Locale;
 $locale = $data['locale'];
 /** @var Page $page */
 $page = $data['page'];
+/** @var Media|null $cover image de couverture téléversée en back-office */
+$cover = $data['cover'] ?? null;
 ?>
 <article class="wrap page-editoriale">
   <header class="page-tete">
@@ -27,6 +30,18 @@ $page = $data['page'];
 
   <?php if (!$page->isTranslatedIn($locale) && $locale !== Locale::Fr) : ?>
     <p class="page-langue" lang="en">This text is only available in French.</p>
+  <?php endif; ?>
+
+  <?php if ($cover !== null) : ?>
+    <div class="page-visuel">
+      <?= $partial('partials/picture', [
+          'media' => $cover,
+          'locale' => $locale,
+          'sizes' => '(max-width: 900px) 100vw, 72rem',
+          'priority' => true,
+          'label' => $page->title($locale),
+      ]) ?>
+    </div>
   <?php endif; ?>
 
   <div class="page-corps">

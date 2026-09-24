@@ -54,7 +54,7 @@ $cgvPdfUrl = $url->asset('documents/cgv-cedric-taldu-' . $locale->value . '.pdf'
 $estFr = $locale === Locale::Fr;
 $shippingText = $shippingOnRequest ? $t('checkout.on_request') : money($shippingPrice, $locale);
 $totalShippingText = $totalShipping === null ? $t('checkout.on_request') : money($totalShipping, $locale);
-$pickupText = $t('checkout.free');
+$pickupText = $t('checkout.travel_free');
 $totalPickupText = money($valuation->subtotal, $locale);
 
 // Fenêtre de réception, formatée dans la langue de la page.
@@ -70,7 +70,7 @@ $jour = static function (DateTimeImmutable $d) use ($mois, $estFr): string {
     return $estFr ? $n . ' ' . $m : $m . ' ' . $n;
 };
 ?>
-<main class="commande" id="contenu">
+<div class="commande">
   <div class="wrap">
     <h1><?= $t('checkout.title') ?></h1>
 
@@ -88,6 +88,8 @@ $jour = static function (DateTimeImmutable $d) use ($mois, $estFr): string {
                tabindex="-1" autocomplete="off">
       </div>
 
+      <?php // Étapes 1 et 2 en une seule colonne : le bilan occupe l'autre sans étirer leurs rangées. ?>
+      <div class="commande-etapes">
       <!-- 1 — Coordonnées -->
       <section class="commande-section">
         <h2><span class="commande-num">1</span> <?= $t('checkout.your_details') ?></h2>
@@ -147,6 +149,8 @@ $jour = static function (DateTimeImmutable $d) use ($mois, $estFr): string {
         </div>
       </section>
 
+      </div>
+
       <!-- 3 — Récapitulatif et paiement -->
       <section class="commande-section commande-bilan">
         <h2><span class="commande-num">3</span> <?= $t('checkout.summary') ?></h2>
@@ -196,4 +200,4 @@ $jour = static function (DateTimeImmutable $d) use ($mois, $estFr): string {
       </section>
     </form>
   </div>
-</main>
+</div>

@@ -35,21 +35,25 @@ $cartCount = is_int($data['cartCount'] ?? null) ? $data['cartCount'] : 0;
 
 // « Actus » n'apparaît que s'il existe au moins un article publié.
 $hasNews = ($data['hasNews'] ?? false) === true;
+
+// Rubrique active (déduite de la route par Chrome) et style choisi en réglage.
+$section = is_string($data['currentSection'] ?? null) ? $data['currentSection'] : null;
+$styleActif = is_string($data['navActiveStyle'] ?? null) ? $data['navActiveStyle'] : 'souligne';
 ?>
-<header>
+<header class="site-tete">
   <div class="nav">
     <a class="brand" href="<?= attr($url->route('home', ['locale' => $locale->value])) ?>">Cédric Taldu<small><?= $t('nav.tagline') ?></small></a>
 
     <button class="burger" aria-expanded="false" aria-controls="menu"><?= $t('nav.menu') ?></button>
 
-    <nav aria-label="<?= $t('nav.main_label') ?>">
+    <nav aria-label="<?= $t('nav.main_label') ?>" data-actif="<?= attr($styleActif) ?>">
       <ul id="menu">
         <li>
-          <a href="<?= attr($url->route('page.about', ['locale' => $locale->value])) ?>"><?= $t('nav.about') ?></a>
+          <a href="<?= attr($url->route('page.about', ['locale' => $locale->value])) ?>"<?php if ($section === 'about') : ?> aria-current="page"<?php endif; ?>><?= $t('nav.about') ?></a>
         </li>
         <li class="sous-menu">
           <?php /* Non cliquable : c'est un ouvreur de sous-menu, pas une page. */ ?>
-          <button type="button" class="nav-bouton" aria-expanded="true"><?= $t('nav.gallery') ?></button>
+          <button type="button" class="nav-bouton" aria-expanded="true"<?php if ($section === 'gallery') : ?> aria-current="true"<?php endif; ?>><?= $t('nav.gallery') ?></button>
           <ul>
             <?php foreach ($rubriques as $rubrique) : ?>
             <li>
@@ -63,14 +67,14 @@ $hasNews = ($data['hasNews'] ?? false) === true;
         </li>
         <?php if ($hasNews) : ?>
         <li>
-          <a href="<?= attr($url->route('blog.index', ['locale' => $locale->value])) ?>"><?= $t('nav.news') ?></a>
+          <a href="<?= attr($url->route('blog.index', ['locale' => $locale->value])) ?>"<?php if ($section === 'news') : ?> aria-current="page"<?php endif; ?>><?= $t('nav.news') ?></a>
         </li>
         <?php endif; ?>
         <li>
-          <a href="<?= attr($url->route('page.booklet', ['locale' => $locale->value])) ?>"><?= $t('nav.booklet') ?></a>
+          <a href="<?= attr($url->route('page.booklet', ['locale' => $locale->value])) ?>"<?php if ($section === 'booklet') : ?> aria-current="page"<?php endif; ?>><?= $t('nav.booklet') ?></a>
         </li>
         <li>
-          <a href="<?= attr($url->route('contact.form', ['locale' => $locale->value])) ?>"><?= $t('nav.contact') ?></a>
+          <a href="<?= attr($url->route('contact.form', ['locale' => $locale->value])) ?>"<?php if ($section === 'contact') : ?> aria-current="page"<?php endif; ?>><?= $t('nav.contact') ?></a>
         </li>
       </ul>
     </nav>
