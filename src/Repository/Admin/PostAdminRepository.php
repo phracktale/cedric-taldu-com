@@ -23,7 +23,7 @@ final class PostAdminRepository
     private const SELECT = <<<'SQL'
         SELECT p.id, p.cover_media_id, p.author_id, p.event_date, p.event_place,
                p.is_published, p.published_at,
-               t.locale, t.slug, t.title, t.excerpt, t.body, t.meta_title, t.meta_description
+               t.locale, t.slug, t.title, t.excerpt, t.body, t.blocks, t.meta_title, t.meta_description
         FROM posts p
         LEFT JOIN post_translations t ON t.post_id = p.id
         SQL;
@@ -213,8 +213,8 @@ final class PostAdminRepository
 
         $insert = $this->pdo->prepare(
             'INSERT INTO post_translations
-                (post_id, locale, slug, title, excerpt, body, meta_title, meta_description)
-             VALUES (:id, :locale, :slug, :title, :excerpt, :body, :meta_title, :meta_description)'
+                (post_id, locale, slug, title, excerpt, body, blocks, meta_title, meta_description)
+             VALUES (:id, :locale, :slug, :title, :excerpt, :body, :blocks, :meta_title, :meta_description)'
         );
 
         foreach ($translations as $locale => $fields) {
@@ -229,6 +229,7 @@ final class PostAdminRepository
                 'title' => $fields['title'] ?? '',
                 'excerpt' => $fields['excerpt'] ?? null,
                 'body' => $fields['body'] ?? null,
+                'blocks' => $fields['blocks'] ?? null,
                 'meta_title' => $fields['meta_title'] ?? null,
                 'meta_description' => $fields['meta_description'] ?? null,
             ]);
@@ -274,6 +275,7 @@ final class PostAdminRepository
                 'title' => self::nullableString($row['title']),
                 'excerpt' => self::nullableString($row['excerpt']),
                 'body' => self::nullableString($row['body']),
+                'blocks' => self::nullableString($row['blocks']),
                 'meta_title' => self::nullableString($row['meta_title']),
                 'meta_description' => self::nullableString($row['meta_description']),
             ];

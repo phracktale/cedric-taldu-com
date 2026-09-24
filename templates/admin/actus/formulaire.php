@@ -13,7 +13,9 @@
 
 declare(strict_types=1);
 
-$base = is_string($data['basePath'] ?? null) ? $data['basePath'] : '';
+use App\Domain\Editorial\BlockCatalog;
+
+$base =is_string($data['basePath'] ?? null) ? $data['basePath'] : '';
 $jeton = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
 
 /** @var array<string, mixed>|null $article */
@@ -98,6 +100,17 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
                         <span class="champ-aide">
                             Mise en forme : titres &lt;h2&gt;/&lt;h3&gt;, &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;, listes,
                             citations, liens, images. Tout le reste est retiré à l’enregistrement.
+                        </span>
+                    </p>
+
+                    <p class="champ">
+                        <label for="blocs_<?= attr($langue) ?>">Blocs après le corps (optionnel)</label>
+                        <textarea id="blocs_<?= attr($langue) ?>" name="blocs_<?= attr($langue) ?>" rows="6"
+                                  data-block-editor
+                                  data-catalog="<?= jsonAttr(BlockCatalog::all()) ?>"
+                                  data-media-picker="<?= attr($base) ?>/admin/medias/choix"><?= e($valeur('blocs', $langue, 'blocks')) ?></textarea>
+                        <span class="champ-aide">
+                            Titres, images de la médiathèque, citations, boutons, colonnes… affichés sous le corps.
                         </span>
                     </p>
 

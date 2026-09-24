@@ -45,7 +45,7 @@ interdisant les attributs `style`. Reste pour l'incrément 2 : le CTA comme **bl
   Cible choisie dans une liste (page, galerie, boutique, livret) ou URL interne.
 - CTA en fin d'actualité.
 
-## Incrément 2 — Blocs de page `feature/blocs-contenu`
+## Incrément 2 — Blocs de page ✅ `feature/blocs-contenu`
 
 - Les blocs ne **remplacent** plus le corps de la page : le corps devient un bloc
   « texte riche » en tête de composition (migration du contenu existant).

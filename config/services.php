@@ -724,6 +724,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(TranslationInput::class),
             $c->get(SlugHistory::class),
             $c->get(CoverUpload::class),
+            $c->get(BlockSanitizer::class),
         ),
     );
 
@@ -770,6 +771,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(MediaAdminRepository::class),
         $c->get(MediaStore::class),
         $c->get(Validator::class),
+        $c->get(UrlGenerator::class),
     ));
 
     $container->set(CheckoutController::class, static fn (Container $c): CheckoutController => new CheckoutController(

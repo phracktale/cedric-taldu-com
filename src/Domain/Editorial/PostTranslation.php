@@ -23,6 +23,16 @@ final class PostTranslation
         public readonly ?string $body,
         public readonly ?string $metaTitle,
         public readonly ?string $metaDescription,
+        // Blocs éditoriaux (editor-core), rendus APRÈS le corps ; null = aucun.
+        public readonly ?string $blocksJson = null,
     ) {
+    }
+
+    /**
+     * @return list<Block>
+     */
+    public function blocks(): array
+    {
+        return Block::listFromJson($this->blocksJson);
     }
 }

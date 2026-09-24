@@ -119,6 +119,8 @@ final class BlockSanitizer
                 : (string) ($schema['default'] ?? ($schema['options'][0] ?? '')),
             // URL : seuls http(s), mailto ou lien interne ; sinon vidée.
             'url', 'image' => $this->safeUrl($string),
+            // Identifiant de média : un entier positif, rien d'autre.
+            'media' => ctype_digit($string) && (int) $string > 0 ? (string) (int) $string : '',
             default => trim($string),
         };
     }
@@ -127,7 +129,8 @@ final class BlockSanitizer
     {
         $url = trim($url);
 
-        return preg_match('#^(https?:|mailto:|/)#i', $url) === 1 ? $url : '';
+        // « //hote » commencerait par « / » mais mènerait hors du site.
+        return preg_match('#^(https?:|mailto:|/(?!/))#i', $url) === 1 ? $url : '';
     }
 
     private function id(mixed $id): string

@@ -61,6 +61,37 @@ final class BlockSanitizerTest extends TestCase
         $this->assertSame('2', $this->parse($json)[0]['props']['level']);
     }
 
+    public function test_une_url_en_protocole_relatif_est_videe(): void
+    {
+        // « //hote » commence par « / » mais mène hors du site.
+        $json = $this->sanitizer()->sanitizeJson(
+            '[{"id":"a","type":"button","props":{"label":"X","url":"//evil.example/x"}}]'
+        );
+
+        $this->assertSame('', $this->parse($json)[0]['props']['url']);
+    }
+
+    public function test_l_image_ne_garde_qu_un_identifiant_de_media(): void
+    {
+        $json = $this->sanitizer()->sanitizeJson(
+            '[{"id":"a","type":"image","props":{"media":"12"}},{"id":"b","type":"image","props":{"media":"12 OR 1=1"}}]'
+        );
+
+        $this->assertSame('12', $this->parse($json)[0]['props']['media']);
+        $this->assertSame('', $this->parse($json)[1]['props']['media']);
+    }
+
+    public function test_le_bouton_porte_un_alignement_en_liste_blanche(): void
+    {
+        $json = $this->sanitizer()->sanitizeJson(
+            '[{"id":"a","type":"button","props":{"label":"X","align":"right"}},'
+            . '{"id":"b","type":"button","props":{"label":"Y","align":"evil"}}]'
+        );
+
+        $this->assertSame('right', $this->parse($json)[0]['props']['align']);
+        $this->assertSame('center', $this->parse($json)[1]['props']['align']);
+    }
+
     public function test_une_url_de_bouton_hostile_est_videe(): void
     {
         $json = $this->sanitizer()->sanitizeJson(

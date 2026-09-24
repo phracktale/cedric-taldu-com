@@ -45,11 +45,14 @@ $cover = $data['cover'] ?? null;
   <?php endif; ?>
 
   <div class="page-corps">
+    <?= richText($page->body($locale)) ?>
+    <?php // Blocs (editor-core) APRÈS le corps : ils le complètent, ne le remplacent plus. ?>
     <?php if ($page->hasBlocks($locale)) : ?>
-      <?php // Page composée par blocs (editor-core). Repli sur l'HTML sinon. ?>
-      <?= $partial('partials/blocks', ['blocks' => $page->blocks($locale), 'locale' => $locale]) ?>
-    <?php else : ?>
-      <?= richText($page->body($locale)) ?>
+      <?= $partial('partials/blocks', [
+          'blocks' => $page->blocks($locale),
+          'locale' => $locale,
+          'medias' => $data['blockMedias'] ?? [],
+      ]) ?>
     <?php endif; ?>
   </div>
 

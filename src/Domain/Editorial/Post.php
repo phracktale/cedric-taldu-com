@@ -53,6 +53,16 @@ final class Post
         return $this->translations->for($locale)->body;
     }
 
+    /**
+     * Blocs de l'article dans cette langue, rendus après le corps.
+     *
+     * @return list<Block>
+     */
+    public function blocks(Locale $locale): array
+    {
+        return $this->translations->for($locale)->blocks();
+    }
+
     public function isTranslatedIn(Locale $locale): bool
     {
         return $this->translations->isAvailableIn($locale);

@@ -51,7 +51,7 @@ final class PagesTest extends FunctionalTestCase
         $this->assertStringContainsString('class="bloc bloc-titre">Mon parcours</h2>', $corps);
         $this->assertStringContainsString('Texte de présentation.', $corps);
         $this->assertStringContainsString('bloc-citation', $corps);
-        $this->assertStringContainsString('href="/fr/contact"', $corps);
+        $this->assertStringContainsString('href="/cedric-taldu/fr/contact"', $corps);
     }
 
     public function test_un_bloc_colonnes_rend_ses_enfants(): void
