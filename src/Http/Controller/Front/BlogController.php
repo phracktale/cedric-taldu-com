@@ -9,14 +9,19 @@ use App\Core\Exception\NotFoundException;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\View;
+use App\Domain\Editorial\Cta;
+use App\Domain\Editorial\HomeSectionForm;
 use App\Domain\Exception\InvalidSlug;
 use App\Domain\Locale;
 use App\Domain\Slug;
 use App\Repository\MediaRepository;
 use App\Repository\PostRepository;
+use App\Repository\SettingRepository;
+use App\Service\I18n\Translator;
 use App\Service\I18n\UrlGenerator;
 use App\Service\Seo\StructuredData;
 use App\Service\View\Chrome;
+use App\Service\View\CtaLinker;
 
 /**
  * Blog public « Actus » : liste paginée et article (02-front §6).
@@ -37,6 +42,9 @@ final class BlogController
         private readonly UrlGenerator $url,
         private readonly ClockInterface $clock,
         private readonly StructuredData $seo,
+        private readonly SettingRepository $settings,
+        private readonly CtaLinker $ctas,
+        private readonly Translator $translator,
     ) {
     }
 
@@ -87,11 +95,24 @@ final class BlogController
             ? null
             : ($this->medias->findByIds([$post->coverMediaId])[$post->coverMediaId] ?? null);
 
+        $chrome = $this->chrome->base($request, $locale);
+        // Bouton de fin d'actualité (écran Apparence) : absent tant qu'il n'est pas réglé.
+        $reglage = $this->settings->json(Cta::END_OF_POST_SETTING);
+
         return Response::html($this->view->render('front/blog-article', [
-            ...$this->chrome->base($request, $locale),
+            ...$chrome,
             'metaTitle' => $post->title($locale),
             'post' => $post,
             'cover' => $cover,
+            'endCta' => isset(HomeSectionForm::common($reglage)['cta'])
+                ? $this->ctas->fromSetting(
+                    'blog',
+                    $reglage,
+                    $locale,
+                    $chrome['menuCategories'] ?? [],
+                    $this->translator->tRaw('home.hero_cta', $locale),
+                )
+                : null,
             'listUrl' => $this->url->route('blog.index', ['locale' => $locale->value]),
             'canonical' => $this->url->absolute('blog.show', [
                 'locale' => $locale->value,

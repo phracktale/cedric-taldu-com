@@ -20,9 +20,9 @@ $texte = $data['texte'];
     <h2><?= e($texte($shop, 'title')) ?></h2>
     <hr class="stipple">
     <?php if ($texte($shop, 'text') !== null) : ?><p><?= e($texte($shop, 'text')) ?></p><?php endif; ?>
-    <p class="cta-row">
-      <a class="btn btn-plein" href="#galeries"><?= $t('home.shop_cta') ?></a>
-    </p>
+    <?php if (isset($data['ctas']['boutique'])) : ?>
+      <?= $partial('partials/cta', $data['ctas']['boutique']) ?>
+    <?php endif; ?>
   </div>
 </section>
 <?php endif; ?>

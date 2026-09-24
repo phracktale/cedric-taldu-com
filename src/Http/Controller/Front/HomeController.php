@@ -10,16 +10,20 @@ use App\Core\Response;
 use App\Core\View;
 use App\Domain\Catalog\Artwork;
 use App\Domain\Catalog\Media;
+use App\Domain\Editorial\Cta;
 use App\Domain\Editorial\HomeLayout;
+use App\Domain\Editorial\HomeSectionForm;
 use App\Domain\Editorial\Post;
 use App\Domain\Locale;
 use App\Repository\ArtworkRepository;
 use App\Repository\MediaRepository;
 use App\Repository\PostRepository;
 use App\Repository\SettingRepository;
+use App\Service\I18n\Translator;
 use App\Service\I18n\UrlGenerator;
 use App\Service\Seo\StructuredData;
 use App\Service\View\Chrome;
+use App\Service\View\CtaLinker;
 
 /**
  * Accueil.
@@ -59,6 +63,8 @@ final class HomeController
         private readonly ClockInterface $clock,
         private readonly UrlGenerator $url,
         private readonly StructuredData $seo,
+        private readonly CtaLinker $ctas,
+        private readonly Translator $translator,
     ) {
     }
 
@@ -68,9 +74,30 @@ final class HomeController
 
         $content = $this->settings->manyForLocale(self::SETTINGS, $locale);
         $showcase = $this->showcase($content['home.showcase']);
+        $chrome = $this->chrome->base($request, $locale);
+
+        // Réglages communs aux langues (CTA, fond, portrait) : déjà en cache.
+        $hero = HomeSectionForm::common($this->settings->json('home.hero'));
+        $fond = is_array($hero['background'] ?? null) ? $hero['background'] : [];
+        $couleurFond = HomeSectionForm::color($fond['color'] ?? null);
+        $portraitId = HomeSectionForm::common($this->settings->json('home.studio'))['portrait_media_id'] ?? null;
+        $images = $this->medias->findByIds(array_values(array_filter(
+            [$fond['media_id'] ?? null, $portraitId],
+            'is_int',
+        )));
 
         $data = [
-            ...$this->chrome->base($request, $locale),
+            ...$chrome,
+            'ctas' => $this->ctas($locale, $chrome['menuCategories'] ?? []),
+            'heroBackground' => [
+                'media' => is_int($fond['media_id'] ?? null) ? ($images[$fond['media_id']] ?? null) : null,
+                'color' => $couleurFond,
+                'tone' => ($fond['tone'] ?? null) === 'papier' ? 'papier' : 'encre',
+            ],
+            'studioPortrait' => is_int($portraitId) ? ($images[$portraitId] ?? null) : null,
+            // La CSP interdit les attributs style : la couleur passe par le <style nonce>.
+            'themeCss' => (is_string($chrome['themeCss'] ?? null) ? $chrome['themeCss'] : '')
+                . ($couleurFond === null ? '' : '.hero { --hero-fond: ' . $couleurFond . '; }'),
             'metaTitle' => $this->metaTitle($content['home.hero'], $locale),
             'metaDescription' => self::text($content['home.hero'], 'baseline'),
             'canonical' => $this->url->absolute('home', ['locale' => $locale->value]),
@@ -128,6 +155,33 @@ final class HomeController
         }
 
         return ['artworks' => $artworks, 'medias' => $this->medias->findByIds($mediaIds)];
+    }
+
+    /**
+     * Boutons des sections : libellé saisi, ou libellé par défaut de la section.
+     *
+     * @param mixed $rubriques rubriques publiées (Chrome), pour les CTA vers une galerie
+     * @return array<string, array{cta: Cta, href: string}>
+     */
+    private function ctas(Locale $locale, mixed $rubriques): array
+    {
+        $ctas = [];
+
+        foreach (HomeSectionForm::CTA_DEFAULTS as $section => $defaut) {
+            $cta = $this->ctas->fromSetting(
+                $section,
+                $this->settings->json(HomeSectionForm::settingKey($section)),
+                $locale,
+                $rubriques,
+                $this->translator->tRaw($defaut['label'], $locale),
+            );
+
+            if ($cta !== null) {
+                $ctas[$section] = $cta;
+            }
+        }
+
+        return $ctas;
     }
 
     /**

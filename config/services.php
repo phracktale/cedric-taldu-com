@@ -41,6 +41,7 @@ use App\Http\Controller\Admin\AuthController;
 use App\Http\Controller\Admin\ArtworkController as AdminArtworkController;
 use App\Http\Controller\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controller\Admin\DashboardController;
+use App\Http\Controller\Admin\AppearanceController;
 use App\Http\Controller\Admin\HomeController as AdminHomeController;
 use App\Http\Controller\Admin\MediaController;
 use App\Http\Controller\Admin\OrderController as AdminOrderController;
@@ -139,6 +140,7 @@ use App\Http\Controller\Admin\PageController as AdminPageController;
 use Stripe\StripeClient;
 use App\Service\View\AdminChrome;
 use App\Service\View\Chrome;
+use App\Service\View\CtaLinker;
 
 return static function (Config $config, Request $request, string $rootPath, ?Env $env = null): Container {
     // La connexion se construit depuis l'environnement, comme le reste. Le
@@ -632,6 +634,12 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(ClockInterface::class),
         $c->get(UrlGenerator::class),
         $c->get(StructuredData::class),
+        $c->get(CtaLinker::class),
+        $c->get(Translator::class),
+    ));
+
+    $container->set(CtaLinker::class, static fn (Container $c): CtaLinker => new CtaLinker(
+        $c->get(UrlGenerator::class),
     ));
 
     $container->set(CategoryController::class, static fn (Container $c): CategoryController => new CategoryController(
@@ -745,6 +753,16 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(AdminChrome::class),
         $c->get(SettingRepository::class),
         $c->get(SettingsAdminRepository::class),
+        $c->get(CoverUpload::class),
+        $c->get(ArtworkAdminRepository::class),
+        $c->get(CategoryRepository::class),
+    ));
+
+    $container->set(AppearanceController::class, static fn (Container $c): AppearanceController => new AppearanceController(
+        $c->get(AdminChrome::class),
+        $c->get(SettingRepository::class),
+        $c->get(SettingsAdminRepository::class),
+        $c->get(CategoryRepository::class),
     ));
 
     $container->set(MediaController::class, static fn (Container $c): MediaController => new MediaController(
@@ -797,6 +815,9 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(UrlGenerator::class),
         $c->get(ClockInterface::class),
         $c->get(StructuredData::class),
+        $c->get(SettingRepository::class),
+        $c->get(CtaLinker::class),
+        $c->get(Translator::class),
     ));
 
     $container->set(ContactController::class, static fn (Container $c): ContactController => new ContactController(

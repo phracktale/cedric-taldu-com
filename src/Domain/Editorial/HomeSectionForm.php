@@ -112,7 +112,10 @@ final class HomeSectionForm
      * Réglages communs du CTA d'une section, défauts de la section compris.
      *
      * @param array<string, mixed> $document
-     * @return array{target: string, category_id: int|null, url: string|null, style: string, align: string, enabled: bool}
+     * @return array{
+     *     target: string, category_id: int|null, url: string|null,
+     *     style: string, align: string, enabled: bool
+     * }
      */
     public static function ctaCommon(string $section, array $document): array
     {
@@ -161,10 +164,6 @@ final class HomeSectionForm
                 }
             }
 
-            if (self::hasCta($section)) {
-                $partie['cta'] = self::clean($input['cta_' . $langue] ?? null, self::SHORT);
-            }
-
             if ($section === 'triptyque') {
                 $partie['cells'] = self::cells($input, $langue);
             }
@@ -176,19 +175,11 @@ final class HomeSectionForm
             $document[$langue] = $partie;
         }
 
-        $common = self::common($document);
-
         if (self::hasCta($section)) {
-            /** @var Cta $cta */
-            $cta = Cta::fromStored([
-                'target' => $input['cta_target'] ?? null,
-                'category_id' => $input['cta_category'] ?? null,
-                'url' => $input['cta_url'] ?? null,
-                'style' => $input['cta_style'] ?? null,
-                'align' => $input['cta_align'] ?? null,
-            ], 'x');
-            $common['cta'] = [...$cta->toArray(), 'enabled' => ($input['cta_affiche'] ?? null) !== null];
+            $document = self::applyCta($document, $input);
         }
+
+        $common = self::common($document);
 
         if ($section === 'hero') {
             $retirer = ($input['fond_retirer'] ?? null) !== null;
@@ -233,10 +224,6 @@ final class HomeSectionForm
                     : (is_string($valeur) ? $valeur : '');
             }
 
-            if (self::hasCta($section)) {
-                $valeurs['cta_' . $langue] = is_string($partie['cta'] ?? null) ? $partie['cta'] : '';
-            }
-
             if ($section === 'triptyque') {
                 $cellules = is_array($partie['cells'] ?? null) ? array_values($partie['cells']) : [];
                 for ($i = 1; $i <= self::CELLS; $i++) {
@@ -250,13 +237,7 @@ final class HomeSectionForm
         $common = self::common($document);
 
         if (self::hasCta($section)) {
-            $cta = self::ctaCommon($section, $document);
-            $valeurs['cta_target'] = $cta['target'];
-            $valeurs['cta_category'] = (string) ($cta['category_id'] ?? '');
-            $valeurs['cta_url'] = (string) ($cta['url'] ?? '');
-            $valeurs['cta_style'] = $cta['style'];
-            $valeurs['cta_align'] = $cta['align'];
-            $valeurs['cta_affiche'] = $cta['enabled'] ? '1' : '';
+            $valeurs = [...$valeurs, ...self::ctaToForm($section, $document)];
         }
 
         if ($section === 'hero') {
@@ -272,7 +253,8 @@ final class HomeSectionForm
         }
 
         if ($section === 'vitrine') {
-            $partie = is_array($document[Locale::reference()->value] ?? null) ? $document[Locale::reference()->value] : [];
+            $reference = $document[Locale::reference()->value] ?? null;
+            $partie = is_array($reference) ? $reference : [];
             $ids = is_array($partie['artwork_ids'] ?? null) ? array_values($partie['artwork_ids']) : [];
             for ($i = 1; $i <= self::CELLS; $i++) {
                 $valeurs['vitrine_' . $i] = is_int($ids[$i - 1] ?? null) ? (string) $ids[$i - 1] : '';
@@ -280,6 +262,66 @@ final class HomeSectionForm
         }
 
         return $valeurs;
+    }
+
+    /**
+     * CTA posté (libellé par langue dans `cta_{langue}`, réglages communs dans
+     * `cta_*`) rangé dans le document. Sert aussi hors de l'accueil (fin d'actualité).
+     *
+     * @param array<string, mixed>       $document
+     * @param array<string, string|null> $input
+     * @return array<string, mixed>
+     */
+    public static function applyCta(array $document, array $input): array
+    {
+        foreach (Locale::cases() as $locale) {
+            $partie = is_array($document[$locale->value] ?? null) ? $document[$locale->value] : [];
+            $partie['cta'] = self::clean($input['cta_' . $locale->value] ?? null, self::SHORT);
+            $document[$locale->value] = $partie;
+        }
+
+        /** @var Cta $cta un libellé non vide garantit un CTA */
+        $cta = Cta::fromStored([
+            'target' => $input['cta_target'] ?? null,
+            'category_id' => $input['cta_category'] ?? null,
+            'url' => $input['cta_url'] ?? null,
+            'style' => $input['cta_style'] ?? null,
+            'align' => $input['cta_align'] ?? null,
+        ], 'x');
+
+        $document['common'] = [
+            ...self::common($document),
+            'cta' => [...$cta->toArray(), 'enabled' => ($input['cta_affiche'] ?? null) !== null],
+        ];
+
+        return $document;
+    }
+
+    /**
+     * Champs du CTA à plat, pour pré-remplir un formulaire.
+     *
+     * @param array<string, mixed> $document
+     * @return array<string, string>
+     */
+    public static function ctaToForm(string $section, array $document): array
+    {
+        $cta = self::ctaCommon($section, $document);
+        $valeurs = [];
+
+        foreach (Locale::cases() as $locale) {
+            $partie = is_array($document[$locale->value] ?? null) ? $document[$locale->value] : [];
+            $valeurs['cta_' . $locale->value] = is_string($partie['cta'] ?? null) ? $partie['cta'] : '';
+        }
+
+        return [
+            ...$valeurs,
+            'cta_target' => $cta['target'],
+            'cta_category' => (string) ($cta['category_id'] ?? ''),
+            'cta_url' => (string) ($cta['url'] ?? ''),
+            'cta_style' => $cta['style'],
+            'cta_align' => $cta['align'],
+            'cta_affiche' => $cta['enabled'] ? '1' : '',
+        ];
     }
 
     /**

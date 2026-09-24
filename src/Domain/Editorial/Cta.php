@@ -31,6 +31,9 @@ final class Cta
 
     public const STYLES = ['plein' => 'Plein', 'vide' => 'Contour'];
 
+    /** Réglage du bouton qui clôt chaque actualité (écran Apparence). */
+    public const END_OF_POST_SETTING = 'blog.cta';
+
     public const ALIGNS = ['centre' => 'Centré', 'gauche' => 'À gauche', 'droite' => 'À droite'];
 
     private function __construct(

@@ -67,6 +67,10 @@ $dateAffichee = $post->eventDate ?? $post->publishedAt;
     <?= richText($post->body($locale)) ?>
   </div>
 
+  <?php if (is_array($data['endCta'] ?? null)) : ?>
+    <?= $partial('partials/cta', [...$data['endCta'], 'class' => 'article-cta']) ?>
+  <?php endif; ?>
+
   <p class="article-retour">
     <a href="<?= attr($listUrl) ?>"><?= $t('blog.back_to_list') ?></a>
   </p>

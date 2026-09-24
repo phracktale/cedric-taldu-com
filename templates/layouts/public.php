@@ -68,6 +68,10 @@ $ogCard = $ogImage !== null ? 'summary_large_image' : 'summary';
 <?= jsonLd(is_array($data['jsonLd'] ?? null) ? $data['jsonLd'] : null, $nonce) ?>
 <link rel="preload" href="<?= attr($url->asset('fonts/Marcellus-Regular.woff2')) ?>" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="<?= attr($url->asset('css/site.css')) ?>">
+<?php // Thème choisi en back-office : valeurs validées (#rrggbb), servies sous nonce. ?>
+<?php if (is_string($data['themeCss'] ?? null) && $data['themeCss'] !== '') : ?>
+<style nonce="<?= attr($nonce) ?>"><?= e($data['themeCss']) ?></style>
+<?php endif; ?>
 <script type="module" src="<?= attr($url->asset('js/app.js')) ?>" nonce="<?= attr($nonce) ?>" defer></script>
 </head>
 <body data-base="<?= attr($data['basePath'] ?? '') ?>">

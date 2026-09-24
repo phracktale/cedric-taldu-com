@@ -19,10 +19,8 @@ $texte = $data['texte'];
   <p class="eyebrow"><?php if ($texte($contact, 'eyebrow') !== null) : ?><?= e($texte($contact, 'eyebrow')) ?><?php else : ?><?= $t('nav.contact') ?><?php endif; ?></p>
   <h2><?= e($texte($contact, 'title')) ?></h2>
   <?php if ($texte($contact, 'text') !== null) : ?><p><?= e($texte($contact, 'text')) ?></p><?php endif; ?>
-  <p class="cta-row">
-    <a class="btn btn-vide" href="<?= attr($url->route('contact.form', ['locale' => $locale->value])) ?>">
-      <?= $t('home.contact_cta') ?>
-    </a>
-  </p>
+  <?php if (isset($data['ctas']['contact'])) : ?>
+    <?= $partial('partials/cta', $data['ctas']['contact']) ?>
+  <?php endif; ?>
 </section>
 <?php endif; ?>
