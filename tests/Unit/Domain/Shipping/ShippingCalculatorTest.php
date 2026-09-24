@@ -258,9 +258,11 @@ final class ShippingCalculatorTest extends TestCase
         $this->assertSame(0, $this->centimes($devis));
     }
 
-    public function test_la_remise_en_main_propre_n_exige_pas_d_adresse(): void
+    public function test_la_remise_en_main_propre_exige_l_adresse_ou_se_rendre(): void
     {
-        $this->assertFalse(ShippingMethod::Pickup->requiresAddress());
+        // Revue du 2026-09-24 : l'artiste se déplace jusqu'à l'acheteur, dans un
+        // rayon mesuré depuis cette adresse, conservée ensuite sur la commande.
+        $this->assertTrue(ShippingMethod::Pickup->requiresAddress());
         $this->assertTrue(ShippingMethod::Shipping->requiresAddress());
     }
 
