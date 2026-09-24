@@ -39,6 +39,8 @@ final class Artwork
         public readonly ?int $primaryMediaId,
         public readonly int $position,
         public readonly Translations $translations,
+        /** Hors gabarit (revue du 2026-09-24) : livraison sur rendez-vous. */
+        public readonly bool $isOversized = false,
     ) {
     }
 

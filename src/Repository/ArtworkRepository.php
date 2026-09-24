@@ -32,7 +32,7 @@ final class ArtworkRepository
     private const SELECT = <<<'SQL'
         SELECT a.id, a.category_id, a.series_id, a.reference, a.year, a.technique,
                a.width_mm, a.height_mm, a.is_signed, a.price_cents, a.status,
-               a.weight_grams, a.primary_media_id, a.position,
+               a.weight_grams, a.is_oversized, a.primary_media_id, a.position,
                t.locale, t.slug, t.eyebrow, t.title, t.description, t.detail,
                t.meta_title, t.meta_description
         FROM artworks a
@@ -404,6 +404,7 @@ final class ArtworkRepository
                     primaryMediaId: self::nullableInt($row['primary_media_id']),
                     position: (int) $row['position'],
                     translations: new Translations($data['translations']),
+                    isOversized: (int) $row['is_oversized'] === 1,
                 );
             },
             $grouped,

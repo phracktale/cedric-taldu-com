@@ -127,6 +127,9 @@ $media = $medias[$oeuvre->primaryMediaId] ?? null;
       <?php if ($oeuvre->status->hasBadge()) : ?>
       <p class="dispo<?= $oeuvre->isPurchasable() ? '' : ' vendue' ?>"><?= e($oeuvre->status->label($locale)) ?></p>
       <?php endif; ?>
+      <?php if ($oeuvre->isOversized && $oeuvre->isPurchasable()) : ?>
+      <p class="hors-gabarit"><?= $t('artwork.oversized') ?></p>
+      <?php endif; ?>
 
       <?php // Le bouton n'existe que si l'œuvre est disponible ET a un prix :
             // isPurchasable() porte les deux. Vendue, le bloc reste visible en

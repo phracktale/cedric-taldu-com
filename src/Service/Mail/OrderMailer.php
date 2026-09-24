@@ -153,7 +153,8 @@ final class OrderMailer
                 'shipping' => 'Frais d’expédition',
                 'total' => 'Total',
                 'shippingAddress' => 'Adresse de livraison',
-                'pickup' => 'Remise en main propre à l’adresse indiquée, sur rendez-vous',
+                // Sans adresse : livraison sur rendez-vous (œuvre hors gabarit).
+                'pickup' => 'Livraison sur rendez-vous : nous vous contactons pour en convenir, par téléphone ou visio.',
                 'consult' => 'Consulter ma commande',
                 'withdrawal' => 'Vous disposez de 14 jours à compter de la réception pour '
                     . 'exercer votre droit de rétractation. Les frais de retour restent à votre charge.',
@@ -174,7 +175,7 @@ final class OrderMailer
                 'shipping' => 'Shipping',
                 'total' => 'Total',
                 'shippingAddress' => 'Shipping address',
-                'pickup' => 'Hand delivery to the address given, by appointment',
+                'pickup' => 'Delivery by appointment: we will contact you to arrange it, by phone or video call.',
                 'consult' => 'View my order',
                 'withdrawal' => 'You have 14 days from delivery to exercise your right of '
                     . 'withdrawal. Return shipping is at your expense.',

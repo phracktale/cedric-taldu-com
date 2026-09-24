@@ -338,6 +338,8 @@ final class ArtworkController
             'technique' => self::nullableText($request->input('technique'), 160),
             'width_mm' => self::positiveInt($request->input('largeur')),
             'height_mm' => self::positiveInt($request->input('hauteur')),
+            'depth_mm' => self::positiveInt($request->input('profondeur')),
+            'is_oversized' => $request->input('hors_gabarit') !== null,
             'is_signed' => $request->input('signee') !== null,
             'price_cents' => self::priceInCents($request->input('prix') ?? ''),
             // Liste close : la valeur finit dans un ENUM, et un ENUM refuse ce

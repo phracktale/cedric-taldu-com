@@ -102,7 +102,7 @@ final class CheckoutController
             return $this->toCart($locale);
         }
 
-        $method = $request->input('mode') === 'pickup' ? ShippingMethod::Pickup : ShippingMethod::Shipping;
+        $method = ShippingMethod::tryFrom((string) $request->input('mode')) ?? ShippingMethod::Shipping;
 
         // Case CGV obligatoire (03-boutique §3, étape 2).
         if ($request->input('cgv') === null) {
@@ -303,6 +303,11 @@ final class CheckoutController
             // panier : Prodigi l'expédie, elle ne peut pas être retirée.
             'pickupAllowed' => !self::hasPrintOnDemand($valuation),
             'handDelivery' => $this->handDelivery(),
+            // Œuvre hors gabarit au panier : livraison sur rendez-vous uniquement.
+            'oversized' => array_filter(
+                $valuation->lines,
+                static fn ($line): bool => $line->item->isOversized,
+            ) !== [],
         ];
     }
 

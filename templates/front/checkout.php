@@ -43,6 +43,8 @@ $pickupAllowed = ($data['pickupAllowed'] ?? true) === true;
 // Zone de remise en main propre réglée en back-office (lieu, rayon).
 /** @var array{place: string, radius: int} $zoneRemise */
 $zoneRemise = is_array($data['handDelivery'] ?? null) ? $data['handDelivery'] : ['place' => '', 'radius' => 0];
+// Œuvre hors gabarit au panier : livraison sur rendez-vous uniquement.
+$horsGabarit = ($data['oversized'] ?? false) === true;
 /** @var DateTimeImmutable $deliveryFrom */
 $deliveryFrom = $data['deliveryFrom'];
 /** @var DateTimeImmutable $deliveryTo */
@@ -111,13 +113,23 @@ $jour = static function (DateTimeImmutable $d) use ($mois, $estFr): string {
         <h2><span class="commande-num">2</span> <?= $t('checkout.delivery') ?></h2>
 
         <div class="commande-modes">
+          <?php if ($horsGabarit) : ?>
+          <?php // Œuvre hors gabarit (revue du 2026-09-24) : ni expédition ni remise automatique. ?>
+          <label class="commande-mode">
+            <input type="radio" name="mode" value="appointment" checked
+                   data-prix="<?= attr($t('checkout.appointment_price')) ?>" data-total="<?= attr($totalPickupText) ?>" data-mode="appointment">
+            <span class="commande-mode-nom"><?= $t('checkout.appointment') ?></span>
+            <span class="commande-mode-prix"><?= $t('checkout.appointment_price') ?></span>
+          </label>
+          <?php else : ?>
           <label class="commande-mode">
             <input type="radio" name="mode" value="shipping" checked
                    data-prix="<?= attr($shippingText) ?>" data-total="<?= attr($totalShippingText) ?>" data-mode="shipping">
             <span class="commande-mode-nom"><?= $t('checkout.shipping') ?></span>
             <span class="commande-mode-prix"><?= e($shippingText) ?></span>
           </label>
-          <?php if ($pickupAllowed) : ?>
+          <?php endif; ?>
+          <?php if ($pickupAllowed && !$horsGabarit) : ?>
           <label class="commande-mode">
             <input type="radio" name="mode" value="pickup"
                    data-prix="<?= attr($pickupText) ?>" data-total="<?= attr($totalPickupText) ?>" data-mode="pickup">
@@ -127,7 +139,7 @@ $jour = static function (DateTimeImmutable $d) use ($mois, $estFr): string {
           <?php endif; ?>
         </div>
 
-        <div class="commande-adresse" data-commande-adresse>
+        <div class="commande-adresse" data-commande-adresse<?php if ($horsGabarit) : ?> hidden<?php endif; ?>>
           <label for="adresse"><?= $t('checkout.address') ?></label>
           <input type="text" id="adresse" name="adresse" maxlength="190">
 
@@ -173,14 +185,17 @@ $jour = static function (DateTimeImmutable $d) use ($mois, $estFr): string {
         </p>
         <p class="commande-detail">
           <span><?= $t('checkout.shipping_cost') ?></span>
-          <span data-recap-port><?= e($shippingText) ?></span>
+          <span data-recap-port><?php if ($horsGabarit) : ?><?= $t('checkout.appointment_price') ?><?php else : ?><?= e($shippingText) ?><?php endif; ?></span>
         </p>
         <p class="commande-total">
           <span><?= $t('checkout.total') ?></span>
-          <span data-recap-total><?= e($totalShippingText) ?></span>
+          <span data-recap-total><?php if ($horsGabarit) : ?><?= e($totalPickupText) ?><?php else : ?><?= e($totalShippingText) ?><?php endif; ?></span>
         </p>
 
-        <p class="commande-reception" data-quand-expedition><?= $t('checkout.delivery_estimate', ['from' => $jour($deliveryFrom), 'to' => $jour($deliveryTo)]) ?></p>
+        <?php if ($horsGabarit) : ?>
+        <p class="commande-reception"><?= $t('checkout.appointment_notice') ?></p>
+        <?php endif; ?>
+        <p class="commande-reception" data-quand-expedition<?php if ($horsGabarit) : ?> hidden<?php endif; ?>><?= $t('checkout.delivery_estimate', ['from' => $jour($deliveryFrom), 'to' => $jour($deliveryTo)]) ?></p>
         <p class="commande-reception" data-quand-retrait hidden><?= $t('checkout.pickup_notice', $zoneRemise) ?></p>
 
         <label for="note"><?= $t('checkout.note') ?></label>
