@@ -17,6 +17,7 @@ use App\Repository\OrderRepository;
 use App\Service\Account\CustomerLogin;
 use App\Service\Account\CustomerSession;
 use App\Service\I18n\UrlGenerator;
+use App\Service\Invoice\InvoiceDownload;
 use App\Service\Mail\AccountMailer;
 use App\Service\Newsletter\Newsletter;
 use App\Service\Spam\Throttle;
@@ -51,6 +52,7 @@ final class AccountController
         private readonly Throttle $throttle,
         private readonly UrlGenerator $url,
         private readonly LoggerInterface $logger,
+        private readonly InvoiceDownload $invoices,
     ) {
     }
 
@@ -130,7 +132,21 @@ final class AccountController
 
         $order = $this->ownOrder($email, (string) $request->attribute('reference'));
 
-        return $this->render($request, 'front/account/order', ['order' => $order]);
+        return $this->render($request, 'front/account/order', [
+            'order' => $order,
+            'invoiceable' => InvoiceDownload::isInvoiceable($order),
+        ]);
+    }
+
+    public function invoice(Request $request): Response
+    {
+        $email = $this->session->email();
+
+        if ($email === null) {
+            return RedirectResponse::to($this->url->route('account.index', ['locale' => self::locale($request)->value]));
+        }
+
+        return $this->invoices->response($this->ownOrder($email, (string) $request->attribute('reference')));
     }
 
     public function newsletter(Request $request): Response

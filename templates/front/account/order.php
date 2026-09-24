@@ -81,5 +81,10 @@ $adresse = static function (?Address $a): string {
     <?php if ($commande->trackingNumber !== null) : ?>
       <p><?= $t('account.tracking') ?> : <?= e((string) $commande->trackingCarrier) ?> <?= e($commande->trackingNumber) ?></p>
     <?php endif; ?>
+    <?php if (($data['invoiceable'] ?? false) === true) : ?>
+      <p class="cta-row cta-row--gauche">
+        <a class="btn btn-plein" href="<?= attr($url->route('account.invoice', ['locale' => $locale->value, 'reference' => $commande->reference])) ?>"><?= $t('account.invoice') ?></a>
+      </p>
+    <?php endif; ?>
   </section>
 </article>

@@ -34,6 +34,9 @@ $transporteurs = is_array($data['transporteurs'] ?? null) ? $data['transporteurs
 
   <div class="admin-bloc-tete">
     <h1>Commande <?= e($order->reference) ?></h1>
+    <?php if (($data['facturable'] ?? false) === true) : ?>
+    <p><a class="bouton bouton--secondaire" href="<?= attr($base . '/admin/commandes/' . $order->id . '/facture') ?>">Facture (PDF)</a></p>
+    <?php endif; ?>
     <p>Statut : <strong><?= e($order->status->label(Locale::Fr)) ?></strong></p>
   </div>
 

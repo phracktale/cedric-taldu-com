@@ -51,6 +51,9 @@ use App\Repository\CustomerLoginRepository;
 use App\Service\Account\CustomerLogin;
 use App\Service\Account\CustomerSession;
 use App\Service\Mail\AccountMailer;
+use App\Service\Invoice\InvoiceDownload;
+use App\Service\Invoice\InvoiceRenderer;
+use App\Http\Controller\Admin\BillingController;
 use App\Http\Controller\Admin\HomeController as AdminHomeController;
 use App\Http\Controller\Admin\MediaController;
 use App\Http\Controller\Admin\OrderController as AdminOrderController;
@@ -920,6 +923,19 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(MailerInterface::class),
         $env->getOptional('ARTIST_EMAIL', 'contact@cedrictaldu.com') ?? 'contact@cedrictaldu.com',
     ));
+    // Factures PDF (revue du 2026-09-24).
+    $container->set(InvoiceDownload::class, static fn (Container $c): InvoiceDownload => new InvoiceDownload(
+        new InvoiceRenderer(),
+        $c->get(SettingRepository::class),
+        $env->getOptional('ARTIST_NAME', 'Cédric Taldu') ?? 'Cédric Taldu',
+        $env->getOptional('ARTIST_EMAIL', 'contact@cedrictaldu.com') ?? 'contact@cedrictaldu.com',
+    ));
+    $container->set(BillingController::class, static fn (Container $c): BillingController => new BillingController(
+        $c->get(AdminChrome::class),
+        $c->get(SettingsAdminRepository::class),
+        $c->get(InvoiceDownload::class),
+    ));
+
     $container->set(CustomerAccountController::class, static fn (Container $c): CustomerAccountController => new CustomerAccountController(
         $c->get(View::class),
         $c->get(Chrome::class),
@@ -932,6 +948,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(Throttle::class),
         $c->get(UrlGenerator::class),
         $c->get(LoggerInterface::class),
+        $c->get(InvoiceDownload::class),
     ));
 
     $container->set(NewsletterController::class, static fn (Container $c): NewsletterController
@@ -980,6 +997,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(FulfillmentRepository::class),
             $c->get(FulfillmentService::class),
             $c->get(CarrierRegistry::class),
+            $c->get(InvoiceDownload::class),
         ));
 
     $container->set(
