@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Functional;
 
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Support\Factory\MediaFactory;
 use Tests\Support\FunctionalTestCase;
 
 /**
@@ -91,6 +92,28 @@ final class PagesTest extends FunctionalTestCase
             "UPDATE page_translations SET blocks = :b
               WHERE locale = 'fr' AND page_id = (SELECT id FROM pages WHERE code = :code)"
         )->execute(['b' => json_encode($blocks, JSON_THROW_ON_ERROR), 'code' => $code]);
+    }
+
+    public function test_l_image_de_couverture_d_une_page_est_affichee(): void
+    {
+        // Revue du 2026-09-24 : l'image téléversée sur « À propos » était bien
+        // enregistrée en médiathèque, mais la page publique ne la rendait pas.
+        $media = (new MediaFactory($this->pdo))
+            ->named('portrait-atelier')
+            ->translated('fr', 'Portrait à l’atelier')
+            ->create();
+        $this->pdo->prepare("UPDATE pages SET cover_media_id = :m WHERE code = 'about'")->execute(['m' => $media]);
+
+        $corps = $this->get('/cedric-taldu/fr/a-propos')->body;
+
+        $this->assertStringContainsString('class="page-visuel"', $corps);
+        $this->assertStringContainsString('portrait-atelier', $corps);
+        $this->assertStringContainsString('Portrait à l’atelier', $corps);
+    }
+
+    public function test_une_page_sans_couverture_n_affiche_pas_de_visuel(): void
+    {
+        $this->assertStringNotContainsString('page-visuel', $this->get('/cedric-taldu/fr/a-propos')->body);
     }
 
     public function test_la_page_anglaise_repond_aussi(): void
