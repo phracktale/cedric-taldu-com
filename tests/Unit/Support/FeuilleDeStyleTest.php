@@ -63,6 +63,29 @@ final class FeuilleDeStyleTest extends TestCase
     }
 
     /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function gabarits(): iterable
+    {
+        yield 'vertical' => ['portrait', '3 / 4'];
+        yield 'horizontal' => ['paysage', '4 / 3'];
+        yield 'carré' => ['carre', '1 / 1'];
+    }
+
+    #[DataProvider('gabarits')]
+    public function test_chaque_orientation_a_son_gabarit_fixe(string $orientation, string $ratio): void
+    {
+        $this->assertStringContainsString('aspect-ratio: ' . $ratio, $this->regle('.dessin--' . $orientation));
+    }
+
+    public function test_le_visuel_tient_dans_son_gabarit_avec_un_facteur_de_zoom(): void
+    {
+        // Jamais rogné : contain, et un zoom réglable en back-office.
+        $this->assertStringContainsString('object-fit: contain', $this->regle('.dessin img'));
+        $this->assertMatchesRegularExpression('~scale:\s*var\(--vignette-zoom,\s*1\)~', $this->regle('.dessin img'));
+    }
+
+    /**
      * @return iterable<string, array{string}>
      */
     public static function stylesActifs(): iterable

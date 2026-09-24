@@ -56,6 +56,18 @@ final class ApparenceTest extends AdminTestCase
         $this->assertStringNotContainsString('display:none', $corps);
     }
 
+    public function test_le_facteur_de_zoom_des_vignettes_est_reglable_et_borne(): void
+    {
+        $this->postAvecJeton(self::ADMIN, ['style' => 'souligne', 'zoom' => '85']);
+        $corps = $this->requete('GET', '/cedric-taldu/fr/a-propos')->body;
+        $this->assertMatchesRegularExpression('~<style nonce="[^"]+">[^<]*--vignette-zoom: 0\.85~', $corps);
+
+        // Hors bornes (60 à 100 %) : ramené dans l'intervalle.
+        $this->postAvecJeton(self::ADMIN, ['style' => 'souligne', 'zoom' => '5000']);
+        $corps = $this->requete('GET', '/cedric-taldu/fr/a-propos')->body;
+        $this->assertStringContainsString('--vignette-zoom: 1;', $corps);
+    }
+
     public function test_sans_reglage_aucun_cta_ne_clot_les_actus(): void
     {
         $this->article();

@@ -98,6 +98,16 @@ final class MediaTest extends TestCase
         $this->assertSame(320, $this->media(largeur: 200)->defaultWidth());
     }
 
+    public function test_l_orientation_choisit_le_gabarit_de_la_vignette(): void
+    {
+        // Revue du 2026-09-24 : gabarit fixe vertical/horizontal géré en CSS.
+        $this->assertSame('portrait', $this->media(2400, 3200)->orientation());
+        $this->assertSame('paysage', $this->media(3200, 2400)->orientation());
+        $this->assertSame('carre', $this->media(1000, 1000)->orientation());
+        // Presque carré (écart ≤ 5 %) : traité comme carré.
+        $this->assertSame('carre', $this->media(1000, 1040)->orientation());
+    }
+
     public function test_le_rapport_d_aspect_evite_le_decalage_de_mise_en_page(): void
     {
         $this->assertSame('2400 / 3200', $this->media()->aspectRatio());
