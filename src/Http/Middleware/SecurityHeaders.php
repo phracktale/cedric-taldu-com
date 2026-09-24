@@ -9,6 +9,7 @@ use App\Core\RandomInterface;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\RouteMatch;
+use App\Service\Analytics\MatomoConfig;
 
 /**
  * En-tetes de securite sur TOUTES les reponses, y compris les 404 et les 500.
@@ -33,6 +34,10 @@ final class SecurityHeaders implements MiddlewareInterface
     public function __construct(
         private readonly Config $config,
         private readonly RandomInterface $random,
+        // Matomo auto-hébergé (revue du 2026-09-24) : sa seule origine est
+        // autorisée pour le script, les requêtes et le pixel, et seulement s'il
+        // est configuré.
+        private readonly ?MatomoConfig $matomo = null,
     ) {
     }
 
@@ -75,13 +80,15 @@ final class SecurityHeaders implements MiddlewareInterface
 
     private function contentSecurityPolicy(string $nonce): string
     {
+        $mesure = $this->matomo === null ? '' : ' ' . $this->matomo->origin();
+
         return implode('; ', [
             "default-src 'self'",
-            "script-src 'self' 'nonce-" . $nonce . "'",
+            "script-src 'self' 'nonce-" . $nonce . "'" . $mesure,
             "style-src 'self' 'nonce-" . $nonce . "'",
-            "img-src 'self' data:",
+            "img-src 'self' data:" . $mesure,
             "font-src 'self'",
-            "connect-src 'self'",
+            "connect-src 'self'" . $mesure,
             // Le tunnel de paiement poste vers Stripe Checkout ; aucune autre
             // origine ne peut recevoir un formulaire du site.
             "form-action 'self' https://checkout.stripe.com",

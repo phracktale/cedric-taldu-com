@@ -73,6 +73,10 @@ $ogCard = $ogImage !== null ? 'summary_large_image' : 'summary';
 <style nonce="<?= attr($nonce) ?>"><?= e($data['themeCss']) ?></style>
 <?php endif; ?>
 <script type="module" src="<?= attr($url->asset('js/app.js')) ?>" nonce="<?= attr($nonce) ?>" defer></script>
+<?php // Mesure d'audience Matomo, sans cookie (revue du 2026-09-24) : seulement si configurée. ?>
+<?php if (($data['matomo'] ?? null) instanceof App\Service\Analytics\MatomoConfig) : ?>
+<script type="module" src="<?= attr($url->asset('js/analytics.js')) ?>" nonce="<?= attr($nonce) ?>" data-matomo-url="<?= attr($data['matomo']->url) ?>" data-matomo-site="<?= attr($data['matomo']->siteId) ?>"></script>
+<?php endif; ?>
 </head>
 <body data-base="<?= attr($data['basePath'] ?? '') ?>">
 <?php if (($data['isProduction'] ?? true) === false) : ?>

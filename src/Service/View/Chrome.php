@@ -13,6 +13,7 @@ use App\Domain\Editorial\HomeSectionForm;
 use App\Domain\Editorial\MainMenu;
 use App\Domain\Editorial\Theme;
 use App\Domain\Locale;
+use App\Service\Analytics\MatomoConfig;
 use App\Http\Middleware\SecurityHeaders;
 use App\Repository\CartRepository;
 use App\Repository\CategoryRepository;
@@ -64,6 +65,7 @@ final class Chrome
         private readonly CartRepository $carts,
         private readonly PostRepository $posts,
         private readonly SettingRepository $settings,
+        private readonly ?MatomoConfig $matomo = null,
     ) {
     }
 
@@ -89,6 +91,8 @@ final class Chrome
             // Le panier et le tunnel postent depuis le front : le jeton doit
             // etre disponible a tout gabarit public portant un formulaire.
             'csrfToken' => $this->csrf->token(),
+            // Mesure d'audience (Matomo auto-hébergé), null si non configurée.
+            'matomo' => $this->matomo,
             // Renseignes par chaque controleur : le lien de changement de langue
             // doit mener a la page EQUIVALENTE, pas a l'accueil.
             'localeSwitch' => [],
