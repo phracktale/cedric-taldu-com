@@ -43,6 +43,9 @@ abstract class FunctionalTestCase extends TestCase
     /** @var list<\App\Core\Route>|null table de routes de remplacement */
     private ?array $routes = null;
 
+    /** Géocodeur doublé : près d'Amiens par défaut (voir FakeGeocoder). */
+    protected Doubles\FakeGeocoder $geocodeur;
+
     /** @var array<string, callable(Container): object> services supplementaires */
     private array $services = [];
 
@@ -50,6 +53,7 @@ abstract class FunctionalTestCase extends TestCase
     {
         $this->logger = new RecordingLogger();
         $this->session = new ArraySession();
+        $this->geocodeur = new Doubles\FakeGeocoder();
 
         $this->pdo = DatabaseTestCase::connect();
         DatabaseTestCase::ensureSchemaFor($this->pdo);
@@ -200,6 +204,8 @@ abstract class FunctionalTestCase extends TestCase
             // La MEME connexion que les fixtures du test : sans cela, la page ne
             // verrait rien de ce que le test vient d'inserer dans sa transaction.
             $this->container->instance(\PDO::class, $this->pdo);
+            // Aucun test n'appelle le réseau : le géocodage (BAN) est doublé.
+            $this->container->instance(\App\Service\Shipping\Geocoder::class, $this->geocodeur);
 
             if ($this->routes !== null) {
                 $this->container->instance(\App\Core\Router::class, new \App\Core\Router($this->routes));
