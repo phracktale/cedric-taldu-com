@@ -30,6 +30,8 @@ use App\Http\Controller\Admin\HomeController as AdminHomeController;
 use App\Http\Controller\Admin\AppearanceController;
 use App\Http\Controller\Admin\DeliveryController;
 use App\Http\Controller\Admin\MenuController;
+use App\Http\Controller\Admin\NewsletterController as AdminNewsletterController;
+use App\Http\Controller\Front\NewsletterController;
 use App\Http\Controller\Admin\PageController as AdminPageController;
 use App\Http\Controller\Admin\PostController as AdminPostController;
 use App\Http\Controller\Admin\ProductController as AdminProductController;
@@ -91,6 +93,12 @@ return [
 
     // Contact — général ou rattaché à une œuvre (?oeuvre={slug}). Le POST est
     // protégé par CSRF (défaut) ET par le SpamGuard.
+    // Désinscription de la newsletter par lien signé (revue du 2026-09-24).
+    new Route('newsletter.unsubscribe.confirm', 'GET', '/fr/newsletter/desinscription', [NewsletterController::class, 'confirm'], locale: 'fr'),
+    new Route('newsletter.unsubscribe.confirm', 'GET', '/en/newsletter/unsubscribe', [NewsletterController::class, 'confirm'], locale: 'en'),
+    new Route('newsletter.unsubscribe', 'POST', '/fr/newsletter/desinscription', [NewsletterController::class, 'unsubscribe'], locale: 'fr'),
+    new Route('newsletter.unsubscribe', 'POST', '/en/newsletter/unsubscribe', [NewsletterController::class, 'unsubscribe'], locale: 'en'),
+
     new Route('contact.form', 'GET', '/fr/contact', [ContactController::class, 'form'], locale: 'fr'),
     new Route('contact.form', 'GET', '/en/contact', [ContactController::class, 'form'], locale: 'en'),
     new Route('contact.submit', 'POST', '/fr/contact', [ContactController::class, 'submit'], locale: 'fr'),
@@ -247,6 +255,9 @@ return [
     new Route('admin.appearance.update', 'POST', '/admin/apparence', [AppearanceController::class, 'update']),
     new Route('admin.delivery.edit', 'GET', '/admin/livraison', [DeliveryController::class, 'edit']),
     new Route('admin.delivery.update', 'POST', '/admin/livraison', [DeliveryController::class, 'update']),
+    new Route('admin.newsletter.index', 'GET', '/admin/newsletter', [AdminNewsletterController::class, 'index']),
+    new Route('admin.newsletter.export', 'GET', '/admin/newsletter/export', [AdminNewsletterController::class, 'export']),
+    new Route('admin.newsletter.unsubscribe', 'POST', '/admin/newsletter/desinscription', [AdminNewsletterController::class, 'unsubscribe']),
     new Route('admin.menu.edit', 'GET', '/admin/menu', [MenuController::class, 'edit']),
     new Route('admin.menu.update', 'POST', '/admin/menu', [MenuController::class, 'update']),
 

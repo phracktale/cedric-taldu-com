@@ -27,6 +27,7 @@ use App\Service\Mail\ContactMailer;
 use App\Service\Spam\SpamGuard;
 use App\Service\Spam\SpamSignals;
 use App\Service\Spam\FormTimestamp;
+use App\Service\Newsletter\Newsletter;
 use App\Service\View\Chrome;
 
 /**
@@ -64,6 +65,7 @@ final class ContactController
         private readonly LoggerInterface $logger,
         private readonly ClockInterface $clock,
         private readonly string $pepper,
+        private readonly Newsletter $newsletter,
     ) {
     }
 
@@ -138,6 +140,16 @@ final class ContactController
             return $this->rejectForm($request, $locale, $artwork, $failure);
         }
 
+        // Consentement RGPD explicite (revue du 2026-09-24) : sans la case, le
+        // message n'est pas conservé.
+        if ($request->input('rgpd') === null) {
+            return $this->rejectForm($request, $locale, $artwork, new ValidationFailed([
+                'rgpd' => $locale === Locale::Fr
+                    ? 'Cochez la case pour nous permettre de traiter votre message.'
+                    : 'Please tick the box so that we can process your message.',
+            ]));
+        }
+
         $subject = $artwork !== null
             ? 'Question sur une œuvre : ' . $artwork->title($locale)
             : 'Message de contact';
@@ -157,12 +169,19 @@ final class ContactController
             createdAt: null,
         );
 
-        $id = $this->messages->store($message, $this->clock->now());
+        $now = $this->clock->now();
+        $id = $this->messages->store($message, $now, $now);
 
         // Un message signalé (indésirable) est conservé pour consultation, mais
         // ne dérange pas l'artiste. Seul un message accepté le notifie.
         if ($verdict->shouldNotify()) {
             $this->sendNotification($message, $id, $artwork, $locale);
+
+            // Newsletter : case facultative, jamais précochée. Un message jugé
+            // indésirable n'abonne personne.
+            if ($request->input('newsletter') !== null) {
+                $this->newsletter->subscribe($message->senderEmail, $locale, Newsletter::SOURCE_CONTACT);
+            }
         }
 
         return $this->confirmed($locale);

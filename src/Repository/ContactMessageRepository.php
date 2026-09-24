@@ -31,15 +31,19 @@ final class ContactMessageRepository
     {
     }
 
-    public function store(ContactMessage $message, DateTimeImmutable $now): int
+    /**
+     * @param DateTimeImmutable|null $privacyConsentedAt moment du consentement RGPD
+     *                                                    (case du formulaire, revue du 2026-09-24)
+     */
+    public function store(ContactMessage $message, DateTimeImmutable $now, ?DateTimeImmutable $privacyConsentedAt = null): int
     {
         $statement = $this->pdo->prepare(
             'INSERT INTO contact_messages
                 (artwork_id, sender_name, sender_email, subject, body, locale,
-                 status, spam_score, ip_hash, user_agent, created_at)
+                 status, spam_score, ip_hash, user_agent, privacy_consented_at, created_at)
              VALUES
                 (:artwork, :name, :email, :subject, :body, :locale,
-                 :status, :score, :ip, :agent, :now)'
+                 :status, :score, :ip, :agent, :consent, :now)'
         );
 
         $statement->execute([
@@ -53,6 +57,7 @@ final class ContactMessageRepository
             'score' => $message->spamScore,
             'ip' => $message->ipHash,
             'agent' => $message->userAgent,
+            'consent' => $privacyConsentedAt?->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s'),
             'now' => $now->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s'),
         ]);
 

@@ -79,6 +79,8 @@ return [
     'checkout.country' => 'Country',
     'checkout.note' => 'Note (optional)',
     'checkout.accept_terms' => 'I accept the terms and conditions',
+    'checkout.privacy' => '— your data is used to process the order:',
+    'checkout.privacy_link' => 'privacy policy',
     'checkout.read' => '(read)',
     'checkout.pdf' => '(PDF)',
     'page.download_pdf' => 'Download the terms as PDF',
@@ -154,6 +156,14 @@ return [
     'contact.rgpd' => 'The information you provide is used solely to answer your request. '
         . 'You have the right to access, rectify and erase your data.',
     'contact.learn_more' => 'Learn more',
+    'contact.consent' => 'I agree that my information may be used to answer my request.',
+    'newsletter.consent' => 'I would like to receive news from the studio (exhibitions, new works). '
+        . 'Unsubscribe at any time.',
+    'newsletter.unsubscribe_title' => 'Unsubscribe from the newsletter',
+    'newsletter.unsubscribe_intro' => 'You will no longer receive news from the studio at :email.',
+    'newsletter.unsubscribe_confirm' => 'Confirm unsubscription',
+    'newsletter.unsubscribed' => 'Done: you have been unsubscribed from the newsletter.',
+    'newsletter.invalid_link' => 'This unsubscribe link is not valid.',
 
     // Journal / news
     'blog.journal' => 'Journal',

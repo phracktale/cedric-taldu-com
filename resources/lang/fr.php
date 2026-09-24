@@ -81,6 +81,8 @@ return [
     'checkout.country' => 'Pays',
     'checkout.note' => 'Note (facultative)',
     'checkout.accept_terms' => 'J’accepte les conditions générales de vente',
+    'checkout.privacy' => '— vos données servent à traiter la commande :',
+    'checkout.privacy_link' => 'politique de confidentialité',
     'checkout.read' => '(lire)',
     'checkout.pdf' => '(PDF)',
     'page.download_pdf' => 'Télécharger les CGV en PDF',
@@ -156,6 +158,14 @@ return [
     'contact.rgpd' => 'Les informations transmises servent uniquement à répondre à votre demande. '
         . 'Vous disposez d’un droit d’accès, de rectification et d’effacement de vos données.',
     'contact.learn_more' => 'En savoir plus',
+    'contact.consent' => 'J’accepte que mes informations soient utilisées pour répondre à ma demande.',
+    'newsletter.consent' => 'Je souhaite recevoir les actualités de l’atelier (expositions, nouvelles œuvres). '
+        . 'Désinscription possible à tout moment.',
+    'newsletter.unsubscribe_title' => 'Se désinscrire de la newsletter',
+    'newsletter.unsubscribe_intro' => 'Vous ne recevrez plus les actualités de l’atelier à l’adresse :email.',
+    'newsletter.unsubscribe_confirm' => 'Confirmer la désinscription',
+    'newsletter.unsubscribed' => 'C’est fait : vous êtes désinscrit de la newsletter.',
+    'newsletter.invalid_link' => 'Ce lien de désinscription n’est pas valide.',
 
     // Journal / actus
     'blog.journal' => 'Journal',

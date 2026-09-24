@@ -44,6 +44,8 @@ use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Admin\AppearanceController;
 use App\Http\Controller\Admin\DeliveryController;
 use App\Http\Controller\Admin\MenuController;
+use App\Http\Controller\Admin\NewsletterController as AdminNewsletterController;
+use App\Http\Controller\Front\NewsletterController;
 use App\Http\Controller\Admin\HomeController as AdminHomeController;
 use App\Http\Controller\Admin\MediaController;
 use App\Http\Controller\Admin\OrderController as AdminOrderController;
@@ -72,6 +74,7 @@ use App\Repository\ArtworkRepository;
 use App\Repository\AuditLogRepository;
 use App\Repository\CategoryRepository;
 use App\Repository\MediaRepository;
+use App\Repository\NewsletterRepository;
 use App\Repository\ProductRepository;
 use App\Repository\RateLimitRepository;
 use App\Repository\SeriesRepository;
@@ -142,6 +145,8 @@ use App\Http\Controller\Admin\MessageController as AdminMessageController;
 use App\Http\Controller\Admin\PageController as AdminPageController;
 use Stripe\StripeClient;
 use App\Service\View\AdminChrome;
+use App\Service\Newsletter\Newsletter;
+use App\Service\Newsletter\UnsubscribeToken;
 use App\Service\Shipping\BanGeocoder;
 use App\Service\Shipping\CarrierRegistry;
 use App\Service\Shipping\ColissimoCarrier;
@@ -816,6 +821,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(Geocoder::class),
         $c->get(SettingRepository::class),
         $c->get(CarrierRegistry::class),
+        $c->get(Newsletter::class),
     ));
 
     // Géocodage de la remise en main propre (Base Adresse Nationale, côté serveur).
@@ -880,7 +886,34 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(LoggerInterface::class),
         $c->get(ClockInterface::class),
         $config->securityPepper,
+        $c->get(Newsletter::class),
     ));
+
+    // Newsletter (revue du 2026-09-24) : abonnés, jeton de désinscription signé.
+    $container->set(NewsletterRepository::class, static fn (Container $c): NewsletterRepository
+        => new NewsletterRepository($c->get(PDO::class)));
+    $container->set(Newsletter::class, static fn (Container $c): Newsletter => new Newsletter(
+        $c->get(NewsletterRepository::class),
+        $c->get(Translator::class),
+        $c->get(ClockInterface::class),
+    ));
+    $container->set(UnsubscribeToken::class, static fn (): UnsubscribeToken
+        => new UnsubscribeToken($config->securityPepper));
+    $container->set(NewsletterController::class, static fn (Container $c): NewsletterController
+        => new NewsletterController(
+            $c->get(View::class),
+            $c->get(Chrome::class),
+            $c->get(Newsletter::class),
+            $c->get(UnsubscribeToken::class),
+        ));
+    $container->set(AdminNewsletterController::class, static fn (Container $c): AdminNewsletterController
+        => new AdminNewsletterController(
+            $c->get(AdminChrome::class),
+            $c->get(NewsletterRepository::class),
+            $c->get(Newsletter::class),
+            $c->get(UnsubscribeToken::class),
+            $c->get(UrlGenerator::class),
+        ));
 
     $container->set(CartController::class, static fn (Container $c): CartController => new CartController(
         $c->get(View::class),
