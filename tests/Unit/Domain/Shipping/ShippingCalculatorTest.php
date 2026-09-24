@@ -277,7 +277,7 @@ final class ShippingCalculatorTest extends TestCase
     public function test_les_modes_de_remise_correspondent_aux_valeurs_de_la_base(): void
     {
         $this->assertSame(
-            ['pickup', 'shipping'],
+            ['pickup', 'shipping', 'appointment'],
             array_map(static fn (ShippingMethod $m): string => $m->value, ShippingMethod::cases()),
         );
     }

@@ -246,6 +246,15 @@ final class CommandeTest extends FunctionalTestCase
         $this->assertSame(0, (int) $this->valeur('SELECT COUNT(*) FROM orders'));
     }
 
+    public function test_l_expedition_annonce_son_transporteur(): void
+    {
+        $cookie = $this->panierAvecOeuvre();
+
+        $corps = $this->requete('GET', '/cedric-taldu/fr/commande', cookies: [self::COOKIE => $cookie])->body;
+
+        $this->assertStringContainsString('Expédition Colissimo', $corps);
+    }
+
     public function test_une_oeuvre_hors_gabarit_bascule_le_tunnel_sur_rendez_vous(): void
     {
         $artwork = (new ArtworkFactory($this->pdo))->published()->available()->priced(450000)->oversized()
