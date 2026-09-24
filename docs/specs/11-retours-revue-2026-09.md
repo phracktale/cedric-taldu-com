@@ -87,18 +87,22 @@ d'implémentation, et liste les décisions encore ouvertes.
 - Consentement newsletter, distinct et non précoché, avec preuve horodatée.
 - Matomo : mesure d'audience, CSP à ouvrir sur l'origine Matomo.
 
-## Décisions ouvertes
+## Décisions complémentaires (2026-09-24, après la revue)
 
-1. **Comptes clients** : historique des commandes et adresses enregistrées, ou
-   simple abonnement newsletter ? Un compte ajoute mot de passe, réinitialisation,
-   droit à l'effacement et surface d'attaque ; le paiement reste Stripe Checkout.
-2. **Colissimo** : l'API (étiquettes, points de retrait) demande un **contrat
-   Colissimo** et ses identifiants. Colissimo ne publie pas d'API de tarifs : le
-   prix affiché reste calculé par une grille poids/zone. Qui porte le contrat pour
-   la démo ?
-3. **Matomo** : auto-hébergé sur Thor, ou Matomo Cloud ? En configuration
-   « exemptée » (CNIL), il ne demande pas de bandeau de consentement.
-4. **Rayon de 30 km** : une liste de codes postaux convient-elle, ou faut-il une
-   distance calculée depuis l'adresse ?
-5. **Données de l'artiste** (action en attente) : poids des œuvres et taille maximale
-   d'un colis, pour paramétrer le hors-gabarit et les tranches de poids.
+1. **Comptes clients** : historique des commandes, **facture PDF** téléchargeable,
+   détail de chaque commande (adresses de livraison et de facturation, transaction),
+   **désinscription de la newsletter** depuis le compte.
+2. **Colissimo** : intégrer le prestataire **sans contrat pour l'instant**. Le code
+   est prêt derrière l'interface `Carrier` ; tant que les identifiants manquent, le
+   transporteur fonctionne en mode grille (tarif poids/zone) et les appels à l'API
+   (étiquettes, points de retrait) sont désactivés proprement.
+3. **Matomo** : **auto-hébergé sur Thor**, en tant que service (conteneur dédié).
+4. **Rayon de 30 km** : **distance calculée** depuis l'adresse, par une API de
+   géocodage gratuite — la Base Adresse Nationale (`api-adresse.data.gouv.fr`),
+   appelée côté serveur, avec repli sur l'expédition si le service ne répond pas.
+
+## En attente
+
+- **Données de l'artiste** : poids des œuvres et taille maximale d'un colis, pour
+  paramétrer le hors-gabarit et les tranches de poids.
+- **Contrat Colissimo** : identifiants à poser dans `.env` quand ils existeront.
