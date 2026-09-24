@@ -258,6 +258,14 @@ final class ShippingCalculatorTest extends TestCase
         $this->assertSame(0, $this->centimes($devis));
     }
 
+    public function test_la_livraison_sur_rendez_vous_n_exige_pas_d_adresse(): void
+    {
+        // Hors gabarit (revue du 2026-09-24) : les modalités se fixent ensemble,
+        // par téléphone ou visio ; le tunnel ne collecte pas d'adresse.
+        $this->assertFalse(ShippingMethod::Appointment->requiresAddress());
+        $this->assertSame('Livraison sur rendez-vous', ShippingMethod::Appointment->label(\App\Domain\Locale::Fr));
+    }
+
     public function test_la_remise_en_main_propre_exige_l_adresse_ou_se_rendre(): void
     {
         // Revue du 2026-09-24 : l'artiste se déplace jusqu'à l'acheteur, dans un

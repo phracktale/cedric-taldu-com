@@ -246,6 +246,32 @@ final class CommandeTest extends FunctionalTestCase
         $this->assertSame(0, (int) $this->valeur('SELECT COUNT(*) FROM orders'));
     }
 
+    public function test_une_oeuvre_hors_gabarit_bascule_le_tunnel_sur_rendez_vous(): void
+    {
+        $artwork = (new ArtworkFactory($this->pdo))->published()->available()->priced(450000)->oversized()
+            ->translated('fr', 'grand-format', 'Grand format')->create($this->categoryId);
+        $cookie = $this->ajouter('original', $artwork);
+
+        $corps = $this->requete('GET', '/cedric-taldu/fr/commande', cookies: [self::COOKIE => $cookie])->body;
+
+        $this->assertStringContainsString('value="appointment"', $corps);
+        $this->assertStringNotContainsString('value="shipping"', $corps);
+        $this->assertStringNotContainsString('value="pickup"', $corps);
+        $this->assertStringContainsString('téléphone ou visio', $corps);
+    }
+
+    public function test_une_oeuvre_hors_gabarit_se_commande_sans_adresse(): void
+    {
+        $artwork = (new ArtworkFactory($this->pdo))->published()->available()->priced(450000)->oversized()
+            ->translated('fr', 'grand-format', 'Grand format')->create($this->categoryId);
+        $cookie = $this->ajouter('original', $artwork);
+
+        $reponse = $this->commander($cookie, ['mode' => 'appointment', 'adresse' => '', 'code_postal' => '', 'ville' => '']);
+
+        $this->assertSame(303, $reponse->status);
+        $this->assertSame('appointment', $this->valeur('SELECT shipping_method FROM orders'));
+    }
+
     public function test_une_remise_en_main_propre_exige_une_adresse(): void
     {
         $cookie = $this->panierAvecOeuvre();

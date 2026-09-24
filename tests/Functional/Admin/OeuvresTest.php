@@ -60,6 +60,20 @@ final class OeuvresTest extends AdminTestCase
         $this->assertSame('CT-ENC-001', $this->valeur('SELECT reference FROM artworks'));
     }
 
+    public function test_une_oeuvre_hors_gabarit_et_sa_profondeur_s_enregistrent(): void
+    {
+        // Revue du 2026-09-24 : case « Hors gabarit » et profondeur, pour
+        // paramétrer la livraison.
+        $formulaire = $this->requete('GET', self::OEUVRES . '/nouvelle')->body;
+        $this->assertStringContainsString('name="hors_gabarit"', $formulaire);
+        $this->assertStringContainsString('name="profondeur"', $formulaire);
+
+        $this->creer(['reference' => 'CT-GF-001', 'titre_fr' => 'Grand format', 'hors_gabarit' => '1', 'profondeur' => '45']);
+
+        $this->assertSame('1', $this->valeur('SELECT is_oversized FROM artworks'));
+        $this->assertSame('45', $this->valeur('SELECT depth_mm FROM artworks'));
+    }
+
     public function test_une_oeuvre_nait_en_brouillon_et_non_publiee(): void
     {
         // Rien ne se publie par accident : la fiche est invisible tant que

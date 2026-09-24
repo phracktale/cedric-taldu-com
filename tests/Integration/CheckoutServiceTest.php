@@ -377,6 +377,48 @@ final class CheckoutServiceTest extends DatabaseTestCase
         $this->assertNotNull($this->valeur('SELECT shipping_address FROM orders'));
     }
 
+    // ----------------------------------------- hors gabarit (revue 2026-09)
+
+    public function test_une_oeuvre_hors_gabarit_se_commande_sur_rendez_vous_sans_port(): void
+    {
+        $this->pdo->exec("UPDATE artworks SET is_oversized = 1 WHERE id = {$this->artwork}");
+
+        $resultat = $this->commanderPanier(
+            [[LineKind::Original, $this->artwork, 1]],
+            $this->demande(mode: ShippingMethod::Appointment),
+        );
+
+        $this->assertSame(CheckoutOutcome::Redirect, $resultat->outcome);
+        $this->assertNotNull($resultat->order);
+        $this->assertSame(0, $resultat->order->shipping->cents);
+        $this->assertSame('appointment', $this->valeur('SELECT shipping_method FROM orders'));
+        $this->assertNull($this->valeur('SELECT shipping_address FROM orders'));
+    }
+
+    public function test_une_oeuvre_hors_gabarit_ne_s_expedie_pas_automatiquement(): void
+    {
+        $this->pdo->exec("UPDATE artworks SET is_oversized = 1 WHERE id = {$this->artwork}");
+
+        $expedition = $this->commanderPanier([[LineKind::Original, $this->artwork, 1]], $this->demande());
+        $retrait = $this->commanderPanier(
+            [[LineKind::Original, $this->artwork, 1]],
+            $this->demande(mode: ShippingMethod::Pickup),
+        );
+
+        $this->assertSame(CheckoutOutcome::ShippingOnRequest, $expedition->outcome);
+        $this->assertSame(CheckoutOutcome::ShippingOnRequest, $retrait->outcome);
+    }
+
+    public function test_le_rendez_vous_est_reserve_aux_oeuvres_hors_gabarit(): void
+    {
+        $resultat = $this->commanderPanier(
+            [[LineKind::Original, $this->artwork, 1]],
+            $this->demande(mode: ShippingMethod::Appointment),
+        );
+
+        $this->assertSame(CheckoutOutcome::ShippingOnRequest, $resultat->outcome);
+    }
+
     public function test_le_retrait_est_refuse_quand_le_panier_contient_une_reproduction(): void
     {
         // Une reproduction est expediee par Prodigi : elle ne peut pas etre
