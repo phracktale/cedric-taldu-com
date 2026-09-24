@@ -55,8 +55,9 @@ final class BlocsAdminTest extends AdminTestCase
 
         $this->assertSame(200, $reponse->status);
         $this->assertStringContainsString('application/json', (string) ($reponse->headers['content-type'] ?? ''));
-        /** @var list<array{id: int, label: string, thumb: string}> $liste */
-        $liste = json_decode($reponse->body, true, 8, JSON_THROW_ON_ERROR);
+        /** @var array{medias: list<array{id: int, label: string, thumb: string}>} $reponseJson */
+        $reponseJson = json_decode($reponse->body, true, 8, JSON_THROW_ON_ERROR);
+        $liste = $reponseJson['medias'];
         $this->assertSame($media, $liste[0]['id']);
         $this->assertSame('Atelier', $liste[0]['label']);
         $this->assertStringStartsWith('/cedric-taldu/', $liste[0]['thumb']);

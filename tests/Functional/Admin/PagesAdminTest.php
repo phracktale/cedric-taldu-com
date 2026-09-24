@@ -108,7 +108,7 @@ final class PagesAdminTest extends AdminTestCase
         $this->assertStringNotContainsString('<script', $stocke);
     }
 
-    public function test_les_blocs_enregistres_paraissent_sur_la_page_publique(): void
+    public function test_les_blocs_enregistres_paraissent_apres_le_contenu_html(): void
     {
         $blocs = json_encode([
             ['type' => 'heading', 'props' => ['text' => 'Parcours et démarche', 'level' => '2']],
@@ -122,9 +122,9 @@ final class PagesAdminTest extends AdminTestCase
 
         $corps = $this->get('/cedric-taldu/fr/a-propos')->body;
 
-        // Les blocs REMPLACENT le HTML historique.
+        // Revue du 2026-09-24 : les blocs COMPLÈTENT le HTML, après lui.
         $this->assertStringContainsString('Parcours et démarche', $corps);
-        $this->assertStringNotContainsString('Ancien HTML.', $corps);
+        $this->assertStringContainsString('Ancien HTML.', $corps);
     }
 
     public function test_des_blocs_vides_reviennent_au_contenu_html(): void
