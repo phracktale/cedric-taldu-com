@@ -162,7 +162,8 @@ final class EspaceClientTest extends FunctionalTestCase
     {
         $this->pdo->exec(
             "INSERT INTO settings (`key`, value, updated_at) VALUES ('shop.seller',
-             '{\"name\":\"Cédric Taldu\",\"address\":\"25 allée des Lilas\\\\n80470 Dreuil-lès-Amiens\",\"siret\":\"495 376 436 00046\"}', NOW())"
+             '{\"name\":\"Cédric Taldu\",\"address\":\"25 allée des Lilas\\\\n80470 Dreuil-lès-Amiens\",\"siret\":\"495 376 436 00046\"}', NOW())
+             ON DUPLICATE KEY UPDATE value = VALUES(value)"
         );
         $this->seConnecter('camille@example.com');
 
