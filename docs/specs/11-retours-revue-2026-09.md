@@ -28,7 +28,12 @@ d'implémentation, et liste les décisions encore ouvertes.
 - Image de couverture de page (À propos) affichée.
 - Libellé « De la même série ».
 
-## Incrément 1 — Apparence et accueil éditables `feature/apparence-accueil`
+## Incrément 1 — Apparence et accueil éditables ✅ `feature/apparence-accueil`
+
+Livré : `Cta` (domaine) et `CtaLinker` ; écran de contenu par section
+(`/admin/accueil/{section}`) ; écran `/admin/apparence`. Les couleurs saisies
+(`#rrggbb` seulement) passent par un `<style nonce>` de la mise en page, la CSP
+interdisant les attributs `style`. Reste pour l'incrément 2 : le CTA comme **bloc**.
 
 - Écran back-office **Apparence** : style de l'entrée active, couleur d'accent.
 - Formulaires d'édition du **contenu** de chaque section de l'accueil (aujourd'hui,
