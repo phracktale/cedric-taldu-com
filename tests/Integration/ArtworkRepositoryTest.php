@@ -42,6 +42,31 @@ final class ArtworkRepositoryTest extends DatabaseTestCase
         return array_map(static fn (Artwork $o): string => $o->title(Locale::Fr), $oeuvres);
     }
 
+    // ------------------------------------------ toutes les œuvres (revue 2026-09)
+
+    public function test_toutes_les_oeuvres_publiees_toutes_rubriques_confondues(): void
+    {
+        $autre = (new CategoryFactory($this->pdo))->translated('fr', 'huiles', 'Huiles')->create();
+        $this->oeuvre()->translated('fr', 'pilier-i', 'Pilier I')->atPosition(2)->create($this->rubriqueId);
+        $this->oeuvre()->translated('fr', 'rouge', 'Rouge')->atPosition(1)->create($autre);
+        $this->oeuvre()->draft()->translated('fr', 'brouillon', 'Brouillon')->create($autre);
+
+        $oeuvres = $this->depot->findPublished(24, 0);
+
+        $this->assertSame(['Rouge', 'Pilier I'], $this->titres($oeuvres));
+        $this->assertSame(2, $this->depot->countPublished());
+    }
+
+    public function test_toutes_les_oeuvres_se_paginent(): void
+    {
+        foreach (['a', 'b', 'c'] as $rang => $slug) {
+            $this->oeuvre()->translated('fr', $slug, strtoupper($slug))->atPosition($rang)->create($this->rubriqueId);
+        }
+
+        $this->assertSame(['B'], $this->titres($this->depot->findPublished(1, 1)));
+        $this->assertSame([], $this->depot->findPublished(0, 0));
+    }
+
     // ------------------------------------------------------ page rubrique
 
     public function test_les_œuvres_publiees_d_une_rubrique_sont_listees(): void

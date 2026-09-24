@@ -25,7 +25,8 @@ final class CtaLinkerTest extends TestCase
     public static function ciblesFixes(): iterable
     {
         yield 'accueil' => ['home', 'fr', '/cedric-taldu/fr/'];
-        yield 'galeries' => ['galleries', 'fr', '/cedric-taldu/fr/#galeries'];
+        yield 'galeries' => ['galleries', 'fr', '/cedric-taldu/fr/galerie'];
+        yield 'toutes les œuvres' => ['works', 'fr', '/cedric-taldu/fr/oeuvres'];
         yield 'à propos' => ['about', 'fr', '/cedric-taldu/fr/a-propos'];
         yield 'livret' => ['booklet', 'fr', '/cedric-taldu/fr/livret'];
         yield 'actus' => ['news', 'fr', '/cedric-taldu/fr/actus'];
@@ -57,7 +58,7 @@ final class CtaLinkerTest extends TestCase
         $cta = Cta::fromStored(['target' => 'category', 'category_id' => 7], 'Encres');
         $this->assertNotNull($cta);
 
-        $this->assertSame('/cedric-taldu/fr/#galeries', $this->linker()->href($cta, Locale::Fr, []));
+        $this->assertSame('/cedric-taldu/fr/galerie', $this->linker()->href($cta, Locale::Fr, []));
     }
 
     public function test_un_chemin_interne_recoit_le_prefixe(): void

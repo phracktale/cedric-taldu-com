@@ -86,7 +86,7 @@ final class PageAccueilTest extends FunctionalTestCase
         $corps = $this->get('/cedric-taldu/fr/')->body;
 
         $this->assertStringContainsString('Voir les œuvres disponibles', $corps);
-        $this->assertStringContainsString('href="/cedric-taldu/fr/#galeries"', $corps);
+        $this->assertStringContainsString('href="/cedric-taldu/fr/galerie"', $corps);
     }
 
     public function test_le_module_contact_offre_un_bouton_de_contact(): void
