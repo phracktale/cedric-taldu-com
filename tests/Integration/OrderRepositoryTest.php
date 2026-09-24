@@ -205,6 +205,28 @@ final class OrderRepositoryTest extends DatabaseTestCase
         $this->assertSame('pickup', $this->valeur("SELECT shipping_method FROM orders WHERE id = {$commande->id}"));
     }
 
+    public function test_les_commandes_d_un_client_se_retrouvent_par_son_adresse(): void
+    {
+        // Espace client (revue du 2026-09-24) : historique par adresse e-mail,
+        // plus récentes d'abord, sans les paniers jamais payés.
+        (new \Tests\Support\Factory\OrderFactory($this->pdo))->reference('CT-2026-0101')
+            ->forEmail('camille@example.com')->createdAt('2026-09-01 10:00:00')->create();
+        (new \Tests\Support\Factory\OrderFactory($this->pdo))->reference('CT-2026-0102')
+            ->forEmail('Camille@Example.com')->createdAt('2026-09-10 10:00:00')->status('shipped')->create();
+        (new \Tests\Support\Factory\OrderFactory($this->pdo))->reference('CT-2026-0103')
+            ->forEmail('camille@example.com')->status('pending')->create();
+        (new \Tests\Support\Factory\OrderFactory($this->pdo))->reference('CT-2026-0104')
+            ->forEmail('alex@example.com')->create();
+
+        $commandes = $this->repository->findForCustomer('camille@example.com');
+
+        $this->assertSame(['CT-2026-0102', 'CT-2026-0101'], array_map(static fn ($c): string => $c->reference, $commandes));
+        $this->assertSame('pi_test_123', $commandes[0]->paymentReference);
+        $this->assertSame('2026-09-10', $commandes[0]->createdAt?->format('Y-m-d'));
+        $this->assertTrue($this->repository->hasOrders(' CAMILLE@example.com'));
+        $this->assertFalse($this->repository->hasOrders('personne@example.com'));
+    }
+
     public function test_une_creation_qui_echoue_ne_laisse_aucune_commande_partielle(): void
     {
         // La commande et ses lignes sont ecrites dans UNE transaction : une
