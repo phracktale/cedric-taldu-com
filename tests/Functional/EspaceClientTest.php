@@ -9,7 +9,7 @@ use App\Core\Csrf;
 use App\Core\Response;
 use App\Service\Mail\MailerInterface;
 use App\Service\Spam\Throttle;
-use Tests\Support\Doubles\ArrayMailer;
+use App\Service\Mail\ArrayMailer;
 use Tests\Support\Doubles\FakeThrottle;
 use Tests\Support\Doubles\FrozenClock;
 use Tests\Support\Factory\OrderFactory;
