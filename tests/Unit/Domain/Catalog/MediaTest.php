@@ -162,4 +162,23 @@ final class MediaTest extends TestCase
     {
         $this->assertSame('50% 50%', $this->media()->objectPosition());
     }
+
+    public function test_le_point_focal_devient_des_classes_arrondies_a_dix_pour_cent(): void
+    {
+        // La CSP bloque l'attribut style : le point focal passe par des classes
+        // (fx-30 fy-20) qui posent les variables de object-position.
+        $media = new Media(
+            id: 1,
+            publicBasename: 'portrait',
+            mime: 'image/jpeg',
+            width: 2400,
+            height: 3200,
+            focalX: 34,
+            focalY: 16,
+            translations: new Translations(['fr' => new MediaTranslation(Locale::Fr, 'Portrait', null)]),
+        );
+
+        $this->assertSame('fx-30 fy-20', $media->focalClasses());
+        $this->assertSame('fx-50 fy-50', $this->media()->focalClasses());
+    }
 }
