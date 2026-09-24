@@ -184,6 +184,26 @@ final class MediasTest extends AdminTestCase
         $this->assertSame(600, $media['height']);
     }
 
+    public function test_apres_un_recadrage_l_original_peut_etre_retabli(): void
+    {
+        // Revue du 2026-09-24 : un recadrage n'est plus une perte définitive.
+        $id = $this->uploader($this->fixtures->jpeg(1600, 1200, 'entiere.jpg'));
+        $this->assertStringNotContainsString('/original"', $this->requete('GET', self::MEDIAS . '/' . $id)->body);
+
+        $this->postAvecJeton(self::MEDIAS . '/' . $id . '/recadrage', [
+            'crop_x' => '0.25', 'crop_y' => '0.25', 'crop_w' => '0.5', 'crop_h' => '0.5',
+        ]);
+        $fiche = $this->requete('GET', self::MEDIAS . '/' . $id)->body;
+        $this->assertStringContainsString('action="/cedric-taldu/admin/medias/' . $id . '/original"', $fiche);
+
+        $reponse = $this->postAvecJeton(self::MEDIAS . '/' . $id . '/original');
+
+        $this->assertSame(302, $reponse->status);
+        $media = $this->depot()->findById($id);
+        $this->assertNotNull($media);
+        $this->assertSame([1600, 1200], [$media['width'], $media['height']]);
+    }
+
     // ---------------------------------------------------------- remplacement
 
     public function test_le_remplacement_change_l_image_en_conservant_la_place(): void

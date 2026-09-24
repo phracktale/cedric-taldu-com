@@ -265,6 +265,21 @@ final class ImageProcessorTest extends TestCase
         $this->assertFileExists($repertoire . '/abcdef-320.jpg');
     }
 
+    public function test_le_derive_d_une_image_minuscule_n_est_pas_agrandi(): void
+    {
+        // Revue du 2026-09-24 : images floues. Le dérivé « 320 » d'un original
+        // de 200 px garde ses 200 px au lieu d'être étiré.
+        $original = $this->reencode($this->fixtures->jpeg(200, 150));
+        $repertoire = $this->fixtures->path('derives-minuscule-net');
+        mkdir($repertoire);
+
+        $this->processeur->derivatives($original, $repertoire, 'abcdef');
+
+        $taille = getimagesize($repertoire . '/abcdef-320.jpg');
+        $this->assertIsArray($taille);
+        $this->assertSame([200, 150], [$taille[0], $taille[1]]);
+    }
+
     // ------------------------------------------------------------ recadrage
 
     public function test_le_recadrage_produit_une_image_aux_dimensions_de_la_zone(): void

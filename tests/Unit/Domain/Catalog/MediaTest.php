@@ -98,6 +98,16 @@ final class MediaTest extends TestCase
         $this->assertSame(320, $this->media(largeur: 200)->defaultWidth());
     }
 
+    public function test_l_orientation_choisit_le_gabarit_de_la_vignette(): void
+    {
+        // Revue du 2026-09-24 : gabarit fixe vertical/horizontal géré en CSS.
+        $this->assertSame('portrait', $this->media(2400, 3200)->orientation());
+        $this->assertSame('paysage', $this->media(3200, 2400)->orientation());
+        $this->assertSame('carre', $this->media(1000, 1000)->orientation());
+        // Presque carré (écart ≤ 5 %) : traité comme carré.
+        $this->assertSame('carre', $this->media(1000, 1040)->orientation());
+    }
+
     public function test_le_rapport_d_aspect_evite_le_decalage_de_mise_en_page(): void
     {
         $this->assertSame('2400 / 3200', $this->media()->aspectRatio());
@@ -151,5 +161,24 @@ final class MediaTest extends TestCase
     public function test_sans_point_focal_le_recadrage_est_centre(): void
     {
         $this->assertSame('50% 50%', $this->media()->objectPosition());
+    }
+
+    public function test_le_point_focal_devient_des_classes_arrondies_a_dix_pour_cent(): void
+    {
+        // La CSP bloque l'attribut style : le point focal passe par des classes
+        // (fx-30 fy-20) qui posent les variables de object-position.
+        $media = new Media(
+            id: 1,
+            publicBasename: 'portrait',
+            mime: 'image/jpeg',
+            width: 2400,
+            height: 3200,
+            focalX: 34,
+            focalY: 16,
+            translations: new Translations(['fr' => new MediaTranslation(Locale::Fr, 'Portrait', null)]),
+        );
+
+        $this->assertSame('fx-30 fy-20', $media->focalClasses());
+        $this->assertSame('fx-50 fy-50', $this->media()->focalClasses());
     }
 }

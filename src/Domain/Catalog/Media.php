@@ -107,6 +107,20 @@ final class Media
     /**
      * Valeur de aspect-ratio, pour reserver la place avant chargement.
      */
+    /**
+     * Gabarit de la vignette (revue du 2026-09-24) : vertical, horizontal ou
+     * carré, à 5 % près. Le cadre est fixe par orientation (CSS) et l'image y
+     * tient entière, jamais rognée.
+     */
+    public function orientation(): string
+    {
+        if ($this->width <= 0 || $this->height <= 0 || abs($this->width - $this->height) <= 0.05 * max($this->width, $this->height)) {
+            return 'carre';
+        }
+
+        return $this->height > $this->width ? 'portrait' : 'paysage';
+    }
+
     public function aspectRatio(): string
     {
         return $this->width . ' / ' . $this->height;
@@ -126,6 +140,17 @@ final class Media
      * Valeur de object-position : le point d'interet reste visible quand
      * l'image est recadree en vignette. Centre par defaut.
      */
+    /**
+     * Point focal en classes `fx-NN fy-NN`, arrondi à 10 % : la CSP bloque
+     * l'attribut style, les classes posent les variables de object-position.
+     */
+    public function focalClasses(): string
+    {
+        $arrondi = static fn (?int $valeur): int => (int) (round(max(0, min(100, $valeur ?? 50)) / 10) * 10);
+
+        return 'fx-' . $arrondi($this->focalX) . ' fy-' . $arrondi($this->focalY);
+    }
+
     public function objectPosition(): string
     {
         return ($this->focalX ?? 50) . '% ' . ($this->focalY ?? 50) . '%';

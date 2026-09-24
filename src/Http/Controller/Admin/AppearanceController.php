@@ -9,6 +9,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Domain\Editorial\Cta;
 use App\Domain\Editorial\HomeSectionForm;
+use App\Domain\Editorial\Theme;
 use App\Domain\Locale;
 use App\Repository\Admin\SettingsAdminRepository;
 use App\Repository\CategoryRepository;
@@ -65,6 +66,7 @@ final class AppearanceController
             'styles' => self::STYLES,
             'style' => in_array($style, Chrome::ACTIVE_STYLES, true) ? $style : Chrome::ACTIVE_STYLES[0],
             'couleur' => HomeSectionForm::color($nav['color'] ?? null) ?? '',
+            'zoom' => Theme::zoom($this->settings->json(Theme::IMAGES_SETTING)['zoom'] ?? null),
             'valeurs' => $valeurs,
             'rubriques' => $rubriques,
         ]);
@@ -78,6 +80,12 @@ final class AppearanceController
             'style' => in_array($style, Chrome::ACTIVE_STYLES, true) ? $style : Chrome::ACTIVE_STYLES[0],
             'color' => HomeSectionForm::color($request->input('couleur')),
         ], $this->chrome->now());
+
+        $this->save->save(
+            Theme::IMAGES_SETTING,
+            ['zoom' => Theme::zoom($request->input('zoom'))],
+            $this->chrome->now(),
+        );
 
         $input = [];
         foreach (array_keys(HomeSectionForm::ctaToForm('blog', [])) as $champ) {

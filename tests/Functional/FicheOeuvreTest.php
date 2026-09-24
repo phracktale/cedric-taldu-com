@@ -180,7 +180,18 @@ final class FicheOeuvreTest extends FunctionalTestCase
 
         $this->assertStringContainsString('width="2400"', $corps);
         $this->assertStringContainsString('height="3960"', $corps);
-        $this->assertStringContainsString('aspect-ratio: 2400 / 3960', $corps);
+        // Le gabarit vient d'une classe d'orientation : un attribut style serait
+        // bloqué par la CSP et ne s'appliquerait jamais (revue du 2026-09-24).
+        $this->assertStringContainsString('class="dessin dessin--portrait"', $corps);
+        $this->assertStringNotContainsString('aspect-ratio: 2400 / 3960', $corps);
+    }
+
+    public function test_une_oeuvre_horizontale_a_un_gabarit_horizontal(): void
+    {
+        $media = (new MediaFactory($this->pdo))->named('paysage')->sized(3200, 2000)->create();
+        $this->oeuvre()->withPrimaryMedia($media)->translated('fr', 'horizon', 'Horizon')->create($this->rubrique);
+
+        $this->assertStringContainsString('dessin--paysage', $this->get('/cedric-taldu/fr/galerie/encres')->body);
     }
 
     public function test_sans_javascript_le_visuel_ouvre_l_image_en_pleine_taille(): void

@@ -68,7 +68,7 @@ final class BlocsTest extends FunctionalTestCase
 
         $corps = $this->get('/cedric-taldu/fr/a-propos')->body;
 
-        $this->assertMatchesRegularExpression('~<figure class="bloc bloc-image">\s*<div class="dessin"[^>]*>\s*<picture~', $corps);
+        $this->assertMatchesRegularExpression('~<figure class="bloc bloc-image">\s*<div class="dessin[^"]*">\s*<picture~', $corps);
         $this->assertStringContainsString('atelier-lumiere', $corps);
         $this->assertStringContainsString('Mon atelier', $corps);
     }

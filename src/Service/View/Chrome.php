@@ -11,6 +11,7 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Domain\Editorial\HomeSectionForm;
 use App\Domain\Editorial\MainMenu;
+use App\Domain\Editorial\Theme;
 use App\Domain\Locale;
 use App\Http\Middleware\SecurityHeaders;
 use App\Repository\CartRepository;
@@ -122,7 +123,13 @@ final class Chrome
     private function themeCss(): string
     {
         $couleur = HomeSectionForm::color($this->settings->json('nav.active_style')['color'] ?? null);
+        $images = $this->settings->json(Theme::IMAGES_SETTING);
+        $declarations = $couleur === null ? '' : '--actif: ' . $couleur . '; ';
 
-        return $couleur === null ? '' : ':root { --actif: ' . $couleur . '; }';
+        if (array_key_exists('zoom', $images)) {
+            $declarations .= Theme::zoomCss(Theme::zoom($images['zoom'])) . ' ';
+        }
+
+        return $declarations === '' ? '' : ':root { ' . $declarations . '}';
     }
 }
