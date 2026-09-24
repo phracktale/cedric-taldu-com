@@ -217,7 +217,11 @@ nav a.boutique:hover, nav a.boutique:focus-visible { background: var(--encre); c
 
 /* Sous-menu Galerie : alimenté depuis la base, jamais écrit en dur.
    Sans JavaScript, :focus-within suffit à l'ouvrir et à le parcourir. */
-.sous-menu { position: relative; }
+.sous-menu { position: relative; display: flex; align-items: center; gap: .35rem; }
+/* Ouvreur du sous-menu, à côté du lien « Galerie » (revue du 2026-09-24). */
+.sous-menu-ouvrir { font-size: .7rem; letter-spacing: 0; padding: .1rem .2rem; }
+.galerie-tout { margin-top: 3rem; }
+.gal-card .dessin { margin-bottom: 1.2rem; }
 .sous-menu > ul {
   display: none;
   position: absolute; top: 100%; left: 0;
@@ -250,7 +254,8 @@ nav a.boutique:hover, nav a.boutique:focus-visible { background: var(--encre); c
   nav li { width: 100%; }
   nav a { display: block; padding: .7rem 0; }
   nav a.boutique { display: inline-block; margin-top: .6rem; }
-  .sous-menu > ul { position: static; border: none; padding: 0 0 0 1rem; }
+  .sous-menu { flex-wrap: wrap; }
+  .sous-menu > ul { position: static; border: none; padding: 0 0 0 1rem; flex-basis: 100%; }
 }
 
 /* ------------------------------------------------------------------ boutons */

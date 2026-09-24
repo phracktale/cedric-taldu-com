@@ -43,6 +43,8 @@ final class Chrome
      */
     private const SECTIONS = [
         'page.about' => 'about',
+        'gallery.index' => 'gallery',
+        'artwork.index' => 'gallery',
         'category.show' => 'gallery',
         'artwork.show' => 'gallery',
         'blog.index' => 'news',

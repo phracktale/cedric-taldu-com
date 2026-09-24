@@ -50,6 +50,7 @@ use App\Http\Controller\Front\ArtworkController;
 use App\Http\Controller\Front\CartController;
 use App\Http\Controller\Front\CheckoutController;
 use App\Http\Controller\Front\CategoryController;
+use App\Http\Controller\Front\GalleryController;
 use App\Http\Controller\Front\HomeController;
 use App\Http\Controller\Front\StripeWebhookController;
 use App\Http\Middleware\AuthGuard;
@@ -640,6 +641,15 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
 
     $container->set(CtaLinker::class, static fn (Container $c): CtaLinker => new CtaLinker(
         $c->get(UrlGenerator::class),
+    ));
+
+    $container->set(GalleryController::class, static fn (Container $c): GalleryController => new GalleryController(
+        $c->get(View::class),
+        $c->get(Chrome::class),
+        $c->get(ArtworkRepository::class),
+        $c->get(MediaRepository::class),
+        $c->get(UrlGenerator::class),
+        $c->get(StructuredData::class),
     ));
 
     $container->set(CategoryController::class, static fn (Container $c): CategoryController => new CategoryController(

@@ -34,6 +34,7 @@ use App\Http\Controller\Admin\ProductController as AdminProductController;
 use App\Http\Controller\Front\ArtworkController;
 use App\Http\Controller\Front\BlogController;
 use App\Http\Controller\Front\CategoryController;
+use App\Http\Controller\Front\GalleryController;
 use App\Http\Controller\Front\CartController;
 use App\Http\Controller\Front\CheckoutController;
 use App\Http\Controller\Front\ContactController;
@@ -56,6 +57,11 @@ return [
     new Route('home', 'GET', '/en/', [HomeController::class, 'show'], locale: 'en'),
 
     // Rubrique
+    // Page mère « Galerie » et toutes les œuvres (revue du 2026-09-24).
+    new Route('gallery.index', 'GET', '/fr/galerie', [GalleryController::class, 'index'], locale: 'fr'),
+    new Route('gallery.index', 'GET', '/en/gallery', [GalleryController::class, 'index'], locale: 'en'),
+    new Route('artwork.index', 'GET', '/fr/oeuvres', [GalleryController::class, 'works'], locale: 'fr'),
+    new Route('artwork.index', 'GET', '/en/works', [GalleryController::class, 'works'], locale: 'en'),
     new Route('category.show', 'GET', '/fr/galerie/{slug}', [CategoryController::class, 'show'], locale: 'fr', requirements: $slug),
     new Route('category.show', 'GET', '/en/gallery/{slug}', [CategoryController::class, 'show'], locale: 'en', requirements: $slug),
 

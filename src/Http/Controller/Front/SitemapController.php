@@ -51,6 +51,11 @@ final class SitemapController
             Locale::En->value => $this->url->absolute('home', ['locale' => Locale::En->value]),
         ]);
 
+        // Page mère Galerie et toutes les œuvres (revue du 2026-09-24).
+        foreach (['gallery.index', 'artwork.index'] as $route) {
+            $entries[] = $this->alternates($this->localeUrls($route, static fn (Locale $l): array => [], Locale::cases()));
+        }
+
         foreach ($this->categories->findPublished() as $category) {
             $entries[] = $this->alternates($this->localeUrls(
                 'category.show',

@@ -3,9 +3,9 @@
 /**
  * En-tête global.
  *
- * 02-front-public §1 : le menu Galerie n'est PAS cliquable et ouvre un
- * sous-menu listant les rubriques publiées, alimenté depuis la base — aucune
- * rubrique n'est écrite en dur.
+ * 02-front-public §1, revu le 2026-09-24 : « Galerie » mène à la page mère des
+ * galeries, et un bouton voisin ouvre le sous-menu listant les rubriques
+ * publiées, alimenté depuis la base — aucune rubrique n'est écrite en dur.
  *
  * Sans JavaScript, le sous-menu reste ouvrable et parcourable au clavier grâce
  * à `:focus-within` ; nav.js n'ajoute que le clic, les flèches et Échap.
@@ -52,8 +52,10 @@ $styleActif = is_string($data['navActiveStyle'] ?? null) ? $data['navActiveStyle
           <a href="<?= attr($url->route('page.about', ['locale' => $locale->value])) ?>"<?php if ($section === 'about') : ?> aria-current="page"<?php endif; ?>><?= $t('nav.about') ?></a>
         </li>
         <li class="sous-menu">
-          <?php /* Non cliquable : c'est un ouvreur de sous-menu, pas une page. */ ?>
-          <button type="button" class="nav-bouton" aria-expanded="true"<?php if ($section === 'gallery') : ?> aria-current="true"<?php endif; ?>><?= $t('nav.gallery') ?></button>
+          <?php /* « Galerie » mène à la page mère (revue du 2026-09-24) ; le bouton
+                   voisin ouvre le sous-menu des rubriques. */ ?>
+          <a href="<?= attr($url->route('gallery.index', ['locale' => $locale->value])) ?>"<?php if ($section === 'gallery') : ?> aria-current="page"<?php endif; ?>><?= $t('nav.gallery') ?></a>
+          <button type="button" class="nav-bouton sous-menu-ouvrir" aria-expanded="true" aria-label="<?= $t('nav.gallery_open') ?>">▾</button>
           <ul>
             <?php foreach ($rubriques as $rubrique) : ?>
             <li>
