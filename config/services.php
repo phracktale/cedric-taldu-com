@@ -46,6 +46,11 @@ use App\Http\Controller\Admin\DeliveryController;
 use App\Http\Controller\Admin\MenuController;
 use App\Http\Controller\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controller\Front\NewsletterController;
+use App\Http\Controller\Front\AccountController as CustomerAccountController;
+use App\Repository\CustomerLoginRepository;
+use App\Service\Account\CustomerLogin;
+use App\Service\Account\CustomerSession;
+use App\Service\Mail\AccountMailer;
 use App\Http\Controller\Admin\HomeController as AdminHomeController;
 use App\Http\Controller\Admin\MediaController;
 use App\Http\Controller\Admin\OrderController as AdminOrderController;
@@ -899,6 +904,36 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
     ));
     $container->set(UnsubscribeToken::class, static fn (): UnsubscribeToken
         => new UnsubscribeToken($config->securityPepper));
+    // Espace client par lien e-mail (revue du 2026-09-24).
+    $container->set(CustomerLoginRepository::class, static fn (Container $c): CustomerLoginRepository
+        => new CustomerLoginRepository($c->get(PDO::class)));
+    $container->set(CustomerLogin::class, static fn (Container $c): CustomerLogin => new CustomerLogin(
+        $c->get(CustomerLoginRepository::class),
+        $c->get(ClockInterface::class),
+    ));
+    $container->set(CustomerSession::class, static fn (Container $c): CustomerSession => new CustomerSession(
+        $c->get(SessionInterface::class),
+        $c->get(Csrf::class),
+    ));
+    $container->set(AccountMailer::class, static fn (Container $c): AccountMailer => new AccountMailer(
+        $c->get(View::class),
+        $c->get(MailerInterface::class),
+        $env->getOptional('ARTIST_EMAIL', 'contact@cedrictaldu.com') ?? 'contact@cedrictaldu.com',
+    ));
+    $container->set(CustomerAccountController::class, static fn (Container $c): CustomerAccountController => new CustomerAccountController(
+        $c->get(View::class),
+        $c->get(Chrome::class),
+        $c->get(CustomerSession::class),
+        $c->get(CustomerLogin::class),
+        $c->get(OrderRepository::class),
+        $c->get(NewsletterRepository::class),
+        $c->get(Newsletter::class),
+        $c->get(AccountMailer::class),
+        $c->get(Throttle::class),
+        $c->get(UrlGenerator::class),
+        $c->get(LoggerInterface::class),
+    ));
+
     $container->set(NewsletterController::class, static fn (Container $c): NewsletterController
         => new NewsletterController(
             $c->get(View::class),

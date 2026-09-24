@@ -98,6 +98,8 @@ $liens = [
 
     <?php // Accès au panier, présent sur tout le site. La pastille montre le
           // nombre d'articles ; admin.js la met à jour après un ajout en fetch. ?>
+    <?php // Espace client (revue du 2026-09-24) : commandes, factures, newsletter. ?>
+    <a class="panier-lien compte-lien" href="<?= attr($url->route('account.index', ['locale' => $locale->value])) ?>"><?= $t('nav.account') ?></a>
     <a class="panier-lien" href="<?= attr($url->route('cart.show', ['locale' => $locale->value])) ?>">
       <?= $t('nav.cart') ?>
       <span class="pastille-panier" data-cart-count<?php if ($cartCount === 0) : ?> hidden<?php endif; ?>><?= e($cartCount) ?></span>

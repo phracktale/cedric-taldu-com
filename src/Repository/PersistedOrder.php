@@ -44,6 +44,11 @@ final class PersistedOrder
         public readonly ?string $trackingCarrier,
         public readonly ?string $trackingNumber,
         public readonly array $lines,
+        // Espace client (revue du 2026-09-24) : dates et référence de transaction.
+        public readonly ?\DateTimeImmutable $createdAt = null,
+        public readonly ?\DateTimeImmutable $paidAt = null,
+        /** Identifiant du paiement chez Stripe (payment intent), pour le client et la facture. */
+        public readonly ?string $paymentReference = null,
     ) {
     }
 
