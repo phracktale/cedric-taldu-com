@@ -8,6 +8,7 @@ use App\Core\Exception\NotFoundException;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\View;
+use App\Domain\Editorial\Block;
 use App\Domain\Locale;
 use App\Repository\MediaRepository;
 use App\Repository\PageRepository;
@@ -87,6 +88,7 @@ final class PageController
             'cover' => $page->coverMediaId === null
                 ? null
                 : ($this->medias->findByIds([$page->coverMediaId])[$page->coverMediaId] ?? null),
+            'blockMedias' => $this->medias->findByIds(Block::mediaIdsIn($page->blocks($locale))),
             'canonical' => $this->url->absolute($route, ['locale' => $locale->value]),
             'alternates' => $this->url->hreflangAlternates($route, $translated),
             // Le code fixe donne le nom de route (page.about, page.terms, …).

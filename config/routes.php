@@ -252,6 +252,8 @@ return [
     // Mediatheque
     new Route('admin.media.index', 'GET', '/admin/medias', [MediaController::class, 'index']),
     new Route('admin.media.upload', 'POST', '/admin/medias', [MediaController::class, 'upload']),
+    // Sélecteur d'images de l'éditeur de blocs (JSON), revue du 2026-09-24.
+    new Route('admin.media.picker', 'GET', '/admin/medias/choix', [MediaController::class, 'picker']),
     new Route('admin.media.edit', 'GET', '/admin/medias/{id}', [MediaController::class, 'edit'], requirements: $id),
     new Route('admin.media.update', 'POST', '/admin/medias/{id}', [MediaController::class, 'update'], requirements: $id),
     new Route('admin.media.replace', 'POST', '/admin/medias/{id}/remplacement', [MediaController::class, 'replace'], requirements: $id),

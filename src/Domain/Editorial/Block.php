@@ -46,6 +46,30 @@ final class Block
     }
 
     /**
+     * Identifiants des médias référencés par des blocs image, enfants compris :
+     * le contrôleur les charge en une requête avant le rendu.
+     *
+     * @param list<Block> $blocks
+     * @return list<int>
+     */
+    public static function mediaIdsIn(array $blocks): array
+    {
+        $ids = [];
+
+        foreach ($blocks as $block) {
+            $media = $block->text('media');
+
+            if ($block->type === 'image' && ctype_digit($media) && (int) $media > 0) {
+                $ids[] = (int) $media;
+            }
+
+            $ids = [...$ids, ...self::mediaIdsIn($block->children)];
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    /**
      * Liste de blocs depuis un document JSON, ou [] si absent/malformé.
      *
      * @return list<Block>

@@ -19,6 +19,7 @@
 
 declare(strict_types=1);
 
+use App\Domain\Catalog\Media;
 use App\Domain\Editorial\Block;
 use App\Domain\Locale;
 
@@ -26,14 +27,28 @@ use App\Domain\Locale;
 $blocks = is_array($data['blocks'] ?? null) ? $data['blocks'] : [];
 /** @var Locale $locale */
 $locale = $data['locale'];
+/** @var array<int, Media> $medias médias des blocs image, chargés par le contrôleur */
+$medias = is_array($data['medias'] ?? null) ? $data['medias'] : [];
 
 /** Ramène une valeur à une liste blanche ; le premier élément est le défaut. */
 $parmi = static fn (string $valeur, array $autorises): string
     => in_array($valeur, $autorises, true) ? $valeur : $autorises[0];
 
-/** Une URL sûre pour un href : http(s), mailto ou lien interne ; sinon inerte. */
-$lien = static fn (string $u): string
-    => preg_match('#^(https?:|mailto:|/)#i', $u) === 1 ? $u : '#';
+/**
+ * Une URL sûre pour un href : http(s), mailto ou lien interne ; sinon inerte.
+ * Un lien interne reçoit le préfixe de chemin (aucune URL en dur, CLAUDE.md) ;
+ * « //hote » mènerait hors du site et reste inerte.
+ */
+$lien = static function (string $u) use ($url): string {
+    if (preg_match('#^/(?!/)#', $u) === 1) {
+        return $url->path($u);
+    }
+
+    return preg_match('#^(https?:|mailto:)#i', $u) === 1 ? $u : '#';
+};
+
+/** Alignement du bouton : valeur du catalogue → classe CTA du site. */
+$alignements = ['center' => 'centre', 'left' => 'gauche', 'right' => 'droite'];
 ?>
 <?php foreach ($blocks as $block) : ?>
   <?php if ($block->type === 'text') : ?>
@@ -45,10 +60,23 @@ $lien = static fn (string $u): string
 
   <?php elseif ($block->type === 'image') : ?>
     <?php $legende = $block->text('caption'); ?>
+    <?php $media = $medias[(int) $block->text('media')] ?? null; ?>
+    <?php if ($media instanceof Media) : ?>
+    <figure class="bloc bloc-image">
+      <?= $partial('partials/picture', [
+          'media' => $media,
+          'locale' => $locale,
+          'sizes' => '(max-width: 900px) 100vw, 72rem',
+          'label' => $block->text('alt') !== '' ? $block->text('alt') : $legende,
+      ]) ?>
+      <?php if ($legende !== '') : ?><figcaption><?= e($legende) ?></figcaption><?php endif; ?>
+    </figure>
+    <?php elseif ($block->text('src') !== '') : ?>
     <figure class="bloc bloc-image">
       <img src="<?= attr($lien($block->text('src'))) ?>" alt="<?= attr($block->text('alt')) ?>" loading="lazy">
       <?php if ($legende !== '') : ?><figcaption><?= e($legende) ?></figcaption><?php endif; ?>
     </figure>
+    <?php endif; ?>
 
   <?php elseif ($block->type === 'quote') : ?>
     <?php $auteur = $block->text('author'); ?>
@@ -67,7 +95,8 @@ $lien = static fn (string $u): string
   <?php elseif ($block->type === 'button') : ?>
     <?php $variante = $parmi($block->text('variant', 'primary'), ['primary', 'secondary', 'outline']); ?>
     <?php $classe = $variante === 'primary' ? 'btn-plein' : 'btn-vide'; ?>
-    <p class="bloc bloc-cta">
+    <?php $alignement = $alignements[$parmi($block->text('align', 'center'), ['center', 'left', 'right'])]; ?>
+    <p class="bloc bloc-cta cta-row cta-row--<?= e($alignement) ?>">
       <a class="btn <?= e($classe) ?>" href="<?= attr($lien($block->text('url'))) ?>"><?= e($block->text('label')) ?></a>
     </p>
 
@@ -75,14 +104,14 @@ $lien = static fn (string $u): string
     <?php $nb = $parmi($block->text('count', '2'), ['2', '3', '4']); ?>
     <?php $gap = $parmi($block->text('gap', 'md'), ['sm', 'md', 'lg']); ?>
     <div class="bloc bloc-colonnes bloc-colonnes--<?= e($nb) ?> bloc-gap--<?= e($gap) ?>">
-      <?= $partial('partials/blocks', ['blocks' => $block->children, 'locale' => $locale]) ?>
+      <?= $partial('partials/blocks', ['blocks' => $block->children, 'locale' => $locale, 'medias' => $medias]) ?>
     </div>
 
   <?php elseif ($block->type === 'section') : ?>
     <?php $pad = $parmi($block->text('padding', 'md'), ['none', 'sm', 'md', 'lg', 'xl']); ?>
     <?php $largeur = $parmi($block->text('maxWidth', 'prose'), ['prose', 'content', 'wide', 'full']); ?>
     <section class="bloc bloc-section bloc-pad--<?= e($pad) ?> bloc-max--<?= e($largeur) ?>">
-      <?= $partial('partials/blocks', ['blocks' => $block->children, 'locale' => $locale]) ?>
+      <?= $partial('partials/blocks', ['blocks' => $block->children, 'locale' => $locale, 'medias' => $medias]) ?>
     </section>
   <?php endif; ?>
   <?php // Un type inconnu ne correspond à aucune branche : ignoré silencieusement. ?>

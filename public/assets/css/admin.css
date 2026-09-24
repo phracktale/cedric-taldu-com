@@ -415,3 +415,17 @@ legend {
   .admin-entete { flex-direction: column; align-items: flex-start; }
   .tableau { font-size: .85rem; }
 }
+
+/* Sélecteur d'images de l'éditeur de blocs (revue du 2026-09-24). */
+.eb-media { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
+.eb-media input[type="number"] { width: 7rem; }
+.eb-media-apercu { width: 4rem; height: 4rem; object-fit: cover; border: 1px solid var(--filet); }
+.eb-media-grille {
+  flex-basis: 100%;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr)); gap: .5rem;
+  max-height: 18rem; overflow-y: auto; padding: .5rem; border: 1px solid var(--filet);
+}
+.eb-media-grille[hidden] { display: none; }
+.eb-media-choix { padding: 0; border: 2px solid transparent; background: none; cursor: pointer; }
+.eb-media-choix:hover, .eb-media-choix:focus-visible { border-color: var(--encre); }
+.eb-media-choix img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }

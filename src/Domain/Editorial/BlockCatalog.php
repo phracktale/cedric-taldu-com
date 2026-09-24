@@ -44,7 +44,10 @@ final class BlockCatalog
             'image' => [
                 'label' => 'Image', 'icon' => 'I', 'category' => 'base', 'allowChildren' => false,
                 'schema' => [
-                    'src' => ['type' => 'image', 'label' => 'Image'],
+                    // Image de la médiathèque, rendue en <picture> responsive.
+                    'media' => ['type' => 'media', 'label' => 'Image de la médiathèque'],
+                    // Adresse directe : repli historique, sans dérivés.
+                    'src' => ['type' => 'image', 'label' => 'ou adresse d’une image'],
                     'alt' => ['type' => 'string', 'label' => 'Texte alternatif'],
                     'caption' => ['type' => 'string', 'label' => 'Légende'],
                 ],
@@ -69,6 +72,7 @@ final class BlockCatalog
                     'label' => ['type' => 'string', 'label' => 'Texte', 'default' => 'En savoir plus'],
                     'url' => ['type' => 'url', 'label' => 'Lien'],
                     'variant' => ['type' => 'select', 'label' => 'Style', 'default' => 'primary', 'options' => ['primary', 'secondary', 'outline']],
+                    'align' => ['type' => 'select', 'label' => 'Alignement', 'default' => 'center', 'options' => ['center', 'left', 'right']],
                 ],
             ],
             'columns' => [

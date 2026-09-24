@@ -91,6 +91,11 @@ function monter(textarea) {
     legende.textContent = schema.label || cle;
     enveloppe.appendChild(legende);
 
+    if (schema.type === 'media') {
+      enveloppe.appendChild(selecteurMedia(donnee, cle, textarea.dataset.mediaPicker || ''));
+      return enveloppe;
+    }
+
     let entree;
     if (schema.type === 'select') {
       entree = document.createElement('select');
@@ -114,6 +119,76 @@ function monter(textarea) {
     enveloppe.appendChild(entree);
 
     return enveloppe;
+  }
+
+  /**
+   * Choix d'une image de la médiathèque (revue du 2026-09-24) : le numéro du
+   * média reste saisissable à la main ; « Choisir » ouvre une grille de
+   * vignettes chargée depuis le back-office (JSON), un clic retient l'image.
+   */
+  function selecteurMedia(donnee, cle, source) {
+    const bloc = document.createElement('div');
+    bloc.className = 'eb-media';
+
+    const entree = document.createElement('input');
+    entree.type = 'number';
+    entree.min = '1';
+    entree.value = donnee.props[cle] != null ? String(donnee.props[cle]) : '';
+    entree.setAttribute('aria-label', 'Numéro de l’image');
+
+    const apercu = document.createElement('img');
+    apercu.className = 'eb-media-apercu';
+    apercu.alt = '';
+    apercu.hidden = true;
+
+    const retenir = (id, vignette) => {
+      entree.value = id;
+      donnee.props[cle] = id;
+      ecrire();
+      apercu.hidden = !vignette;
+      if (vignette) apercu.src = vignette;
+    };
+
+    entree.addEventListener('input', () => retenir(entree.value, ''));
+    bloc.append(entree, apercu);
+
+    if (!source) return bloc;
+
+    const grille = document.createElement('div');
+    grille.className = 'eb-media-grille';
+    grille.hidden = true;
+
+    bloc.appendChild(bouton('Choisir une image', 'Choisir une image de la médiathèque', async () => {
+      grille.hidden = !grille.hidden;
+      if (grille.hidden || grille.childElementCount > 0) return;
+
+      try {
+        const reponse = await fetch(source, { headers: { Accept: 'application/json' } });
+        const images = reponse.ok ? ((await reponse.json()).medias || []) : [];
+        images.forEach((image) => {
+          const choix = document.createElement('button');
+          choix.type = 'button';
+          choix.className = 'eb-media-choix';
+          choix.title = image.label;
+          const vignette = document.createElement('img');
+          vignette.src = image.thumb;
+          vignette.alt = image.label;
+          vignette.loading = 'lazy';
+          choix.appendChild(vignette);
+          choix.addEventListener('click', () => {
+            retenir(String(image.id), image.thumb);
+            grille.hidden = true;
+          });
+          grille.appendChild(choix);
+        });
+        if (images.length === 0) grille.textContent = 'Aucune image dans la médiathèque.';
+      } catch {
+        grille.textContent = 'La médiathèque n’a pas pu être chargée.';
+      }
+    }));
+    bloc.appendChild(grille);
+
+    return bloc;
   }
 
   /** Barre « ajouter un bloc » sous une liste. */

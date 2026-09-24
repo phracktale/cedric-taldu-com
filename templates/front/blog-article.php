@@ -65,6 +65,13 @@ $dateAffichee = $post->eventDate ?? $post->publishedAt;
 
   <div class="article-corps">
     <?= richText($post->body($locale)) ?>
+    <?php if ($post->blocks($locale) !== []) : ?>
+      <?= $partial('partials/blocks', [
+          'blocks' => $post->blocks($locale),
+          'locale' => $locale,
+          'medias' => $data['blockMedias'] ?? [],
+      ]) ?>
+    <?php endif; ?>
   </div>
 
   <?php if (is_array($data['endCta'] ?? null)) : ?>

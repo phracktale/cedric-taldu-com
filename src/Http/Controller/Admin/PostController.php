@@ -12,6 +12,7 @@ use App\Domain\Exception\InvalidSlug;
 use App\Domain\Locale;
 use App\Domain\Slug;
 use App\Repository\Admin\PostAdminRepository;
+use App\Service\Content\BlockSanitizer;
 use App\Service\Content\TranslationInput;
 use App\Service\Media\CoverUpload;
 use App\Service\Media\Exception\UploadRejected;
@@ -50,6 +51,7 @@ final class PostController
         private readonly TranslationInput $translations,
         private readonly \App\Service\Seo\SlugHistory $slugHistory,
         private readonly CoverUpload $covers,
+        private readonly BlockSanitizer $blocks,
     ) {
     }
 
@@ -206,7 +208,17 @@ final class PostController
      */
     private function collect(Request $request): array
     {
-        return $this->translations->collect($request->post, self::FIELDS, self::KINDS, 'title');
+        $translations = $this->translations->collect($request->post, self::FIELDS, self::KINDS, 'title');
+
+        // Blocs éditoriaux (revue du 2026-09-24) : ASSAINIS ici, à l'écriture,
+        // comme ceux des pages. Vide → NULL, l'article se limite à son corps.
+        foreach (array_keys($translations) as $locale) {
+            $raw = $request->post['blocs_' . $locale] ?? '';
+            $clean = $this->blocks->sanitizeJson(is_string($raw) ? $raw : '');
+            $translations[$locale]['blocks'] = $clean === '[]' ? null : $clean;
+        }
+
+        return $translations;
     }
 
     /**

@@ -31,7 +31,7 @@ final class PostRepository
 
     private const SELECT = <<<'SQL'
         SELECT p.id, p.cover_media_id, p.author_id, p.event_date, p.event_place, p.published_at,
-               t.locale, t.slug, t.title, t.excerpt, t.body, t.meta_title, t.meta_description
+               t.locale, t.slug, t.title, t.excerpt, t.body, t.blocks, t.meta_title, t.meta_description
         FROM posts p
         INNER JOIN post_translations t ON t.post_id = p.id
         SQL;
@@ -156,6 +156,7 @@ final class PostRepository
                 body: self::nullableString($row['body']),
                 metaTitle: self::nullableString($row['meta_title']),
                 metaDescription: self::nullableString($row['meta_description']),
+                blocksJson: self::nullableString($row['blocks']),
             );
         }
 

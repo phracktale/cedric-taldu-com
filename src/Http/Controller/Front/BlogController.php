@@ -9,6 +9,7 @@ use App\Core\Exception\NotFoundException;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\View;
+use App\Domain\Editorial\Block;
 use App\Domain\Editorial\Cta;
 use App\Domain\Editorial\HomeSectionForm;
 use App\Domain\Exception\InvalidSlug;
@@ -104,6 +105,7 @@ final class BlogController
             'metaTitle' => $post->title($locale),
             'post' => $post,
             'cover' => $cover,
+            'blockMedias' => $this->medias->findByIds(Block::mediaIdsIn($post->blocks($locale))),
             'endCta' => isset(HomeSectionForm::common($reglage)['cta'])
                 ? $this->ctas->fromSetting(
                     'blog',

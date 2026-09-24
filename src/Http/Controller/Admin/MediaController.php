@@ -14,6 +14,7 @@ use App\Domain\Locale;
 use App\Repository\Admin\MediaAdminRepository;
 use App\Service\Media\CropRegion;
 use App\Service\Media\Exception\UploadRejected;
+use App\Service\I18n\UrlGenerator;
 use App\Service\Media\MediaStore;
 use App\Service\View\AdminChrome;
 use InvalidArgumentException;
@@ -34,17 +35,42 @@ final class MediaController
 {
     private const PAR_PAGE = 48;
 
+    /** Images proposées par le sélecteur de l'éditeur de blocs. */
+    private const CHOIX = 120;
+
     public function __construct(
         private readonly AdminChrome $chrome,
         private readonly MediaAdminRepository $medias,
         private readonly MediaStore $store,
         private readonly Validator $validator,
+        private readonly UrlGenerator $url,
     ) {
     }
 
     public function index(Request $request): Response
     {
         return $this->page($request);
+    }
+
+    /**
+     * Liste JSON des images récentes pour le sélecteur de l'éditeur de blocs
+     * (revue du 2026-09-24) : identifiant, libellé, vignette de 320 px.
+     */
+    public function picker(Request $request): Response
+    {
+        $liste = [];
+
+        foreach ($this->medias->findRecent(self::CHOIX) as $media) {
+            $id = (int) $media['id'];
+            $alt = $this->medias->translationsOf($id)['fr']['alt'] ?? '';
+            $liste[] = [
+                'id' => $id,
+                'label' => $alt !== '' ? $alt : (string) $media['public_basename'],
+                'thumb' => $this->url->media($media['public_basename'] . '-320.jpg'),
+            ];
+        }
+
+        return Response::json(['medias' => $liste]);
     }
 
     public function upload(Request $request): Response

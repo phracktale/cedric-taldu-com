@@ -73,14 +73,14 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
                     </p>
 
                     <p class="champ">
-                        <label for="blocs_<?= attr($langue) ?>">Composition par blocs (optionnel)</label>
+                        <label for="blocs_<?= attr($langue) ?>">Blocs après le contenu (optionnel)</label>
                         <textarea id="blocs_<?= attr($langue) ?>" name="blocs_<?= attr($langue) ?>" rows="6"
                                   data-block-editor
                                   data-catalog="<?= jsonAttr(BlockCatalog::all()) ?>"
-                                  data-media-base="<?= attr($base) ?>/admin/medias"><?= e($valeur('blocs', $langue, 'blocks')) ?></textarea>
+                                  data-media-picker="<?= attr($base) ?>/admin/medias/choix"><?= e($valeur('blocs', $langue, 'blocks')) ?></textarea>
                         <span class="champ-aide">
-                            Dès qu’un bloc est défini, la composition par blocs REMPLACE le contenu HTML ci-dessus
-                            sur la page publique. Sans JavaScript, ce champ contient le JSON brut des blocs.
+                            Les blocs s’affichent SOUS le contenu ci-dessus, sans le remplacer. Sans JavaScript,
+                            ce champ contient le JSON brut des blocs.
                         </span>
                     </p>
 
