@@ -69,6 +69,12 @@ final class PriceIntegrityTest extends FunctionalTestCase
             'nom' => 'Acheteur',
             'email' => 'acheteur@example.test',
             'mode' => 'pickup',
+            // Remise en main propre : l'adresse, située près d'Amiens par le
+            // géocodeur doublé, mesure la distance (revue du 2026-09-24).
+            'adresse' => '25 allée des Lilas',
+            'code_postal' => '80470',
+            'ville' => 'Dreuil-lès-Amiens',
+            'pays' => 'FR',
             'cgv' => 'on',
             // Toute la panoplie du fraudeur au prix.
             'total' => '1',

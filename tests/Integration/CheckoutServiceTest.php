@@ -373,7 +373,8 @@ final class CheckoutServiceTest extends DatabaseTestCase
         $this->assertSame(CheckoutOutcome::Redirect, $resultat->outcome);
         $this->assertNotNull($resultat->order);
         $this->assertSame(0, $resultat->order->shipping->cents);
-        $this->assertNull($this->valeur('SELECT shipping_address FROM orders'));
+        // L'adresse où l'artiste se rend est conservée (revue du 2026-09-24).
+        $this->assertNotNull($this->valeur('SELECT shipping_address FROM orders'));
     }
 
     public function test_le_retrait_est_refuse_quand_le_panier_contient_une_reproduction(): void

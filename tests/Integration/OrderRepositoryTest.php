@@ -192,12 +192,16 @@ final class OrderRepositoryTest extends DatabaseTestCase
         $this->assertSame('FR', $adresse['country']);
     }
 
-    public function test_une_remise_en_main_propre_n_enregistre_aucune_adresse(): void
+    public function test_une_remise_en_main_propre_enregistre_l_adresse_ou_se_rendre(): void
     {
-        // 06-securite §9 : pas de donnee personnelle sans finalite.
+        // Revue du 2026-09-24 : l'artiste se déplace jusqu'à l'acheteur. L'adresse
+        // a une finalité (06-securite §9) : elle est conservée sur la commande.
         $commande = $this->creerCommande(mode: ShippingMethod::Pickup, port: 0);
 
-        $this->assertNull($this->valeur("SELECT shipping_address FROM orders WHERE id = {$commande->id}"));
+        $this->assertStringContainsString(
+            'Trois-Cailloux',
+            (string) $this->valeur("SELECT shipping_address FROM orders WHERE id = {$commande->id}"),
+        );
         $this->assertSame('pickup', $this->valeur("SELECT shipping_method FROM orders WHERE id = {$commande->id}"));
     }
 
