@@ -56,8 +56,10 @@ final class FeuilleDeStyleTest extends TestCase
     {
         // « 1 / -1 » sans rangées explicites ne couvre que la première : le
         // récapitulatif étirait la rangée des coordonnées, d'où un grand vide.
+        // Les étapes forment désormais une seule colonne, le bilan l'autre.
         $this->assertStringNotContainsString('grid-row: 1 / -1', self::$css);
-        $this->assertMatchesRegularExpression('~grid-row:\s*1\s*/\s*span\s+\d~', $this->regle('.commande-bilan', 1));
+        $this->assertStringContainsString('grid-column: 1', $this->regle('.commande-etapes'));
+        $this->assertStringContainsString('grid-column: 2', $this->regle('.commande-bilan'));
     }
 
     /**
