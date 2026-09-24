@@ -48,6 +48,8 @@ final class Kernel
         if ($match !== null) {
             $request = $request->withAttributes([
                 ...$match->parameters,
+                // Nom de la route résolue : sert à signaler l'entrée de menu active.
+                'route' => $match->route->name,
                 ...($match->route->locale !== null ? ['locale' => $match->route->locale] : []),
             ]);
         }

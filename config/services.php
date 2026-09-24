@@ -516,6 +516,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(Csrf::class),
         $c->get(CartRepository::class),
         $c->get(PostRepository::class),
+        $c->get(SettingRepository::class),
     ));
 
     $container->set(AdminChrome::class, static fn (Container $c): AdminChrome => new AdminChrome(
@@ -769,6 +770,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(Chrome::class),
         $c->get(PageRepository::class),
         $c->get(UrlGenerator::class),
+        $c->get(MediaRepository::class),
     ));
 
     $container->set(StructuredData::class, static fn (): StructuredData => new StructuredData());

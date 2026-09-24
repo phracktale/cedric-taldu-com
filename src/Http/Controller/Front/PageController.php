@@ -9,6 +9,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\View;
 use App\Domain\Locale;
+use App\Repository\MediaRepository;
 use App\Repository\PageRepository;
 use App\Service\I18n\UrlGenerator;
 use App\Service\View\Chrome;
@@ -32,6 +33,7 @@ final class PageController
         private readonly Chrome $chrome,
         private readonly PageRepository $pages,
         private readonly UrlGenerator $url,
+        private readonly MediaRepository $medias,
     ) {
     }
 
@@ -81,6 +83,10 @@ final class PageController
             ...$this->chrome->base($request, $locale),
             'metaTitle' => $page->title($locale),
             'page' => $page,
+            // Image de couverture téléversée en back-office (revue du 2026-09-24).
+            'cover' => $page->coverMediaId === null
+                ? null
+                : ($this->medias->findByIds([$page->coverMediaId])[$page->coverMediaId] ?? null),
             'canonical' => $this->url->absolute($route, ['locale' => $locale->value]),
             'alternates' => $this->url->hreflangAlternates($route, $translated),
             // Le code fixe donne le nom de route (page.about, page.terms, …).

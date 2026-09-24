@@ -14,6 +14,7 @@ use App\Http\Middleware\SecurityHeaders;
 use App\Repository\CartRepository;
 use App\Repository\CategoryRepository;
 use App\Repository\PostRepository;
+use App\Repository\SettingRepository;
 
 /**
  * Contexte commun a toutes les pages publiques.
@@ -31,6 +32,25 @@ final class Chrome
     /** Cookie du panier, comme dans CartController (03-boutique §2). */
     private const CART_COOKIE = CookieFactory::PREFIX . 'cart';
 
+    /** Styles d'entrée de menu active proposés à l'artiste ; le premier est le défaut. */
+    public const ACTIVE_STYLES = ['souligne', 'gras', 'inverse', 'couleur'];
+
+    /**
+     * Rubrique du menu à laquelle appartient chaque route publique.
+     *
+     * @var array<string, string>
+     */
+    private const SECTIONS = [
+        'page.about' => 'about',
+        'category.show' => 'gallery',
+        'artwork.show' => 'gallery',
+        'blog.index' => 'news',
+        'blog.show' => 'news',
+        'page.booklet' => 'booklet',
+        'contact.form' => 'contact',
+        'contact.submit' => 'contact',
+    ];
+
     public function __construct(
         private readonly CategoryRepository $categories,
         private readonly Config $config,
@@ -38,6 +58,7 @@ final class Chrome
         private readonly Csrf $csrf,
         private readonly CartRepository $carts,
         private readonly PostRepository $posts,
+        private readonly SettingRepository $settings,
     ) {
     }
 
@@ -69,7 +90,23 @@ final class Chrome
             'alternates' => [],
             'canonical' => null,
             'currentCategoryId' => null,
+            // Entrée de menu active, déduite de la route, et son style (réglage).
+            'currentSection' => self::SECTIONS[$request->attribute('route') ?? ''] ?? null,
+            'navActiveStyle' => $this->activeStyle(),
             'metaDescription' => null,
         ];
+    }
+
+    /**
+     * Style d'entrée active choisi en back-office (`nav.active_style`).
+     *
+     * Une valeur inconnue retombe sur le défaut : elle finit dans un attribut
+     * HTML, seule une valeur de la liste fermée peut y parvenir.
+     */
+    private function activeStyle(): string
+    {
+        $style = $this->settings->json('nav.active_style')['style'] ?? null;
+
+        return in_array($style, self::ACTIVE_STYLES, true) ? $style : self::ACTIVE_STYLES[0];
     }
 }

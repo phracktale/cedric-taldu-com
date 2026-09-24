@@ -53,6 +53,10 @@
   --filet: #D8D4CB;
   --alerte: #8C2F1F;
   --max: 1180px;
+  /* Largeur des pages de contenu (éditoriales, articles) : revue du 2026-09-24. */
+  --contenu: 72rem;
+  /* Teinte du style d'entrée active « couleur ». */
+  --actif: #8C5A2B;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -142,7 +146,7 @@ h2 { font-size: clamp(1.7rem, 3.4vw, 2.5rem); margin-bottom: 1.2rem; }
 
 /* ------------------------------------------------------------- navigation */
 
-header {
+.site-tete {
   position: sticky; top: 0; z-index: 50;
   background: rgba(250, 249, 246, .94);
   backdrop-filter: blur(6px);
@@ -167,7 +171,7 @@ nav a, .nav-bouton {
   color: var(--encre-70);
   padding-bottom: .2rem;
   border: none; border-bottom: 1px solid transparent;
-  background: none; font-family: inherit; cursor: pointer;
+  background: none; font-family: inherit; font-weight: inherit; cursor: pointer;
   transition: color .2s, border-color .2s;
 }
 nav a:hover, nav a:focus-visible,
@@ -191,7 +195,17 @@ nav a:hover, nav a:focus-visible,
 /* Confirmation d'ajout, révélée par admin.js (masquée sans JavaScript). */
 .achat-confirme { margin: .8rem 0 0; font-size: .9rem; color: var(--encre-70); }
 .achat-confirme[hidden] { display: none; }
-nav a[aria-current] { color: var(--encre); border-bottom-color: var(--encre); }
+/* Entrée active : aria-current posé par l'en-tête, style choisi en réglage
+   (nav.active_style) et porté par l'attribut data-actif de la navigation. */
+nav a[aria-current], .nav-bouton[aria-current] { color: var(--encre); }
+nav[data-actif="souligne"] a[aria-current],
+nav[data-actif="souligne"] .nav-bouton[aria-current] { border-bottom-color: var(--encre); }
+nav[data-actif="gras"] a[aria-current],
+nav[data-actif="gras"] .nav-bouton[aria-current] { font-weight: 500; }
+nav[data-actif="inverse"] a[aria-current],
+nav[data-actif="inverse"] .nav-bouton[aria-current] { background: var(--encre); color: var(--papier); padding: .2rem .5rem; }
+nav[data-actif="couleur"] a[aria-current],
+nav[data-actif="couleur"] .nav-bouton[aria-current] { color: var(--actif); }
 
 nav a.boutique {
   border: 1px solid var(--encre);
@@ -207,6 +221,7 @@ nav a.boutique:hover, nav a.boutique:focus-visible { background: var(--encre); c
 .sous-menu > ul {
   display: none;
   position: absolute; top: 100%; left: 0;
+  z-index: 60;
   min-width: 12rem;
   flex-direction: column; gap: 0;
   background: var(--papier);
@@ -351,11 +366,12 @@ button.btn { font-family: inherit; cursor: pointer; }
 
 /* ------------------------------------------------------- page éditoriale */
 
-.page-editoriale { max-width: 46rem; padding-top: clamp(2.5rem, 6vh, 4.5rem); padding-bottom: clamp(3rem, 8vh, 5rem); }
+.page-editoriale { max-width: var(--contenu); padding-top: clamp(2.5rem, 6vh, 4.5rem); padding-bottom: clamp(3rem, 8vh, 5rem); }
 .page-tete { margin-bottom: 2.5rem; }
 .page-tete h1 { font-size: clamp(1.9rem, 4.4vw, 3rem); }
 .page-langue { color: var(--encre-40); font-style: italic; margin-bottom: 1.5rem; }
 
+.page-visuel { margin: 0 0 2.5rem; }
 .page-corps { color: var(--encre-70); line-height: 1.75; font-size: 1.02rem; }
 .page-corps > :first-child { margin-top: 0; }
 .page-corps h2 { font-size: 1.55rem; margin: 2.6rem 0 1rem; color: var(--encre); }
@@ -513,8 +529,8 @@ button.btn { font-family: inherit; cursor: pointer; }
     display: grid; grid-template-columns: minmax(0, 1fr) 22rem;
     column-gap: 2rem; align-items: start;
   }
-  .commande-section { grid-column: 1; }
-  .commande-bilan { grid-column: 2; grid-row: 1 / -1; position: sticky; top: 5.5rem; margin-bottom: 0; }
+  .commande-etapes { grid-column: 1; }
+  .commande-bilan { grid-column: 2; grid-row: 1; position: sticky; top: 5.5rem; margin-bottom: 0; }
 }
 
 /* ----------------------------------------------------------- confirmation */

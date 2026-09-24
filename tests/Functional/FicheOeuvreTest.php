@@ -219,7 +219,7 @@ final class FicheOeuvreTest extends FunctionalTestCase
 
         $corps = $this->get('/cedric-taldu/fr/oeuvre/courante')->body;
 
-        $this->assertStringContainsString('De la même recherche', $corps);
+        $this->assertStringContainsString('De la même série', $corps);
         $this->assertStringContainsString('Même série', $corps);
     }
 

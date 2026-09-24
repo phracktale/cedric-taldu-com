@@ -70,6 +70,30 @@ final class CommandeTest extends FunctionalTestCase
         $this->assertStringContainsString('data-total=', $corps);
     }
 
+    public function test_le_tunnel_ne_rend_qu_un_seul_element_main(): void
+    {
+        // La mise en page ouvre déjà <main id="contenu"> : un second élément
+        // dupliquait l'identifiant et le repère de navigation.
+        $cookie = $this->panierAvecOeuvre();
+
+        $corps = $this->requete('GET', '/cedric-taldu/fr/commande', cookies: [self::COOKIE => $cookie])->body;
+
+        $this->assertSame(1, substr_count($corps, '<main'));
+        $this->assertSame(1, substr_count($corps, 'id="contenu"'));
+    }
+
+    public function test_la_remise_en_main_propre_annonce_des_frais_de_deplacement_offerts(): void
+    {
+        // Revue du 2026-09-24 : pas de « port gratuit » pour un retrait, mais des
+        // frais de déplacement offerts dans un rayon de 30 km autour d'Amiens.
+        $cookie = $this->panierAvecOeuvre();
+
+        $corps = $this->requete('GET', '/cedric-taldu/fr/commande', cookies: [self::COOKIE => $cookie])->body;
+
+        $this->assertStringContainsString('Frais de déplacement offerts', $corps);
+        $this->assertStringContainsString('30 km', $corps);
+    }
+
     public function test_la_case_cgv_pointe_le_pdf_dans_la_langue_du_tunnel(): void
     {
         // La case doit permettre de LIRE les CGV avant de les accepter : un lien
