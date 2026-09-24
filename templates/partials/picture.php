@@ -55,7 +55,7 @@ $texteAlternatif = static function (Media $media) use ($locale, $etiquette): str
 };
 
 ?>
-<div class="dessin"<?php if ($media instanceof Media) : ?> style="aspect-ratio: <?= attr($media->aspectRatio()) ?>"<?php endif; ?>>
+<div class="dessin<?php if ($media instanceof Media) : ?> dessin--<?= attr($media->orientation()) ?><?php endif; ?>">
 <?php if ($media instanceof Media) : ?>
   <picture>
     <source type="image/webp" srcset="<?= attr($srcset($media, 'webp')) ?>" sizes="<?= attr($sizes) ?>">
@@ -66,7 +66,7 @@ $texteAlternatif = static function (Media $media) use ($locale, $etiquette): str
       width="<?= attr($media->width) ?>"
       height="<?= attr($media->height) ?>"
       alt="<?= attr($texteAlternatif($media)) ?>"
-      style="object-position: <?= attr($media->objectPosition()) ?>"
+      class="<?= attr($media->focalClasses()) ?>"
       decoding="async"
       <?php if ($prioritaire) : ?>fetchpriority="high"<?php else : ?>loading="lazy"<?php endif; ?>
     >

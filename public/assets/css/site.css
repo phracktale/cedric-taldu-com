@@ -621,7 +621,28 @@ a.oeuvre:hover .cadre, a.oeuvre:focus-visible .cadre {
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
 }
-.dessin img { width: 100%; height: 100%; object-fit: contain; }
+.dessin img {
+  width: 100%; height: 100%; object-fit: contain;
+  /* Point focal (classes fx-/fy-) et facteur de zoom réglable en back-office. */
+  object-position: var(--fx, 50%) var(--fy, 50%);
+  scale: var(--vignette-zoom, 1);
+}
+/* Gabarit fixe par orientation (revue du 2026-09-24) : l'œuvre tient entière
+   dans son cadre, jamais rognée ni agrandie au-delà de sa résolution. */
+.dessin--portrait { aspect-ratio: 3 / 4; }
+.dessin--paysage { aspect-ratio: 4 / 3; }
+.dessin--carre { aspect-ratio: 1 / 1; }
+/* Le zoom ne vise que les vignettes : pas la fiche, ni les visuels de mise en page. */
+.visuel .dessin img, .bloc-image .dessin img, .portrait .dessin img, .hero-fond .dessin img { scale: 1; }
+/* Fond du hero et portrait : l'image couvre son cadre (point focal respecté). */
+.hero-fond .dessin, .portrait .dessin { aspect-ratio: auto; width: 100%; height: 100%; background: none; }
+.hero-fond .dessin img, .portrait .dessin img { object-fit: cover; }
+.fx-0 { --fx: 0%; } .fx-10 { --fx: 10%; } .fx-20 { --fx: 20%; } .fx-30 { --fx: 30%; }
+.fx-40 { --fx: 40%; } .fx-50 { --fx: 50%; } .fx-60 { --fx: 60%; } .fx-70 { --fx: 70%; }
+.fx-80 { --fx: 80%; } .fx-90 { --fx: 90%; } .fx-100 { --fx: 100%; }
+.fy-0 { --fy: 0%; } .fy-10 { --fy: 10%; } .fy-20 { --fy: 20%; } .fy-30 { --fy: 30%; }
+.fy-40 { --fy: 40%; } .fy-50 { --fy: 50%; } .fy-60 { --fy: 60%; } .fy-70 { --fy: 70%; }
+.fy-80 { --fy: 80%; } .fy-90 { --fy: 90%; } .fy-100 { --fy: 100%; }
 .dessin span {
   font-size: .72rem; letter-spacing: .2em; text-transform: uppercase;
   color: var(--encre-70); background: rgba(255, 255, 255, .85); padding: .3rem .7rem;

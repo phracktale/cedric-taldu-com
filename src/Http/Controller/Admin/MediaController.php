@@ -231,6 +231,24 @@ final class MediaController
         return RedirectResponse::to($request->basePath . '/admin/medias/' . (int) $media['id'] . '?recadre=1');
     }
 
+    /**
+     * Annule les recadrages : l'original mis de côté reprend sa place.
+     */
+    public function restoreOriginal(Request $request): Response
+    {
+        $media = $this->media($request);
+
+        try {
+            $this->store->restoreOriginal((int) $media['id']);
+        } catch (UploadRejected $exception) {
+            return $this->editPage($request, $media, erreur: $exception->reason()->message(), status: 422);
+        }
+
+        $this->chrome->audit()->record($this->userId(), 'media.restore', $request, 'media', (int) $media['id']);
+
+        return RedirectResponse::to($request->basePath . '/admin/medias/' . (int) $media['id']);
+    }
+
     public function delete(Request $request): Response
     {
         $media = $this->media($request);

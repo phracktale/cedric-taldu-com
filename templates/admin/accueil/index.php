@@ -55,7 +55,7 @@ $sections = is_array($data['sections'] ?? null) ? $data['sections'] : [];
                         </label>
                         <input type="number" id="position_<?= attr($section['section']) ?>"
                                name="position_<?= attr($section['section']) ?>" min="1" max="99"
-                               value="<?= attr($rang + 1) ?>" style="width: 4rem">
+                               value="<?= attr($rang + 1) ?>" class="champ-court">
                     </td>
                     <td class="colonne-actions">
                         <label class="visually-hidden" for="affiche_<?= attr($section['section']) ?>">

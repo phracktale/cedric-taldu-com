@@ -103,8 +103,11 @@ final class ImageProcessor
                 // tres large et tres plat — un panoramique de 2400 x 3 — donne
                 // une hauteur arrondie a zero pour les petites largeurs, et GD
                 // refuse une image de hauteur nulle.
-                $targetHeight = max(1, (int) round($target * $height / $width));
-                $resized = $this->resize($source, max(1, $target), $targetHeight);
+                // Le dérivé de repli d'une image plus étroite que la plus petite
+                // largeur garde la taille de l'original : l'étirer le rendrait flou.
+                $pixels = min($target, $width);
+                $targetHeight = max(1, (int) round($pixels * $height / $width));
+                $resized = $this->resize($source, max(1, $pixels), $targetHeight);
 
                 try {
                     foreach (Media::FORMATS as $format) {

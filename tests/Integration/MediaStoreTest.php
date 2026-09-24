@@ -417,6 +417,21 @@ final class MediaStoreTest extends DatabaseTestCase
         $this->assertFileDoesNotExist($this->racine . '/storage/' . $source);
     }
 
+    public function test_remplacer_l_image_oublie_l_original_mis_de_cote(): void
+    {
+        // Sinon « Rétablir l'original » ferait revenir une image remplacée.
+        $resultat = $this->store->store($this->televerse($this->fixtures->jpeg(1600, 1200, 'entiere.jpg')));
+        $this->store->crop($resultat->id, \App\Service\Media\CropRegion::fromFractions(0.25, 0.25, 0.5, 0.5));
+        $source = (string) ($this->depot->findById($resultat->id)['source_storage_path'] ?? '');
+
+        $this->store->replace($resultat->id, $this->televerse($this->fixtures->jpeg(1000, 700, 'nouvelle.jpg')));
+
+        $media = $this->depot->findById($resultat->id);
+        $this->assertNotNull($media);
+        $this->assertNull($media['source_storage_path']);
+        $this->assertFileDoesNotExist($this->racine . '/storage/' . $source);
+    }
+
     public function test_retablir_sans_recadrage_prealable_est_sans_effet(): void
     {
         $resultat = $this->store->store($this->televerse($this->fixtures->jpeg(1600, 1200, 'entiere.jpg')));

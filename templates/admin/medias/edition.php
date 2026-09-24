@@ -102,6 +102,17 @@ $valeur = static function (string $langue, string $colonne) use ($traductions): 
         </form>
     </section>
 
+    <?php if (is_string($media['source_storage_path'] ?? null)) : ?>
+    <?php // Recadrage réversible (revue du 2026-09-24) : l'original est gardé de côté. ?>
+    <form method="post" action="<?= attr($base . '/admin/medias/' . $id . '/original') ?>" class="media-original">
+        <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
+        <p class="champ-aide">Cette image a été recadrée ; l’original est conservé.</p>
+        <p class="actions">
+            <button type="submit" class="bouton bouton--secondaire">Rétablir l’original</button>
+        </p>
+    </form>
+    <?php endif; ?>
+
     <form method="post" action="<?= attr($base . '/admin/medias/' . $id) ?>" class="formulaire" data-surveiller>
         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
 

@@ -432,3 +432,6 @@ legend {
 
 /* Champ numérique étroit (positions du menu). */
 .champ-court { width: 4rem; }
+
+/* Corps de message tel que saisi (retours à la ligne conservés). */
+.message-corps--brut { white-space: pre-wrap; }

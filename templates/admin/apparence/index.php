@@ -10,6 +10,8 @@
 
 declare(strict_types=1);
 
+use App\Domain\Editorial\Theme;
+
 $base = is_string($data['basePath'] ?? null) ? $data['basePath'] : '';
 $jeton = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
 /** @var array<string, string> $styles */
@@ -38,6 +40,20 @@ $couleur = is_string($data['couleur'] ?? null) ? $data['couleur'] : '';
                 <input type="text" id="couleur" name="couleur" maxlength="7" pattern="#[0-9a-fA-F]{6}"
                        placeholder="#8c5a2b" value="<?= attr($couleur) ?>">
                 <span class="champ-aide">Format #rrggbb. Vide : teinte par défaut.</span>
+            </p>
+        </fieldset>
+
+        <fieldset>
+            <legend>Vignettes des œuvres</legend>
+            <p class="champ">
+                <label for="zoom">Taille de l’œuvre dans sa vignette (%)</label>
+                <input type="number" id="zoom" name="zoom" class="champ-court"
+                       min="<?= attr(Theme::ZOOM_MIN) ?>" max="<?= attr(Theme::ZOOM_MAX) ?>" step="5"
+                       value="<?= attr($data['zoom'] ?? Theme::ZOOM_MAX) ?>">
+                <span class="champ-aide">
+                    Chaque vignette a un cadre fixe, vertical, horizontal ou carré selon l’œuvre, qui
+                    n’est jamais rognée. 100 % : l’œuvre remplit son cadre ; en dessous, une marge l’entoure.
+                </span>
             </p>
         </fieldset>
 

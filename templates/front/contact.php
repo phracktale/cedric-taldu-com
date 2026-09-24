@@ -69,7 +69,7 @@ $csrfToken = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
     <?php endif; ?>
 
     <?php // Champ appât : hors écran, jamais atteignable au clavier. ?>
-    <div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;" tabindex="-1">
+    <div aria-hidden="true" class="pot-de-miel" tabindex="-1">
       <label for="<?= attr($honeypot) ?>"><?= $t('form.do_not_fill') ?></label>
       <input type="text" id="<?= attr($honeypot) ?>" name="<?= attr($honeypot) ?>"
              tabindex="-1" autocomplete="off">

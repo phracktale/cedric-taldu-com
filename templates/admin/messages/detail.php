@@ -44,7 +44,7 @@ $actionStatut = $base . '/admin/messages/' . $message->id . '/statut';
         <?php endif; ?>
     </dl>
 
-    <div class="message-corps" style="white-space:pre-wrap;"><?= e($message->body) ?></div>
+    <div class="message-corps message-corps--brut"><?= e($message->body) ?></div>
 
     <p class="actions">
         <a class="bouton" href="<?= attr($mailto) ?>">Répondre par e-mail</a>

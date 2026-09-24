@@ -128,6 +128,12 @@ final class MediaStore
         $this->guardAgainstForeignDuplicate($processed->checksum, $mediaId, $temporary);
 
         $this->swapFile($row, $processed, $temporary, $this->displayName($validated->clientName));
+
+        // Une nouvelle image rend caduc l'original mis de côté d'un recadrage.
+        if ($row['source_storage_path'] !== null) {
+            $this->discard(dirname($this->storagePath) . '/' . $row['source_storage_path']);
+            $this->media->updateSource($mediaId, null);
+        }
     }
 
     /**
@@ -154,9 +160,53 @@ final class MediaStore
 
         $this->guardAgainstForeignDuplicate($processed->checksum, $mediaId, $temporary);
 
+        // Revue du 2026-09-24 : le TOUT PREMIER recadrage met l'original de côté,
+        // pour qu'un recadrage ne soit plus une perte définitive.
+        if ($row['source_storage_path'] === null) {
+            $source = $this->sourcePathFor((string) $row['public_basename'], $extension === '' ? 'jpg' : $extension);
+
+            if (!copy($original, dirname($this->storagePath) . '/' . $source)) {
+                $this->discard($temporary);
+
+                throw new RuntimeException('Impossible de mettre l’original de côté avant le recadrage.');
+            }
+
+            $this->media->updateSource($mediaId, $source);
+        }
+
         // Le recadrage ne touche pas au nom d'origine : c'est la meme image, cadree.
         $originalName = $row['original_name'] === null ? null : (string) $row['original_name'];
         $this->swapFile($row, $processed, $temporary, $originalName);
+    }
+
+    /**
+     * Annule tous les recadrages : l'original mis de côté reprend sa place et
+     * les dérivés sont régénérés. Sans original mis de côté, rien à faire.
+     *
+     * @throws Exception\UploadRejected
+     */
+    public function restoreOriginal(int $mediaId): void
+    {
+        $row = $this->media->findById($mediaId);
+
+        if ($row === null || $row['source_storage_path'] === null) {
+            return;
+        }
+
+        $source = dirname($this->storagePath) . '/' . $row['source_storage_path'];
+        $extension = pathinfo((string) $row['source_storage_path'], PATHINFO_EXTENSION);
+        $temporary = $this->temporaryPath($extension === '' ? 'jpg' : $extension);
+
+        // Recadrage sur l'image entière : réécrit l'original et en donne la mesure.
+        $processed = $this->processor->crop($source, CropRegion::fromFractions(0.0, 0.0, 1.0, 1.0), $temporary);
+
+        $this->guardAgainstForeignDuplicate($processed->checksum, $mediaId, $temporary);
+
+        $originalName = $row['original_name'] === null ? null : (string) $row['original_name'];
+        $this->swapFile($row, $processed, $temporary, $originalName);
+
+        $this->discard($source);
+        $this->media->updateSource($mediaId, null);
     }
 
     /**
@@ -182,6 +232,11 @@ final class MediaStore
         }
 
         $this->discard(dirname($this->storagePath) . '/' . $row['storage_path']);
+
+        if ($row['source_storage_path'] !== null) {
+            $this->discard(dirname($this->storagePath) . '/' . $row['source_storage_path']);
+        }
+
         $this->media->delete($mediaId);
     }
 
@@ -278,6 +333,19 @@ final class MediaStore
         }
 
         return $directory . '/' . $basename . '.' . $extension;
+    }
+
+    /**
+     * Chemin (relatif à storage/) de l'original mis de côté avant recadrage,
+     * rangé à côté de l'original courant, hors webroot comme lui.
+     */
+    private function sourcePathFor(string $basename, string $extension): string
+    {
+        // storageFileFor() crée le répertoire s'il manque.
+        $this->storageFileFor($basename, $extension);
+
+        return 'uploads/' . substr($basename, 0, 2) . '/' . substr($basename, 2, 2)
+            . '/' . $basename . '-source.' . $extension;
     }
 
     private function relativeStoragePath(string $basename, string $extension): string

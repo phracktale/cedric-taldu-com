@@ -18,7 +18,7 @@ use PDO;
 final class MediaAdminRepository
 {
     private const SELECT = <<<'SQL'
-        SELECT m.id, m.storage_path, m.public_basename, m.mime, m.width, m.height,
+        SELECT m.id, m.storage_path, m.source_storage_path, m.public_basename, m.mime, m.width, m.height,
                m.bytes, m.checksum, m.original_name, m.copyright, m.focal_x, m.focal_y, m.created_at
         FROM media m
         SQL;
@@ -281,6 +281,16 @@ final class MediaAdminRepository
         $statement->execute(['copyright' => $copyright, 'id' => $mediaId]);
     }
 
+    /**
+     * Original mis de côté avant le premier recadrage (chemin relatif à
+     * storage/), ou null quand il n'y en a pas / plus.
+     */
+    public function updateSource(int $mediaId, ?string $sourceStoragePath): void
+    {
+        $statement = $this->pdo->prepare('UPDATE media SET source_storage_path = :source WHERE id = :id');
+        $statement->execute(['source' => $sourceStoragePath, 'id' => $mediaId]);
+    }
+
     public function delete(int $mediaId): void
     {
         $statement = $this->pdo->prepare('DELETE FROM media WHERE id = :id');
@@ -298,6 +308,7 @@ final class MediaAdminRepository
         return [
             'id' => (int) $row['id'],
             'storage_path' => (string) $row['storage_path'],
+            'source_storage_path' => $row['source_storage_path'] === null ? null : (string) $row['source_storage_path'],
             'public_basename' => (string) $row['public_basename'],
             'mime' => (string) $row['mime'],
             'width' => (int) $row['width'],
