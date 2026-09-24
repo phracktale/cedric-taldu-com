@@ -208,6 +208,17 @@ final class FicheOeuvreTest extends FunctionalTestCase
         $this->assertStringContainsString('target="_blank"', $corps);
     }
 
+    public function test_une_oeuvre_hors_gabarit_annonce_une_livraison_sur_rendez_vous(): void
+    {
+        $this->oeuvre()->available()->priced(450000)->oversized()
+            ->translated('fr', 'grand-format', 'Grand format')->create($this->rubrique);
+
+        $corps = $this->get('/cedric-taldu/fr/oeuvre/grand-format')->body;
+
+        $this->assertStringContainsString('Hors gabarit', $corps);
+        $this->assertStringContainsString('sur rendez-vous', $corps);
+    }
+
     public function test_une_œuvre_sans_visuel_affiche_la_trame_sans_erreur(): void
     {
         $this->oeuvre()->withPrimaryMedia(null)

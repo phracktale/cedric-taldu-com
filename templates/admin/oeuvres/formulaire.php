@@ -219,12 +219,30 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
                 </p>
 
                 <p class="champ">
+                    <label for="profondeur">Profondeur (mm)</label>
+                    <input type="number" id="profondeur" name="profondeur" min="1"
+                           value="<?= attr($champ('profondeur', 'depth_mm')) ?>">
+                    <span class="champ-aide">Épaisseur du châssis ou du cadre.</span>
+                </p>
+
+                <p class="champ">
                     <label for="poids">Poids (g)</label>
                     <input type="number" id="poids" name="poids" min="1"
                            value="<?= attr($champ('poids', 'weight_grams')) ?>">
                     <span class="champ-aide">Sert au calcul des frais de port.</span>
                 </p>
             </div>
+
+            <?php // Revue du 2026-09-24 : pas d'expédition automatique d'une œuvre hors gabarit. ?>
+            <p class="champ champ-inline">
+                <input type="checkbox" id="hors_gabarit" name="hors_gabarit" value="1"
+                    <?php if (($oeuvre['is_oversized'] ?? false) === true || isset($saisie['hors_gabarit'])) : ?>checked<?php endif; ?>>
+                <label for="hors_gabarit">Hors gabarit</label>
+            </p>
+            <p class="champ-aide">
+                Trop grande ou trop lourde pour un colis : l’expédition et la remise en main propre
+                sont désactivées, la livraison se fixe sur rendez-vous (téléphone ou visio).
+            </p>
 
             <p class="champ champ-inline">
                 <input type="checkbox" id="signee" name="signee" value="1"

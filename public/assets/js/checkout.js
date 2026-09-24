@@ -26,7 +26,8 @@ export function initCheckout() {
     if (bouton) bouton.textContent = choisi.dataset.total ? ` — ${choisi.dataset.total}` : '';
 
     const retrait = choisi.dataset.mode === 'pickup';
-    if (adresse) adresse.hidden = retrait;
+    // L'adresse sert aussi à la remise en main propre (distance, lieu de rendez-vous).
+    if (adresse) adresse.hidden = choisi.dataset.mode === 'appointment';
     if (quandExpedition) quandExpedition.hidden = retrait;
     if (quandRetrait) quandRetrait.hidden = !retrait;
   };

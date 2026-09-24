@@ -39,7 +39,7 @@ final class CartRepository
     // la fait respecter mecaniquement.
 
     private const SELECT_ARTWORKS = <<<'SQL'
-        SELECT a.id, a.price_cents, a.vat_category, a.weight_grams, a.status,
+        SELECT a.id, a.price_cents, a.vat_category, a.weight_grams, a.is_oversized, a.status,
                a.reserved_until, a.is_published,
                COALESCE(t.title, r.title) AS title
         FROM artworks a
@@ -341,6 +341,7 @@ final class CartRepository
                     && $status->effectiveAt($reservedUntil, $now)->isPurchasable(),
                 stockQty: null,
                 editionsRemaining: null,
+                isOversized: (int) $row['is_oversized'] === 1,
             );
         }
 

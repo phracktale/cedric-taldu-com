@@ -91,6 +91,24 @@ final class CommandesTest extends AdminTestCase
         $this->assertSame('6A123456789', $this->valeur("SELECT tracking_number FROM orders WHERE id = {$id}"));
     }
 
+    public function test_une_expedition_colissimo_affiche_son_lien_de_suivi(): void
+    {
+        $id = $this->creerCommande('CT-2026-0006', 'paid', 'eve@example.test');
+        $fiche = $this->requete('GET', self::COMMANDES . '/' . $id)->body;
+        // Le transporteur se choisit dans la liste des transporteurs branchés.
+        $this->assertStringContainsString('<option value="Colissimo"', $fiche);
+
+        $this->postAvecJeton(self::COMMANDES . '/' . $id . '/expedition', [
+            'transporteur' => 'Colissimo',
+            'suivi' => '6A123456789',
+        ]);
+
+        $this->assertStringContainsString(
+            'href="https://www.laposte.fr/outils/suivre-vos-envois?code=6A123456789"',
+            $this->requete('GET', self::COMMANDES . '/' . $id)->body,
+        );
+    }
+
     public function test_une_commande_non_payee_ne_s_expedie_pas(): void
     {
         $id = $this->creerCommande('CT-2026-0006', 'pending', 'frank@example.test');

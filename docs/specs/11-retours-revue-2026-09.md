@@ -74,7 +74,13 @@ interdisant les attributs `style`. Reste pour l'incrément 2 : le CTA comme **bl
   (`aspect-ratio` + `object-fit: contain`), avec un facteur de zoom réglable.
 - Attributs `sizes` recalés sur les largeurs réelles d'affichage.
 
-## Incrément 5 — Livraison `feature/livraison-colissimo`
+## Incrément 5 — Livraison ✅ `feature/livraison-colissimo`
+
+Livré : remise en main propre dans un rayon mesuré par géocodage BAN (réglable
+dans `/admin/livraison`) ; case « Hors gabarit » et livraison sur rendez-vous
+(migration 0016) ; interface `Carrier` avec Colissimo (suivi La Poste, API
+désactivée tant que le contrat manque). Reste, à l'arrivée du contrat : le
+client de l'API Colissimo (étiquettes, points de retrait).
 
 - Case **Hors gabarit** sur l'œuvre : désactive l'expédition et bascule vers une
   demande de rendez-vous (téléphone/visio), sans paiement en ligne automatique.

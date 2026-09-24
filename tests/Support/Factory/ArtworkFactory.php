@@ -25,6 +25,7 @@ final class ArtworkFactory extends Factory
     private ?int $widthMm = 100;
     private ?int $heightMm = 165;
     private bool $signed = true;
+    private bool $oversized = false;
     private int $position = 0;
     private ?int $seriesId = null;
     private ?int $primaryMediaId = null;
@@ -169,6 +170,17 @@ final class ArtworkFactory extends Factory
         return $this;
     }
 
+    /**
+     * Œuvre hors gabarit (revue du 2026-09-24) : pas d'expédition automatique,
+     * livraison organisée sur rendez-vous.
+     */
+    public function oversized(): self
+    {
+        $this->oversized = true;
+
+        return $this;
+    }
+
     public function create(int $categoryId): int
     {
         $n = self::next();
@@ -204,6 +216,10 @@ final class ArtworkFactory extends Factory
         );
 
         $id = $this->lastInsertId();
+
+        if ($this->oversized) {
+            $this->insert('UPDATE artworks SET is_oversized = 1 WHERE id = :id', ['id' => $id]);
+        }
 
         foreach ($this->translations as $locale => $translation) {
             $this->insert(

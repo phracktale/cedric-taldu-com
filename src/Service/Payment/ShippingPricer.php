@@ -58,6 +58,19 @@ final class ShippingPricer
             static fn (ValuedLine $line): bool => $line->item->isPrintOnDemand(),
         ));
 
+        // Hors gabarit (revue du 2026-09-24) : une œuvre hors gabarit n'est NI
+        // expédiée NI remise automatiquement ; la livraison se fixe sur rendez-vous.
+        // Réciproquement, le rendez-vous est réservé aux paniers hors gabarit.
+        $oversized = array_filter($lines, static fn (ValuedLine $line): bool => $line->item->isOversized) !== [];
+
+        if ($oversized !== ($method === ShippingMethod::Appointment)) {
+            return ShippingQuote::onRequest(null);
+        }
+
+        if ($method === ShippingMethod::Appointment) {
+            return ShippingQuote::free(null);
+        }
+
         if ($method === ShippingMethod::Pickup) {
             // Un tirage à la demande ne se retire pas : le prestataire l'expédie.
             // Un original ou une édition limitée (à l'atelier), si.

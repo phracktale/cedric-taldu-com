@@ -34,7 +34,7 @@ final class ArtworkAdminRepository
 
     private const SELECT = <<<'SQL'
         SELECT a.id, a.category_id, a.series_id, a.reference, a.year, a.technique,
-               a.width_mm, a.height_mm, a.is_signed, a.price_cents, a.vat_category,
+               a.width_mm, a.height_mm, a.depth_mm, a.is_oversized, a.is_signed, a.price_cents, a.vat_category,
                a.status, a.weight_grams, a.primary_media_id, a.position,
                a.print_asset_path, a.print_asset_mime,
                a.is_published, a.published_at,
@@ -175,10 +175,10 @@ final class ArtworkAdminRepository
     {
         $statement = $this->pdo->prepare(
             'INSERT INTO artworks
-                (category_id, series_id, reference, year, technique, width_mm, height_mm,
+                (category_id, series_id, reference, year, technique, width_mm, height_mm, depth_mm, is_oversized,
                  is_signed, price_cents, vat_category, status, weight_grams,
                  primary_media_id, position, is_published, created_at, updated_at)
-             VALUES (:category, :series, :reference, :year, :technique, :width, :height,
+             VALUES (:category, :series, :reference, :year, :technique, :width, :height, :depth, :oversized,
                      :signed, :price, :vat, :status, :weight,
                      :media, :position, 0, :now, :now2)'
         );
@@ -207,6 +207,7 @@ final class ArtworkAdminRepository
             'UPDATE artworks SET
                 category_id = :category, series_id = :series, reference = :reference,
                 year = :year, technique = :technique, width_mm = :width, height_mm = :height,
+                depth_mm = :depth, is_oversized = :oversized,
                 is_signed = :signed, price_cents = :price, vat_category = :vat,
                 status = :status, weight_grams = :weight, primary_media_id = :media,
                 updated_at = :now
@@ -329,6 +330,8 @@ final class ArtworkAdminRepository
             'technique' => $fields['technique'],
             'width' => $fields['width_mm'],
             'height' => $fields['height_mm'],
+            'depth' => $fields['depth_mm'] ?? null,
+            'oversized' => ($fields['is_oversized'] ?? false) === true ? 1 : 0,
             'signed' => $fields['is_signed'] === true ? 1 : 0,
             'price' => $fields['price_cents'],
             'vat' => $fields['vat_category'],
@@ -404,6 +407,8 @@ final class ArtworkAdminRepository
                 'technique' => self::nullableString($row['technique']),
                 'width_mm' => $row['width_mm'] === null ? null : (int) $row['width_mm'],
                 'height_mm' => $row['height_mm'] === null ? null : (int) $row['height_mm'],
+                'depth_mm' => $row['depth_mm'] === null ? null : (int) $row['depth_mm'],
+                'is_oversized' => (bool) $row['is_oversized'],
                 'is_signed' => (bool) $row['is_signed'],
                 'price_cents' => $row['price_cents'] === null ? null : (int) $row['price_cents'],
                 'vat_category' => (string) $row['vat_category'],

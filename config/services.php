@@ -42,6 +42,7 @@ use App\Http\Controller\Admin\ArtworkController as AdminArtworkController;
 use App\Http\Controller\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Admin\AppearanceController;
+use App\Http\Controller\Admin\DeliveryController;
 use App\Http\Controller\Admin\MenuController;
 use App\Http\Controller\Admin\HomeController as AdminHomeController;
 use App\Http\Controller\Admin\MediaController;
@@ -141,6 +142,10 @@ use App\Http\Controller\Admin\MessageController as AdminMessageController;
 use App\Http\Controller\Admin\PageController as AdminPageController;
 use Stripe\StripeClient;
 use App\Service\View\AdminChrome;
+use App\Service\Shipping\BanGeocoder;
+use App\Service\Shipping\CarrierRegistry;
+use App\Service\Shipping\ColissimoCarrier;
+use App\Service\Shipping\Geocoder;
 use App\Service\View\Chrome;
 use App\Service\View\CtaLinker;
 
@@ -770,6 +775,14 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(CategoryRepository::class),
     ));
 
+    $container->set(DeliveryController::class, static fn (Container $c): DeliveryController => new DeliveryController(
+        $c->get(AdminChrome::class),
+        $c->get(SettingRepository::class),
+        $c->get(SettingsAdminRepository::class),
+        $c->get(Geocoder::class),
+        $c->get(CarrierRegistry::class),
+    ));
+
     $container->set(MenuController::class, static fn (Container $c): MenuController => new MenuController(
         $c->get(AdminChrome::class),
         $c->get(SettingRepository::class),
@@ -800,7 +813,22 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(UrlGenerator::class),
         $c->get(LoggerInterface::class),
         $c->get(ShippingPricer::class),
+        $c->get(Geocoder::class),
+        $c->get(SettingRepository::class),
+        $c->get(CarrierRegistry::class),
     ));
+
+    // Géocodage de la remise en main propre (Base Adresse Nationale, côté serveur).
+    $container->set(Geocoder::class, static fn (): Geocoder => new BanGeocoder());
+
+    // Transporteurs branchés (revue du 2026-09-24). Colissimo d'abord ; son API
+    // reste désactivée tant que le contrat et son mot de passe manquent.
+    $container->set(CarrierRegistry::class, static fn (): CarrierRegistry => new CarrierRegistry([
+        new ColissimoCarrier(
+            $env->getOptional('COLISSIMO_CONTRACT_NUMBER', '') ?? '',
+            $env->getOptional('COLISSIMO_PASSWORD', '') ?? '',
+        ),
+    ]));
 
     $container->set(PageController::class, static fn (Container $c): PageController => new PageController(
         $c->get(View::class),
@@ -883,6 +911,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(UrlGenerator::class),
             $c->get(FulfillmentRepository::class),
             $c->get(FulfillmentService::class),
+            $c->get(CarrierRegistry::class),
         ));
 
     $container->set(

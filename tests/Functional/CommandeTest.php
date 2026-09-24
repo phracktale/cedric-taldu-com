@@ -209,20 +209,86 @@ final class CommandeTest extends FunctionalTestCase
         $this->assertSame(0, (int) $this->valeur('SELECT COUNT(*) FROM orders'));
     }
 
-    public function test_une_remise_en_main_propre_n_exige_pas_d_adresse(): void
+    public function test_une_remise_en_main_propre_dans_le_rayon_est_offerte(): void
     {
+        // Revue du 2026-09-24 : l'artiste se déplace jusqu'à l'acheteur, dans un
+        // rayon de 30 km autour d'Amiens. L'adresse sert à mesurer la distance.
         $cookie = $this->panierAvecOeuvre();
 
-        $reponse = $this->commander($cookie, [
-            'mode' => 'pickup',
-            'ville' => '',
-            'code_postal' => '',
-            'adresse' => '',
-        ]);
+        $reponse = $this->commander($cookie, ['mode' => 'pickup', 'adresse' => '25 allée des Lilas', 'code_postal' => '80470']);
 
         $this->assertSame(303, $reponse->status);
         $this->assertSame('pickup', $this->valeur('SELECT shipping_method FROM orders'));
         $this->assertSame(0, (int) $this->valeur('SELECT shipping_cents FROM orders'));
+        $this->assertSame('80470', $this->geocodeur->demandes[0]->postalCode);
+    }
+
+    public function test_une_remise_en_main_propre_au_dela_du_rayon_est_refusee(): void
+    {
+        $this->geocodeur->loin();
+        $cookie = $this->panierAvecOeuvre();
+
+        $reponse = $this->commander($cookie, ['mode' => 'pickup', 'ville' => 'Paris', 'code_postal' => '75001']);
+
+        $this->assertContains($reponse->status, [422, 200]);
+        $this->assertStringContainsString('30 km', $reponse->body);
+        $this->assertSame(0, (int) $this->valeur('SELECT COUNT(*) FROM orders'));
+    }
+
+    public function test_une_remise_en_main_propre_invérifiable_est_refusee(): void
+    {
+        $this->geocodeur->muet();
+        $cookie = $this->panierAvecOeuvre();
+
+        $reponse = $this->commander($cookie, ['mode' => 'pickup']);
+
+        $this->assertContains($reponse->status, [422, 200]);
+        $this->assertSame(0, (int) $this->valeur('SELECT COUNT(*) FROM orders'));
+    }
+
+    public function test_l_expedition_annonce_son_transporteur(): void
+    {
+        $cookie = $this->panierAvecOeuvre();
+
+        $corps = $this->requete('GET', '/cedric-taldu/fr/commande', cookies: [self::COOKIE => $cookie])->body;
+
+        $this->assertStringContainsString('Expédition Colissimo', $corps);
+    }
+
+    public function test_une_oeuvre_hors_gabarit_bascule_le_tunnel_sur_rendez_vous(): void
+    {
+        $artwork = (new ArtworkFactory($this->pdo))->published()->available()->priced(450000)->oversized()
+            ->translated('fr', 'grand-format', 'Grand format')->create($this->categoryId);
+        $cookie = $this->ajouter('original', $artwork);
+
+        $corps = $this->requete('GET', '/cedric-taldu/fr/commande', cookies: [self::COOKIE => $cookie])->body;
+
+        $this->assertStringContainsString('value="appointment"', $corps);
+        $this->assertStringNotContainsString('value="shipping"', $corps);
+        $this->assertStringNotContainsString('value="pickup"', $corps);
+        $this->assertStringContainsString('téléphone ou visio', $corps);
+    }
+
+    public function test_une_oeuvre_hors_gabarit_se_commande_sans_adresse(): void
+    {
+        $artwork = (new ArtworkFactory($this->pdo))->published()->available()->priced(450000)->oversized()
+            ->translated('fr', 'grand-format', 'Grand format')->create($this->categoryId);
+        $cookie = $this->ajouter('original', $artwork);
+
+        $reponse = $this->commander($cookie, ['mode' => 'appointment', 'adresse' => '', 'code_postal' => '', 'ville' => '']);
+
+        $this->assertSame(303, $reponse->status);
+        $this->assertSame('appointment', $this->valeur('SELECT shipping_method FROM orders'));
+    }
+
+    public function test_une_remise_en_main_propre_exige_une_adresse(): void
+    {
+        $cookie = $this->panierAvecOeuvre();
+
+        $reponse = $this->commander($cookie, ['mode' => 'pickup', 'adresse' => '', 'code_postal' => '', 'ville' => '']);
+
+        $this->assertContains($reponse->status, [422, 200]);
+        $this->assertSame(0, (int) $this->valeur('SELECT COUNT(*) FROM orders'));
     }
 
     public function test_un_honeypot_rempli_est_rejete_sans_creer_de_commande(): void

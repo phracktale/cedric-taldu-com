@@ -17,17 +17,21 @@ use App\Domain\Locale;
 use App\Domain\Order\Address;
 use App\Domain\Order\OrderReference;
 use App\Domain\Shipping\DeliveryEstimate;
+use App\Domain\Shipping\HandDeliveryZone;
 use App\Domain\Shipping\ShippingMethod;
 use App\Domain\Shop\Cart;
 use App\Domain\Shop\CartValuation;
 use App\Domain\Shop\PricingPolicy;
 use App\Repository\CartRepository;
 use App\Repository\OrderRepository;
+use App\Repository\SettingRepository;
 use App\Service\I18n\UrlGenerator;
 use App\Service\Payment\CheckoutOutcome;
 use App\Service\Payment\CheckoutRequest;
 use App\Service\Payment\CheckoutService;
 use App\Service\Payment\ShippingPricer;
+use App\Service\Shipping\CarrierRegistry;
+use App\Service\Shipping\Geocoder;
 use App\Service\View\Chrome;
 use DateTimeImmutable;
 
@@ -62,6 +66,9 @@ final class CheckoutController
         private readonly UrlGenerator $url,
         private readonly LoggerInterface $logger,
         private readonly ShippingPricer $shipping,
+        private readonly Geocoder $geocoder,
+        private readonly SettingRepository $settings,
+        private readonly CarrierRegistry $carriers,
     ) {
     }
 
@@ -97,7 +104,7 @@ final class CheckoutController
             return $this->toCart($locale);
         }
 
-        $method = $request->input('mode') === 'pickup' ? ShippingMethod::Pickup : ShippingMethod::Shipping;
+        $method = ShippingMethod::tryFrom((string) $request->input('mode')) ?? ShippingMethod::Shipping;
 
         // Case CGV obligatoire (03-boutique §3, étape 2).
         if ($request->input('cgv') === null) {
@@ -129,6 +136,36 @@ final class CheckoutController
             $checkoutRequest = $this->buildRequest($request, $locale, $method);
         } catch (InvalidAddress $e) {
             return $this->rejectForm($request, $locale, 'Adresse de livraison incomplète ou invalide.');
+        }
+
+        // Remise en main propre (revue du 2026-09-24) : l'artiste se déplace,
+        // frais offerts, DANS le rayon réglé autour de l'atelier. La distance est
+        // mesurée côté serveur ; une adresse qu'on ne sait pas situer est refusée.
+        if ($method === ShippingMethod::Pickup && $checkoutRequest->shippingAddress !== null) {
+            $zone = HandDeliveryZone::fromSetting($this->settings->json(HandDeliveryZone::SETTING));
+            $point = $this->geocoder->locate($checkoutRequest->shippingAddress);
+
+            if ($point === null) {
+                return $this->rejectForm(
+                    $request,
+                    $locale,
+                    'Nous n’avons pas pu situer cette adresse pour la remise en main propre. '
+                    . 'Vérifiez-la, choisissez l’expédition ou écrivez-nous.',
+                );
+            }
+
+            if (!$zone->covers($point)) {
+                return $this->rejectForm(
+                    $request,
+                    $locale,
+                    sprintf(
+                        'La remise en main propre est proposée dans un rayon de %d km autour de l’atelier (%s). '
+                        . 'Pour cette adresse, choisissez l’expédition.',
+                        $zone->radiusKm,
+                        $zone->placeName,
+                    ),
+                );
+            }
         }
 
         $cart = $this->cart($request, $locale);
@@ -267,7 +304,24 @@ final class CheckoutController
             // La remise en main propre disparaît dès qu'une reproduction est au
             // panier : Prodigi l'expédie, elle ne peut pas être retirée.
             'pickupAllowed' => !self::hasPrintOnDemand($valuation),
+            'handDelivery' => $this->handDelivery(),
+            'carrierName' => $this->carriers->default()->name(),
+            // Œuvre hors gabarit au panier : livraison sur rendez-vous uniquement.
+            'oversized' => array_filter(
+                $valuation->lines,
+                static fn ($line): bool => $line->item->isOversized,
+            ) !== [],
         ];
+    }
+
+    /**
+     * @return array{place: string, radius: int}
+     */
+    private function handDelivery(): array
+    {
+        $zone = HandDeliveryZone::fromSetting($this->settings->json(HandDeliveryZone::SETTING));
+
+        return ['place' => $zone->placeName, 'radius' => $zone->radiusKm];
     }
 
     private static function hasPrintOnDemand(CartValuation $valuation): bool

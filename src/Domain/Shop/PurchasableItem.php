@@ -42,6 +42,11 @@ final class PurchasableItem
          * demande (Prodigi) ou atelier (barème au poids).
          */
         public readonly ?ProcessingMode $processingMode = null,
+        /**
+         * Œuvre hors gabarit (revue du 2026-09-24) : pas d'expédition
+         * automatique, livraison organisée sur rendez-vous.
+         */
+        public readonly bool $isOversized = false,
     ) {
     }
 
