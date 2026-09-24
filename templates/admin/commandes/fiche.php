@@ -58,7 +58,7 @@ $prodigi = $data['prodigi'] ?? null;
       </p>
     <?php else : ?>
       <?php // Sans adresse : livraison sur rendez-vous (hors gabarit) ou retrait antérieur au 2026-09-24. ?>
-      <p class="aide"><?= e($order->shippingMethod->label(AppDomainocale::fr)) ?> — aucune adresse collect�e.</p>
+      <p class="aide"><?= e($order->shippingMethod->label(Locale::Fr)) ?> — aucune adresse collectée.</p>
     <?php endif; ?>
   </section>
 
