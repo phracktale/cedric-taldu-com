@@ -46,7 +46,7 @@ function rendre(barre, etat) {
   }
 
   const lignes = etat.log.map((l) => `[${heure(l.at)}] ${l.path.padEnd(60)} ${String(l.ms).padStart(5)} ms`
-    + (l.status === 200 ? '' : `  (${l.status}, non écrite)`));
+    + (l.status !== 200 ? `  (${l.status}, non écrite)` : (l.eco ? `  EcoIndex ${l.eco.grade} ${l.eco.score}` : '')));
   lignes.push(`Total : ${etat.count} pages en ${secondes(etat.total_ms)} s`);
   bloc.querySelector('pre').textContent = lignes.join('\n');
   barre.removeAttribute('data-stale');

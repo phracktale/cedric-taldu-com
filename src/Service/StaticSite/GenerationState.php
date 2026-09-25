@@ -4,20 +4,25 @@ declare(strict_types=1);
 
 namespace App\Service\StaticSite;
 
+use App\Domain\EcoIndex\EcoIndex;
+
 /**
  * État de la génération statique, affiché par la barre du back-office
  * (retours du 2026-09-25, point 7) : numéro d'incrément, date, nombre de
  * pages, durée totale, fraîcheur et journal page à page.
  *
  * Réglage `static.generation`. Les instants sont en UTC, au format ISO avec
- * millisecondes ; l'affichage les passe en heure de Paris.
+ * millisecondes ; l'affichage les passe en heure de Paris. Chaque page écrite
+ * porte sa mesure EcoIndex (point 8).
+ *
+ * @phpstan-type Eco array{score: int, grade: string, dom: int, requests: int, kb: float, ges: float, water: float}
  */
 final class GenerationState
 {
     public const SETTING = 'static.generation';
 
     /**
-     * @param list<array{at: string, path: string, ms: int, status: int}> $log
+     * @param list<array{at: string, path: string, ms: int, status: int, eco: Eco|null}> $log
      */
     public function __construct(
         public readonly int $number,
@@ -50,6 +55,7 @@ final class GenerationState
                 'path' => is_string($ligne['path'] ?? null) ? $ligne['path'] : '',
                 'ms' => is_int($ligne['ms'] ?? null) ? $ligne['ms'] : 0,
                 'status' => is_int($ligne['status'] ?? null) ? $ligne['status'] : 0,
+                'eco' => self::eco($ligne['eco'] ?? null),
             ];
         }
 
@@ -65,7 +71,7 @@ final class GenerationState
     }
 
     /**
-     * @return array{number: int, at: string|null, count: int, total_ms: int, stale: bool, invalidated_at: string|null, log: list<array{at: string, path: string, ms: int, status: int}>}
+     * @return array{number: int, at: string|null, count: int, total_ms: int, stale: bool, invalidated_at: string|null, log: list<array{at: string, path: string, ms: int, status: int, eco: Eco|null}>}
      */
     public function toArray(): array
     {
@@ -77,6 +83,51 @@ final class GenerationState
             'stale' => $this->stale,
             'invalidated_at' => $this->invalidatedAt,
             'log' => $this->log,
+        ];
+    }
+
+    /**
+     * EcoIndex moyen des pages mesurées, ou null s'il n'y en a aucune.
+     *
+     * @return array{score: int, grade: string}|null
+     */
+    public function averageEco(): ?array
+    {
+        $scores = [];
+        foreach ($this->log as $ligne) {
+            if ($ligne['eco'] !== null) {
+                $scores[] = $ligne['eco']['score'];
+            }
+        }
+
+        if ($scores === []) {
+            return null;
+        }
+
+        $moyenne = array_sum($scores) / count($scores);
+
+        return ['score' => (int) round($moyenne), 'grade' => EcoIndex::gradeFor($moyenne)];
+    }
+
+    /**
+     * @return Eco|null
+     */
+    private static function eco(mixed $stored): ?array
+    {
+        if (!is_array($stored) || !is_int($stored['score'] ?? null) || !is_string($stored['grade'] ?? null)) {
+            return null;
+        }
+
+        $nombre = static fn (mixed $v): float => is_int($v) || is_float($v) ? (float) $v : 0.0;
+
+        return [
+            'score' => $stored['score'],
+            'grade' => $stored['grade'],
+            'dom' => is_int($stored['dom'] ?? null) ? $stored['dom'] : 0,
+            'requests' => is_int($stored['requests'] ?? null) ? $stored['requests'] : 0,
+            'kb' => $nombre($stored['kb'] ?? null),
+            'ges' => $nombre($stored['ges'] ?? null),
+            'water' => $nombre($stored['water'] ?? null),
         ];
     }
 

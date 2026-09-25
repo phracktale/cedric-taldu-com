@@ -45,6 +45,7 @@ use App\Http\Controller\Admin\AppearanceController;
 use App\Http\Controller\Admin\DeliveryController;
 use App\Http\Controller\Admin\MenuController;
 use App\Http\Controller\Admin\GenerationController;
+use App\Http\Controller\Admin\EcoIndexController;
 use App\Http\Controller\Admin\TemplateController;
 use App\Http\Controller\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controller\Front\NewsletterController;
@@ -155,6 +156,7 @@ use App\Service\StaticSite\FileInvalidator;
 use App\Service\StaticSite\GenerationStore;
 use App\Service\StaticSite\Generator;
 use App\Service\StaticSite\Invalidator;
+use App\Service\StaticSite\PageAnalyzer;
 use App\Service\StaticSite\PageCatalog;
 use App\Service\StaticSite\StaticDirectory;
 use App\Service\Seo\StructuredData;
@@ -1082,6 +1084,11 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(GenerationStore::class),
         new SecurityHeaders($config, $c->get(RandomInterface::class), $matomo),
         $c->get(ClockInterface::class),
+        new PageAnalyzer($rootPath . '/public'),
+    ));
+    $container->set(EcoIndexController::class, static fn (Container $c): EcoIndexController => new EcoIndexController(
+        $c->get(AdminChrome::class),
+        $c->get(GenerationStore::class),
     ));
     $container->set(GenerationController::class, static fn (Container $c): GenerationController => new GenerationController(
         $c->get(AdminChrome::class),
