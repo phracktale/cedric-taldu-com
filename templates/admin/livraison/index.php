@@ -6,6 +6,7 @@
  *
  * @var array<string, mixed>          $data
  * @var App\Service\I18n\UrlGenerator $url
+ * @var callable                      $partial
  */
 
 declare(strict_types=1);
@@ -20,7 +21,7 @@ $zone = $data['zone'];
 /** @var list<Carrier> $transporteurs */
 $transporteurs = is_array($data['transporteurs'] ?? null) ? $data['transporteurs'] : [];
 ?>
-<div class="admin-page admin-page--etroite">
+<div class="admin-page">
     <h1>Livraison</h1>
 
     <?php if (is_string($data['erreur'] ?? null)) : ?>
@@ -66,20 +67,5 @@ $transporteurs = is_array($data['transporteurs'] ?? null) ? $data['transporteurs
         </p>
     </form>
 
-    <section class="admin-bloc">
-        <h2>Transporteurs</h2>
-        <ul>
-            <?php foreach ($transporteurs as $transporteur) : ?>
-            <li>
-                <strong><?= e($transporteur->name()) ?></strong> —
-                tarif à la grille poids/zone, suivi des colis.
-                <?php if ($transporteur->apiEnabled()) : ?>
-                API active (étiquettes, points de retrait).
-                <?php else : ?>
-                API en attente : identifiants absents (contrat à renseigner dans le fichier .env du serveur).
-                <?php endif; ?>
-            </li>
-            <?php endforeach; ?>
-        </ul>
-    </section>
+    <?= $partial('admin/livraison/tarifs', $data) ?>
 </div>

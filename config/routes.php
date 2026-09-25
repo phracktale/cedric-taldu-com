@@ -295,6 +295,7 @@ return [
     new Route('admin.appearance.update', 'POST', '/admin/apparence', [AppearanceController::class, 'update']),
     new Route('admin.delivery.edit', 'GET', '/admin/livraison', [DeliveryController::class, 'edit']),
     new Route('admin.delivery.update', 'POST', '/admin/livraison', [DeliveryController::class, 'update']),
+    new Route('admin.delivery.rates', 'POST', '/admin/livraison/tarifs', [DeliveryController::class, 'updateRates']),
     new Route('admin.newsletter.index', 'GET', '/admin/newsletter', [AdminNewsletterController::class, 'index']),
     new Route('admin.newsletter.export', 'GET', '/admin/newsletter/export', [AdminNewsletterController::class, 'export']),
     new Route('admin.newsletter.unsubscribe', 'POST', '/admin/newsletter/desinscription', [AdminNewsletterController::class, 'unsubscribe']),

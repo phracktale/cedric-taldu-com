@@ -522,3 +522,9 @@ body.admin { padding-bottom: 3.5rem; }
 .eco-note--g { background: #ed2124; }
 .barre-eco-lien { color: inherit; }
 .tableau-defilant { overflow-x: auto; }
+
+/* Tarifs d'expédition (retours du 2026-09-25, Boutique › Livraisons). */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.zone-tarifs { border: 1px solid #ddd; border-radius: 6px; padding: 1rem; margin: 0 0 1.2rem; }
+.zone-tarifs > legend { font-weight: 600; padding: 0 .4rem; }
+.tableau-tarifs input { width: 8rem; }
