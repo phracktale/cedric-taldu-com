@@ -37,6 +37,11 @@ final class Route
      * @param bool $guest route d'administration ouverte sans session : la
      *        connexion elle-meme, et rien d'autre. AuthTest parcourt la table et
      *        exige qu'une route sous /admin non marquee ainsi soit fermee.
+     * @param list<string> $csrfConfirm champs repris quand le jeton manque ou
+     *        est faux : au lieu d'un refus, CsrfGuard renvoie (303) vers la page
+     *        de confirmation en GET au meme chemin, qui porte un jeton frais.
+     *        Pour l'ajout au panier depuis une page statique, sans JavaScript
+     *        (retours du 2026-09-25, point 7). Aucune ecriture n'a lieu.
      */
     public function __construct(
         public readonly string $name,
@@ -47,6 +52,7 @@ final class Route
         public readonly array $requirements = [],
         public readonly bool $csrfExempt = false,
         public readonly bool $guest = false,
+        public readonly array $csrfConfirm = [],
     ) {
         $this->method = strtoupper($method);
         $this->handler = $handler;

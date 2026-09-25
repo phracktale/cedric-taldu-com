@@ -44,6 +44,7 @@ use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Admin\AppearanceController;
 use App\Http\Controller\Admin\DeliveryController;
 use App\Http\Controller\Admin\MenuController;
+use App\Http\Controller\Admin\GenerationController;
 use App\Http\Controller\Admin\TemplateController;
 use App\Http\Controller\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controller\Front\NewsletterController;
@@ -72,6 +73,7 @@ use App\Http\Middleware\CsrfGuard;
 use App\Http\Middleware\Locale;
 use App\Http\Middleware\RedirectMiddleware;
 use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\StaticInvalidation;
 use App\Repository\Admin\ArtworkAdminRepository;
 use App\Repository\Admin\CategoryAdminRepository;
 use App\Repository\Admin\DashboardRepository;
@@ -148,6 +150,13 @@ use App\Http\Controller\Front\ContactController;
 use App\Http\Controller\Front\BlogController;
 use App\Http\Controller\Front\PageController;
 use App\Http\Controller\Front\SitemapController;
+use App\Http\Controller\Front\StateController;
+use App\Service\StaticSite\FileInvalidator;
+use App\Service\StaticSite\GenerationStore;
+use App\Service\StaticSite\Generator;
+use App\Service\StaticSite\Invalidator;
+use App\Service\StaticSite\PageCatalog;
+use App\Service\StaticSite\StaticDirectory;
 use App\Service\Seo\StructuredData;
 use App\Service\Seo\SlugHistory;
 use App\Http\Controller\Admin\PostController as AdminPostController;
@@ -557,6 +566,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(AdminSession::class),
         $c->get(AuditTrail::class),
         $c->get(ClockInterface::class),
+        $c->get(GenerationStore::class),
     ));
 
     // --- Paiement ---------------------------------------------------------
@@ -1033,6 +1043,53 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
 
     // --- Noyau ------------------------------------------------------------
 
+    // --- Génération statique (retours du 2026-09-25, point 7) -------------
+    //
+    // Le site statique vit dans public/static (servi par la réécriture du
+    // .htaccess) ; STATIC_DIR le déplace, pour les tests notamment.
+    $staticDir = $env->getOptional('STATIC_DIR', '') ?? '';
+    $container->set(StaticDirectory::class, static fn (): StaticDirectory => new StaticDirectory(
+        $staticDir !== '' ? $staticDir : $rootPath . '/public/static',
+    ));
+    $container->set(GenerationStore::class, static fn (Container $c): GenerationStore => new GenerationStore(
+        $c->get(SettingRepository::class),
+        $c->get(SettingsAdminRepository::class),
+    ));
+    $container->set(Invalidator::class, static fn (Container $c): Invalidator => new FileInvalidator(
+        $c->get(StaticDirectory::class),
+        $c->get(GenerationStore::class),
+        $c->get(ClockInterface::class),
+    ));
+    $container->set(PageCatalog::class, static fn (Container $c): PageCatalog => new PageCatalog(
+        $c->get(UrlGenerator::class),
+        $c->get(CategoryRepository::class),
+        $c->get(ArtworkRepository::class),
+        $c->get(PostRepository::class),
+        $c->get(PageRepository::class),
+        $c->get(ClockInterface::class),
+    ));
+    $container->set(Generator::class, static fn (Container $c): Generator => new Generator(
+        static function () use ($c): Kernel {
+            $kernel = $c->get(Kernel::class);
+            assert($kernel instanceof Kernel);
+
+            return $kernel;
+        },
+        $c->get(PageCatalog::class),
+        $c->get(StaticDirectory::class),
+        $c->get(GenerationStore::class),
+        new SecurityHeaders($config, $c->get(RandomInterface::class), $matomo),
+        $c->get(ClockInterface::class),
+    ));
+    $container->set(GenerationController::class, static fn (Container $c): GenerationController => new GenerationController(
+        $c->get(AdminChrome::class),
+        $c->get(Generator::class),
+    ));
+    $container->set(StateController::class, static fn (Container $c): StateController => new StateController(
+        $c->get(Csrf::class),
+        $c->get(CartRepository::class),
+    ));
+
     $container->set(Kernel::class, static fn (Container $c): Kernel => new Kernel(
         $c->get(Router::class),
         $c,
@@ -1049,6 +1106,9 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             new RedirectMiddleware($c->get(RedirectRepository::class)),
             new CsrfGuard($c->get(Csrf::class), $c->get(LoggerInterface::class)),
             new AuthGuard($c->get(AdminSession::class), $c->get(LoggerInterface::class)),
+            // En dernier : seule une écriture authentifiée, au jeton valide et
+            // aboutie périme le site statique.
+            new StaticInvalidation($c->get(Invalidator::class)),
         ],
     ));
 

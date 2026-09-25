@@ -136,9 +136,11 @@ final class PanierTest extends FunctionalTestCase
         $this->assertSame(0, (int) $this->valeur('SELECT COUNT(*) FROM cart_items'));
     }
 
-    public function test_un_ajout_sans_jeton_csrf_est_refuse(): void
+    public function test_un_ajout_sans_jeton_csrf_n_ajoute_rien(): void
     {
-        // 06-securite §3 : l'ajout au panier est un POST, donc protege.
+        // 06-securite §3 : l'ajout au panier est un POST, donc protege. Depuis le
+        // site statique (2026-09-25), le refus renvoie a la page de confirmation
+        // (SiteStatiqueTest) au lieu d'une page d'erreur ; rien n'est ajoute.
         $artwork = $this->oeuvre();
 
         $reponse = $this->requete('POST', '/cedric-taldu/fr/panier/ajout', post: [
@@ -146,7 +148,8 @@ final class PanierTest extends FunctionalTestCase
             'id' => (string) $artwork,
         ]);
 
-        $this->assertContains($reponse->status, [403, 419]);
+        $this->assertSame(303, $reponse->status);
+        $this->assertSame(0, (int) $this->valeur('SELECT COUNT(*) FROM cart_items'));
     }
 
     public function test_un_genre_de_ligne_inconnu_est_refuse(): void

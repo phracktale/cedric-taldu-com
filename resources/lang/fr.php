@@ -56,6 +56,9 @@ return [
     'cart.checkout' => 'Passer la commande',
     'cart.added' => 'Ajouté au panier.',
     'cart.view' => 'Voir le panier',
+    'cart.confirm_title' => 'Confirmer l’ajout',
+    'cart.confirm_intro' => 'Confirmez l’ajout de cet article à votre panier.',
+    'cart.confirm_button' => 'Ajouter au panier',
 
     // Formulaires (éléments partagés)
     'form.do_not_fill' => 'Ne pas remplir',

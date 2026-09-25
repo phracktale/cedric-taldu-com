@@ -31,6 +31,7 @@ use App\Http\Controller\Admin\AppearanceController;
 use App\Http\Controller\Admin\BillingController;
 use App\Http\Controller\Admin\DeliveryController;
 use App\Http\Controller\Admin\MenuController;
+use App\Http\Controller\Admin\GenerationController;
 use App\Http\Controller\Admin\TemplateController;
 use App\Http\Controller\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controller\Front\NewsletterController;
@@ -48,6 +49,7 @@ use App\Http\Controller\Front\ContactController;
 use App\Http\Controller\Front\HomeController;
 use App\Http\Controller\Front\PageController;
 use App\Http\Controller\Front\SitemapController;
+use App\Http\Controller\Front\StateController;
 use App\Http\Controller\Front\PrintAssetController;
 use App\Http\Controller\Front\ProdigiWebhookController;
 use App\Http\Controller\Front\StripeWebhookController;
@@ -132,8 +134,12 @@ return [
     new Route('cart.show', 'GET', '/fr/panier', [CartController::class, 'show'], locale: 'fr'),
     new Route('cart.show', 'GET', '/en/cart', [CartController::class, 'show'], locale: 'en'),
 
-    new Route('cart.add', 'POST', '/fr/panier/ajout', [CartController::class, 'add'], locale: 'fr'),
-    new Route('cart.add', 'POST', '/en/cart/add', [CartController::class, 'add'], locale: 'en'),
+    // Page statique sans JavaScript : sans jeton, l'ajout renvoie a sa page de
+    // confirmation (GET, meme chemin), qui porte un jeton frais.
+    new Route('cart.add', 'POST', '/fr/panier/ajout', [CartController::class, 'add'], locale: 'fr', csrfConfirm: CartController::LINE_FIELDS),
+    new Route('cart.add', 'POST', '/en/cart/add', [CartController::class, 'add'], locale: 'en', csrfConfirm: CartController::LINE_FIELDS),
+    new Route('cart.confirm', 'GET', '/fr/panier/ajout', [CartController::class, 'confirm'], locale: 'fr'),
+    new Route('cart.confirm', 'GET', '/en/cart/add', [CartController::class, 'confirm'], locale: 'en'),
 
     new Route('cart.update', 'POST', '/fr/panier/quantite', [CartController::class, 'update'], locale: 'fr'),
     new Route('cart.update', 'POST', '/en/cart/quantity', [CartController::class, 'update'], locale: 'en'),
@@ -188,6 +194,10 @@ return [
     // Sitemap : non localise (un seul fichier couvre les deux langues via
     // xhtml:link). En prod il repond a la racine, en preprod sous le prefixe.
     new Route('sitemap', 'GET', '/sitemap.xml', [SitemapController::class, 'show']),
+
+    // État du visiteur pour les pages statiques (jeton CSRF, pastille du
+    // panier), lu par etat.js. Non localisé, jamais mis en cache.
+    new Route('state', 'GET', '/api/etat', [StateController::class, 'show']),
 
     // Fichier d'impression Prodigi : route machine (non localisee), a jeton
     // signe. Sert l'image prete-a-imprimer, rangee hors webroot, au robot Prodigi.
@@ -281,6 +291,7 @@ return [
     new Route('admin.newsletter.unsubscribe', 'POST', '/admin/newsletter/desinscription', [AdminNewsletterController::class, 'unsubscribe']),
     new Route('admin.menu.edit', 'GET', '/admin/menu', [MenuController::class, 'edit']),
     new Route('admin.menu.update', 'POST', '/admin/menu', [MenuController::class, 'update']),
+    new Route('admin.generation', 'POST', '/admin/generation', [GenerationController::class, 'generate']),
     new Route('admin.templates.edit', 'GET', '/admin/templates', [TemplateController::class, 'edit']),
     new Route('admin.templates.update', 'POST', '/admin/templates', [TemplateController::class, 'update']),
 

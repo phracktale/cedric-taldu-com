@@ -15,6 +15,7 @@ import { initPrefetch } from './prefetch.js';
 import { initZoom } from './zoom.js';
 import { initCart } from './cart.js';
 import { initCheckout } from './checkout.js';
+import { initEtat } from './etat.js';
 
 const base = document.body.dataset.base ?? '/';
 
@@ -23,3 +24,4 @@ initPrefetch(base);
 initZoom();
 initCart();
 initCheckout();
+initEtat(base);

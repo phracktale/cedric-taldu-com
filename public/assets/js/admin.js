@@ -16,6 +16,7 @@
 import { monterEditeursDeBlocs } from './block-editor.js';
 import { monterMenuAdmin } from './admin-menu.js';
 import { monterCompositeurs } from './composer.js';
+import { monterBarreGeneration } from './admin-generation.js';
 
 /* ------------------------------------------------------------- onglets FR/EN */
 
@@ -251,6 +252,7 @@ document.querySelectorAll('[data-cropper]').forEach(activerRecadrage);
 monterEditeursDeBlocs(document);
 monterMenuAdmin(document);
 monterCompositeurs(document);
+monterBarreGeneration();
 
 document.querySelectorAll('[data-slug-depuis]').forEach((slug) => {
   const titre = document.getElementById(slug.dataset.slugDepuis);

@@ -94,5 +94,8 @@ $groupeCourant = App\Service\View\AdminMenu::groupOf($chemin);
 <main id="contenu" class="admin-contenu">
 <?= $content ?>
 </main>
+<?php if (($data['generation'] ?? null) instanceof App\Service\StaticSite\GenerationState) : ?>
+<?= $partial('admin/partials/barre-generation', $data) ?>
+<?php endif; ?>
 </body>
 </html>

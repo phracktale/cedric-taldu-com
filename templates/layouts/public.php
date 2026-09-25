@@ -78,7 +78,7 @@ $ogCard = $ogImage !== null ? 'summary_large_image' : 'summary';
 <script type="module" src="<?= attr($url->asset('js/analytics.js')) ?>" nonce="<?= attr($nonce) ?>" data-matomo-url="<?= attr($data['matomo']->url) ?>" data-matomo-site="<?= attr($data['matomo']->siteId) ?>"></script>
 <?php endif; ?>
 </head>
-<body data-base="<?= attr($data['basePath'] ?? '') ?>">
+<body data-base="<?= attr($data['basePath'] ?? '') ?>"<?php if (($data['isStatic'] ?? false) === true) : ?> data-static<?php endif; ?>>
 <?php if (($data['isProduction'] ?? true) === false) : ?>
 <p class="bandeau-env"><?= $t('env.preprod', ['env' => is_string($data['env'] ?? null) ? $data['env'] : '']) ?></p>
 <?php endif; ?>

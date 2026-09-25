@@ -486,3 +486,24 @@ legend {
   .composer { grid-template-columns: 1fr; }
   .composer-palette { position: static; max-height: none; }
 }
+
+/* Barre fixe de la génération statique (retours du 2026-09-25, point 7). */
+body.admin { padding-bottom: 3.5rem; }
+.barre-generation {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+  padding: .45rem 1rem calc(.45rem + env(safe-area-inset-bottom, 0px));
+  background: #1d1f21; color: #e6e6e6; font-size: .85rem;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, .25);
+}
+.barre-ligne { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem 1.2rem; }
+.barre-pages, .barre-numero { font-weight: 600; }
+.barre-date { color: #b5b5b5; }
+.barre-etat { color: #8fd18f; }
+.barre-etat--perime { color: #f0c36b; }
+.barre-action { margin-left: auto; }
+.barre-journal-bloc summary { cursor: pointer; color: #b5b5b5; margin-top: .3rem; }
+.barre-journal {
+  max-height: 40vh; overflow: auto; margin: .4rem 0 0; padding: .6rem .8rem;
+  background: #0d0e0f; color: #9fe39f; border-radius: 4px;
+  font: .8rem/1.45 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre;
+}

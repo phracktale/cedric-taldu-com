@@ -54,6 +54,9 @@ return [
     'cart.checkout' => 'Proceed to checkout',
     'cart.added' => 'Added to your cart.',
     'cart.view' => 'View cart',
+    'cart.confirm_title' => 'Confirm',
+    'cart.confirm_intro' => 'Please confirm adding this item to your cart.',
+    'cart.confirm_button' => 'Add to cart',
 
     // Forms (shared elements)
     'form.do_not_fill' => 'Do not fill',
