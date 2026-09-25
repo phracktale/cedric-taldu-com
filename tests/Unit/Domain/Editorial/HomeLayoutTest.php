@@ -40,6 +40,16 @@ final class HomeLayoutTest extends TestCase
         $this->assertCount(count(HomeLayout::SECTIONS), $layout->forAdmin());
     }
 
+    public function test_la_liste_composee_donne_l_ordre_et_masque_le_reste(): void
+    {
+        // Retours du 2026-09-25 : la page est composée par glisser-déposer ; ce
+        // qui n'y est pas est masqué, les doublons et inconnus sont ignorés.
+        $layout = HomeLayout::fromList(['contact', 'hero', 'evil', 'hero']);
+
+        $this->assertSame(['contact', 'hero'], $layout->enabledOrder());
+        $this->assertCount(count(HomeLayout::SECTIONS), $layout->forAdmin());
+    }
+
     public function test_une_clef_inconnue_est_ignoree(): void
     {
         $layout = HomeLayout::fromStored([['section' => 'evil', 'enabled' => true]]);
