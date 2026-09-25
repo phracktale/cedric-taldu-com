@@ -27,6 +27,15 @@ final class FakeProdigiClient implements ProdigiClientInterface
     private string $nextStage = 'InProgress';
 
     private ?Throwable $quoteFailure = null;
+
+    /** @var list<string> commandes interrogées (GET /orders/{id}), dans l'ordre */
+    public array $lookedUp = [];
+
+    /** @var array<string, ProdigiOrderState> */
+    private array $orderStates = [];
+
+    /** @var array<string, true> */
+    private array $lookupFailures = [];
     private int $nextQuoteCents = 495;
     private string $nextQuoteCurrency = 'EUR';
 
@@ -45,6 +54,28 @@ final class FakeProdigiClient implements ProdigiClientInterface
     {
         $this->nextQuoteCents = $shippingCents;
         $this->nextQuoteCurrency = $currency;
+    }
+
+    public function respondOrderWith(string $prodigiOrderId, ProdigiOrderState $state): void
+    {
+        $this->orderStates[$prodigiOrderId] = $state;
+    }
+
+    public function failOrderLookupFor(string $prodigiOrderId): void
+    {
+        $this->lookupFailures[$prodigiOrderId] = true;
+    }
+
+    public function order(string $prodigiOrderId): ProdigiOrderState
+    {
+        $this->lookedUp[] = $prodigiOrderId;
+
+        if (isset($this->lookupFailures[$prodigiOrderId])) {
+            throw new Exception\ProdigiException('Prodigi injoignable (double).');
+        }
+
+        // Sans réponse programmée : commande toujours en production, sans suivi.
+        return $this->orderStates[$prodigiOrderId] ?? new ProdigiOrderState('InProgress');
     }
 
     public function failQuoteWith(Throwable $failure): void

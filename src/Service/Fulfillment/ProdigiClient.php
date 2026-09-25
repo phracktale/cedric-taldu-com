@@ -116,6 +116,47 @@ final class ProdigiClient implements ProdigiClientInterface
         return $this->parseQuote((string) $body);
     }
 
+    public function order(string $prodigiOrderId): ProdigiOrderState
+    {
+        // L'identifiant vient de notre base, mais il entre dans une URL : format strict.
+        if (preg_match('/^[A-Za-z0-9_-]{1,80}$/D', $prodigiOrderId) !== 1) {
+            throw new ProdigiException('Identifiant de commande Prodigi invalide.');
+        }
+
+        $handle = curl_init($this->config->baseUrl . '/v4.0/orders/' . $prodigiOrderId);
+
+        if ($handle === false) {
+            throw new ProdigiException('Initialisation curl impossible.');
+        }
+
+        curl_setopt_array($handle, [
+            CURLOPT_HTTPHEADER => ['X-API-Key: ' . $this->config->apiKey],
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => self::TIMEOUT,
+            CURLOPT_CONNECTTIMEOUT => self::CONNECT_TIMEOUT,
+        ]);
+
+        $body = curl_exec($handle);
+        $status = (int) curl_getinfo($handle, CURLINFO_HTTP_CODE);
+        $error = curl_error($handle);
+        curl_close($handle);
+
+        if ($body === false) {
+            throw new ProdigiException('Prodigi injoignable : ' . $error);
+        }
+
+        if ($status < 200 || $status >= 300) {
+            throw new ProdigiException('Prodigi a répondu ' . $status . ' : ' . substr((string) $body, 0, 500));
+        }
+
+        $data = json_decode((string) $body, true);
+        if (!is_array($data) || !is_array($data['order'] ?? null)) {
+            throw new ProdigiException('Réponse Prodigi inattendue.');
+        }
+
+        return ProdigiOrderState::fromOrder($data['order']);
+    }
+
     private function parseQuote(string $body): ProdigiQuoteResult
     {
         $data = json_decode($body, true);

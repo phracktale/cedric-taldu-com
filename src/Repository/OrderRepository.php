@@ -486,6 +486,7 @@ final class OrderRepository
         string $carrier,
         string $trackingNumber,
         DateTimeImmutable $now,
+        ?string $trackingUrl = null,
     ): bool {
         $current = $this->statusOf($orderId);
 
@@ -498,7 +499,7 @@ final class OrderRepository
         $statement = $this->pdo->prepare(
             'UPDATE orders
                 SET status = :shipped, shipped_at = :shipped_at, tracking_carrier = :carrier,
-                    tracking_number = :tracking, updated_at = :updated
+                    tracking_number = :tracking, tracking_url = :url, updated_at = :updated
               WHERE id = :id AND status = :paid'
         );
 
@@ -508,6 +509,8 @@ final class OrderRepository
             'paid' => OrderStatus::Paid->value,
             'carrier' => $carrier,
             'tracking' => $trackingNumber,
+            // https seulement : ProdigiOrderState l'a déjà contrôlé.
+            'url' => $trackingUrl !== null && str_starts_with($trackingUrl, 'https://') ? $trackingUrl : null,
             'shipped_at' => $now->format('Y-m-d H:i:s'),
             'updated' => $now->format('Y-m-d H:i:s'),
         ]);
