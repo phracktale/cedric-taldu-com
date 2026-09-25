@@ -111,7 +111,7 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
 
             <div class="grille-champs">
                 <p class="champ">
-                    <label for="rubrique">Rubrique (obligatoire)</label>
+                    <label for="rubrique">Galerie (obligatoire)</label>
                     <select id="rubrique" name="rubrique" required>
                         <option value="">Choisir…</option>
                         <?php foreach ($rubriques as $rubrique) : ?>
@@ -132,7 +132,7 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
                         ><?= e($serie['translations']['fr']['title'] ?? 'Sans titre') ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <span class="champ-aide">Les séries se créent depuis la rubrique.</span>
+                    <span class="champ-aide">Les séries se créent depuis la galerie.</span>
                 </p>
             </div>
         </fieldset>

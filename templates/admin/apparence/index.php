@@ -27,7 +27,7 @@ $couleur = is_string($data['couleur'] ?? null) ? $data['couleur'] : '';
 
         <fieldset>
             <legend>Entrée de menu active</legend>
-            <p class="champ-aide">Comment signaler, dans le menu, la rubrique où se trouve le visiteur.</p>
+            <p class="champ-aide">Comment signaler, dans le menu, la partie du site où se trouve le visiteur.</p>
             <?php foreach ($styles as $valeur => $libelle) : ?>
             <p class="champ champ-inline">
                 <input type="radio" id="style_<?= attr($valeur) ?>" name="style" value="<?= attr($valeur) ?>"

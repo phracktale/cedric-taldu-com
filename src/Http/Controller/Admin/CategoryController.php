@@ -60,10 +60,18 @@ final class CategoryController
 
     // ---------------------------------------------------------------- liste
 
+    /**
+     * Ancienne adresse de la liste (« rubriques ») : redirection permanente.
+     */
+    public function legacy(Request $request): Response
+    {
+        return RedirectResponse::to($request->basePath . '/admin/galeries', 301);
+    }
+
     public function index(Request $request): Response
     {
         return $this->chrome->page($request, 'admin/rubriques/index', [
-            'titre' => 'Rubriques',
+            'titre' => 'Galeries',
             'rubriques' => $this->categories->findAll(),
         ]);
     }
@@ -104,7 +112,7 @@ final class CategoryController
             ['title' => $translations[Locale::reference()->value]['title'] ?? null],
         );
 
-        return RedirectResponse::to($request->basePath . '/admin/rubriques/' . $id);
+        return RedirectResponse::to($request->basePath . '/admin/galeries/' . $id);
     }
 
     // -------------------------------------------------------------- edition
@@ -158,7 +166,7 @@ final class CategoryController
             $this->diff($existing['translations'] ?? [], $translations),
         );
 
-        return RedirectResponse::to($request->basePath . '/admin/rubriques/' . $id);
+        return RedirectResponse::to($request->basePath . '/admin/galeries/' . $id);
     }
 
     public function togglePublication(Request $request): Response
@@ -176,7 +184,7 @@ final class CategoryController
             $id,
         );
 
-        return RedirectResponse::to($request->basePath . '/admin/rubriques');
+        return RedirectResponse::to($request->basePath . '/admin/galeries');
     }
 
     public function move(Request $request): Response
@@ -189,7 +197,7 @@ final class CategoryController
 
         $this->categories->move((int) $category['id'], $direction);
 
-        return RedirectResponse::to($request->basePath . '/admin/rubriques');
+        return RedirectResponse::to($request->basePath . '/admin/galeries');
     }
 
     public function delete(Request $request): Response
@@ -202,10 +210,10 @@ final class CategoryController
         // œuvres : proposer de les deplacer. »
         if ($artworks > 0) {
             return $this->chrome->page($request, 'admin/rubriques/index', [
-                'titre' => 'Rubriques',
+                'titre' => 'Galeries',
                 'rubriques' => $this->categories->findAll(),
                 'erreur' => sprintf(
-                    'Cette rubrique contient %d œuvre(s). Déplacez-les dans une autre rubrique avant de la supprimer.',
+                    'Cette galerie contient %d œuvre(s). Déplacez-les dans une autre galerie avant de la supprimer.',
                     $artworks,
                 ),
             ], 409);
@@ -214,7 +222,7 @@ final class CategoryController
         $this->categories->delete($id);
         $this->chrome->audit()->record($this->chrome->currentUserId(), 'category.delete', $request, 'category', $id);
 
-        return RedirectResponse::to($request->basePath . '/admin/rubriques');
+        return RedirectResponse::to($request->basePath . '/admin/galeries');
     }
 
     // --------------------------------------------------------------- series
@@ -242,7 +250,7 @@ final class CategoryController
 
         $this->chrome->audit()->record($this->chrome->currentUserId(), 'series.create', $request, 'series', $id);
 
-        return RedirectResponse::to($request->basePath . '/admin/rubriques/' . $category['id']);
+        return RedirectResponse::to($request->basePath . '/admin/galeries/' . $category['id']);
     }
 
     public function deleteSeries(Request $request): Response
@@ -267,7 +275,7 @@ final class CategoryController
             (int) $series['id'],
         );
 
-        return RedirectResponse::to($request->basePath . '/admin/rubriques/' . $category['id']);
+        return RedirectResponse::to($request->basePath . '/admin/galeries/' . $category['id']);
     }
 
     // -------------------------------------------------------------- interne
@@ -278,7 +286,7 @@ final class CategoryController
     private function form(Request $request, ?array $category, ?string $erreur = null, int $status = 200): Response
     {
         return $this->chrome->page($request, 'admin/rubriques/formulaire', [
-            'titre' => $category === null ? 'Nouvelle rubrique' : 'Modifier la rubrique',
+            'titre' => $category === null ? 'Nouvelle galerie' : 'Modifier la galerie',
             'rubrique' => $category,
             'series' => $category === null ? [] : $this->series->findByCategory((int) $category['id']),
             'erreur' => $erreur,
@@ -401,6 +409,6 @@ final class CategoryController
             ? $this->categories->findById((int) $id)
             : null;
 
-        return $category ?? throw new NotFoundException('Rubrique introuvable.');
+        return $category ?? throw new NotFoundException('Galerie introuvable.');
     }
 }

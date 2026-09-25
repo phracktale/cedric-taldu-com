@@ -40,7 +40,7 @@ $statutChoisi = $data['statutChoisi'] ?? null;
     <form method="get" action="<?= attr($base . '/admin/oeuvres') ?>" class="formulaire">
         <div class="grille-champs">
             <p class="champ">
-                <label for="rubrique">Rubrique</label>
+                <label for="rubrique">Galerie</label>
                 <select id="rubrique" name="rubrique">
                     <option value="">Toutes</option>
                     <?php foreach ($rubriques as $rubrique) : ?>

@@ -37,7 +37,7 @@ $entrees = $utilisateur === null ? [] : [
     ['chemin' => '/admin/menu', 'libelle' => 'Menu'],
     ['chemin' => '/admin/livraison', 'libelle' => 'Livraison'],
     ['chemin' => '/admin/facturation', 'libelle' => 'Facturation'],
-    ['chemin' => '/admin/rubriques', 'libelle' => 'Rubriques'],
+    ['chemin' => '/admin/galeries', 'libelle' => 'Galeries'],
     ['chemin' => '/admin/oeuvres', 'libelle' => 'Œuvres'],
     ['chemin' => '/admin/actus', 'libelle' => 'Actus'],
     ['chemin' => '/admin/pages', 'libelle' => 'Pages'],

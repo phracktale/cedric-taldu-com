@@ -23,18 +23,18 @@ $rubriques = is_array($data['rubriques'] ?? null) ? $data['rubriques'] : [];
 
 ?>
 <div class="admin-page">
-    <h1>Rubriques</h1>
+    <h1>Galeries</h1>
 
     <?php if (is_string($data['erreur'] ?? null)) : ?>
     <p class="erreur" role="alert"><?= e($data['erreur']) ?></p>
     <?php endif; ?>
 
     <p class="actions">
-        <a class="bouton" href="<?= attr($base . '/admin/rubriques/nouvelle') ?>">Nouvelle rubrique</a>
+        <a class="bouton" href="<?= attr($base . '/admin/galeries/nouvelle') ?>">Nouvelle galerie</a>
     </p>
 
     <?php if ($rubriques === []) : ?>
-    <p class="aide">Aucune rubrique. La galerie du site est vide tant qu’il n’y en a pas.</p>
+    <p class="aide">Aucune galerie. Le site n’affiche aucune œuvre tant qu’il n’y en a pas.</p>
     <?php else : ?>
     <table class="tableau">
         <thead>
@@ -50,7 +50,7 @@ $rubriques = is_array($data['rubriques'] ?? null) ? $data['rubriques'] : [];
             <?php $fr = $rubrique['translations']['fr'] ?? []; ?>
             <tr>
                 <td>
-                    <a href="<?= attr($base . '/admin/rubriques/' . $rubrique['id']) ?>"><?= e($fr['title'] ?? 'Sans titre') ?></a>
+                    <a href="<?= attr($base . '/admin/galeries/' . $rubrique['id']) ?>"><?= e($fr['title'] ?? 'Sans titre') ?></a>
                 </td>
                 <td><code><?= e($fr['slug'] ?? '') ?></code></td>
                 <td>
@@ -61,23 +61,23 @@ $rubriques = is_array($data['rubriques'] ?? null) ? $data['rubriques'] : [];
                     <?php endif; ?>
                 </td>
                 <td class="colonne-actions">
-                    <form method="post" action="<?= attr($base . '/admin/rubriques/' . $rubrique['id'] . '/position') ?>">
+                    <form method="post" action="<?= attr($base . '/admin/galeries/' . $rubrique['id'] . '/position') ?>">
                         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
                         <button type="submit" name="direction" value="haut" class="lien-bouton"
-                                aria-label="Monter cette rubrique">↑</button>
+                                aria-label="Monter cette galerie">↑</button>
                         <button type="submit" name="direction" value="bas" class="lien-bouton"
-                                aria-label="Descendre cette rubrique">↓</button>
+                                aria-label="Descendre cette galerie">↓</button>
                     </form>
 
-                    <form method="post" action="<?= attr($base . '/admin/rubriques/' . $rubrique['id'] . '/publication') ?>">
+                    <form method="post" action="<?= attr($base . '/admin/galeries/' . $rubrique['id'] . '/publication') ?>">
                         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
                         <button type="submit" class="lien-bouton">
                             <?php if ($rubrique['is_published'] === true) : ?>Dépublier<?php else : ?>Publier<?php endif; ?>
                         </button>
                     </form>
 
-                    <form method="post" action="<?= attr($base . '/admin/rubriques/' . $rubrique['id'] . '/suppression') ?>"
-                          data-confirmation="Supprimer définitivement cette rubrique ?">
+                    <form method="post" action="<?= attr($base . '/admin/galeries/' . $rubrique['id'] . '/suppression') ?>"
+                          data-confirmation="Supprimer définitivement cette galerie ?">
                         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
                         <button type="submit" class="lien-bouton">Supprimer</button>
                     </form>
