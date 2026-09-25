@@ -311,7 +311,12 @@ final class CheckoutController
             'deliveryTo' => $deliveryTo,
             // La remise en main propre disparaît dès qu'une reproduction est au
             // panier : Prodigi l'expédie, elle ne peut pas être retirée.
-            'pickupAllowed' => !self::hasPrintOnDemand($valuation),
+            // Retours du 2026-09-25 : remise en main propre seulement avec une
+            // édition rehaussée, et jamais avec un tirage expédié par le prestataire.
+            'pickupAllowed' => !self::hasPrintOnDemand($valuation) && array_filter(
+                $valuation->lines,
+                static fn ($line): bool => $line->item->isHandFinished(),
+            ) !== [],
             'handDelivery' => $this->handDelivery(),
             'carrierName' => $this->carriers->default()->name(),
             // Œuvre hors gabarit au panier : livraison sur rendez-vous uniquement.

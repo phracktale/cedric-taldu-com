@@ -970,3 +970,6 @@ footer a:hover { text-decoration: underline; }
   .nav-bas { padding: 0; }
   .nav-bas > ul { height: auto; border-top: none; }
 }
+
+/* Mode de livraison unique (retours du 2026-09-25) : pas de choix à faire. */
+.commande-mode-unique { display: flex; justify-content: space-between; gap: 1rem; margin: 0 0 1.4rem; }

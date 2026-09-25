@@ -61,6 +61,17 @@ final class PurchasableItem
      * Les originaux et les éditions limitées (rehaussées à l'atelier) sont, eux,
      * expédiés depuis l'atelier : leur port suit le barème au poids.
      */
+    /**
+     * Édition rehaussée à la main à l'atelier (circuit manuel). Avec les œuvres
+     * hors gabarit, ce sont les seuls articles qui ouvrent un choix de livraison
+     * (retours du 2026-09-25) ; le reste s'expédie.
+     */
+    public function isHandFinished(): bool
+    {
+        return $this->kind === LineKind::Reproduction
+            && $this->processingMode === ProcessingMode::ArtistManual;
+    }
+
     public function isPrintOnDemand(): bool
     {
         return $this->kind === LineKind::Reproduction
