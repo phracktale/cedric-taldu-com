@@ -258,7 +258,7 @@ final class MediaController
         if (array_sum($usages) > 0) {
             return $this->page(
                 $request,
-                erreur: 'Cette image est utilisée : retirez-la d’abord des œuvres et rubriques concernées.',
+                erreur: 'Cette image est utilisée : retirez-la d’abord des œuvres et galeries concernées.',
                 status: 409,
             );
         }

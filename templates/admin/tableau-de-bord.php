@@ -33,9 +33,9 @@ $actions = is_array($data['actions'] ?? null) ? $data['actions'] : [];
     <section class="cartes" aria-label="État du catalogue">
         <article class="carte">
             <p class="carte-nombre"><?= e($compteurs['categories'] ?? 0) ?></p>
-            <p class="carte-libelle">rubriques</p>
+            <p class="carte-libelle">galeries</p>
             <p class="carte-detail"><?= e($compteurs['categories_published'] ?? 0) ?> publiée(s)</p>
-            <p><a href="<?= attr($base . '/admin/rubriques') ?>">Gérer les rubriques</a></p>
+            <p><a href="<?= attr($base . '/admin/galeries') ?>">Gérer les galeries</a></p>
         </article>
 
         <article class="carte">

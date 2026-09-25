@@ -21,7 +21,7 @@ $entrees = is_array($data['entrees'] ?? null) ? $data['entrees'] : [];
     <h1>Menu</h1>
 
     <p class="aide">
-        Choisissez les rubriques du menu principal, leur ordre (1 = en premier) et, si
+        Choisissez les entrées du menu principal, leur ordre (1 = en premier) et, si
         vous le souhaitez, un libellé à vous — par exemple « Boutique » pour « Toutes les
         œuvres ». Un libellé vide garde le libellé par défaut.
     </p>
@@ -32,7 +32,7 @@ $entrees = is_array($data['entrees'] ?? null) ? $data['entrees'] : [];
         <table class="tableau">
             <thead>
                 <tr>
-                    <th scope="col">Rubrique</th>
+                    <th scope="col">Entrée</th>
                     <th scope="col">Position</th>
                     <th scope="col">Affichée</th>
                     <th scope="col">Libellé (français)</th>

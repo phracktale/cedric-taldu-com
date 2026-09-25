@@ -27,8 +27,8 @@ $saisie = is_array($data['saisie'] ?? null) ? $data['saisie'] : [];
 $series = is_array($data['series'] ?? null) ? $data['series'] : [];
 
 $action = $rubrique === null
-    ? $base . '/admin/rubriques'
-    : $base . '/admin/rubriques/' . $rubrique['id'];
+    ? $base . '/admin/galeries'
+    : $base . '/admin/galeries/' . $rubrique['id'];
 
 /**
  * Valeur a afficher : la saisie refusee prime sur la valeur en base, sinon un
@@ -100,7 +100,7 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
                         <label for="methode_<?= attr($langue) ?>">Texte « méthode »</label>
                         <textarea id="methode_<?= attr($langue) ?>"
                                   name="methode_<?= attr($langue) ?>"><?= e($valeur('methode', $langue, 'method_text')) ?></textarea>
-                        <span class="champ-aide">Bande de bas de page de la rubrique. Facultatif.</span>
+                        <span class="champ-aide">Bande de bas de page de la galerie. Facultatif.</span>
                     </p>
 
                     <div class="grille-champs">
@@ -146,7 +146,7 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
 
         <p class="actions">
             <button type="submit" class="bouton">Enregistrer</button>
-            <a class="bouton bouton--secondaire" href="<?= attr($base . '/admin/rubriques') ?>">Retour à la liste</a>
+            <a class="bouton bouton--secondaire" href="<?= attr($base . '/admin/galeries') ?>">Retour à la liste</a>
         </p>
     </form>
 
@@ -155,7 +155,7 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
         <h2>Séries</h2>
 
         <?php if ($series === []) : ?>
-        <p class="aide">Aucune série. Les séries regroupent les œuvres d’une rubrique en sous-ensembles filtrables.</p>
+        <p class="aide">Aucune série. Les séries regroupent les œuvres d’une galerie en sous-ensembles filtrables.</p>
         <?php else : ?>
         <table class="tableau">
             <thead><tr><th scope="col">Titre</th><th scope="col" class="colonne-actions">Actions</th></tr></thead>
@@ -165,7 +165,7 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
                     <td><?= e($serie['translations']['fr']['title'] ?? 'Sans titre') ?></td>
                     <td class="colonne-actions">
                         <form method="post"
-                              action="<?= attr($base . '/admin/rubriques/' . $rubrique['id'] . '/series/' . $serie['id'] . '/suppression') ?>"
+                              action="<?= attr($base . '/admin/galeries/' . $rubrique['id'] . '/series/' . $serie['id'] . '/suppression') ?>"
                               data-confirmation="Supprimer cette série ? Les œuvres qu’elle regroupe seront conservées.">
                             <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
                             <button type="submit" class="lien-bouton">Supprimer</button>
@@ -177,7 +177,7 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
         </table>
         <?php endif; ?>
 
-        <form method="post" action="<?= attr($base . '/admin/rubriques/' . $rubrique['id'] . '/series') ?>"
+        <form method="post" action="<?= attr($base . '/admin/galeries/' . $rubrique['id'] . '/series') ?>"
               class="formulaire">
             <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
             <div class="grille-champs">

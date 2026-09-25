@@ -229,16 +229,18 @@ return [
     new Route('admin.account.2fa.disable', 'POST', '/admin/compte/2fa/retrait', [AccountController::class, 'disableTwoFactor']),
 
     // Rubriques et series
-    new Route('admin.category.index', 'GET', '/admin/rubriques', [AdminCategoryController::class, 'index']),
-    new Route('admin.category.create', 'GET', '/admin/rubriques/nouvelle', [AdminCategoryController::class, 'create']),
-    new Route('admin.category.store', 'POST', '/admin/rubriques', [AdminCategoryController::class, 'store']),
-    new Route('admin.category.edit', 'GET', '/admin/rubriques/{id}', [AdminCategoryController::class, 'edit'], requirements: $id),
-    new Route('admin.category.update', 'POST', '/admin/rubriques/{id}', [AdminCategoryController::class, 'update'], requirements: $id),
-    new Route('admin.category.publish', 'POST', '/admin/rubriques/{id}/publication', [AdminCategoryController::class, 'togglePublication'], requirements: $id),
-    new Route('admin.category.move', 'POST', '/admin/rubriques/{id}/position', [AdminCategoryController::class, 'move'], requirements: $id),
-    new Route('admin.category.delete', 'POST', '/admin/rubriques/{id}/suppression', [AdminCategoryController::class, 'delete'], requirements: $id),
-    new Route('admin.series.store', 'POST', '/admin/rubriques/{id}/series', [AdminCategoryController::class, 'storeSeries'], requirements: $id),
-    new Route('admin.series.delete', 'POST', '/admin/rubriques/{id}/series/{serie}/suppression', [AdminCategoryController::class, 'deleteSeries'], requirements: $idEtSerie),
+    new Route('admin.category.index', 'GET', '/admin/galeries', [AdminCategoryController::class, 'index']),
+    // Ancienne adresse (« rubriques », avant les retours du 2026-09-25).
+    new Route('admin.category.legacy', 'GET', '/admin/rubriques', [AdminCategoryController::class, 'legacy']),
+    new Route('admin.category.create', 'GET', '/admin/galeries/nouvelle', [AdminCategoryController::class, 'create']),
+    new Route('admin.category.store', 'POST', '/admin/galeries', [AdminCategoryController::class, 'store']),
+    new Route('admin.category.edit', 'GET', '/admin/galeries/{id}', [AdminCategoryController::class, 'edit'], requirements: $id),
+    new Route('admin.category.update', 'POST', '/admin/galeries/{id}', [AdminCategoryController::class, 'update'], requirements: $id),
+    new Route('admin.category.publish', 'POST', '/admin/galeries/{id}/publication', [AdminCategoryController::class, 'togglePublication'], requirements: $id),
+    new Route('admin.category.move', 'POST', '/admin/galeries/{id}/position', [AdminCategoryController::class, 'move'], requirements: $id),
+    new Route('admin.category.delete', 'POST', '/admin/galeries/{id}/suppression', [AdminCategoryController::class, 'delete'], requirements: $id),
+    new Route('admin.series.store', 'POST', '/admin/galeries/{id}/series', [AdminCategoryController::class, 'storeSeries'], requirements: $id),
+    new Route('admin.series.delete', 'POST', '/admin/galeries/{id}/series/{serie}/suppression', [AdminCategoryController::class, 'deleteSeries'], requirements: $idEtSerie),
 
     // Œuvres
     new Route('admin.artwork.index', 'GET', '/admin/oeuvres', [AdminArtworkController::class, 'index']),

@@ -246,7 +246,7 @@ nav a.boutique:hover, nav a.boutique:focus-visible { background: var(--encre); c
 @media (max-width: 900px) {
   .burger { display: block; }
   nav > ul {
-    display: none; position: absolute; top: 72px; left: 0; right: 0;
+    display: none; position: absolute; top: 100%; left: 0; right: 0;
     background: var(--papier); border-bottom: 1px solid var(--filet);
     flex-direction: column; gap: 0; padding: 1rem 5vw 1.5rem;
   }
@@ -949,12 +949,24 @@ footer a:hover { text-decoration: underline; }
 
 /* ---------------------------------------------------- espace client (2026-09) */
 
-.compte-lien { margin-left: auto; margin-right: 1.2rem; }
+.compte-lien { margin: 0; }
 .compte-bloc { margin: 2.5rem 0 0; }
 .compte-bloc h2 { font-size: 1.2rem; margin-bottom: 1rem; }
 .compte-adresses { display: grid; gap: 2rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
 .adresse-bloc { white-space: pre-line; }
 .compte-commandes { width: 100%; }
 @media (max-width: 900px) {
-  .compte-lien { margin-right: .6rem; }
+  .outils-entete { gap: .8rem; }
+}
+
+/* En-tête sur deux lignes (retours du 2026-09-25) : logo, compte, panier et
+   langues en haut ; menu de navigation dessous, séparé par un filet. */
+.nav-haut { height: 64px; }
+.outils-entete { display: flex; align-items: center; gap: 1.4rem; margin-left: auto; }
+.nav-bas { max-width: var(--max); margin: 0 auto; padding: 0 5vw; }
+.nav-bas > ul { height: 48px; border-top: 1px solid var(--filet); }
+@media (max-width: 900px) {
+  .burger { margin-left: 1rem; }
+  .nav-bas { padding: 0; }
+  .nav-bas > ul { height: auto; border-top: none; }
 }

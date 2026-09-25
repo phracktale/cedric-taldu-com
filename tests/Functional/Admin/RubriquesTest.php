@@ -19,7 +19,7 @@ use Tests\Support\Factory\UserFactory;
  */
 final class RubriquesTest extends AdminTestCase
 {
-    private const RUBRIQUES = '/cedric-taldu/admin/rubriques';
+    private const RUBRIQUES = '/cedric-taldu/admin/galeries';
 
     protected function setUp(): void
     {
@@ -30,6 +30,26 @@ final class RubriquesTest extends AdminTestCase
     }
 
     // ------------------------------------------------------------- creation
+
+    public function test_le_back_office_parle_de_galeries_et_non_de_rubriques(): void
+    {
+        // Retours du 2026-09-25 : le vocabulaire du site est « Galerie ».
+        $liste = $this->requete('GET', self::RUBRIQUES);
+
+        $this->assertSame(200, $liste->status);
+        $this->assertStringContainsString('<h1>Galeries</h1>', $liste->body);
+        $this->assertStringContainsString('href="' . self::RUBRIQUES . '"', $liste->body);
+        $this->assertStringNotContainsString('Rubrique', $liste->body);
+        $this->assertStringNotContainsString('rubrique', strip_tags($liste->body));
+    }
+
+    public function test_l_ancienne_adresse_des_rubriques_redirige(): void
+    {
+        $reponse = $this->requete('GET', '/cedric-taldu/admin/rubriques');
+
+        $this->assertSame(301, $reponse->status);
+        $this->assertSame(self::RUBRIQUES, $reponse->header('Location'));
+    }
 
     public function test_le_formulaire_de_creation_s_ouvre(): void
     {

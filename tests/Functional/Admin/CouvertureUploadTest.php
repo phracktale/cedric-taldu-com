@@ -67,7 +67,7 @@ final class CouvertureUploadTest extends AdminTestCase
 
     public function test_une_rubrique_recoit_sa_couverture_par_televersement(): void
     {
-        $reponse = $this->avecCouverture('/cedric-taldu/admin/rubriques', 'couverture_fichier', [
+        $reponse = $this->avecCouverture('/cedric-taldu/admin/galeries', 'couverture_fichier', [
             'titre_fr' => 'Encres',
         ]);
 
@@ -123,7 +123,7 @@ final class CouvertureUploadTest extends AdminTestCase
         // Un PHP deguise en JPEG doit etre refuse par MediaStore ; le formulaire
         // revient en 422 et la rubrique n'est pas creee.
         $reponse = $this->avecCouvertureFichier(
-            '/cedric-taldu/admin/rubriques',
+            '/cedric-taldu/admin/galeries',
             'couverture_fichier',
             ['titre_fr' => 'Encres'],
             $this->fixtures->phpDeguiseEnJpeg(),

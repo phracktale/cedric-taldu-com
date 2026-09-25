@@ -176,7 +176,7 @@ $valeur = static function (string $langue, string $colonne) use ($traductions): 
     <section class="formulaire">
         <h2>Remplacer l’image</h2>
         <p class="champ-aide">
-            Le nouveau fichier prend la place de celui-ci : les œuvres et rubriques qui l’emploient
+            Le nouveau fichier prend la place de celui-ci : les œuvres et galeries qui l’emploient
             le suivent. Les déclinaisons sont régénérées et le point focal réinitialisé.
         </p>
         <form method="post" action="<?= attr($base . '/admin/medias/' . $id . '/remplacement') ?>"
@@ -212,7 +212,7 @@ $valeur = static function (string $langue, string $colonne) use ($traductions): 
             <li>Présente dans <?= e($usages['galleries']) ?> galerie(s) d’œuvre.</li>
             <?php endif; ?>
             <?php if ($usages['categories'] > 0) : ?>
-            <li>Couverture de <?= e($usages['categories']) ?> rubrique(s).</li>
+            <li>Couverture de <?= e($usages['categories']) ?> galerie(s).</li>
             <?php endif; ?>
         </ul>
         <p class="aide">Retirez l’image de ces emplacements avant de pouvoir la supprimer.</p>

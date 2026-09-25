@@ -58,12 +58,39 @@ $liens = [
 ];
 ?>
 <header class="site-tete">
-  <div class="nav">
+  <?php // Retours du 2026-09-25 : logo, compte, panier et langues sur une ligne ; menu sur la suivante. ?>
+  <div class="nav nav-haut">
     <a class="brand" href="<?= attr($url->route('home', ['locale' => $locale->value])) ?>">Cédric Taldu<small><?= $t('nav.tagline') ?></small></a>
 
-    <button class="burger" aria-expanded="false" aria-controls="menu"><?= $t('nav.menu') ?></button>
+    <div class="outils-entete">
+    <?php // Accès au panier, présent sur tout le site. La pastille montre le
+          // nombre d'articles ; admin.js la met à jour après un ajout en fetch. ?>
+    <?php // Espace client (revue du 2026-09-24) : commandes, factures, newsletter. ?>
+    <a class="panier-lien compte-lien" href="<?= attr($url->route('account.index', ['locale' => $locale->value])) ?>"><?= $t('nav.account') ?></a>
+    <a class="panier-lien" href="<?= attr($url->route('cart.show', ['locale' => $locale->value])) ?>">
+      <?= $t('nav.cart') ?>
+      <span class="pastille-panier" data-cart-count<?php if ($cartCount === 0) : ?> hidden<?php endif; ?>><?= e($cartCount) ?></span>
+    </a>
 
-    <nav aria-label="<?= $t('nav.main_label') ?>" data-actif="<?= attr($styleActif) ?>">
+    <?php // Sélecteur de langue : vers l'URL équivalente dans l'autre langue,
+          // fournie par le contrôleur (05-i18n §2). Muet si l'équivalent manque. ?>
+    <?php if ($localeSwitch !== []) : ?>
+    <nav class="langues" aria-label="<?= $t('nav.language') ?>">
+      <?php foreach (Locale::cases() as $autre) : ?>
+        <?php if ($autre === $locale) : ?>
+          <span aria-current="true"><?= e($autre->nativeName()) ?></span>
+        <?php elseif (isset($localeSwitch[$autre->value])) : ?>
+          <a href="<?= attr($localeSwitch[$autre->value]) ?>" hreflang="<?= attr($autre->value) ?>"><?= e($autre->nativeName()) ?></a>
+        <?php endif; ?>
+      <?php endforeach; ?>
+    </nav>
+    <?php endif; ?>
+    </div>
+
+    <button class="burger" aria-expanded="false" aria-controls="menu"><?= $t('nav.menu') ?></button>
+  </div><!-- /nav-haut -->
+
+  <nav aria-label="<?= $t('nav.main_label') ?>" class="nav-bas" data-actif="<?= attr($styleActif) ?>">
       <ul id="menu">
         <?php foreach ($entrees as $entree) : ?>
           <?php $cle = $entree['item']; ?>
@@ -94,29 +121,5 @@ $liens = [
         <?php endif; ?>
         <?php endforeach; ?>
       </ul>
-    </nav>
-
-    <?php // Accès au panier, présent sur tout le site. La pastille montre le
-          // nombre d'articles ; admin.js la met à jour après un ajout en fetch. ?>
-    <?php // Espace client (revue du 2026-09-24) : commandes, factures, newsletter. ?>
-    <a class="panier-lien compte-lien" href="<?= attr($url->route('account.index', ['locale' => $locale->value])) ?>"><?= $t('nav.account') ?></a>
-    <a class="panier-lien" href="<?= attr($url->route('cart.show', ['locale' => $locale->value])) ?>">
-      <?= $t('nav.cart') ?>
-      <span class="pastille-panier" data-cart-count<?php if ($cartCount === 0) : ?> hidden<?php endif; ?>><?= e($cartCount) ?></span>
-    </a>
-
-    <?php // Sélecteur de langue : vers l'URL équivalente dans l'autre langue,
-          // fournie par le contrôleur (05-i18n §2). Muet si l'équivalent manque. ?>
-    <?php if ($localeSwitch !== []) : ?>
-    <nav class="langues" aria-label="<?= $t('nav.language') ?>">
-      <?php foreach (Locale::cases() as $autre) : ?>
-        <?php if ($autre === $locale) : ?>
-          <span aria-current="true"><?= e($autre->nativeName()) ?></span>
-        <?php elseif (isset($localeSwitch[$autre->value])) : ?>
-          <a href="<?= attr($localeSwitch[$autre->value]) ?>" hreflang="<?= attr($autre->value) ?>"><?= e($autre->nativeName()) ?></a>
-        <?php endif; ?>
-      <?php endforeach; ?>
-    </nav>
-    <?php endif; ?>
-  </div>
+  </nav>
 </header>

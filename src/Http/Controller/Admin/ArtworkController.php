@@ -295,7 +295,7 @@ final class ArtworkController
         $categoryId = self::positiveInt($request->input('rubrique'));
 
         if ($categoryId === null || !$this->artworks->categoryExists($categoryId)) {
-            return 'Choisissez une rubrique existante.';
+            return 'Choisissez une galerie existante.';
         }
 
         $price = $request->input('prix');
