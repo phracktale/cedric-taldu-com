@@ -65,8 +65,23 @@ foreach ($etat->log as $ligne) {
         substr($ligne['at'], 11, 12),
         $ligne['path'],
         $ligne['ms'],
-        $ligne['status'] === 200 ? '' : '  (' . $ligne['status'] . ', non écrite)',
+        $ligne['status'] !== 200
+            ? '  (' . $ligne['status'] . ', non écrite)'
+            : ($ligne['eco'] === null ? '' : sprintf(
+                '  EcoIndex %s %3d  (DOM %d, %d req., %s Ko)',
+                $ligne['eco']['grade'],
+                $ligne['eco']['score'],
+                $ligne['eco']['dom'],
+                $ligne['eco']['requests'],
+                number_format($ligne['eco']['kb'], 1, ',', ' '),
+            )),
     ));
+}
+
+$eco = $etat->averageEco();
+if ($eco !== null) {
+    fwrite(STDOUT, sprintf("EcoIndex moyen : %s (%d)
+", $eco['grade'], $eco['score']));
 }
 
 fwrite(STDOUT, sprintf(
