@@ -14,10 +14,15 @@ $item = is_array($data['item'] ?? null) ? $data['item'] : [];
 $label = is_string($data['label'] ?? null) ? $data['label'] : '';
 $libelles = ($data['labels'] ?? false) === true;
 $lienEdition = is_string($data['editUrl'] ?? null) ? $data['editUrl'] : null;
+// Section obligatoire d'un modèle : pas de retrait possible.
+$obligatoire = ($data['required'] ?? false) === true;
 ?>
 <li class="composer-entree" data-composer-entry data-item="<?= jsonAttr($item) ?>">
     <span class="composer-poignee" aria-hidden="true">⠿</span>
     <span class="composer-nom"><?= e($label) ?></span>
+    <?php if ($obligatoire) : ?>
+    <span class="composer-obligatoire">obligatoire</span>
+    <?php endif; ?>
     <?php if ($libelles) : ?>
     <details class="composer-libelles">
         <summary>Libellés</summary>
@@ -31,6 +36,8 @@ $lienEdition = is_string($data['editUrl'] ?? null) ? $data['editUrl'] : null;
     <span class="composer-actions">
         <button type="button" class="eb-btn" data-composer-up aria-label="Monter « <?= attr($label) ?> »">↑</button>
         <button type="button" class="eb-btn" data-composer-down aria-label="Descendre « <?= attr($label) ?> »">↓</button>
+        <?php if (!$obligatoire) : ?>
         <button type="button" class="eb-btn" data-composer-remove aria-label="Retirer « <?= attr($label) ?> »">✕</button>
+        <?php endif; ?>
     </span>
 </li>

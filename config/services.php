@@ -44,6 +44,7 @@ use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Admin\AppearanceController;
 use App\Http\Controller\Admin\DeliveryController;
 use App\Http\Controller\Admin\MenuController;
+use App\Http\Controller\Admin\TemplateController;
 use App\Http\Controller\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controller\Front\NewsletterController;
 use App\Http\Controller\Front\AccountController as CustomerAccountController;
@@ -809,6 +810,12 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(SettingRepository::class),
         $c->get(SettingsAdminRepository::class),
         $c->get(CategoryRepository::class),
+    ));
+
+    $container->set(TemplateController::class, static fn (Container $c): TemplateController => new TemplateController(
+        $c->get(AdminChrome::class),
+        $c->get(SettingRepository::class),
+        $c->get(SettingsAdminRepository::class),
     ));
 
     $container->set(AppearanceController::class, static fn (Container $c): AppearanceController => new AppearanceController(
