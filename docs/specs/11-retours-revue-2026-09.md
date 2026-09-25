@@ -152,3 +152,10 @@ Heimdall, certificat) — en attente de validation.
 | 5 | Modèles de page, d'actu, de galerie, de contact… | Un modèle par type, composé par glisser-déposer | `feature/modeles-de-contenu` |
 | 7 | Barre fixe en back-office : pages statiques générées, n° de génération, date, journal page à page | Construire une vraie génération statique (CSP par empreintes, jeton et panier chargés en JS) | `feature/generation-statique` |
 | 8 | Évaluation EcoIndex | Calcul intégré (formule GreenIT : DOM, requêtes, poids) | `feature/ecoindex` |
+| 6 | — | ✅ livré : choix du mode seulement pour hors gabarit / édition rehaussée | ✅ `feature/livraison-selon-produit` |
+| 9 | Menu du back-office en rubriques (Contenus, Boutique, Modules, Paramètres) | ✅ livré | ✅ `feature/admin-menu-groupes` |
+| 10 | Commandes : statut d'envoi et suivi récupérés chez l'imprimeur (Prodigi) | à faire | — |
+| 11 | Livraisons : grille de tarifs éditable, choix du module | à faire | — |
+| 12 | Carte interactive Leaflet (centre, zoom, marqueurs titre + description) | à faire | — |
+| 13 | Paramètres « Global » | à faire | — |
+| 14 | Front statique avec SvelteKit 2 + Svelte 5 et API PHP pour boutique, newsletter, contact | **en attente de décision** (contredit les contraintes « sans build / sans framework » de CLAUDE.md) | — |
