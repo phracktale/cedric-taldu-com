@@ -57,7 +57,7 @@ final class CommandeTest extends FunctionalTestCase
     {
         // 03-boutique §3 : le récapitulatif éclaire l'acheteur avant paiement —
         // frais de port, total, fenêtre de réception estimée, moyen de paiement.
-        $cookie = $this->panierAvecOeuvre();
+        $cookie = $this->panierAvecEditionRehaussee();
 
         $corps = $this->requete('GET', '/cedric-taldu/fr/commande', cookies: [self::COOKIE => $cookie])->body;
 
@@ -86,7 +86,7 @@ final class CommandeTest extends FunctionalTestCase
     {
         // Revue du 2026-09-24 : pas de « port gratuit » pour un retrait, mais des
         // frais de déplacement offerts dans un rayon de 30 km autour d'Amiens.
-        $cookie = $this->panierAvecOeuvre();
+        $cookie = $this->panierAvecEditionRehaussee();
 
         $corps = $this->requete('GET', '/cedric-taldu/fr/commande', cookies: [self::COOKIE => $cookie])->body;
 
