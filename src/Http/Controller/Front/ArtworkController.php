@@ -85,7 +85,7 @@ final class ArtworkController
         $data = [
             ...$this->chrome->base($request, $locale),
             'metaTitle' => $artwork->metaTitle($locale),
-            'sections' => $this->chrome->template('artwork'),
+            ...$this->chrome->templateData('artwork', $locale),
             'metaDescription' => $artwork->metaDescription($locale),
             'canonical' => $this->url->absolute('artwork.show', [
                 'locale' => $locale->value,

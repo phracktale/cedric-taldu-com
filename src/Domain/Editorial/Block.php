@@ -57,10 +57,14 @@ final class Block
         $ids = [];
 
         foreach ($blocks as $block) {
-            $media = $block->text('media');
+            // Toute prop de type « media » du catalogue : image, fond de bannière
+            // ou de section, texte + image (retours du 2026-09-25).
+            foreach (BlockCatalog::definition($block->type)['schema'] ?? [] as $cle => $schema) {
+                $media = $block->text($cle);
 
-            if ($block->type === 'image' && ctype_digit($media) && (int) $media > 0) {
-                $ids[] = (int) $media;
+                if ($schema['type'] === 'media' && ctype_digit($media) && (int) $media > 0) {
+                    $ids[] = (int) $media;
+                }
             }
 
             $ids = [...$ids, ...self::mediaIdsIn($block->children)];

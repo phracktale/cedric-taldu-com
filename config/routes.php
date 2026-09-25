@@ -32,6 +32,7 @@ use App\Http\Controller\Admin\BillingController;
 use App\Http\Controller\Admin\DeliveryController;
 use App\Http\Controller\Admin\MenuController;
 use App\Http\Controller\Admin\GenerationController;
+use App\Http\Controller\Admin\ContentBlockController;
 use App\Http\Controller\Admin\EcoIndexController;
 use App\Http\Controller\Admin\TemplateController;
 use App\Http\Controller\Admin\NewsletterController as AdminNewsletterController;
@@ -266,6 +267,13 @@ return [
 
     // Actus (blog) — CRUD. La contrainte $id empêche « nouvel-article » d'être
     // capté par la route {id}.
+    // Bibliothèque de blocs réutilisables (retours du 2026-09-25).
+    new Route('admin.block.index', 'GET', '/admin/blocs', [ContentBlockController::class, 'index']),
+    new Route('admin.block.create', 'POST', '/admin/blocs', [ContentBlockController::class, 'create']),
+    new Route('admin.block.edit', 'GET', '/admin/blocs/{id}', [ContentBlockController::class, 'edit'], requirements: $id),
+    new Route('admin.block.update', 'POST', '/admin/blocs/{id}', [ContentBlockController::class, 'update'], requirements: $id),
+    new Route('admin.block.delete', 'POST', '/admin/blocs/{id}/suppression', [ContentBlockController::class, 'delete'], requirements: $id),
+
     new Route('admin.post.index', 'GET', '/admin/actus', [AdminPostController::class, 'index']),
     new Route('admin.post.create', 'GET', '/admin/actus/nouvel-article', [AdminPostController::class, 'create']),
     new Route('admin.post.store', 'POST', '/admin/actus', [AdminPostController::class, 'store']),

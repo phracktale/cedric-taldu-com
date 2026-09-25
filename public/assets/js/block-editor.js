@@ -23,6 +23,12 @@ function monter(textarea) {
     catalogue = JSON.parse(textarea.dataset.catalog || '{}');
   } catch { catalogue = {}; }
 
+  // Modèles de section (retours du 2026-09-25) : assemblages prêts à insérer.
+  let modeles = {};
+  try {
+    modeles = JSON.parse(textarea.dataset.presets || '{}');
+  } catch { modeles = {}; }
+
   let blocs = analyser(textarea.value);
 
   textarea.hidden = true;
@@ -102,7 +108,8 @@ function monter(textarea) {
       (schema.options || []).forEach((option) => {
         const o = document.createElement('option');
         o.value = option;
-        o.textContent = option;
+        // Libellé lisible du catalogue (« Haute », « Voile sombre »…), sinon la valeur.
+        o.textContent = (schema.labels && schema.labels[option]) || option;
         entree.appendChild(o);
       });
     } else if (schema.type === 'richtext') {
@@ -197,16 +204,35 @@ function monter(textarea) {
     barre.className = 'eb-ajout';
 
     const choix = document.createElement('select');
-    Object.entries(catalogue).forEach(([type, def]) => {
+    choix.setAttribute('aria-label', 'Bloc ou modèle à ajouter');
+    const groupe = (libelle) => {
+      const g = document.createElement('optgroup');
+      g.label = libelle;
+      choix.appendChild(g);
+      return g;
+    };
+    const option = (parent, valeur, libelle) => {
       const o = document.createElement('option');
-      o.value = type;
-      o.textContent = def.label || type;
-      choix.appendChild(o);
-    });
+      o.value = valeur;
+      o.textContent = libelle;
+      parent.appendChild(o);
+    };
+
+    const blocsSimples = groupe('Blocs');
+    Object.entries(catalogue).forEach(([type, def]) => option(blocsSimples, type, def.label || type));
+    if (Object.keys(modeles).length > 0) {
+      const g = groupe('Modèles de section');
+      Object.entries(modeles).forEach(([cle, modele]) => option(g, 'modele:' + cle, modele.label || cle));
+    }
 
     barre.appendChild(choix);
     barre.appendChild(bouton('+ Ajouter', 'Ajouter un bloc', () => {
-      liste.push(nouveauBloc(choix.value));
+      if (choix.value.startsWith('modele:')) {
+        const modele = modeles[choix.value.slice(7)];
+        (modele ? modele.blocks : []).forEach((b) => liste.push(instancier(b)));
+      } else {
+        liste.push(nouveauBloc(choix.value));
+      }
       redessiner();
     }, 'eb-btn-ajout'));
 
@@ -230,6 +256,14 @@ function monter(textarea) {
 
     const bloc = { id: identifiant(), type, version: 1, props };
     if (def.allowChildren) bloc.children = [];
+    return bloc;
+  }
+
+  /** Copie d'un bloc de modèle : identifiants neufs, props manquantes à leur défaut. */
+  function instancier(modele) {
+    const bloc = nouveauBloc(modele.type);
+    Object.assign(bloc.props, modele.props || {});
+    if (Array.isArray(modele.children)) bloc.children = modele.children.map(instancier);
     return bloc;
   }
 

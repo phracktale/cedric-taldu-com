@@ -68,6 +68,7 @@ final class Chrome
         private readonly PostRepository $posts,
         private readonly SettingRepository $settings,
         private readonly MenuRenderer $menus,
+        private readonly PlacedBlocks $placed,
         private readonly ?MatomoConfig $matomo = null,
     ) {
     }
@@ -144,6 +145,30 @@ final class Chrome
     public function template(string $type): array
     {
         return ContentTemplate::fromStored($type, $this->settings->json(ContentTemplate::settingKey($type)))->sections();
+    }
+
+    /**
+     * Modèle d'un type de contenu prêt à rendre : ordre des sections et blocs
+     * de la bibliothèque qui y sont placés (retours du 2026-09-25).
+     *
+     * @return array{sections: list<string>, contentBlocks: array<int, array{blocks: list<\App\Domain\Editorial\Block>, medias: array<int, \App\Domain\Catalog\Media>}>}
+     */
+    public function templateData(string $type, Locale $locale): array
+    {
+        $sections = $this->template($type);
+
+        return ['sections' => $sections, 'contentBlocks' => $this->placed->load($sections, $locale)];
+    }
+
+    /**
+     * Blocs de la bibliothèque placés parmi ces clefs (accueil).
+     *
+     * @param list<string> $keys
+     * @return array<int, array{blocks: list<\App\Domain\Editorial\Block>, medias: array<int, \App\Domain\Catalog\Media>}>
+     */
+    public function placedBlocks(array $keys, Locale $locale): array
+    {
+        return $this->placed->load($keys, $locale);
     }
 
     /**

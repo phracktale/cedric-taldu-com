@@ -39,11 +39,12 @@ final class ModelesAdminTest extends AdminTestCase
     public function test_le_modele_d_actu_pilote_les_articles(): void
     {
         (new PostFactory($this->pdo))->publishedAt('2026-06-01 09:00:00')
-            ->translated('fr', 'vernissage', 'Vernissage', '<p>Le corps.</p>')->create();
+            ->translated('fr', 'vernissage', 'Vernissage', body: '<p>Le corps.</p>')->create();
 
         $this->enregistrer(['template_post' => [['type' => 'body'], ['type' => 'header']]]);
 
         $corps = $this->requete('GET', '/cedric-taldu/fr/actus/vernissage')->body;
+        $this->assertStringContainsString('Le corps.', $corps);
         $this->assertLessThan(strpos($corps, '<h1'), strpos($corps, 'Le corps.'));
         $this->assertStringNotContainsString('article-retour', $corps);
         $this->assertStringNotContainsString('<nav class="fil"', $corps);

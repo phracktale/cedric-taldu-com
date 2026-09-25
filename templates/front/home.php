@@ -87,7 +87,11 @@ $bag = [
 ?>
 <?php foreach ($sectionsAffichees as $section) : ?>
   <?php // Le nom du partial vient d'une clef de section EN LISTE BLANCHE. ?>
-  <?php if (isset(HomeLayout::SECTIONS[$section])) : ?>
+  <?php $bloc = App\Domain\Editorial\ContentBlock::idFromKey($section); ?>
+  <?php if ($bloc !== null) : ?>
+    <?php // Bloc de la bibliothèque (retours du 2026-09-25). ?>
+    <?= $partial('partials/content-block', ['placed' => $data['contentBlocks'][$bloc] ?? null, 'locale' => $data['locale']]) ?>
+  <?php elseif (isset(HomeLayout::SECTIONS[$section])) : ?>
     <?= $partial('partials/home/' . $section, $bag) ?>
   <?php endif; ?>
 <?php endforeach; ?>

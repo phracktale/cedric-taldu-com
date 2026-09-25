@@ -69,7 +69,7 @@ final class HomeLayout
 
             $section = $entry['section'] ?? null;
 
-            if (!is_string($section) || !isset(self::SECTIONS[$section]) || isset($enabledByKey[$section])) {
+            if (!self::isKnown($section) || isset($enabledByKey[$section])) {
                 continue;
             }
 
@@ -123,7 +123,7 @@ final class HomeLayout
             static fn (array $e): array => [
                 'section' => $e['section'],
                 'enabled' => $e['enabled'],
-                'label' => self::SECTIONS[$e['section']],
+                'label' => self::SECTIONS[$e['section']] ?? $e['section'],
             ],
             $this->sections,
         );
@@ -142,7 +142,7 @@ final class HomeLayout
         $vues = [];
 
         foreach ($ordered as $section) {
-            if (is_string($section) && isset(self::SECTIONS[$section]) && !isset($vues[$section])) {
+            if (self::isKnown($section) && !isset($vues[$section])) {
                 $vues[$section] = true;
                 $sections[] = ['section' => $section, 'enabled' => true];
             }
@@ -155,6 +155,18 @@ final class HomeLayout
         }
 
         return new self($sections);
+    }
+
+    /**
+     * Section du site, ou bloc de la bibliothèque (`block:{id}`, retours du
+     * 2026-09-25) — son existence est vérifiée au placement et au rendu.
+     *
+     * @phpstan-assert-if-true string $section
+     */
+    public static function isKnown(mixed $section): bool
+    {
+        return is_string($section)
+            && (isset(self::SECTIONS[$section]) || ContentBlock::idFromKey($section) !== null);
     }
 
     /**

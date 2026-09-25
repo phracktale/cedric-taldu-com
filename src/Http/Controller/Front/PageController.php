@@ -83,7 +83,7 @@ final class PageController
         return Response::html($this->view->render('front/page', [
             ...$this->chrome->base($request, $locale),
             'metaTitle' => $page->title($locale),
-            'sections' => $this->chrome->template('page'),
+            ...$this->chrome->templateData('page', $locale),
             'page' => $page,
             // Image de couverture téléversée en back-office (revue du 2026-09-24).
             'cover' => $page->coverMediaId === null

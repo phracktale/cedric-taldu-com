@@ -13,6 +13,7 @@
 
 declare(strict_types=1);
 
+use App\Domain\Editorial\ContentBlock;
 use App\Domain\Editorial\ContentTemplate;
 
 // Sections dans l'ordre du modèle « Galerie » composé en back-office
@@ -21,5 +22,10 @@ use App\Domain\Editorial\ContentTemplate;
 $sections = is_array($data['sections'] ?? null) ? $data['sections'] : ContentTemplate::default('category')->sections();
 ?>
 <?php foreach ($sections as $section) : ?>
+<?php $bloc = ContentBlock::idFromKey($section); ?>
+<?php if ($bloc !== null) : ?>
+<?= $partial('partials/content-block', ['placed' => $data['contentBlocks'][$bloc] ?? null, 'locale' => $data['locale']]) ?>
+<?php else : ?>
 <?= $partial('sections/category/' . $section, $data) ?>
+<?php endif; ?>
 <?php endforeach; ?>
