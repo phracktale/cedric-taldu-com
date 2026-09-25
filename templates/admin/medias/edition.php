@@ -146,7 +146,7 @@ $valeur = static function (string $langue, string $colonne) use ($traductions): 
                 <label for="copyright">Copyright</label>
                 <input type="text" id="copyright" name="copyright"
                        value="<?= attr($media['copyright'] ?? '') ?>" maxlength="190">
-                <span class="champ-aide">Mention de crédit, la même dans toutes les langues. Exemple : © Cédric Taldu.</span>
+                <span class="champ-aide">Mention de crédit, la même dans toutes les langues. Exemple : © <?= e($data['site']->name) ?>.</span>
             </p>
 
             <div class="grille-champs">

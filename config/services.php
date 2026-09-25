@@ -46,8 +46,11 @@ use App\Http\Controller\Admin\DeliveryController;
 use App\Http\Controller\Admin\MenuController;
 use App\Http\Controller\Admin\GenerationController;
 use App\Http\Controller\Admin\MapController;
+use App\Http\Controller\Admin\GlobalController;
 use App\Http\Controller\Admin\ContentBlockController;
 use App\Repository\ContentBlockRepository;
+use App\Domain\Editorial\SiteIdentity;
+use App\Service\View\SiteIdentityProvider;
 use App\Repository\Admin\ShippingAdminRepository;
 use App\Service\Fulfillment\ShipmentRecorder;
 use App\Service\Fulfillment\TrackingRefresh;
@@ -264,10 +267,15 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(LoggerInterface::class),
     ));
 
-    $container->set(View::class, static fn (Container $c): View => new View(
-        $rootPath . '/templates',
-        $c->get(UrlGenerator::class),
-        $c->get(Translator::class),
+    $container->set(View::class, static function (Container $c) use ($rootPath): View {
+        $view = new View($rootPath . '/templates', $c->get(UrlGenerator::class), $c->get(Translator::class));
+        // Identité du site (Paramètres › Global), commune à tous les gabarits.
+        $view->share('site', static fn (): SiteIdentity => $c->get(SiteIdentityProvider::class)->get());
+
+        return $view;
+    });
+    $container->set(SiteIdentityProvider::class, static fn (Container $c): SiteIdentityProvider => new SiteIdentityProvider(
+        $c->get(SettingRepository::class),
     ));
 
     $container->set(CookieFactory::class, static fn (Container $c): CookieFactory => new CookieFactory(
@@ -919,7 +927,9 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(MediaRepository::class),
     ));
 
-    $container->set(StructuredData::class, static fn (): StructuredData => new StructuredData());
+    $container->set(StructuredData::class, static fn (Container $c): StructuredData => new StructuredData(
+        $c->get(SiteIdentityProvider::class),
+    ));
 
     $container->set(SlugHistory::class, static fn (Container $c): SlugHistory => new SlugHistory(
         $c->get(RedirectRepository::class),
@@ -1133,6 +1143,11 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(AdminChrome::class),
         $c->get(ContentBlockRepository::class),
         $c->get(BlockSanitizer::class),
+    ));
+    $container->set(GlobalController::class, static fn (Container $c): GlobalController => new GlobalController(
+        $c->get(AdminChrome::class),
+        $c->get(SettingRepository::class),
+        $c->get(SettingsAdminRepository::class),
     ));
     $container->set(MapController::class, static fn (Container $c): MapController => new MapController(
         $c->get(AdminChrome::class),

@@ -31,11 +31,30 @@ final class View
     /** Un nom de gabarit : segments en minuscules, tirets, sans extension. */
     private const NAME_PATTERN = '/^[a-z0-9]+(?:-[a-z0-9]+)*(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)*$/D';
 
+    /** @var array<string, callable(): mixed> */
+    private array $resolvers = [];
+
+    /** @var array<string, mixed> */
+    private array $shared = [];
+
     public function __construct(
         private readonly string $templatesPath,
         private readonly UrlGenerator $url,
         private readonly Translator $translator,
     ) {
+    }
+
+    /**
+     * Valeur commune à TOUS les gabarits (pages, partiels, e-mails, erreur),
+     * sous `$data[$key]`, résolue une fois au premier rendu qui ne la fournit
+     * pas lui-même. Sert à l'identité du site (Paramètres › Global).
+     *
+     * @param callable(): mixed $resolver
+     */
+    public function share(string $key, callable $resolver): void
+    {
+        $this->resolvers[$key] = $resolver;
+        unset($this->shared[$key]);
     }
 
     /**
@@ -58,6 +77,15 @@ final class View
      */
     private function evaluate(string $file, array $data, string $content): string
     {
+        foreach ($this->resolvers as $key => $resolver) {
+            if (!array_key_exists($key, $data)) {
+                if (!array_key_exists($key, $this->shared)) {
+                    $this->shared[$key] = $resolver();
+                }
+                $data[$key] = $this->shared[$key];
+            }
+        }
+
         $level = ob_get_level();
 
         // Composition de partiels. L'en-tete, le pied de page et la vignette

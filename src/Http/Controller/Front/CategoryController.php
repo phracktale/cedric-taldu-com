@@ -81,7 +81,7 @@ final class CategoryController
 
         $data = [
             ...$this->chrome->base($request, $locale),
-            'metaTitle' => $category->metaTitle($locale),
+            'metaTitle' => $category->metaTitle($locale, $this->chrome->identity()->name),
             ...$this->chrome->templateData('category', $locale),
             'metaDescription' => self::plainText($category->description($locale)),
             // 05-i18n-seo §6 : le canonique d'une page filtree pointe vers la

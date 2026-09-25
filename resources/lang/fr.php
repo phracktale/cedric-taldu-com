@@ -25,7 +25,6 @@ return [
     'nav.contact' => 'Contact',
     'nav.cart' => 'Panier',
     'nav.menu' => 'Menu',
-    'nav.tagline' => 'artiste plasticien — Amiens',
     'nav.main_label' => 'Navigation principale',
     'nav.skip' => 'Aller au contenu',
     'nav.breadcrumb' => 'Fil d’Ariane',
@@ -38,7 +37,6 @@ return [
     'footer.terms' => 'CGV',
     'footer.contact' => 'Contact',
     'footer.legal_label' => 'Informations légales',
-    'footer.role' => 'Artiste plasticien, Amiens, Hauts-de-France',
 
     // Bandeau de préproduction
     'env.preprod' => 'Préproduction — :env · contenus de démonstration',

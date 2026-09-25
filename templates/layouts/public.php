@@ -34,6 +34,10 @@ $ogType = is_string($data['ogType'] ?? null) ? $data['ogType'] : 'website';
 $ogLocale = $locale->value === 'en' ? 'en_GB' : 'fr_FR';
 $ogCard = $ogImage !== null ? 'summary_large_image' : 'summary';
 
+// Identité du site (Paramètres › Global), partagée par View::share.
+$site = ($data['site'] ?? null) instanceof App\Domain\Editorial\SiteIdentity
+    ? $data['site']
+    : App\Domain\Editorial\SiteIdentity::fromStored([]);
 ?>
 <!DOCTYPE html>
 <html lang="<?= attr($locale->htmlLang()) ?>">
@@ -52,7 +56,7 @@ $ogCard = $ogImage !== null ? 'summary_large_image' : 'summary';
 <?php endforeach; ?>
 <?php // Open Graph + Twitter : carte propre au partage d'une œuvre. ?>
 <meta property="og:type" content="<?= attr($ogType) ?>">
-<meta property="og:site_name" content="Cédric Taldu">
+<meta property="og:site_name" content="<?= attr($site->name) ?>">
 <meta property="og:locale" content="<?= attr($ogLocale) ?>">
 <meta property="og:title" content="<?= attr($titre) ?>">
 <?php if ($description !== null) : ?>

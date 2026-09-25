@@ -23,6 +23,10 @@ $langues = is_array($data['localeSwitch'] ?? null) ? $data['localeSwitch'] : [];
 
 $annee = is_string($data['year'] ?? null) ? $data['year'] : '2026';
 
+// Identité du site (Paramètres › Global), partagée par View::share.
+$site = ($data['site'] ?? null) instanceof App\Domain\Editorial\SiteIdentity
+    ? $data['site']
+    : App\Domain\Editorial\SiteIdentity::fromStored([]);
 ?>
 <?php
 // Menu du pied de page composé par glisser-déposer (retours du 2026-09-25).
@@ -31,7 +35,15 @@ $liensPied = is_array($data['footerItems'] ?? null) ? $data['footerItems'] : [];
 ?>
 <footer>
   <div class="foot">
-    <p>© 2025–<?= e($annee) ?> Cédric Taldu — <?= $t('footer.role') ?></p>
+    <p>© <?php if ($site->since < (int) $annee) : ?><?= e($site->since) ?>–<?php endif; ?><?= e($annee) ?> <?= e($site->name) ?><?php if ($site->role($locale) !== '') : ?> — <?= e($site->role($locale)) ?><?php endif; ?></p>
+
+    <?php if ($site->socialLinks() !== []) : ?>
+    <p class="foot-reseaux">
+      <?php foreach ($site->socialLinks() as $reseau) : ?>
+        <a href="<?= attr($reseau['url']) ?>" rel="me noopener" target="_blank"><?= e($reseau['label']) ?></a>
+      <?php endforeach; ?>
+    </p>
+    <?php endif; ?>
 
     <nav class="foot-legal" aria-label="<?= $t('footer.legal_label') ?>">
       <?php foreach ($liensPied as $lien) : ?>

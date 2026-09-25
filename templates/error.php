@@ -20,6 +20,10 @@ $message = is_string($data['message'] ?? null) ? $data['message'] : '';
 $correlationId = is_string($data['correlationId'] ?? null) ? $data['correlationId'] : null;
 $detail = is_string($data['detail'] ?? null) ? $data['detail'] : null;
 
+// Identité du site (Paramètres › Global), partagée par View::share.
+$site = ($data['site'] ?? null) instanceof App\Domain\Editorial\SiteIdentity
+    ? $data['site']
+    : App\Domain\Editorial\SiteIdentity::fromStored([]);
 ?>
 <!DOCTYPE html>
 <html lang="<?= attr($locale) ?>">
@@ -27,7 +31,7 @@ $detail = is_string($data['detail'] ?? null) ? $data['detail'] : null;
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex">
-<title><?= e($titre) ?> — Cédric Taldu</title>
+<title><?= e($titre) ?> — <?= e($site->name) ?></title>
 </head>
 <body>
 <main>

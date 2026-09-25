@@ -40,6 +40,7 @@ final class AdminMenu
                 ['chemin' => '/admin/carte', 'libelle' => 'Carte interactive'],
             ]],
             ['label' => 'Paramètres', 'items' => [
+                ['chemin' => '/admin/global', 'libelle' => 'Global'],
                 ['chemin' => '/admin/apparence', 'libelle' => 'Apparence'],
                 ['chemin' => '/admin/menu', 'libelle' => 'Menu'],
                 ['chemin' => '/admin/templates', 'libelle' => 'Templates'],

@@ -1034,3 +1034,6 @@ footer a:hover { text-decoration: underline; }
 .bloc-carte-lieux { list-style: none; padding: 0; }
 .bloc-carte-lieux li { padding: .5rem 0; border-bottom: 1px solid var(--filet); }
 .bloc-carte-lieux a { margin-left: .5rem; font-size: .85rem; }
+
+/* Réseaux sociaux du pied de page (Paramètres › Global, retours du 2026-09-25). */
+.foot-reseaux { display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem 1.2rem; }

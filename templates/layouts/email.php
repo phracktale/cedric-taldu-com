@@ -24,6 +24,10 @@ $strings = $data['strings'];
 // Titre du document : les courriels de commande passent `order`, les autres
 // (contact) fournissent `docTitle`. Le repli garde les commandes intactes.
 $docTitle = is_string($data['docTitle'] ?? null) ? $data['docTitle'] : ($strings['order'] ?? '');
+// Identité du site (Paramètres › Global), partagée par View::share.
+$site = ($data['site'] ?? null) instanceof App\Domain\Editorial\SiteIdentity
+    ? $data['site']
+    : App\Domain\Editorial\SiteIdentity::fromStored([]);
 ?>
 <!doctype html>
 <html lang="<?= attr($locale->value) ?>">
@@ -36,7 +40,7 @@ $docTitle = is_string($data['docTitle'] ?? null) ? $data['docTitle'] : ($strings
 <div style="max-width:600px;margin:0 auto;background:#fffdfa;padding:32px;border:1px solid #e4e0d8;">
 <?= $content ?>
 <p style="margin-top:32px;padding-top:16px;border-top:1px solid #e4e0d8;font-size:13px;color:#6b655c;">
-Cédric&nbsp;Taldu — Amiens
+<?= e($site->name) ?><?php if ($site->city !== '') : ?> — <?= e($site->city) ?><?php endif; ?>
 </p>
 </div>
 </body>

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Service\Seo;
 
+use App\Domain\Editorial\SiteIdentity;
+use App\Service\View\SiteIdentityProvider;
+
 /**
  * Données structurées JSON-LD (05-i18n-seo §5).
  *
@@ -15,9 +18,17 @@ namespace App\Service\Seo;
  */
 final class StructuredData
 {
-    private const ARTIST = 'Cédric Taldu';
-    private const JOB = 'Artiste plasticien';
-    private const CITY = 'Amiens';
+    /**
+     * @param SiteIdentityProvider|null $site identité de Paramètres › Global ; sans elle, l'identité par défaut
+     */
+    public function __construct(private readonly ?SiteIdentityProvider $site = null)
+    {
+    }
+
+    private function identity(): SiteIdentity
+    {
+        return $this->site?->get() ?? SiteIdentity::fromStored([]);
+    }
 
     /**
      * @return array<string, mixed>
@@ -27,14 +38,16 @@ final class StructuredData
         return [
             '@context' => 'https://schema.org',
             '@type' => 'Person',
-            'name' => self::ARTIST,
-            'jobTitle' => self::JOB,
+            'name' => $this->identity()->name,
+            'jobTitle' => $this->identity()->jobTitle(),
             'url' => $url,
             'address' => [
                 '@type' => 'PostalAddress',
-                'addressLocality' => self::CITY,
+                'addressLocality' => $this->identity()->city,
                 'addressCountry' => 'FR',
             ],
+            // Réseaux de Paramètres › Global : profils de la même personne.
+            ...($this->identity()->socials === [] ? [] : ['sameAs' => $this->identity()->socials]),
         ];
     }
 
@@ -46,7 +59,7 @@ final class StructuredData
         return [
             '@context' => 'https://schema.org',
             '@type' => 'WebSite',
-            'name' => self::ARTIST,
+            'name' => $this->identity()->name,
             'url' => $url,
             'inLanguage' => ['fr', 'en'],
         ];
@@ -68,7 +81,7 @@ final class StructuredData
             '@type' => 'Product',
             'name' => $p['name'],
             'url' => $p['url'],
-            'brand' => ['@type' => 'Person', 'name' => self::ARTIST],
+            'brand' => ['@type' => 'Person', 'name' => $this->identity()->name],
             'itemCondition' => 'https://schema.org/NewCondition',
         ];
 
@@ -154,7 +167,7 @@ final class StructuredData
                 'headline' => $p['name'],
                 'name' => $p['name'],
                 'url' => $p['url'],
-                'author' => ['@type' => 'Person', 'name' => self::ARTIST],
+                'author' => ['@type' => 'Person', 'name' => $this->identity()->name],
             ];
 
             if (($p['datePublished'] ?? null) !== null) {
