@@ -31,6 +31,19 @@ final class SettingRepository
     }
 
     /**
+     * Lecture SANS cache : pour un réglage qui peut changer pendant la requête
+     * elle-même (état de la génération statique, relu en fin de rendu).
+     *
+     * @return array<string, mixed>
+     */
+    public function fresh(string $key): array
+    {
+        unset($this->cache[$key]);
+
+        return $this->json($key);
+    }
+
+    /**
      * @return array<string, mixed> document complet, toutes langues
      */
     public function json(string $key): array

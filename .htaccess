@@ -28,6 +28,12 @@ RedirectMatch 404 ^/(?:\.git|storage|src|tests|vendor|migrations|docker|docs|con
     # Deja dans public/ : ne rien faire, le .htaccess de public/ prend le relais.
     RewriteRule ^public/ - [L]
 
+    # Page du site statique (voir public/.htaccess) : meme regle, vue de la racine.
+    RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
+    RewriteCond %{QUERY_STRING} ^$
+    RewriteCond %{DOCUMENT_ROOT}/public/static/site/$1/index.html -f
+    RewriteRule ^(.+?)/?$ public/static/site/$1/index.html [L]
+
     # Un fichier reel de public/ est servi directement.
     RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f
     RewriteRule ^(.*)$ public/$1 [L]

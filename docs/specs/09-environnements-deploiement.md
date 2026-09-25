@@ -151,6 +151,20 @@ php bin/migrate.php
 php bin/cache-clear.php
 ```
 
+**Site statique** (retours du 2026-09-25, point 7) : les pages publiques sont générées
+dans `public/static/site/` (hors dépôt ; `public/static/` appartient au serveur web,
+comme `public/media/`) et servies par la réécriture du `.htaccess` pour toute
+lecture sans chaîne de requête ; sinon PHP répond. Toute écriture aboutie en back-office,
+tout webhook Stripe et le tunnel **suppriment** le site statique (`StaticInvalidation`) :
+la page servie est toujours juste. Régénération par la barre du back-office (automatique
+quand le site est périmé) ou en ligne de commande, **sous le compte du serveur web** :
+```bash
+docker compose exec -T -u www-data app php bin/generate.php   # Thor
+php bin/generate.php                                          # mutualisé (cron)
+```
+Des fichiers créés par root ne pourraient plus être supprimés à l'invalidation ; le
+script refuse de tourner en root.
+
 Aucun déploiement ne s'exécute si la suite de tests n'est pas verte. Le script de
 déploiement refuse de tourner sur un dépôt avec des modifications non commitées.
 

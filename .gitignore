@@ -10,6 +10,10 @@
 /storage/uploads/*
 !/storage/**/.gitkeep
 
+# Site statique généré (retours du 2026-09-25, point 7) et ses dossiers de travail
+/public/static/*
+!/public/static/.gitkeep
+
 # Dérivés d'images générés à l'upload
 /public/media/*
 !/public/media/.gitkeep

@@ -24,7 +24,7 @@ final class CsrfTest extends AdminTestCase
     private const STATUTS_DE_REFUS = [403, 419];
 
     /**
-     * @return iterable<string, array{string, string}>
+     * @return iterable<string, array{string, string, bool}>
      */
     public static function routesModifiantes(): iterable
     {
@@ -39,21 +39,22 @@ final class CsrfTest extends AdminTestCase
             yield $route->method . ' ' . $route->path => [
                 $route->method,
                 (string) preg_replace('/\{[a-z_]+\}/', '1', $route->path),
+                $route->csrfConfirm !== [],
             ];
         }
     }
 
     #[DataProvider('routesModifiantes')]
-    public function test_une_requete_sans_jeton_est_refusee(string $methode, string $chemin): void
+    public function test_une_requete_sans_jeton_est_refusee(string $methode, string $chemin, bool $confirmation): void
     {
         // Aucun jeton du tout : le cas du formulaire poste depuis un autre site.
         $reponse = $this->requete($methode, '/cedric-taldu' . $chemin);
 
-        $this->assertContains($reponse->status, self::STATUTS_DE_REFUS, $methode . ' ' . $chemin);
+        $this->assertRefus($reponse, $methode, $chemin, $confirmation);
     }
 
     #[DataProvider('routesModifiantes')]
-    public function test_une_requete_a_jeton_faux_est_refusee(string $methode, string $chemin): void
+    public function test_une_requete_a_jeton_faux_est_refusee(string $methode, string $chemin, bool $confirmation): void
     {
         // Un jeton de la bonne LONGUEUR mais de la mauvaise valeur : ce que
         // produit une attaque qui a devine le format sans connaitre la session.
@@ -63,11 +64,11 @@ final class CsrfTest extends AdminTestCase
             Csrf::FIELD => str_repeat('b', 64),
         ]);
 
-        $this->assertContains($reponse->status, self::STATUTS_DE_REFUS, $methode . ' ' . $chemin);
+        $this->assertRefus($reponse, $methode, $chemin, $confirmation);
     }
 
     #[DataProvider('routesModifiantes')]
-    public function test_une_requete_a_jeton_tronque_est_refusee(string $methode, string $chemin): void
+    public function test_une_requete_a_jeton_tronque_est_refusee(string $methode, string $chemin, bool $confirmation): void
     {
         // hash_equals refuse deux chaines de longueurs differentes : le test
         // ferme la porte a une comparaison qui serait revenue a un str_starts_with.
@@ -77,7 +78,25 @@ final class CsrfTest extends AdminTestCase
             Csrf::FIELD => substr($jeton, 0, 32),
         ]);
 
-        $this->assertContains($reponse->status, self::STATUTS_DE_REFUS, $methode . ' ' . $chemin);
+        $this->assertRefus($reponse, $methode, $chemin, $confirmation);
+    }
+
+    /**
+     * Refus net (403/419), ou — pour une route qui le déclare (`csrfConfirm`,
+     * l'ajout au panier depuis une page statique) — renvoi 303 vers la page de
+     * confirmation en GET, au même chemin : aucune écriture dans les deux cas.
+     */
+    private function assertRefus(\App\Core\Response $reponse, string $methode, string $chemin, bool $confirmation): void
+    {
+        if (!$confirmation) {
+            $this->assertContains($reponse->status, self::STATUTS_DE_REFUS, $methode . ' ' . $chemin);
+
+            return;
+        }
+
+        $this->assertSame(303, $reponse->status, $methode . ' ' . $chemin);
+        $this->assertStringStartsWith('/cedric-taldu' . $chemin, $reponse->header('Location') ?? '');
+        $this->assertSame([], $reponse->cookies);
     }
 
     public function test_les_webhooks_sont_les_seules_routes_exemptees(): void

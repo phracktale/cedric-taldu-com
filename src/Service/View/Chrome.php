@@ -20,6 +20,7 @@ use App\Repository\CartRepository;
 use App\Repository\CategoryRepository;
 use App\Repository\PostRepository;
 use App\Repository\SettingRepository;
+use App\Service\StaticSite\Generator;
 
 /**
  * Contexte commun a toutes les pages publiques.
@@ -81,6 +82,10 @@ final class Chrome
         // publié : un lien vers une page vide donne un site inachevé.
         $hasNews = $this->posts->countPublished($this->clock->now()) > 0;
         $ids = array_map(static fn ($c): int => $c->id, $categories);
+        // Rendu pour le site statique (retours du 2026-09-25, point 7) : la page
+        // sera la même pour tous, elle ne porte donc rien de la session —
+        // etat.js complète le jeton et la pastille chez le visiteur.
+        $statique = $request->attribute(Generator::ATTRIBUTE) === '1';
 
         return [
             'locale' => $locale,
@@ -92,11 +97,12 @@ final class Chrome
             'hasNews' => $hasNews,
             // Pastille du panier dans l'en-tete : lecture seule, sans jamais
             // creer de panier (voir CartRepository::countByToken).
-            'cartCount' => $this->carts->countByToken($request->cookie(self::CART_COOKIE)),
+            'cartCount' => $statique ? 0 : $this->carts->countByToken($request->cookie(self::CART_COOKIE)),
+            'isStatic' => $statique,
             'year' => $this->clock->now()->format('Y'),
             // Le panier et le tunnel postent depuis le front : le jeton doit
             // etre disponible a tout gabarit public portant un formulaire.
-            'csrfToken' => $this->csrf->token(),
+            'csrfToken' => $statique ? '' : $this->csrf->token(),
             // Mesure d'audience (Matomo auto-hébergé), null si non configurée.
             'matomo' => $this->matomo,
             // Renseignes par chaque controleur : le lien de changement de langue

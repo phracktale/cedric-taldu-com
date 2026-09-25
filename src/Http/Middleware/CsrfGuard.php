@@ -8,6 +8,7 @@ use App\Core\Csrf;
 use App\Core\Exception\CsrfTokenMismatch;
 use App\Core\LoggerInterface;
 use App\Core\LogLevel;
+use App\Core\RedirectResponse;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\RouteMatch;
@@ -58,9 +59,34 @@ final class CsrfGuard implements MiddlewareInterface
                 'route' => $match->route->name,
             ]);
 
+            if ($match->route->csrfConfirm !== []) {
+                return $this->confirmation($request, $match->route->csrfConfirm);
+            }
+
             throw new CsrfTokenMismatch('Jeton CSRF absent ou invalide.');
         }
 
         return $next($request);
+    }
+
+    /**
+     * Renvoi vers la page de confirmation : seuls les champs declares par la
+     * route passent, et seulement s'ils sont scalaires et courts.
+     *
+     * @param list<string> $fields
+     */
+    private function confirmation(Request $request, array $fields): Response
+    {
+        $repris = [];
+        foreach ($fields as $field) {
+            $value = $request->input($field);
+            if ($value !== null && $value !== '' && strlen($value) <= 64) {
+                $repris[$field] = $value;
+            }
+        }
+
+        $query = http_build_query($repris, '', '&', PHP_QUERY_RFC3986);
+
+        return RedirectResponse::to($request->basePath . $request->path . ($query === '' ? '' : '?' . $query), 303);
     }
 }

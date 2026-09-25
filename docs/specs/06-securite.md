@@ -64,6 +64,12 @@ compte administrateur unique.
   noms préfixés `ct_` pour ne pas entrer en collision avec les autres applications de
   `customer.phracktale.com`.
 - Le jeton est régénéré à la connexion et à la déconnexion.
+- **Pages statiques** (2026-09-25) : une page générée ne porte aucun jeton ; `etat.js` le
+  lit sur `/api/etat` (`Cache-Control: no-store`). Sans JavaScript, un ajout au panier sans
+  jeton valide n'écrit **rien** : la route déclare `csrfConfirm`, et `CsrfGuard` renvoie
+  (303) vers la page « Confirmer l'ajout » en GET, qui porte un jeton frais. Seuls les
+  champs de ligne (`kind`, `id`, `quantite`) sont repris ; le prix vient du catalogue.
+  `CsrfTest` vérifie ce renvoi route par route, `SiteStatiqueTest` l'absence d'écriture.
 - Les actions destructrices du back-office demandent une confirmation explicite, jamais par
   simple lien GET.
 

@@ -37,6 +37,9 @@ final class CartController
 {
     private const COOKIE = CookieFactory::PREFIX . 'cart';
 
+    /** Champs d'une ligne, seuls repris par la confirmation d'ajout (CsrfGuard). */
+    public const LINE_FIELDS = ['kind', 'id', 'quantite'];
+
     /** 03-boutique §2 : cookie de 30 jours. */
     private const COOKIE_TTL = 2_592_000;
 
@@ -105,6 +108,38 @@ final class CartController
             RedirectResponse::to($this->url->route('cart.show', ['locale' => $locale->value]), 303),
             $valuation->cart,
         );
+    }
+
+    /**
+     * Confirmation d'un ajout parti d'une page statique sans jeton (retours du
+     * 2026-09-25, point 7). LECTURE SEULE : ni panier créé, ni cookie posé ;
+     * la page affiche l'article et reposte l'ajout avec un jeton frais.
+     */
+    public function confirm(Request $request): Response
+    {
+        $locale = self::locale($request);
+        $line = self::lineFrom($request->query('kind'), $request->query('id'));
+
+        if ($line === null) {
+            return $this->backToCart($locale);
+        }
+
+        [$kind, $targetId] = $line;
+        $quantite = preg_match('/^[1-9][0-9]?$/', $request->query('quantite') ?? '') === 1 ? (int) $request->query('quantite') : 1;
+        $valuation = $this->revalidate(Cart::empty('confirmation', $locale)->add($kind, $targetId, $quantite));
+
+        // Déjà vendue, dépubliée, inconnue : rien à confirmer.
+        if ($valuation->lines === []) {
+            return $this->backToCart($locale);
+        }
+
+        return Response::html($this->view->render('front/cart-confirm', [
+            ...$this->chrome->base($request, $locale),
+            'metaTitle' => 'Panier',
+            'line' => $valuation->lines[0],
+            'addUrl' => $this->url->route('cart.add', ['locale' => $locale->value]),
+            'panierUrl' => $this->url->route('cart.show', ['locale' => $locale->value]),
+        ], layout: 'layouts/public'));
     }
 
     public function update(Request $request): Response
@@ -192,8 +227,15 @@ final class CartController
      */
     private static function line(Request $request): ?array
     {
-        $kind = LineKind::tryFrom((string) $request->input('kind'));
-        $id = $request->input('id');
+        return self::lineFrom($request->input('kind'), $request->input('id'));
+    }
+
+    /**
+     * @return array{LineKind, int}|null
+     */
+    private static function lineFrom(?string $rawKind, ?string $id): ?array
+    {
+        $kind = LineKind::tryFrom((string) $rawKind);
 
         if ($kind === null || $id === null || preg_match('/^[1-9][0-9]*$/', $id) !== 1) {
             return null;

@@ -47,7 +47,9 @@ final class SecurityHeaders implements MiddlewareInterface
 
         $response = $next($request->withAttributes([self::NONCE_ATTRIBUTE => $nonce]));
 
-        foreach ($this->headers($nonce) as $name => $value) {
+        $source = "'nonce-" . $nonce . "'";
+
+        foreach ($this->headers($source, $source) as $name => $value) {
             $response = $response->withHeader($name, $value);
         }
 
@@ -55,12 +57,30 @@ final class SecurityHeaders implements MiddlewareInterface
     }
 
     /**
+     * En-têtes des pages statiques (retours du 2026-09-25, point 7), posés par
+     * le .htaccess du dossier généré : mêmes règles, mais un fichier servi par
+     * Apache n'a pas de nonce — le style en ligne y est autorisé par empreinte.
+     *
+     * @param list<string> $styleHashes empreintes `sha256-…` des blocs <style>
      * @return array<string, string>
      */
-    private function headers(string $nonce): array
+    public function staticHeaders(array $styleHashes): array
+    {
+        $sources = implode(' ', array_map(static fn (string $h): string => "'" . $h . "'", $styleHashes));
+
+        // Aucun script en ligne dans une page statique : 'self' suffit.
+        return $this->headers('', $sources);
+    }
+
+    /**
+     * @param string $scriptSource source autorisant le script en ligne (nonce), ou vide
+     * @param string $styleSource  source autorisant le style en ligne : nonce ou empreintes
+     * @return array<string, string>
+     */
+    private function headers(string $scriptSource, string $styleSource): array
     {
         $headers = [
-            'Content-Security-Policy' => $this->contentSecurityPolicy($nonce),
+            'Content-Security-Policy' => $this->contentSecurityPolicy($scriptSource, $styleSource),
             'X-Content-Type-Options' => 'nosniff',
             'Referrer-Policy' => 'strict-origin-when-cross-origin',
             'Permissions-Policy' => self::PERMISSIONS_POLICY,
@@ -78,14 +98,14 @@ final class SecurityHeaders implements MiddlewareInterface
         return $headers;
     }
 
-    private function contentSecurityPolicy(string $nonce): string
+    private function contentSecurityPolicy(string $scriptSource, string $styleSource): string
     {
         $mesure = $this->matomo === null ? '' : ' ' . $this->matomo->origin();
 
         return implode('; ', [
             "default-src 'self'",
-            "script-src 'self' 'nonce-" . $nonce . "'" . $mesure,
-            "style-src 'self' 'nonce-" . $nonce . "'",
+            rtrim("script-src 'self' " . $scriptSource) . $mesure,
+            rtrim("style-src 'self' " . $styleSource),
             "img-src 'self' data:" . $mesure,
             "font-src 'self'",
             "connect-src 'self'" . $mesure,

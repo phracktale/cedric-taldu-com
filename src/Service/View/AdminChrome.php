@@ -13,6 +13,7 @@ use App\Core\View;
 use App\Http\Middleware\SecurityHeaders;
 use App\Service\Auth\AdminSession;
 use App\Service\Auth\AuditTrail;
+use App\Service\StaticSite\GenerationStore;
 use DateTimeImmutable;
 
 /**
@@ -37,6 +38,8 @@ final class AdminChrome
         private readonly AdminSession $session,
         private readonly AuditTrail $audit,
         private readonly ClockInterface $clock,
+        // Barre fixe de la génération statique (retours du 2026-09-25, point 7).
+        private readonly ?GenerationStore $generation = null,
     ) {
     }
 
@@ -56,6 +59,7 @@ final class AdminChrome
             'utilisateur' => $user,
             'titre' => 'Administration',
             'chemin' => $request->path,
+            'generation' => $user === null ? null : $this->generation?->load(),
             ...$data,
         ], layout: 'layouts/admin');
 

@@ -82,6 +82,27 @@ $isStaticFile = $real !== false
     // Les fichiers de service ne sortent pas, comme le refuse le .htaccess.
     && !str_starts_with(basename($real), '.');
 
+// Page du site statique (retours du 2026-09-25, point 7), comme la reecriture
+// du .htaccess : lecture sans chaine de requete, page generee presente.
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+$query = $_SERVER['QUERY_STRING'] ?? '';
+if (!$isStaticFile && in_array($method, ['GET', 'HEAD'], true) && $query === '') {
+    try {
+        $page = $publicDir . '/static/site/' . App\Service\StaticSite\StaticPath::fileFor($relative);
+    } catch (InvalidArgumentException) {
+        $page = null;
+    }
+
+    if ($page !== null && is_file($page)) {
+        header('Content-Type: text/html; charset=utf-8');
+        header('Cache-Control: no-cache');
+        header('X-Content-Type-Options: nosniff');
+        readfile($page);
+
+        return true;
+    }
+}
+
 if ($isStaticFile) {
     $extension = strtolower(pathinfo($real, PATHINFO_EXTENSION));
 
