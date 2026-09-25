@@ -59,15 +59,4 @@ final class HomeLayoutTest extends TestCase
         $this->assertNotContains('evil', $sections);
         $this->assertCount(count(HomeLayout::SECTIONS), $sections);
     }
-
-    public function test_from_input_ordonne_par_position_et_active_selon_les_cases(): void
-    {
-        $layout = HomeLayout::fromInput(
-            ['contact' => 1, 'hero' => 2],
-            ['contact' => true, 'hero' => true],
-        );
-
-        // Seules contact et hero sont activées ; contact (pos 1) avant hero (pos 2).
-        $this->assertSame(['contact', 'hero'], $layout->enabledOrder());
-    }
 }

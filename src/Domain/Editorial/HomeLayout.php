@@ -130,30 +130,28 @@ final class HomeLayout
     }
 
     /**
-     * Construit une disposition à partir des positions et états postés.
+     * Page composée par glisser-déposer (retours du 2026-09-25) : les sections
+     * de la liste, dans son ordre ; les autres sont masquées. Doublons et clefs
+     * inconnues sont ignorés.
      *
-     * @param  array<string, int>  $positions section => rang saisi
-     * @param  array<string, bool> $enabled   section => affichée ?
+     * @param list<mixed> $ordered
      */
-    public static function fromInput(array $positions, array $enabled): self
+    public static function fromList(array $ordered): self
     {
-        $order = array_keys(self::SECTIONS);
-        /** @var array<string, int> $rang rang canonique, figé avant le tri */
-        $rang = array_flip($order);
-
-        // Tri par position saisie ; à égalité (ou position absente), on retombe
-        // sur le rang canonique — jamais sur l'ordre en cours de mutation.
-        usort($order, static function (string $a, string $b) use ($positions, $rang): int {
-            $pa = $positions[$a] ?? $rang[$a];
-            $pb = $positions[$b] ?? $rang[$b];
-
-            return ($pa <=> $pb) ?: ($rang[$a] <=> $rang[$b]);
-        });
-
         $sections = [];
+        $vues = [];
 
-        foreach ($order as $section) {
-            $sections[] = ['section' => $section, 'enabled' => $enabled[$section] ?? false];
+        foreach ($ordered as $section) {
+            if (is_string($section) && isset(self::SECTIONS[$section]) && !isset($vues[$section])) {
+                $vues[$section] = true;
+                $sections[] = ['section' => $section, 'enabled' => true];
+            }
+        }
+
+        foreach (array_keys(self::SECTIONS) as $section) {
+            if (!isset($vues[$section])) {
+                $sections[] = ['section' => $section, 'enabled' => false];
+            }
         }
 
         return new self($sections);

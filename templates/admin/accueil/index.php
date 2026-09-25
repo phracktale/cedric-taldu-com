@@ -1,77 +1,74 @@
 <?php
 
 /**
- * Disposition de la page d'accueil (audit, P1 accueil).
+ * Page d'accueil composée par glisser-déposer (retours du 2026-09-25).
  *
- * L'artiste règle l'ORDRE (par un numéro de position, 1 = en haut) et
- * l'ACTIVATION (case cochée) de chaque section. Fonctionne sans JavaScript ; le
- * contenu de chaque section s'édite ailleurs (réglages home.*).
+ * À gauche, les sections disponibles ; à droite, la page. On y glisse les
+ * sections voulues, dans l'ordre voulu : c'est leur position qui décide. Chaque
+ * section n'est utilisable qu'une fois ; son contenu s'édite par son lien.
  *
  * @var array<string, mixed>          $data
  * @var App\Service\I18n\UrlGenerator $url
+ * @var callable                      $partial
  */
 
 declare(strict_types=1);
 
+use App\Domain\Editorial\HomeLayout;
 use App\Domain\Editorial\HomeSectionForm;
 
 $base = is_string($data['basePath'] ?? null) ? $data['basePath'] : '';
 $jeton = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
 /** @var list<array{section: string, enabled: bool, label: string}> $sections */
 $sections = is_array($data['sections'] ?? null) ? $data['sections'] : [];
+$page = array_values(array_filter($sections, static fn (array $s): bool => $s['enabled']));
+$valeur = array_map(static fn (array $s): array => ['type' => $s['section']], $page);
+$lien = static fn (string $section): ?string => HomeSectionForm::isEditable($section)
+    ? $base . '/admin/accueil/' . $section
+    : null;
 ?>
-<div class="admin-page admin-page--etroite">
+<div class="admin-page">
     <h1>Accueil</h1>
 
     <p class="aide">
-        Réglez l’ordre et les sections affichées sur la page d’accueil. La position
-        donne l’ordre (1 = tout en haut) ; décochez une section pour la masquer. Le
-        contenu de chaque section se modifie par son lien « modifier le contenu ».
+        Faites glisser les sections disponibles dans la page, puis réordonnez-les en les
+        déplaçant. Une section retirée de la page n’est plus affichée ; son contenu est conservé.
+        Au clavier ou sur tablette, utilisez « Ajouter » et les flèches.
     </p>
+    <noscript><p class="erreur">Le glisser-déposer demande JavaScript.</p></noscript>
 
     <form method="post" action="<?= attr($base) ?>/admin/accueil" class="formulaire">
         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
 
-        <table class="tableau">
-            <thead>
-                <tr>
-                    <th scope="col">Section</th>
-                    <th scope="col">Position</th>
-                    <th scope="col" class="colonne-actions">Affichée</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($sections as $rang => $section) : ?>
-                <tr>
-                    <td>
-                        <?= e($section['label']) ?>
-                        <?php if (HomeSectionForm::isEditable($section['section'])) : ?>
-                        — <a href="<?= attr($base . '/admin/accueil/' . $section['section']) ?>">modifier le contenu</a>
-                        <?php endif; ?>
-                    </td>
-                    <td>
-                        <label class="visually-hidden" for="position_<?= attr($section['section']) ?>">
-                            Position de <?= e($section['label']) ?>
-                        </label>
-                        <input type="number" id="position_<?= attr($section['section']) ?>"
-                               name="position_<?= attr($section['section']) ?>" min="1" max="99"
-                               value="<?= attr($rang + 1) ?>" class="champ-court">
-                    </td>
-                    <td class="colonne-actions">
-                        <label class="visually-hidden" for="affiche_<?= attr($section['section']) ?>">
-                            Afficher <?= e($section['label']) ?>
-                        </label>
-                        <input type="checkbox" id="affiche_<?= attr($section['section']) ?>"
-                               name="affiche_<?= attr($section['section']) ?>" value="1"
-                               <?php if ($section['enabled']) : ?>checked<?php endif; ?>>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+        <div class="composer" data-composer>
+            <aside class="composer-palette" aria-label="Sections disponibles">
+                <h2>Sections disponibles</h2>
+                <ul>
+                    <?php foreach (HomeLayout::SECTIONS as $section => $libelle) : ?>
+                    <?= $partial('admin/partials/composer-source', ['item' => ['type' => $section], 'label' => $libelle]) ?>
+                    <?php endforeach; ?>
+                </ul>
+            </aside>
+
+            <div class="composer-zones">
+                <section class="composer-bloc">
+                    <h2>La page d’accueil</h2>
+                    <ol class="composer-zone" data-composer-zone data-name="sections" data-unique aria-label="Sections de la page d’accueil">
+                        <?php foreach ($page as $section) : ?>
+                        <?= $partial('admin/partials/composer-entree', [
+                            'item' => ['type' => $section['section']],
+                            'label' => $section['label'],
+                            'editUrl' => $lien($section['section']),
+                        ]) ?>
+                        <?php endforeach; ?>
+                    </ol>
+                    <input type="hidden" name="sections" value="<?= attr(json_encode($valeur, JSON_THROW_ON_ERROR)) ?>">
+                </section>
+            </div>
+        </div>
 
         <p class="actions">
-            <button type="submit" class="bouton">Enregistrer</button>
+            <button type="submit" class="bouton">Enregistrer la page</button>
         </p>
     </form>
 </div>
