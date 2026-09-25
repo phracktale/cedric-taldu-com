@@ -72,7 +72,7 @@ final class BlocsPlacesTest extends AdminTestCase
     public function test_un_template_place_un_bloc_entre_ses_sections(): void
     {
         (new PostFactory($this->pdo))->publishedAt('2026-06-01 09:00:00')
-            ->translated('fr', 'vernissage', 'Vernissage', '<p>Le corps.</p>')->create();
+            ->translated('fr', 'vernissage', 'Vernissage', body: '<p>Le corps.</p>')->create();
 
         $templates = $this->requete('GET', '/cedric-taldu/admin/templates')->body;
         $this->assertStringContainsString('Bannière d’automne', $templates);

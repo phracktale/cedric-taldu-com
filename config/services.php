@@ -47,6 +47,8 @@ use App\Http\Controller\Admin\MenuController;
 use App\Http\Controller\Admin\GenerationController;
 use App\Http\Controller\Admin\ContentBlockController;
 use App\Repository\ContentBlockRepository;
+use App\Service\Content\BlockPlacement;
+use App\Service\View\PlacedBlocks;
 use App\Http\Controller\Admin\EcoIndexController;
 use App\Http\Controller\Admin\TemplateController;
 use App\Http\Controller\Admin\NewsletterController as AdminNewsletterController;
@@ -560,7 +562,19 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(PostRepository::class),
         $c->get(SettingRepository::class),
         new MenuRenderer($c->get(UrlGenerator::class), $c->get(Translator::class)),
+        $c->get(PlacedBlocks::class),
         $matomo,
+    ));
+
+    // Blocs génériques placés dans l'accueil et les templates (retours du 2026-09-25).
+    $container->set(PlacedBlocks::class, static fn (Container $c): PlacedBlocks => new PlacedBlocks(
+        $c->get(ContentBlockRepository::class),
+        $c->get(MediaRepository::class),
+    ));
+    $container->set(BlockPlacement::class, static fn (Container $c): BlockPlacement => new BlockPlacement(
+        $c->get(ContentBlockRepository::class),
+        $c->get(BlockSanitizer::class),
+        $c->get(ClockInterface::class),
     ));
 
     $container->set(AdminChrome::class, static fn (Container $c): AdminChrome => new AdminChrome(
@@ -809,6 +823,8 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(CoverUpload::class),
         $c->get(ArtworkAdminRepository::class),
         $c->get(CategoryRepository::class),
+        $c->get(ContentBlockRepository::class),
+        $c->get(BlockPlacement::class),
     ));
 
     $container->set(DeliveryController::class, static fn (Container $c): DeliveryController => new DeliveryController(
@@ -830,6 +846,8 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(AdminChrome::class),
         $c->get(SettingRepository::class),
         $c->get(SettingsAdminRepository::class),
+        $c->get(ContentBlockRepository::class),
+        $c->get(BlockPlacement::class),
     ));
 
     $container->set(AppearanceController::class, static fn (Container $c): AppearanceController => new AppearanceController(

@@ -43,8 +43,10 @@ function monter(racine) {
   // la source correspondante est alors grisée.
   const majPalette = () => {
     racine.querySelectorAll('[data-composer-source]').forEach((source) => {
-      const cle = cleDe(JSON.parse(source.dataset.item));
-      const deja = zones.some((z) => z.dataset.unique !== undefined
+      const donnee = JSON.parse(source.dataset.item);
+      const cle = cleDe(donnee);
+      // Un « Nouveau bloc » crée un bloc à chaque ajout : jamais grisé.
+      const deja = donnee.type !== 'new' && zones.some((z) => z.dataset.unique !== undefined
         && [...z.querySelectorAll('[data-composer-entry]')].some((li) => cleDe(JSON.parse(li.dataset.item)) === cle));
       source.classList.toggle('composer-source--prise', deja);
       source.querySelector('button')?.toggleAttribute('disabled', deja);

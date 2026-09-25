@@ -86,7 +86,7 @@ final class ContactController
         return Response::html($this->view->render('front/contact', [
             ...$this->chrome->base($request, $locale),
             'metaTitle' => 'Contact',
-            'sections' => $this->chrome->template('contact'),
+            ...$this->chrome->templateData('contact', $locale),
             'localeSwitch' => $this->url->localeAlternates('contact.form', $paramsByLocale),
             'submitUrl' => $this->url->route('contact.submit', ['locale' => $locale->value]),
             'honeypot' => self::HONEYPOT,
@@ -234,7 +234,7 @@ final class ContactController
         return Response::html($this->view->render('front/contact', [
             ...$this->chrome->base($request, $locale),
             'metaTitle' => 'Contact',
-            'sections' => $this->chrome->template('contact'),
+            ...$this->chrome->templateData('contact', $locale),
             'submitUrl' => $this->url->route('contact.submit', ['locale' => $locale->value]),
             'honeypot' => self::HONEYPOT,
             'timestampField' => self::TIMESTAMP,

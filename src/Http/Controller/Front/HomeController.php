@@ -122,7 +122,9 @@ final class HomeController
             ),
             'newsIndexUrl' => $this->url->route('blog.index', ['locale' => $locale->value]),
             // Ordre + activation des sections (réglage administrable home.layout).
-            'homeSections' => HomeLayout::fromStored($this->settings->json('home.layout'))->enabledOrder(),
+            'homeSections' => $sections = HomeLayout::fromStored($this->settings->json('home.layout'))->enabledOrder(),
+            // Blocs de la bibliothèque placés dans l'accueil (retours du 2026-09-25).
+            'contentBlocks' => $this->chrome->placedBlocks($sections, $locale),
         ];
 
         return Response::html($this->view->render('front/home', $data, layout: 'layouts/public'));

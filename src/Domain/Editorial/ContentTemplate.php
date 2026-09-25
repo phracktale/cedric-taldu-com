@@ -93,7 +93,9 @@ final class ContentTemplate
         $sections = [];
 
         foreach ($ordered as $cle) {
-            if (is_string($cle) && isset($definition[$cle]) && !in_array($cle, $sections, true)) {
+            // Section du type, ou bloc de la bibliothèque (retours du 2026-09-25).
+            $connue = is_string($cle) && (isset($definition[$cle]) || ContentBlock::idFromKey($cle) !== null);
+            if ($connue && !in_array($cle, $sections, true)) {
                 $sections[] = $cle;
             }
         }
@@ -105,7 +107,7 @@ final class ContentTemplate
                 // Avant la première section présente de rang supérieur.
                 $position = count($sections);
                 foreach ($sections as $i => $autre) {
-                    if ($rang[$autre] > $rang[$cle]) {
+                    if (isset($rang[$autre]) && $rang[$autre] > $rang[$cle]) {
                         $position = $i;
                         break;
                     }

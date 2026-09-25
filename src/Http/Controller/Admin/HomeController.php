@@ -8,13 +8,17 @@ use App\Core\Exception\NotFoundException;
 use App\Core\RedirectResponse;
 use App\Core\Request;
 use App\Core\Response;
+use App\Domain\Editorial\BlockCatalog;
+use App\Domain\Editorial\ContentBlock;
 use App\Domain\Editorial\HomeLayout;
 use App\Domain\Editorial\HomeSectionForm;
 use App\Domain\Locale;
 use App\Repository\Admin\ArtworkAdminRepository;
 use App\Repository\Admin\SettingsAdminRepository;
 use App\Repository\CategoryRepository;
+use App\Repository\ContentBlockRepository;
 use App\Repository\SettingRepository;
+use App\Service\Content\BlockPlacement;
 use App\Service\Media\CoverUpload;
 use App\Service\Media\Exception\UploadRejected;
 use App\Service\View\AdminChrome;
@@ -37,30 +41,57 @@ final class HomeController
         private readonly CoverUpload $covers,
         private readonly ArtworkAdminRepository $artworks,
         private readonly CategoryRepository $categories,
+        private readonly ContentBlockRepository $library,
+        private readonly BlockPlacement $placement,
     ) {
     }
 
     public function edit(Request $request): Response
     {
         $layout = HomeLayout::fromStored($this->settings->json(self::SETTING));
+        $bibliotheque = [];
+        foreach ($this->library->all() as $bloc) {
+            $bibliotheque[$bloc->id] = $bloc->name;
+        }
+
+        // Entrées de la page : sections du site et blocs de la bibliothèque
+        // (retours du 2026-09-25) ; un bloc supprimé depuis n'apparaît plus.
+        $entrees = [];
+        foreach ($layout->forAdmin() as $section) {
+            if (!$section['enabled']) {
+                continue;
+            }
+
+            $id = ContentBlock::idFromKey($section['section']);
+            if ($id === null) {
+                $entrees[] = [
+                    'item' => ['type' => $section['section']],
+                    'label' => $section['label'],
+                    'editUrl' => HomeSectionForm::isEditable($section['section']) ? $request->basePath . '/admin/accueil/' . $section['section'] : null,
+                ];
+            } elseif (isset($bibliotheque[$id])) {
+                $entrees[] = [
+                    'item' => ['type' => 'block', 'ref' => (string) $id],
+                    'label' => 'Bloc : ' . $bibliotheque[$id],
+                    'editUrl' => $request->basePath . '/admin/blocs/' . $id,
+                ];
+            }
+        }
 
         return $this->chrome->page($request, 'admin/accueil/index', [
             'titre' => 'Accueil',
-            'sections' => $layout->forAdmin(),
+            'entrees' => $entrees,
+            'bibliotheque' => $bibliotheque,
+            'modeles' => BlockCatalog::presets(),
         ]);
     }
 
     public function update(Request $request): Response
     {
         // Retours du 2026-09-25 : la page est composée par glisser-déposer ;
-        // composer.js poste la liste ordonnée des sections (JSON).
-        $postee = json_decode((string) $request->input('sections'), true, 4);
-        $ordre = [];
-        foreach (is_array($postee) ? $postee : [] as $entree) {
-            $ordre[] = is_array($entree) ? ($entree['type'] ?? null) : null;
-        }
-
-        $layout = HomeLayout::fromList($ordre);
+        // composer.js poste la liste ordonnée des sections et des blocs (JSON).
+        // Un « Nouveau bloc » est créé dans la bibliothèque au passage.
+        $layout = HomeLayout::fromList($this->placement->keysFromJson($request->input('sections'), 'accueil'));
         $this->save->save(self::SETTING, $layout->toArray(), $this->chrome->now());
 
         $this->chrome->audit()->record(

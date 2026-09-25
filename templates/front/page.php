@@ -12,6 +12,7 @@
 
 declare(strict_types=1);
 
+use App\Domain\Editorial\ContentBlock;
 use App\Domain\Editorial\ContentTemplate;
 
 // Sections dans l'ordre du modèle « Page » composé en back-office
@@ -21,6 +22,11 @@ $sections = is_array($data['sections'] ?? null) ? $data['sections'] : ContentTem
 ?>
 <article class="wrap page-editoriale">
   <?php foreach ($sections as $section) : ?>
+  <?php $bloc = ContentBlock::idFromKey($section); ?>
+  <?php if ($bloc !== null) : ?>
+  <?= $partial('partials/content-block', ['placed' => $data['contentBlocks'][$bloc] ?? null, 'locale' => $data['locale']]) ?>
+  <?php else : ?>
   <?= $partial('sections/page/' . $section, $data) ?>
+  <?php endif; ?>
   <?php endforeach; ?>
 </article>
