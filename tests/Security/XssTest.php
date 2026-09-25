@@ -199,14 +199,14 @@ final class XssTest extends AdminTestCase
     {
         $this->connecte();
 
-        $this->postAvecJeton('/cedric-taldu/admin/rubriques', [
+        $this->postAvecJeton('/cedric-taldu/admin/galeries', [
             'titre_fr' => 'Encres',
             'slug_fr' => 'encres',
             'description_fr' => '<p>Introduction</p>' . $charge,
         ]);
 
         $id = (int) $this->pdo->query('SELECT id FROM categories')?->fetchColumn();
-        $this->postAvecJeton('/cedric-taldu/admin/rubriques/' . $id . '/publication');
+        $this->postAvecJeton('/cedric-taldu/admin/galeries/' . $id . '/publication');
 
         $this->assertPageInerte($this->get('/cedric-taldu/fr/galerie/encres')->body);
     }
@@ -216,14 +216,14 @@ final class XssTest extends AdminTestCase
     {
         $this->connecte();
 
-        $this->postAvecJeton('/cedric-taldu/admin/rubriques', [
+        $this->postAvecJeton('/cedric-taldu/admin/galeries', [
             'titre_fr' => 'Encres',
             'slug_fr' => 'encres',
             'methode_fr' => '<p>Le geste</p>' . $charge,
         ]);
 
         $id = (int) $this->pdo->query('SELECT id FROM categories')?->fetchColumn();
-        $this->postAvecJeton('/cedric-taldu/admin/rubriques/' . $id . '/publication');
+        $this->postAvecJeton('/cedric-taldu/admin/galeries/' . $id . '/publication');
 
         $this->assertPageInerte($this->get('/cedric-taldu/fr/galerie/encres')->body);
     }
@@ -237,15 +237,15 @@ final class XssTest extends AdminTestCase
         // stockee visant l'artiste lui-meme.
         $this->connecte();
 
-        $this->postAvecJeton('/cedric-taldu/admin/rubriques', [
+        $this->postAvecJeton('/cedric-taldu/admin/galeries', [
             'titre_fr' => $charge,
             'slug_fr' => 'encres',
         ]);
 
         $id = (int) $this->pdo->query('SELECT id FROM categories')?->fetchColumn();
 
-        $this->assertAucuneChargeActive($this->get('/cedric-taldu/admin/rubriques/' . $id)->body, $charge);
-        $this->assertAucuneChargeActive($this->get('/cedric-taldu/admin/rubriques')->body, $charge);
+        $this->assertAucuneChargeActive($this->get('/cedric-taldu/admin/galeries/' . $id)->body, $charge);
+        $this->assertAucuneChargeActive($this->get('/cedric-taldu/admin/galeries')->body, $charge);
     }
 
     /**

@@ -26,7 +26,7 @@ final class EnteteTest extends FunctionalTestCase
     {
         $corps = $this->get('/cedric-taldu/fr/a-propos')->body;
 
-        $this->assertMatchesRegularExpression('~</div><!-- /nav-haut -->\s*<nav class="nav-bas"[^>]*>\s*<ul id="menu">~', $corps);
+        $this->assertMatchesRegularExpression('~</div><!-- /nav-haut -->\s*<nav aria-label="[^"]+" class="nav-bas"[^>]*>\s*<ul id="menu">~', $corps);
     }
 
     private function bloc(string $html, string $debut, string $fin): string

@@ -33,7 +33,7 @@ final class RedirectionSlugTest extends AdminTestCase
         $this->assertSame(200, $this->get('/cedric-taldu/fr/galerie/encres')->status);
 
         // L'artiste renomme le slug.
-        $this->postAvecJeton('/cedric-taldu/admin/rubriques/' . $id, [
+        $this->postAvecJeton('/cedric-taldu/admin/galeries/' . $id, [
             'titre_fr' => 'Encres',
             'slug_fr' => 'encres-de-chine',
         ]);
