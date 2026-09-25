@@ -68,9 +68,9 @@ final class PriceIntegrityTest extends FunctionalTestCase
         $this->requete('POST', '/cedric-taldu/fr/commande', cookies: [self::COOKIE => $cookie], post: [
             'nom' => 'Acheteur',
             'email' => 'acheteur@example.test',
-            'mode' => 'pickup',
-            // Remise en main propre : l'adresse, située près d'Amiens par le
-            // géocodeur doublé, mesure la distance (revue du 2026-09-24).
+            // Un original ordinaire s'expédie (retours du 2026-09-25) ; à 450 €,
+            // au-delà du franco, le port est offert : les montants ne changent pas.
+            'mode' => 'shipping',
             'adresse' => '25 allée des Lilas',
             'code_postal' => '80470',
             'ville' => 'Dreuil-lès-Amiens',

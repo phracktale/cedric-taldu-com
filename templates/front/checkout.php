@@ -114,6 +114,15 @@ $jour = static function (DateTimeImmutable $d) use ($mois, $estFr): string {
       <section class="commande-section">
         <h2><span class="commande-num">2</span> <?= $t('checkout.delivery') ?></h2>
 
+        <?php if (!$horsGabarit && !$pickupAllowed) : ?>
+        <?php // Retours du 2026-09-25 : sans hors gabarit ni édition rehaussée, l'œuvre
+              // s'expédie ; pas de choix de mode, seulement l'adresse. ?>
+        <input type="hidden" name="mode" value="shipping">
+        <p class="commande-mode-unique">
+          <span class="commande-mode-nom"><?= $t('checkout.shipping', ['carrier' => $transporteur]) ?></span>
+          <span class="commande-mode-prix"><?= e($shippingText) ?></span>
+        </p>
+        <?php else : ?>
         <div class="commande-modes">
           <?php if ($horsGabarit) : ?>
           <?php // Œuvre hors gabarit (revue du 2026-09-24) : ni expédition ni remise automatique. ?>
@@ -140,6 +149,7 @@ $jour = static function (DateTimeImmutable $d) use ($mois, $estFr): string {
           </label>
           <?php endif; ?>
         </div>
+        <?php endif; ?>
 
         <div class="commande-adresse" data-commande-adresse<?php if ($horsGabarit) : ?> hidden<?php endif; ?>>
           <label for="adresse"><?= $t('checkout.address') ?></label>

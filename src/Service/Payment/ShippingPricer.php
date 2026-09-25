@@ -71,6 +71,15 @@ final class ShippingPricer
             return ShippingQuote::free(null);
         }
 
+        // Retours du 2026-09-25 : la remise en main propre n'est offerte que si le
+        // panier contient une édition rehaussée à l'atelier.
+        if (
+            $method === ShippingMethod::Pickup
+            && array_filter($lines, static fn (ValuedLine $line): bool => $line->item->isHandFinished()) === []
+        ) {
+            return ShippingQuote::onRequest(null);
+        }
+
         if ($method === ShippingMethod::Pickup) {
             // Un tirage à la demande ne se retire pas : le prestataire l'expédie.
             // Un original ou une édition limitée (à l'atelier), si.

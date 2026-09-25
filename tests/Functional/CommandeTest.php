@@ -57,7 +57,7 @@ final class CommandeTest extends FunctionalTestCase
     {
         // 03-boutique §3 : le récapitulatif éclaire l'acheteur avant paiement —
         // frais de port, total, fenêtre de réception estimée, moyen de paiement.
-        $cookie = $this->panierAvecOeuvre();
+        $cookie = $this->panierAvecEditionRehaussee();
 
         $corps = $this->requete('GET', '/cedric-taldu/fr/commande', cookies: [self::COOKIE => $cookie])->body;
 
@@ -66,7 +66,7 @@ final class CommandeTest extends FunctionalTestCase
         $this->assertStringContainsString('Paiement sécurisé par carte', $corps);
         // Les deux modes portent leur total, pour la mise à jour côté client.
         $this->assertStringContainsString('value="shipping"', $corps);
-        $this->assertStringContainsString('value="pickup"', $corps);
+        // Un original ordinaire s'expédie : pas de choix de mode (retours du 2026-09-25).
         $this->assertStringContainsString('data-total=', $corps);
     }
 
@@ -86,7 +86,7 @@ final class CommandeTest extends FunctionalTestCase
     {
         // Revue du 2026-09-24 : pas de « port gratuit » pour un retrait, mais des
         // frais de déplacement offerts dans un rayon de 30 km autour d'Amiens.
-        $cookie = $this->panierAvecOeuvre();
+        $cookie = $this->panierAvecEditionRehaussee();
 
         $corps = $this->requete('GET', '/cedric-taldu/fr/commande', cookies: [self::COOKIE => $cookie])->body;
 
@@ -209,11 +209,45 @@ final class CommandeTest extends FunctionalTestCase
         $this->assertSame(0, (int) $this->valeur('SELECT COUNT(*) FROM orders'));
     }
 
+    // ------------------------- livraison selon le produit (retours 2026-09-25)
+
+    public function test_un_original_ordinaire_s_expedie_sans_choix_de_mode(): void
+    {
+        $cookie = $this->panierAvecOeuvre();
+
+        $corps = $this->requete('GET', '/cedric-taldu/fr/commande', cookies: [self::COOKIE => $cookie])->body;
+
+        $this->assertStringContainsString('<input type="hidden" name="mode" value="shipping">', $corps);
+        $this->assertStringNotContainsString('value="pickup"', $corps);
+        $this->assertStringNotContainsString('class="commande-modes"', $corps);
+        $this->assertStringContainsString('name="adresse"', $corps);
+    }
+
+    public function test_une_edition_rehaussee_propose_expedition_ou_remise_en_main_propre(): void
+    {
+        $cookie = $this->panierAvecEditionRehaussee();
+
+        $corps = $this->requete('GET', '/cedric-taldu/fr/commande', cookies: [self::COOKIE => $cookie])->body;
+
+        $this->assertStringContainsString('class="commande-modes"', $corps);
+        $this->assertStringContainsString('type="radio" name="mode" value="shipping"', $corps);
+        $this->assertStringContainsString('value="pickup"', $corps);
+    }
+
+    public function test_un_original_ordinaire_ne_se_remet_pas_en_main_propre(): void
+    {
+        $cookie = $this->panierAvecOeuvre();
+
+        $this->commander($cookie, ['mode' => 'pickup']);
+
+        $this->assertSame(0, (int) $this->valeur('SELECT COUNT(*) FROM orders'));
+    }
+
     public function test_une_remise_en_main_propre_dans_le_rayon_est_offerte(): void
     {
         // Revue du 2026-09-24 : l'artiste se déplace jusqu'à l'acheteur, dans un
         // rayon de 30 km autour d'Amiens. L'adresse sert à mesurer la distance.
-        $cookie = $this->panierAvecOeuvre();
+        $cookie = $this->panierAvecEditionRehaussee();
 
         $reponse = $this->commander($cookie, ['mode' => 'pickup', 'adresse' => '25 allée des Lilas', 'code_postal' => '80470']);
 
@@ -226,7 +260,7 @@ final class CommandeTest extends FunctionalTestCase
     public function test_une_remise_en_main_propre_au_dela_du_rayon_est_refusee(): void
     {
         $this->geocodeur->loin();
-        $cookie = $this->panierAvecOeuvre();
+        $cookie = $this->panierAvecEditionRehaussee();
 
         $reponse = $this->commander($cookie, ['mode' => 'pickup', 'ville' => 'Paris', 'code_postal' => '75001']);
 
@@ -238,7 +272,7 @@ final class CommandeTest extends FunctionalTestCase
     public function test_une_remise_en_main_propre_invérifiable_est_refusee(): void
     {
         $this->geocodeur->muet();
-        $cookie = $this->panierAvecOeuvre();
+        $cookie = $this->panierAvecEditionRehaussee();
 
         $reponse = $this->commander($cookie, ['mode' => 'pickup']);
 
@@ -304,7 +338,7 @@ final class CommandeTest extends FunctionalTestCase
 
     public function test_une_remise_en_main_propre_exige_une_adresse(): void
     {
-        $cookie = $this->panierAvecOeuvre();
+        $cookie = $this->panierAvecEditionRehaussee();
 
         $reponse = $this->commander($cookie, ['mode' => 'pickup', 'adresse' => '', 'code_postal' => '', 'ville' => '']);
 
@@ -439,6 +473,32 @@ final class CommandeTest extends FunctionalTestCase
         $post = array_filter($post, static fn ($v): bool => $v !== null);
 
         return $this->requete('POST', '/cedric-taldu/fr/commande', cookies: [self::COOKIE => $cookie], post: $post);
+    }
+
+    /** Édition limitée rehaussée à l'atelier (circuit manuel). */
+    private function panierAvecEditionRehaussee(): string
+    {
+        $artwork = (new ArtworkFactory($this->pdo))->published()->available()->priced(45000)
+            ->translated('fr', 'rehaut', 'Œuvre rehaussée')
+            ->create($this->categoryId);
+
+        $this->pdo->prepare(
+            "INSERT INTO products (artwork_id, kind, processing_mode, edition_size, is_published, created_at, updated_at)
+             VALUES (:art, 'limited', 'artist_manual', 20, 1, NOW(), NOW())"
+        )->execute(['art' => $artwork]);
+        $product = (int) $this->pdo->lastInsertId();
+
+        $this->pdo->prepare(
+            'INSERT INTO product_translations (product_id, locale, title) VALUES (:id, :l, :t)'
+        )->execute(['id' => $product, 'l' => 'fr', 't' => 'Édition rehaussée']);
+
+        $this->pdo->prepare(
+            'INSERT INTO product_variants (product_id, sku, size_label, price_cents, stock_qty, weight_grams,
+                                           created_at, updated_at)
+             VALUES (:prod, :sku, :size, 25000, 5, 300, NOW(), NOW())'
+        )->execute(['prod' => $product, 'sku' => 'LIM-' . bin2hex(random_bytes(4)), 'size' => '50 × 70 cm']);
+
+        return $this->ajouter('reproduction', (int) $this->pdo->lastInsertId());
     }
 
     private function panierAvecOeuvre(): string
