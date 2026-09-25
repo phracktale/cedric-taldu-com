@@ -33,7 +33,8 @@ final class OrderAdminRepository
 
         $statement = $this->pdo->prepare(
             'SELECT id, reference, status, customer_email, customer_name, total_cents,
-                    anomaly_note, created_at
+                    anomaly_note, created_at, shipped_at, tracking_carrier, tracking_number,
+                    tracking_url, prodigi_status
              FROM orders
              ORDER BY created_at DESC, id DESC
              LIMIT :limit'
@@ -53,10 +54,20 @@ final class OrderAdminRepository
                 total: Money::fromCents((int) $row['total_cents']),
                 hasAnomaly: $row['anomaly_note'] !== null && $row['anomaly_note'] !== '',
                 createdAt: (string) $row['created_at'],
+                shippedAt: self::textOrNull($row['shipped_at']),
+                trackingCarrier: self::textOrNull($row['tracking_carrier']),
+                trackingNumber: self::textOrNull($row['tracking_number']),
+                trackingUrl: self::textOrNull($row['tracking_url']),
+                prodigiStatus: self::textOrNull($row['prodigi_status']),
             );
         }
 
         return $orders;
+    }
+
+    private static function textOrNull(mixed $value): ?string
+    {
+        return $value === null || $value === '' ? null : (string) $value;
     }
 
     public function anomalyCount(): int

@@ -343,6 +343,7 @@ return [
     // comme un {id}.
     new Route('admin.order.export', 'GET', '/admin/commandes/export.csv', [AdminOrderController::class, 'export']),
     new Route('admin.order.index', 'GET', '/admin/commandes', [AdminOrderController::class, 'index']),
+    new Route('admin.order.tracking', 'POST', '/admin/commandes/suivi', [AdminOrderController::class, 'refreshTracking']),
     new Route('admin.order.show', 'GET', '/admin/commandes/{id}', [AdminOrderController::class, 'show'], requirements: $id),
     new Route('admin.order.ship', 'POST', '/admin/commandes/{id}/expedition', [AdminOrderController::class, 'ship'], requirements: $id),
     new Route('admin.order.invoice', 'GET', '/admin/commandes/{id}/facture', [AdminOrderController::class, 'invoice'], requirements: $id),

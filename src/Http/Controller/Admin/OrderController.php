@@ -18,6 +18,7 @@ use App\Service\Fulfillment\FulfillmentService;
 use App\Service\Mail\OrderMailer;
 use App\Service\View\AdminChrome;
 use App\Service\I18n\UrlGenerator;
+use App\Service\Fulfillment\TrackingRefresh;
 use App\Service\Invoice\InvoiceDownload;
 use App\Service\Shipping\CarrierRegistry;
 
@@ -46,6 +47,7 @@ final class OrderController
         private readonly FulfillmentService $fulfillmentService,
         private readonly CarrierRegistry $carriers,
         private readonly InvoiceDownload $invoices,
+        private readonly TrackingRefresh $tracking,
     ) {
     }
 
@@ -55,7 +57,27 @@ final class OrderController
             'titre' => 'Commandes',
             'commandes' => $this->admin->recent(),
             'anomalies' => $this->admin->anomalyCount(),
+            'suivi' => $request->query('suivi') === null ? null : [
+                'expediees' => (int) $request->query('expediees', '0'),
+                'echecs' => (int) $request->query('echecs', '0'),
+            ],
         ]);
+    }
+
+    /**
+     * « Actualiser le suivi » (retours du 2026-09-25) : interroge l'imprimeur
+     * pour les commandes encore chez lui, puis revient à la liste avec le bilan.
+     */
+    public function refreshTracking(Request $request): Response
+    {
+        $bilan = $this->tracking->refresh();
+        $this->chrome->audit()->record($this->chrome->currentUserId(), 'order.tracking.refresh', $request);
+
+        return RedirectResponse::to($request->basePath . '/admin/commandes?' . http_build_query([
+            'suivi' => 1,
+            'expediees' => $bilan['shipped'],
+            'echecs' => $bilan['failed'],
+        ]), 303);
     }
 
     public function show(Request $request): Response

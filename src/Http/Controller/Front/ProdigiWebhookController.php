@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controller\Front;
 
-use App\Core\ClockInterface;
 use App\Core\LoggerInterface;
 use App\Core\LogLevel;
 use App\Core\Request;
 use App\Core\Response;
 use App\Repository\FulfillmentRepository;
-use App\Repository\OrderRepository;
-use App\Service\I18n\UrlGenerator;
-use App\Service\Mail\OrderMailer;
+use App\Service\Fulfillment\ProdigiOrderState;
+use App\Service\Fulfillment\ShipmentRecorder;
 use Throwable;
 
 /**
@@ -33,11 +31,8 @@ final class ProdigiWebhookController
     public function __construct(
         private readonly string $secret,
         private readonly FulfillmentRepository $fulfillment,
-        private readonly OrderRepository $orders,
-        private readonly ClockInterface $clock,
+        private readonly ShipmentRecorder $recorder,
         private readonly LoggerInterface $logger,
-        private readonly OrderMailer $mailer,
-        private readonly UrlGenerator $url,
     ) {
     }
 
@@ -68,19 +63,7 @@ final class ProdigiWebhookController
         }
 
         try {
-            $status = is_array($order['status'] ?? null) && is_string($order['status']['stage'] ?? null)
-                ? $order['status']['stage']
-                : 'Unknown';
-            $this->fulfillment->updateProdigiStatus($orderId, $status);
-
-            $shipment = $this->firstTrackedShipment($order);
-
-            if (
-                $shipment !== null
-                && $this->orders->ship($orderId, $shipment['carrier'], $shipment['tracking'], $this->clock->now())
-            ) {
-                $this->notifyShipped($orderId);
-            }
+            $this->recorder->record($orderId, ProdigiOrderState::fromOrder($order));
         } catch (Throwable $e) {
             $this->logger->log(LogLevel::Error, 'Callback Prodigi échoué', [
                 'prodigi_order' => $prodigiId,
@@ -91,63 +74,6 @@ final class ProdigiWebhookController
         }
 
         return self::opaque(200);
-    }
-
-    /**
-     * Première expédition portant un numéro de suivi, ou null.
-     *
-     * @param  array<string, mixed> $order
-     * @return array{carrier: string, tracking: string}|null
-     */
-    private function firstTrackedShipment(array $order): ?array
-    {
-        $shipments = is_array($order['shipments'] ?? null) ? $order['shipments'] : [];
-
-        foreach ($shipments as $shipment) {
-            if (!is_array($shipment)) {
-                continue;
-            }
-
-            $tracking = is_array($shipment['tracking'] ?? null) && is_string($shipment['tracking']['number'] ?? null)
-                ? $shipment['tracking']['number']
-                : '';
-
-            if ($tracking === '') {
-                continue;
-            }
-
-            $carrier = is_array($shipment['carrier'] ?? null) && is_string($shipment['carrier']['name'] ?? null)
-                ? $shipment['carrier']['name']
-                : 'Transporteur';
-
-            return ['carrier' => $carrier, 'tracking' => $tracking];
-        }
-
-        return null;
-    }
-
-    private function notifyShipped(int $orderId): void
-    {
-        try {
-            $order = $this->orders->findById($orderId);
-
-            if ($order === null) {
-                return;
-            }
-
-            $consultation = $this->url->absolute('checkout.confirmation', [
-                'locale' => $order->locale->value,
-                'reference' => $order->reference,
-            ]) . '?t=' . $order->accessToken;
-
-            $this->mailer->sendShipped($order, $consultation);
-        } catch (Throwable $e) {
-            // Un courriel n'est jamais une condition de validité (03-boutique §7).
-            $this->logger->log(LogLevel::Error, 'E-mail d’expédition Prodigi échoué', [
-                'order' => $orderId,
-                'exception' => $e::class,
-            ]);
-        }
     }
 
     private static function opaque(int $status): Response

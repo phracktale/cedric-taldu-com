@@ -75,7 +75,8 @@ final class SuiviCommandesTest extends AdminTestCase
         $this->assertSame(['ord_4'], $this->prodigi->lookedUp);
         $this->assertSame('paid', $this->pdo->query("SELECT status FROM orders WHERE id = {$autre}")->fetchColumn());
 
-        $this->assertStringContainsString('1 commande expédiée', $this->requete('GET', self::LISTE)->body);
+        // Post/Redirect/Get : le bilan suit la redirection.
+        $this->assertStringContainsString('1 commande expédiée', $this->requete('GET', (string) $reponse->header('Location'))->body);
     }
 
     public function test_une_panne_de_l_imprimeur_ne_bloque_pas_les_autres(): void
@@ -85,10 +86,11 @@ final class SuiviCommandesTest extends AdminTestCase
         $this->prodigi->failOrderLookupFor('ord_panne');
         $this->prodigi->respondOrderWith('ord_7', ProdigiOrderState::fromOrder(['status' => ['stage' => 'InProgress']]));
 
-        $this->assertSame(303, $this->postAvecJeton(self::LISTE . '/suivi')->status);
+        $reponse = $this->postAvecJeton(self::LISTE . '/suivi');
+        $this->assertSame(303, $reponse->status);
 
         $this->assertSame(['ord_panne', 'ord_7'], $this->prodigi->lookedUp);
-        $this->assertStringContainsString('1 commande injoignable', $this->requete('GET', self::LISTE)->body);
+        $this->assertStringContainsString('1 commande injoignable', $this->requete('GET', (string) $reponse->header('Location'))->body);
         $this->assertSame('paid', $this->pdo->query("SELECT status FROM orders WHERE id = {$id}")->fetchColumn());
     }
 

@@ -172,6 +172,29 @@ final class FulfillmentRepository
         return $value === false ? null : (int) $value;
     }
 
+    /**
+     * Commandes soumises à Prodigi et pas encore expédiées (payées) : celles
+     * dont le suivi peut encore arriver.
+     *
+     * @return array<int, string> identifiant de commande → identifiant Prodigi
+     */
+    public function ordersAtPrinter(): array
+    {
+        $statement = $this->pdo->prepare(
+            'SELECT id, prodigi_order_id FROM orders
+              WHERE prodigi_order_id IS NOT NULL AND status = :paid
+              ORDER BY id'
+        );
+        $statement->execute(['paid' => 'paid']);
+
+        $commandes = [];
+        foreach ($statement->fetchAll(PDO::FETCH_ASSOC) as $ligne) {
+            $commandes[(int) $ligne['id']] = (string) $ligne['prodigi_order_id'];
+        }
+
+        return $commandes;
+    }
+
     public function updateProdigiStatus(int $orderId, string $status): void
     {
         $statement = $this->pdo->prepare('UPDATE orders SET prodigi_status = :status WHERE id = :id');

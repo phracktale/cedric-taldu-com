@@ -32,4 +32,12 @@ interface ProdigiClientInterface
      * @throws ProdigiException en cas d'échec réseau, de réponse invalide ou de statut d'erreur
      */
     public function quote(array $payload): ProdigiQuoteResult;
+
+    /**
+     * État d'une commande déjà soumise (GET /v4.0/orders/{id}) : étape et suivi.
+     * Sert à rattraper un webhook perdu (Boutique › Commandes, « Actualiser le suivi »).
+     *
+     * @throws ProdigiException en cas d'échec réseau, de réponse invalide ou de statut d'erreur
+     */
+    public function order(string $prodigiOrderId): ProdigiOrderState;
 }

@@ -47,6 +47,8 @@ use App\Http\Controller\Admin\MenuController;
 use App\Http\Controller\Admin\GenerationController;
 use App\Http\Controller\Admin\ContentBlockController;
 use App\Repository\ContentBlockRepository;
+use App\Service\Fulfillment\ShipmentRecorder;
+use App\Service\Fulfillment\TrackingRefresh;
 use App\Service\Content\BlockPlacement;
 use App\Service\View\PlacedBlocks;
 use App\Http\Controller\Admin\EcoIndexController;
@@ -451,12 +453,25 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         => new ProdigiWebhookController(
             $prodigiCallbackSecret,
             $c->get(FulfillmentRepository::class),
-            $c->get(OrderRepository::class),
-            $c->get(ClockInterface::class),
+            $c->get(ShipmentRecorder::class),
             $c->get(LoggerInterface::class),
-            $c->get(OrderMailer::class),
-            $c->get(UrlGenerator::class),
         ));
+
+    // Suivi des envois de l'imprimeur : webhook et « Actualiser le suivi ».
+    $container->set(ShipmentRecorder::class, static fn (Container $c): ShipmentRecorder => new ShipmentRecorder(
+        $c->get(FulfillmentRepository::class),
+        $c->get(OrderRepository::class),
+        $c->get(OrderMailer::class),
+        $c->get(UrlGenerator::class),
+        $c->get(ClockInterface::class),
+        $c->get(LoggerInterface::class),
+    ));
+    $container->set(TrackingRefresh::class, static fn (Container $c): TrackingRefresh => new TrackingRefresh(
+        $c->get(FulfillmentRepository::class),
+        $c->get(ProdigiClientInterface::class),
+        $c->get(ShipmentRecorder::class),
+        $c->get(LoggerInterface::class),
+    ));
 
     // --- Authentification --------------------------------------------------
     //
@@ -1046,6 +1061,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(FulfillmentService::class),
             $c->get(CarrierRegistry::class),
             $c->get(InvoiceDownload::class),
+            $c->get(TrackingRefresh::class),
         ));
 
     $container->set(
