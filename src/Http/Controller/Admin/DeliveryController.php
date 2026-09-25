@@ -10,6 +10,8 @@ use App\Core\Response;
 use App\Domain\Exception\InvalidAddress;
 use App\Domain\Order\Address;
 use App\Domain\Shipping\HandDeliveryZone;
+use App\Domain\Shipping\ShippingGridForm;
+use App\Repository\Admin\ShippingAdminRepository;
 use App\Repository\Admin\SettingsAdminRepository;
 use App\Repository\SettingRepository;
 use App\Service\Shipping\CarrierRegistry;
@@ -23,6 +25,8 @@ use App\Service\View\AdminChrome;
  *   un rayon ; l'adresse est géocodée ici (BAN) et seules ses coordonnées sont
  *   gardées dans le réglage `shipping.hand_delivery`.
  * - État des transporteurs : Colissimo, API active ou en attente d'identifiants.
+ * - Retours du 2026-09-25 : module de livraison choisi, grille de tarifs par
+ *   zone et tranche de poids, emballage forfaitaire (réglage `shipping`).
  */
 final class DeliveryController
 {
@@ -32,6 +36,7 @@ final class DeliveryController
         private readonly SettingsAdminRepository $save,
         private readonly Geocoder $geocoder,
         private readonly CarrierRegistry $carriers,
+        private readonly ShippingAdminRepository $grid,
     ) {
     }
 
@@ -82,15 +87,62 @@ final class DeliveryController
         return RedirectResponse::to($request->basePath . '/admin/livraison');
     }
 
-    private function form(Request $request, ?string $erreur = null, int $status = 200): Response
+    /**
+     * Grille de tarifs, emballage et module : tout ou rien — une saisie
+     * invalide ne touche à rien et réaffiche le formulaire avec la saisie.
+     */
+    public function updateRates(Request $request): Response
     {
+        $zones = $this->grid->zones();
+        $saisie = $request->post;
+        $grille = ShippingGridForm::parse($saisie, array_map(static fn (array $z): int => $z['id'], $zones));
+
+        $emballage = trim((string) $request->input('emballage'));
+        $erreurs = $grille->errors;
+        if (!ctype_digit($emballage) || (int) $emballage > 20000) {
+            $erreurs[] = 'Emballage : un poids en grammes, entre 0 et 20000.';
+        }
+        $transporteur = $this->carriers->byName($request->input('transporteur')) ?? $this->carriers->default();
+
+        if ($erreurs !== []) {
+            return $this->form($request, null, 422, $erreurs, $saisie);
+        }
+
+        $this->grid->save($grille->zones);
+        $this->save->save('shipping', [
+            ...$this->settings->json('shipping'),
+            'packaging_grams' => (int) $emballage,
+            'carrier' => $transporteur->code(),
+        ], $this->chrome->now());
+        $this->chrome->audit()->record($this->chrome->currentUserId(), 'shipping.rates', $request, 'setting', null);
+
+        return RedirectResponse::to($request->basePath . '/admin/livraison?tarifs=1', 303);
+    }
+
+    /**
+     * @param list<string>               $erreursTarifs
+     * @param array<string, string|null> $saisie saisie de la grille à réafficher
+     */
+    private function form(
+        Request $request,
+        ?string $erreur = null,
+        int $status = 200,
+        array $erreursTarifs = [],
+        array $saisie = [],
+    ): Response {
         $zone = HandDeliveryZone::fromSetting($this->settings->json(HandDeliveryZone::SETTING));
 
         return $this->chrome->page($request, 'admin/livraison/index', [
             'titre' => 'Livraison',
             'zone' => $zone,
             'transporteurs' => $this->carriers->all(),
+            'transporteur' => $this->carriers->default()->code(),
             'erreur' => $erreur,
+            'zones' => $this->grid->zones(),
+            'emballage' => $this->settings->json('shipping')['packaging_grams'] ?? 250,
+            'erreursTarifs' => $erreursTarifs,
+            'saisie' => $saisie,
+            'tarifsEnregistres' => $request->query('tarifs') !== null,
         ], $status);
     }
 }

@@ -25,6 +25,19 @@ final class CarrierRegistry
         }
     }
 
+    /**
+     * Registre dont le transporteur choisi (par son code) passe en tête et
+     * devient le transporteur par défaut ; un code inconnu ne change rien.
+     *
+     * @param list<Carrier> $carriers
+     */
+    public static function preferring(array $carriers, mixed $code): self
+    {
+        usort($carriers, static fn (Carrier $a, Carrier $b): int => (int) ($b->code() === $code) <=> (int) ($a->code() === $code));
+
+        return new self($carriers);
+    }
+
     public function default(): Carrier
     {
         return $this->carriers[0];

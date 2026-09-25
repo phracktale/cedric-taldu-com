@@ -47,6 +47,7 @@ use App\Http\Controller\Admin\MenuController;
 use App\Http\Controller\Admin\GenerationController;
 use App\Http\Controller\Admin\ContentBlockController;
 use App\Repository\ContentBlockRepository;
+use App\Repository\Admin\ShippingAdminRepository;
 use App\Service\Fulfillment\ShipmentRecorder;
 use App\Service\Fulfillment\TrackingRefresh;
 use App\Service\Content\BlockPlacement;
@@ -848,6 +849,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(SettingsAdminRepository::class),
         $c->get(Geocoder::class),
         $c->get(CarrierRegistry::class),
+        new ShippingAdminRepository($c->get(PDO::class)),
     ));
 
     $container->set(MenuController::class, static fn (Container $c): MenuController => new MenuController(
@@ -900,12 +902,13 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
 
     // Transporteurs branchés (revue du 2026-09-24). Colissimo d'abord ; son API
     // reste désactivée tant que le contrat et son mot de passe manquent.
-    $container->set(CarrierRegistry::class, static fn (): CarrierRegistry => new CarrierRegistry([
+    // Le module choisi en back-office (réglage shipping.carrier) passe en tête.
+    $container->set(CarrierRegistry::class, static fn (Container $c): CarrierRegistry => CarrierRegistry::preferring([
         new ColissimoCarrier(
             $env->getOptional('COLISSIMO_CONTRACT_NUMBER', '') ?? '',
             $env->getOptional('COLISSIMO_PASSWORD', '') ?? '',
         ),
-    ]));
+    ], $c->get(SettingRepository::class)->json('shipping')['carrier'] ?? null));
 
     $container->set(PageController::class, static fn (Container $c): PageController => new PageController(
         $c->get(View::class),
