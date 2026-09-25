@@ -52,17 +52,15 @@ final class HomeController
 
     public function update(Request $request): Response
     {
-        $positions = [];
-        $enabled = [];
-
-        // Champs SCALAIRES par section (Core\Request ne lit pas les tableaux) :
-        // position_{section} donne l'ordre, affiche_{section} l'activation.
-        foreach (array_keys(HomeLayout::SECTIONS) as $section) {
-            $positions[$section] = (int) ($request->input('position_' . $section) ?? '0');
-            $enabled[$section] = $request->input('affiche_' . $section) !== null;
+        // Retours du 2026-09-25 : la page est composée par glisser-déposer ;
+        // composer.js poste la liste ordonnée des sections (JSON).
+        $postee = json_decode((string) $request->input('sections'), true, 4);
+        $ordre = [];
+        foreach (is_array($postee) ? $postee : [] as $entree) {
+            $ordre[] = is_array($entree) ? ($entree['type'] ?? null) : null;
         }
 
-        $layout = HomeLayout::fromInput($positions, $enabled);
+        $layout = HomeLayout::fromList($ordre);
         $this->save->save(self::SETTING, $layout->toArray(), $this->chrome->now());
 
         $this->chrome->audit()->record(
