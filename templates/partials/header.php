@@ -42,11 +42,15 @@ $styleActif = is_string($data['navActiveStyle'] ?? null) ? $data['navActiveStyle
 // résolu par MenuRenderer : adresse, libellé, partie du site, galerie visée.
 /** @var list<array{key: string, href: string, label: string, section: string|null, categoryId: int|null, dropdown: bool}> $entrees */
 $entrees = is_array($data['menuItems'] ?? null) ? $data['menuItems'] : [];
+// Identité du site (Paramètres › Global), partagée par View::share.
+$site = ($data['site'] ?? null) instanceof App\Domain\Editorial\SiteIdentity
+    ? $data['site']
+    : App\Domain\Editorial\SiteIdentity::fromStored([]);
 ?>
 <header class="site-tete">
   <?php // Retours du 2026-09-25 : logo, compte, panier et langues sur une ligne ; menu sur la suivante. ?>
   <div class="nav nav-haut">
-    <a class="brand" href="<?= attr($url->route('home', ['locale' => $locale->value])) ?>">Cédric Taldu<small><?= $t('nav.tagline') ?></small></a>
+    <a class="brand" href="<?= attr($url->route('home', ['locale' => $locale->value])) ?>"><?= e($site->name) ?><small><?= e($site->tagline($locale)) ?></small></a>
 
     <div class="outils-entete">
     <?php // Accès au panier, présent sur tout le site. La pastille montre le

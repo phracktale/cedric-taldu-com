@@ -23,7 +23,6 @@ return [
     'nav.contact' => 'Contact',
     'nav.cart' => 'Cart',
     'nav.menu' => 'Menu',
-    'nav.tagline' => 'visual artist — Amiens, France',
     'nav.main_label' => 'Main navigation',
     'nav.skip' => 'Skip to content',
     'nav.breadcrumb' => 'Breadcrumb',
@@ -36,7 +35,6 @@ return [
     'footer.terms' => 'Terms',
     'footer.contact' => 'Contact',
     'footer.legal_label' => 'Legal',
-    'footer.role' => 'Visual artist, Amiens, France',
 
     // Preproduction banner
     'env.preprod' => 'Preproduction — :env · demo content',

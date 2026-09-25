@@ -33,6 +33,10 @@ $utilisateur = ($data['utilisateur'] ?? null) instanceof AdminUser ? $data['util
 $groupes = $utilisateur === null ? [] : App\Service\View\AdminMenu::groups();
 $groupeCourant = App\Service\View\AdminMenu::groupOf($chemin);
 
+// Identité du site (Paramètres › Global), partagée par View::share.
+$site = ($data['site'] ?? null) instanceof App\Domain\Editorial\SiteIdentity
+    ? $data['site']
+    : App\Domain\Editorial\SiteIdentity::fromStored([]);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -52,7 +56,7 @@ $groupeCourant = App\Service\View\AdminMenu::groupOf($chemin);
 <a class="skip-link" href="#contenu">Aller au contenu</a>
 
 <header class="admin-entete">
-    <p class="admin-marque"><a href="<?= attr($base . '/admin') ?>">Cédric Taldu</a> <span>administration</span></p>
+    <p class="admin-marque"><a href="<?= attr($base . '/admin') ?>"><?= e($site->name) ?></a> <span>administration</span></p>
 
     <?php if ($utilisateur !== null) : ?>
     <nav class="admin-nav" aria-label="Sections">

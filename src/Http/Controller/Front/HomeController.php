@@ -191,11 +191,8 @@ final class HomeController
      */
     private function metaTitle(array $hero, Locale $locale): string
     {
-        $default = $locale === Locale::Fr
-            ? 'Cédric Taldu | Artiste peintre et dessinateur à Amiens'
-            : 'Cédric Taldu | Visual artist in Amiens, France';
-
-        return self::text($hero, 'meta_title') ?? $default;
+        // Défaut : titre de l'accueil de Paramètres › Global.
+        return self::text($hero, 'meta_title') ?? $this->chrome->identity()->homeTitle($locale);
     }
 
     /**

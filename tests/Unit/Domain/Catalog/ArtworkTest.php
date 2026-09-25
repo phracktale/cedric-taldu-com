@@ -213,7 +213,7 @@ final class ArtworkTest extends TestCase
     public function test_le_titre_de_page_se_deduit_du_contenu_quand_il_n_est_pas_saisi(): void
     {
         // 05-i18n-seo §5 : « Génération par défaut si les champs SEO sont vides ».
-        $this->assertSame('Articulation — Cédric Taldu', $this->oeuvre()->metaTitle(Locale::Fr));
+        $this->assertSame('Articulation — Cédric Taldu', $this->oeuvre()->metaTitle(Locale::Fr, 'Cédric Taldu'));
     }
 
     public function test_le_titre_de_page_saisi_prime(): void
@@ -246,6 +246,6 @@ final class ArtworkTest extends TestCase
             ]),
         );
 
-        $this->assertSame('Titre choisi pour les moteurs', $oeuvre->metaTitle(Locale::Fr));
+        $this->assertSame('Titre choisi pour les moteurs', $oeuvre->metaTitle(Locale::Fr, 'Cédric Taldu'));
     }
 }

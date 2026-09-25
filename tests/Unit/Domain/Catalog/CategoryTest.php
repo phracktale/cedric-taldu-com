@@ -102,7 +102,7 @@ final class CategoryTest extends TestCase
 
     public function test_le_titre_de_page_se_deduit_du_titre_de_la_rubrique(): void
     {
-        $this->assertSame('Encres — Cédric Taldu', $this->rubrique()->metaTitle(Locale::Fr));
+        $this->assertSame('Encres — Cédric Taldu', $this->rubrique()->metaTitle(Locale::Fr, 'Cédric Taldu'));
     }
 
     // ----------------------------------------------------------- series

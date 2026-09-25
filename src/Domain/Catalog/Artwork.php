@@ -19,7 +19,6 @@ use App\Domain\Translations;
 final class Artwork
 {
     /** Nom de l'artiste, employe pour les titres de page par defaut. */
-    private const ARTIST = 'Cédric Taldu';
 
     /**
      * @param Translations<ArtworkTranslation> $translations
@@ -112,11 +111,14 @@ final class Artwork
     /**
      * 05-i18n-seo §5 : generation par defaut quand le champ SEO est vide.
      */
-    public function metaTitle(Locale $locale): string
+    /**
+     * @param string $siteName nom de l'artiste (Paramètres › Global)
+     */
+    public function metaTitle(Locale $locale, string $siteName): string
     {
         $translation = $this->translations->for($locale);
 
-        return $translation->metaTitle ?? $translation->title . ' — ' . self::ARTIST;
+        return $translation->metaTitle ?? $translation->title . ' — ' . $siteName;
     }
 
     public function metaDescription(Locale $locale): ?string

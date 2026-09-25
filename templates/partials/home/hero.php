@@ -44,7 +44,7 @@ $habille = $image !== null || ($fond['color'] ?? null) !== null;
 <section class="hero wrap">
 <?php endif; ?>
   <?php if ($texte($hero, 'eyebrow') !== null) : ?><p class="eyebrow"><?= e($texte($hero, 'eyebrow')) ?></p><?php endif; ?>
-  <h1><?= e($texte($hero, 'title') ?? 'Cédric Taldu') ?></h1>
+  <h1><?= e($texte($hero, 'title') ?? $data['site']->name) ?></h1>
   <?php if ($texte($hero, 'baseline') !== null) : ?><p class="baseline"><?= e($texte($hero, 'baseline')) ?></p><?php endif; ?>
   <?php if (isset($ctas['hero'])) : ?>
     <?= $partial('partials/cta', $ctas['hero']) ?>

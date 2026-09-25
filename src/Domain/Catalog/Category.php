@@ -18,7 +18,6 @@ use App\Domain\Translations;
  */
 final class Category
 {
-    private const ARTIST = 'Cédric Taldu';
 
     /**
      * @param Translations<CategoryTranslation> $translations
@@ -74,10 +73,13 @@ final class Category
         return $this->coverMediaId !== null;
     }
 
-    public function metaTitle(Locale $locale): string
+    /**
+     * @param string $siteName nom de l'artiste (Paramètres › Global)
+     */
+    public function metaTitle(Locale $locale, string $siteName): string
     {
         $translation = $this->translations->for($locale);
 
-        return $translation->metaTitle ?? $translation->title . ' — ' . self::ARTIST;
+        return $translation->metaTitle ?? $translation->title . ' — ' . $siteName;
     }
 }
