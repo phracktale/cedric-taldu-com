@@ -11,6 +11,7 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Domain\Editorial\ContentTemplate;
 use App\Domain\Editorial\HomeSectionForm;
+use App\Domain\Editorial\MapSettings;
 use App\Domain\Editorial\NavMenu;
 use App\Domain\Editorial\Theme;
 use App\Domain\Locale;
@@ -132,6 +133,8 @@ final class Chrome
             // à nonce (la CSP interdit les attributs style). Couleur #rrggbb seule.
             'themeCss' => $this->themeCss(),
             'metaDescription' => null,
+            // Carte interactive, rendue par le bloc « Carte » (retours du 2026-09-25).
+            'map' => MapSettings::fromStored($this->settings->json(MapSettings::SETTING)),
         ];
     }
 

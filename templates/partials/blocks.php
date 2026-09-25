@@ -113,6 +113,9 @@ $choix = static fn (Block $b, string $prop): string => $parmi(
       <div class="bloc-media-texte-texte"><?= richText($block->text('content')) ?></div>
     </div>
 
+  <?php elseif ($block->type === 'map') : ?>
+    <?= $partial('partials/carte', ['map' => $data['map'] ?? null, 'height' => $choix($block, 'height'), 'locale' => $locale]) ?>
+
   <?php elseif ($block->type === 'quote') : ?>
     <?php $auteur = $block->text('author'); ?>
     <?php $source = $block->text('source'); ?>
@@ -139,7 +142,7 @@ $choix = static fn (Block $b, string $prop): string => $parmi(
     <?php $nb = $parmi($block->text('count', '2'), ['2', '3', '4']); ?>
     <?php $gap = $parmi($block->text('gap', 'md'), ['sm', 'md', 'lg']); ?>
     <div class="bloc bloc-colonnes bloc-colonnes--<?= e($nb) ?> bloc-gap--<?= e($gap) ?> bloc-ratio--<?= e($choix($block, 'ratio')) ?>">
-      <?= $partial('partials/blocks', ['blocks' => $block->children, 'locale' => $locale, 'medias' => $medias]) ?>
+      <?= $partial('partials/blocks', ['blocks' => $block->children, 'locale' => $locale, 'medias' => $medias, 'map' => $data['map'] ?? null]) ?>
     </div>
 
   <?php elseif ($block->type === 'section') : ?>
@@ -149,7 +152,7 @@ $choix = static fn (Block $b, string $prop): string => $parmi(
     <section class="bloc bloc-section bloc-pad--<?= e($pad) ?> bloc-max--<?= e($largeur) ?> bloc-couleur--<?= e($choix($block, 'background')) ?> bloc-ton--<?= e($choix($block, 'tone')) ?> bloc-align--<?= e($choix($block, 'align')) ?> bloc-voile--<?= e($image instanceof Media ? $choix($block, 'overlay') : 'none') ?>">
       <?= $partial('partials/bloc-fond', ['media' => $image, 'locale' => $locale, 'label' => '']) ?>
       <div class="bloc-section-contenu">
-        <?= $partial('partials/blocks', ['blocks' => $block->children, 'locale' => $locale, 'medias' => $medias]) ?>
+        <?= $partial('partials/blocks', ['blocks' => $block->children, 'locale' => $locale, 'medias' => $medias, 'map' => $data['map'] ?? null]) ?>
       </div>
     </section>
   <?php endif; ?>

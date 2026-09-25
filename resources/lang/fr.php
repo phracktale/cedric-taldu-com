@@ -44,6 +44,10 @@ return [
     'env.preprod' => 'Préproduction — :env · contenus de démonstration',
 
     // Panier
+    'map.label' => 'Carte',
+    'map.show' => 'Afficher la carte',
+    'map.notice' => 'Fond de carte OpenStreetMap, chargé à la demande.',
+    'map.open' => 'Voir sur OpenStreetMap',
     'cart.title' => 'Votre panier',
     'cart.empty' => 'Votre panier est vide.',
     'cart.item' => 'Article',

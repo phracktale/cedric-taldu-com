@@ -42,6 +42,10 @@ return [
     'env.preprod' => 'Preproduction — :env · demo content',
 
     // Cart
+    'map.label' => 'Map',
+    'map.show' => 'Show the map',
+    'map.notice' => 'OpenStreetMap background, loaded on request.',
+    'map.open' => 'View on OpenStreetMap',
     'cart.title' => 'Your cart',
     'cart.empty' => 'Your cart is empty.',
     'cart.item' => 'Item',

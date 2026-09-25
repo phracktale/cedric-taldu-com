@@ -37,6 +37,7 @@ final class AdminMenu
             ['label' => 'Modules', 'items' => [
                 ['chemin' => '/admin/messages', 'libelle' => 'Messages'],
                 ['chemin' => '/admin/newsletter', 'libelle' => 'Newsletter'],
+                ['chemin' => '/admin/carte', 'libelle' => 'Carte interactive'],
             ]],
             ['label' => 'Paramètres', 'items' => [
                 ['chemin' => '/admin/apparence', 'libelle' => 'Apparence'],

@@ -26,6 +26,9 @@ final class SecurityHeaders implements MiddlewareInterface
 {
     public const NONCE_ATTRIBUTE = 'csp_nonce';
 
+    /** Serveur de tuiles de la carte interactive (OpenStreetMap). */
+    public const MAP_TILES = 'https://tile.openstreetmap.org';
+
     private const NONCE_BYTES = 16;
 
     private const PERMISSIONS_POLICY =
@@ -106,7 +109,8 @@ final class SecurityHeaders implements MiddlewareInterface
             "default-src 'self'",
             rtrim("script-src 'self' " . $scriptSource) . $mesure,
             rtrim("style-src 'self' " . $styleSource),
-            "img-src 'self' data:" . $mesure,
+            // Tuiles du bloc « Carte », chargées seulement au clic du visiteur.
+            "img-src 'self' data: " . self::MAP_TILES . $mesure,
             "font-src 'self'",
             "connect-src 'self'" . $mesure,
             // Le tunnel de paiement poste vers Stripe Checkout ; aucune autre

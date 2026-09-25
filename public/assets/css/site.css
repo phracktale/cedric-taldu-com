@@ -1021,3 +1021,16 @@ footer a:hover { text-decoration: underline; }
 
 /* Mode de livraison unique (retours du 2026-09-25) : pas de choix à faire. */
 .commande-mode-unique { display: flex; justify-content: space-between; gap: 1rem; margin: 0 0 1.4rem; }
+
+/* Carte interactive (retours du 2026-09-25) : la zone ne prend sa hauteur
+   qu'une fois la carte affichée, à la demande du visiteur. */
+.bloc-carte { margin: 2rem 0; }
+.bloc-carte-zone--active { width: 100%; border: 1px solid var(--filet); }
+.bloc-carte--small .bloc-carte-zone--active { height: 280px; }
+.bloc-carte--medium .bloc-carte-zone--active { height: 420px; }
+.bloc-carte--large .bloc-carte-zone--active { height: 600px; }
+.bloc-carte-action { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; margin: .8rem 0; }
+.bloc-carte-note { font-size: .85rem; color: var(--encre-40); }
+.bloc-carte-lieux { list-style: none; padding: 0; }
+.bloc-carte-lieux li { padding: .5rem 0; border-bottom: 1px solid var(--filet); }
+.bloc-carte-lieux a { margin-left: .5rem; font-size: .85rem; }

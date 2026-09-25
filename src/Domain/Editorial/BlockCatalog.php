@@ -89,6 +89,13 @@ final class BlockCatalog
                     'tone' => self::choice('Couleur du texte', self::TONS_TEXTE),
                 ],
             ],
+            'map' => [
+                // Réglée dans Modules › Carte interactive (retours du 2026-09-25).
+                'label' => 'Carte interactive', 'icon' => '⌖', 'category' => 'layout', 'allowChildren' => false,
+                'schema' => [
+                    'height' => self::choice('Hauteur', ['medium' => 'Moyenne', 'small' => 'Basse', 'large' => 'Haute']),
+                ],
+            ],
             'quote' => [
                 'label' => 'Citation', 'icon' => 'Q', 'category' => 'base', 'allowChildren' => false,
                 'schema' => [
