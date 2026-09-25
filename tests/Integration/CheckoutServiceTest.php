@@ -359,14 +359,26 @@ final class CheckoutServiceTest extends DatabaseTestCase
         $this->assertSame(CheckoutOutcome::ShippingOnRequest, $resultat->outcome);
     }
 
-    public function test_la_remise_en_main_propre_ignore_le_poids_et_ne_coute_rien(): void
+    public function test_un_original_ordinaire_ne_se_remet_pas_en_main_propre(): void
     {
-        // Panier d'originaux seuls : le retrait reste possible et gratuit, quel
-        // que soit le poids.
-        $this->pdo->exec("UPDATE artworks SET weight_grams = 40000 WHERE id = {$this->artwork}");
-
+        // Retours du 2026-09-25 : seuls les dessins rehaussés (et les œuvres hors
+        // gabarit, sur rendez-vous) ouvrent un choix de livraison. Le reste s'expédie.
         $resultat = $this->commanderPanier(
             [[LineKind::Original, $this->artwork, 1]],
+            $this->demande(mode: ShippingMethod::Pickup),
+        );
+
+        $this->assertSame(CheckoutOutcome::ShippingOnRequest, $resultat->outcome);
+    }
+
+    public function test_une_edition_rehaussee_ouvre_la_remise_en_main_propre_a_tout_le_panier(): void
+    {
+        // Un original ordinaire accompagnant une édition rehaussée voyage avec elle.
+        $this->pdo->exec("UPDATE artworks SET weight_grams = 40000 WHERE id = {$this->artwork}");
+        $variante = $this->creerEditionLimitee();
+
+        $resultat = $this->commanderPanier(
+            [[LineKind::Original, $this->artwork, 1], [LineKind::Reproduction, $variante, 1]],
             $this->demande(mode: ShippingMethod::Pickup),
         );
 
