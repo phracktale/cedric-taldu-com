@@ -37,7 +37,7 @@ final class MatomoTest extends FunctionalTestCase
         $csp = (string) $reponse->header('Content-Security-Policy');
         $this->assertMatchesRegularExpression("~script-src 'self' 'nonce-[^']+' https://stats\\.example\\.org~", $csp);
         $this->assertStringContainsString("connect-src 'self' https://stats.example.org", $csp);
-        $this->assertStringContainsString("img-src 'self' data: https://stats.example.org", $csp);
+        $this->assertStringContainsString("img-src 'self' data: https://tile.openstreetmap.org https://stats.example.org", $csp);
     }
 
     public function test_le_back_office_n_est_jamais_mesure(): void

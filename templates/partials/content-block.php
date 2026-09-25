@@ -18,6 +18,7 @@ $place = is_array($data['placed'] ?? null) ? $data['placed'] : null;
       'blocks' => $place['blocks'],
       'locale' => $data['locale'],
       'medias' => $place['medias'],
+      'map' => $data['map'] ?? null,
   ]) ?>
 </div>
 <?php endif; ?>

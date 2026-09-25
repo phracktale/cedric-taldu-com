@@ -35,6 +35,7 @@ $dateAffichee = $post->eventDate ?? $post->publishedAt;
       'blocks' => $post->blocks($locale),
       'locale' => $locale,
       'medias' => $data['blockMedias'] ?? [],
+      'map' => $data['map'] ?? null,
   ]) ?>
 </div>
 <?php endif; ?>

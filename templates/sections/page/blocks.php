@@ -31,6 +31,7 @@ $cover = $data['cover'] ?? null;
       'blocks' => $page->blocks($locale),
       'locale' => $locale,
       'medias' => $data['blockMedias'] ?? [],
+      'map' => $data['map'] ?? null,
   ]) ?>
 </div>
 <?php endif; ?>

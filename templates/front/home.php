@@ -90,7 +90,7 @@ $bag = [
   <?php $bloc = App\Domain\Editorial\ContentBlock::idFromKey($section); ?>
   <?php if ($bloc !== null) : ?>
     <?php // Bloc de la bibliothèque (retours du 2026-09-25). ?>
-    <?= $partial('partials/content-block', ['placed' => $data['contentBlocks'][$bloc] ?? null, 'locale' => $data['locale']]) ?>
+    <?= $partial('partials/content-block', ['placed' => $data['contentBlocks'][$bloc] ?? null, 'locale' => $data['locale'], 'map' => $data['map'] ?? null]) ?>
   <?php elseif (isset(HomeLayout::SECTIONS[$section])) : ?>
     <?= $partial('partials/home/' . $section, $bag) ?>
   <?php endif; ?>

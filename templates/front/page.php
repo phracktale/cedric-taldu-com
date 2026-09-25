@@ -24,7 +24,7 @@ $sections = is_array($data['sections'] ?? null) ? $data['sections'] : ContentTem
   <?php foreach ($sections as $section) : ?>
   <?php $bloc = ContentBlock::idFromKey($section); ?>
   <?php if ($bloc !== null) : ?>
-  <?= $partial('partials/content-block', ['placed' => $data['contentBlocks'][$bloc] ?? null, 'locale' => $data['locale']]) ?>
+  <?= $partial('partials/content-block', ['placed' => $data['contentBlocks'][$bloc] ?? null, 'locale' => $data['locale'], 'map' => $data['map'] ?? null]) ?>
   <?php else : ?>
   <?= $partial('sections/page/' . $section, $data) ?>
   <?php endif; ?>

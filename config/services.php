@@ -45,6 +45,7 @@ use App\Http\Controller\Admin\AppearanceController;
 use App\Http\Controller\Admin\DeliveryController;
 use App\Http\Controller\Admin\MenuController;
 use App\Http\Controller\Admin\GenerationController;
+use App\Http\Controller\Admin\MapController;
 use App\Http\Controller\Admin\ContentBlockController;
 use App\Repository\ContentBlockRepository;
 use App\Repository\Admin\ShippingAdminRepository;
@@ -1132,6 +1133,11 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(AdminChrome::class),
         $c->get(ContentBlockRepository::class),
         $c->get(BlockSanitizer::class),
+    ));
+    $container->set(MapController::class, static fn (Container $c): MapController => new MapController(
+        $c->get(AdminChrome::class),
+        $c->get(SettingRepository::class),
+        $c->get(SettingsAdminRepository::class),
     ));
     $container->set(EcoIndexController::class, static fn (Container $c): EcoIndexController => new EcoIndexController(
         $c->get(AdminChrome::class),

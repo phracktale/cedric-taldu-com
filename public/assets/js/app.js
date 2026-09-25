@@ -16,6 +16,7 @@ import { initZoom } from './zoom.js';
 import { initCart } from './cart.js';
 import { initCheckout } from './checkout.js';
 import { initEtat } from './etat.js';
+import { initCarte } from './carte.js';
 
 const base = document.body.dataset.base ?? '/';
 
@@ -25,3 +26,4 @@ initZoom();
 initCart();
 initCheckout();
 initEtat(base);
+initCarte();
