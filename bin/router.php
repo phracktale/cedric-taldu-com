@@ -88,7 +88,7 @@ $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $query = $_SERVER['QUERY_STRING'] ?? '';
 if (!$isStaticFile && in_array($method, ['GET', 'HEAD'], true) && $query === '') {
     try {
-        $page = $publicDir . '/static/' . App\Service\StaticSite\StaticPath::fileFor($relative);
+        $page = $publicDir . '/static/site/' . App\Service\StaticSite\StaticPath::fileFor($relative);
     } catch (InvalidArgumentException) {
         $page = null;
     }

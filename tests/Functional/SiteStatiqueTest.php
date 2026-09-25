@@ -83,7 +83,7 @@ final class SiteStatiqueTest extends FunctionalTestCase
 
         $this->assertStringContainsString('RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$', $htaccess);
         $this->assertStringContainsString('RewriteCond %{QUERY_STRING} ^$', $htaccess);
-        $this->assertStringContainsString('RewriteCond %{DOCUMENT_ROOT}/static/$1/index.html -f', $htaccess);
+        $this->assertStringContainsString('RewriteCond %{DOCUMENT_ROOT}/static/site/$1/index.html -f', $htaccess);
         // Le dossier n'est jamais servi en direct : seulement par réécriture.
         $this->assertStringContainsString('RewriteRule ^static/ - [F]', $htaccess);
     }

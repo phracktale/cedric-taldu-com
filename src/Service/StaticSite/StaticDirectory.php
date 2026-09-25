@@ -11,7 +11,7 @@ use RuntimeException;
 use SplFileInfo;
 
 /**
- * Dossier du site statique (`public/static` par défaut, `STATIC_DIR` sinon).
+ * Dossier du site statique (`public/static/site` par défaut, `STATIC_DIR` sinon).
  *
  * Une génération s'écrit dans un dossier de travail voisin, puis prend la
  * place de l'ancien par renommage : un visiteur ne voit jamais un site à

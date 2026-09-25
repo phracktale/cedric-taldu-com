@@ -1045,11 +1045,13 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
 
     // --- Génération statique (retours du 2026-09-25, point 7) -------------
     //
-    // Le site statique vit dans public/static (servi par la réécriture du
-    // .htaccess) ; STATIC_DIR le déplace, pour les tests notamment.
+    // Le site statique vit dans public/static/site (servi par la réécriture du
+    // .htaccess). public/static appartient au serveur web, comme public/media :
+    // le renommage atomique d'une génération s'y fait. STATIC_DIR le déplace,
+    // pour les tests notamment.
     $staticDir = $env->getOptional('STATIC_DIR', '') ?? '';
     $container->set(StaticDirectory::class, static fn (): StaticDirectory => new StaticDirectory(
-        $staticDir !== '' ? $staticDir : $rootPath . '/public/static',
+        $staticDir !== '' ? $staticDir : $rootPath . '/public/static/site',
     ));
     $container->set(GenerationStore::class, static fn (Container $c): GenerationStore => new GenerationStore(
         $c->get(SettingRepository::class),

@@ -152,7 +152,8 @@ php bin/cache-clear.php
 ```
 
 **Site statique** (retours du 2026-09-25, point 7) : les pages publiques sont générées
-dans `public/static/` (hors dépôt) et servies par la réécriture du `.htaccess` pour toute
+dans `public/static/site/` (hors dépôt ; `public/static/` appartient au serveur web,
+comme `public/media/`) et servies par la réécriture du `.htaccess` pour toute
 lecture sans chaîne de requête ; sinon PHP répond. Toute écriture aboutie en back-office,
 tout webhook Stripe et le tunnel **suppriment** le site statique (`StaticInvalidation`) :
 la page servie est toujours juste. Régénération par la barre du back-office (automatique
