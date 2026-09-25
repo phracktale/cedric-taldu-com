@@ -23,6 +23,7 @@ $jeton = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
 $paris = new DateTimeZone('Europe/Paris');
 $heure = static fn (string $iso, string $format): string => (new DateTimeImmutable($iso))->setTimezone($paris)->format($format);
 $secondes = static fn (int $ms): string => number_format($ms / 1000, 1, ',', ' ');
+$eco = $etat->averageEco();
 ?>
 <aside class="barre-generation" aria-label="Génération statique" data-generation<?php if ($etat->stale) : ?> data-stale<?php endif; ?>>
     <div class="barre-ligne">
@@ -33,6 +34,9 @@ $secondes = static fn (int $ms): string => number_format($ms / 1000, 1, ',', ' '
         <span class="barre-numero">Génération n° <?= e($etat->number) ?></span>
         <?php if ($etat->at !== null) : ?>
         <span class="barre-date">le <?= e($heure($etat->at, 'd/m/Y à H:i')) ?></span>
+        <?php endif; ?>
+        <?php if ($eco !== null) : ?>
+        <a class="barre-eco-lien" href="<?= attr($base . '/admin/ecoindex') ?>"><span class="barre-eco">EcoIndex moyen <?= e($eco['grade']) ?> (<?= e($eco['score']) ?>)</span></a>
         <?php endif; ?>
         <?php if ($etat->stale) : ?>
         <span class="barre-etat barre-etat--perime">Site statique périmé : servi par PHP jusqu’à la régénération</span>
@@ -56,7 +60,9 @@ $secondes = static fn (int $ms): string => number_format($ms / 1000, 1, ',', ' '
     $heure($ligne['at'], 'H:i:s.v'),
     $ligne['path'],
     $ligne['ms'],
-    $ligne['status'] === 200 ? '' : '  (' . $ligne['status'] . ', non écrite)',
+    $ligne['status'] !== 200
+        ? '  (' . $ligne['status'] . ', non écrite)'
+        : ($ligne['eco'] === null ? '' : '  EcoIndex ' . $ligne['eco']['grade'] . ' ' . $ligne['eco']['score']),
 )) ?>
 <?php endforeach; ?>
 <?= e('Total : ' . $etat->count . ' pages en ' . $secondes($etat->totalMs) . ' s') ?></pre>

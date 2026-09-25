@@ -507,3 +507,18 @@ body.admin { padding-bottom: 3.5rem; }
   background: #0d0e0f; color: #9fe39f; border-radius: 4px;
   font: .8rem/1.45 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre;
 }
+
+/* EcoIndex (retours du 2026-09-25, point 8) : couleurs des notes de GreenIT. */
+.eco-note {
+  display: inline-block; min-width: 1.6em; padding: .05rem .35rem; border-radius: 3px;
+  font-weight: 700; text-align: center; color: #fff;
+}
+.eco-note--a { background: #349a47; }
+.eco-note--b { background: #51b84b; }
+.eco-note--c { background: #cadb2a; color: #222; }
+.eco-note--d { background: #f6eb14; color: #222; }
+.eco-note--e { background: #fecd06; color: #222; }
+.eco-note--f { background: #f99839; color: #222; }
+.eco-note--g { background: #ed2124; }
+.barre-eco-lien { color: inherit; }
+.tableau-defilant { overflow-x: auto; }

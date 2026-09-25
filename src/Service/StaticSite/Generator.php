@@ -17,7 +17,7 @@ use Closure;
  * l'attribut `static_render` : le gabarit n'y met ni jeton CSRF ni pastille de
  * panier (etat.js les complète chez le visiteur), et le nonce est retiré. Le
  * `.htaccess` du dossier porte les en-têtes de sécurité, la CSP autorisant le
- * style en ligne par empreinte.
+ * style en ligne par empreinte. Chaque page écrite est notée EcoIndex.
  *
  * Le résultat n'est publié que si aucune invalidation n'est survenue pendant
  * le rendu : une page rendue avant une vente ne remplace jamais la page à jour.
@@ -37,6 +37,7 @@ final class Generator
         private readonly GenerationStore $store,
         private readonly SecurityHeaders $headers,
         private readonly ClockInterface $clock,
+        private readonly PageAnalyzer $analyzer,
     ) {
     }
 
@@ -71,6 +72,7 @@ final class Generator
             $estPage = $reponse->status === 200
                 && str_starts_with($reponse->header('Content-Type') ?? '', 'text/html');
 
+            $eco = null;
             if ($estPage) {
                 $html = (string) preg_replace('/ nonce="[^"]*"/', '', $reponse->body);
                 foreach (self::inlineStyles($html) as $style) {
@@ -78,6 +80,19 @@ final class Generator
                 }
                 $this->directory->write($travail, StaticPath::fileFor($chemin), $html);
                 $pages++;
+
+                // EcoIndex de la page telle qu'elle sera servie (point 8).
+                $mesure = $this->analyzer->measure($html, $origin->basePath);
+                $indice = $mesure->ecoIndex();
+                $eco = [
+                    'score' => (int) round($indice->score),
+                    'grade' => $indice->grade,
+                    'dom' => $mesure->dom,
+                    'requests' => $mesure->requests,
+                    'kb' => round($mesure->kilobytes(), 1),
+                    'ges' => round($indice->gesGrams, 2),
+                    'water' => round($indice->waterCl, 2),
+                ];
             }
 
             $journal[] = [
@@ -85,6 +100,7 @@ final class Generator
                 'path' => $origin->basePath . $chemin,
                 'ms' => intdiv(hrtime(true) - $t0, 1_000_000),
                 'status' => $reponse->status,
+                'eco' => $eco,
             ];
         }
 

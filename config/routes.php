@@ -32,6 +32,7 @@ use App\Http\Controller\Admin\BillingController;
 use App\Http\Controller\Admin\DeliveryController;
 use App\Http\Controller\Admin\MenuController;
 use App\Http\Controller\Admin\GenerationController;
+use App\Http\Controller\Admin\EcoIndexController;
 use App\Http\Controller\Admin\TemplateController;
 use App\Http\Controller\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controller\Front\NewsletterController;
@@ -292,6 +293,7 @@ return [
     new Route('admin.menu.edit', 'GET', '/admin/menu', [MenuController::class, 'edit']),
     new Route('admin.menu.update', 'POST', '/admin/menu', [MenuController::class, 'update']),
     new Route('admin.generation', 'POST', '/admin/generation', [GenerationController::class, 'generate']),
+    new Route('admin.ecoindex', 'GET', '/admin/ecoindex', [EcoIndexController::class, 'show']),
     new Route('admin.templates.edit', 'GET', '/admin/templates', [TemplateController::class, 'edit']),
     new Route('admin.templates.update', 'POST', '/admin/templates', [TemplateController::class, 'update']),
 
