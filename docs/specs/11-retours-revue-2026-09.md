@@ -137,3 +137,18 @@ Heimdall, certificat) — en attente de validation.
 - **Données de l'artiste** : poids des œuvres et taille maximale d'un colis, pour
   paramétrer le hors-gabarit et les tranches de poids.
 - **Contrat Colissimo** : identifiants à poser dans `.env` quand ils existeront.
+
+---
+
+# Retours du 2026-09-25
+
+| # | Retour | Décision | Branche |
+| --- | --- | --- | --- |
+| 1 | En-tête : logo, compte, panier, langues sur une ligne ; menu dessous | — | ✅ `bugfix/entete-galeries` |
+| 2 | Back-office : « Galeries » et non « Rubriques » | URL `/admin/galeries`, ancienne redirigée | ✅ `bugfix/entete-galeries` |
+| 6 | Livraison à renseigner seulement pour hors gabarit ou dessin rehaussé | Autres produits : expédition directe, adresse seule, sans choix de mode | `feature/livraison-selon-produit` |
+| 3 | Menus principal et pied de page à la WordPress : pages, galeries, liens directs glissés-déposés, ordre par position | Composant glisser-déposer commun | `feature/menus-glisser-deposer` |
+| 4 | Accueil : sections disponibles à glisser dans la page | Même composant | `feature/accueil-glisser-deposer` |
+| 5 | Modèles de page, d'actu, de galerie, de contact… | Un modèle par type, composé par glisser-déposer | `feature/modeles-de-contenu` |
+| 7 | Barre fixe en back-office : pages statiques générées, n° de génération, date, journal page à page | Construire une vraie génération statique (CSP par empreintes, jeton et panier chargés en JS) | `feature/generation-statique` |
+| 8 | Évaluation EcoIndex | Calcul intégré (formule GreenIT : DOM, requêtes, poids) | `feature/ecoindex` |
