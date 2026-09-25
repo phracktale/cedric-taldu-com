@@ -103,6 +103,7 @@ final class BlogController
         return Response::html($this->view->render('front/blog-article', [
             ...$chrome,
             'metaTitle' => $post->title($locale),
+            'sections' => $this->chrome->template('post'),
             'post' => $post,
             'cover' => $cover,
             'blockMedias' => $this->medias->findByIds(Block::mediaIdsIn($post->blocks($locale))),

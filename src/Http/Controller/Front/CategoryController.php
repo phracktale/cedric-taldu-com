@@ -82,6 +82,7 @@ final class CategoryController
         $data = [
             ...$this->chrome->base($request, $locale),
             'metaTitle' => $category->metaTitle($locale),
+            'sections' => $this->chrome->template('category'),
             'metaDescription' => self::plainText($category->description($locale)),
             // 05-i18n-seo §6 : le canonique d'une page filtree pointe vers la
             // page nue — un filtre n'est pas une page a indexer.

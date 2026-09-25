@@ -9,6 +9,7 @@ use App\Core\Config;
 use App\Core\CookieFactory;
 use App\Core\Csrf;
 use App\Core\Request;
+use App\Domain\Editorial\ContentTemplate;
 use App\Domain\Editorial\HomeSectionForm;
 use App\Domain\Editorial\NavMenu;
 use App\Domain\Editorial\Theme;
@@ -125,6 +126,18 @@ final class Chrome
             'themeCss' => $this->themeCss(),
             'metaDescription' => null,
         ];
+    }
+
+    /**
+     * Sections d'un type de contenu, dans l'ordre du modèle composé en
+     * back-office (retours du 2026-09-25). Chaque clef désigne un partiel
+     * `sections/{type}/{clef}` : seule une clef de la liste fermée y parvient.
+     *
+     * @return list<string>
+     */
+    public function template(string $type): array
+    {
+        return ContentTemplate::fromStored($type, $this->settings->json(ContentTemplate::settingKey($type)))->sections();
     }
 
     /**

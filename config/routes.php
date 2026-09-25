@@ -31,6 +31,7 @@ use App\Http\Controller\Admin\AppearanceController;
 use App\Http\Controller\Admin\BillingController;
 use App\Http\Controller\Admin\DeliveryController;
 use App\Http\Controller\Admin\MenuController;
+use App\Http\Controller\Admin\TemplateController;
 use App\Http\Controller\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controller\Front\NewsletterController;
 use App\Http\Controller\Front\AccountController as CustomerAccountController;
@@ -280,6 +281,8 @@ return [
     new Route('admin.newsletter.unsubscribe', 'POST', '/admin/newsletter/desinscription', [AdminNewsletterController::class, 'unsubscribe']),
     new Route('admin.menu.edit', 'GET', '/admin/menu', [MenuController::class, 'edit']),
     new Route('admin.menu.update', 'POST', '/admin/menu', [MenuController::class, 'update']),
+    new Route('admin.templates.edit', 'GET', '/admin/templates', [TemplateController::class, 'edit']),
+    new Route('admin.templates.update', 'POST', '/admin/templates', [TemplateController::class, 'update']),
 
     new Route('admin.page.index', 'GET', '/admin/pages', [AdminPageController::class, 'index']),
     new Route('admin.page.edit', 'GET', '/admin/pages/{id}', [AdminPageController::class, 'edit'], requirements: $id),

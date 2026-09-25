@@ -40,6 +40,7 @@ final class AdminMenu
             ['label' => 'Paramètres', 'items' => [
                 ['chemin' => '/admin/apparence', 'libelle' => 'Apparence'],
                 ['chemin' => '/admin/menu', 'libelle' => 'Menu'],
+                ['chemin' => '/admin/templates', 'libelle' => 'Templates'],
             ]],
         ];
     }

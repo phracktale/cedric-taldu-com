@@ -479,6 +479,9 @@ legend {
 .composer-libelles label { display: inline-flex; flex-direction: column; margin: .3rem 1rem 0 0; }
 .composer-actions { display: inline-flex; gap: .25rem; }
 .composer-editer { font-size: .85rem; }
+.composer-obligatoire { font-size: .75rem; padding: .1rem .45rem; border-radius: 999px; background: #eee; color: #555; }
+.composer-type { border: 1px solid #ddd; border-radius: 6px; padding: 1rem; margin: 0 0 1.5rem; }
+.composer-type > legend { font-weight: 600; padding: 0 .4rem; }
 @media (max-width: 800px) {
   .composer { grid-template-columns: 1fr; }
   .composer-palette { position: static; max-height: none; }
