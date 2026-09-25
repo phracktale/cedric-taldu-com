@@ -49,6 +49,12 @@ $lien = static function (string $u) use ($url): string {
 
 /** Alignement du bouton : valeur du catalogue → classe CTA du site. */
 $alignements = ['center' => 'centre', 'left' => 'gauche', 'right' => 'droite'];
+
+/** Prop de design ramenée aux options du catalogue (la première est le défaut). */
+$choix = static fn (Block $b, string $prop): string => $parmi(
+    $b->text($prop),
+    App\Domain\Editorial\BlockCatalog::definition($b->type)['schema'][$prop]['options'] ?? [''],
+);
 ?>
 <?php foreach ($blocks as $block) : ?>
   <?php if ($block->type === 'text') : ?>
@@ -78,6 +84,35 @@ $alignements = ['center' => 'centre', 'left' => 'gauche', 'right' => 'droite'];
     </figure>
     <?php endif; ?>
 
+  <?php elseif ($block->type === 'hero') : ?>
+    <?php $image = $medias[(int) $block->text('media')] ?? null; ?>
+    <?php $niveau = $choix($block, 'titleLevel'); ?>
+    <section class="bloc bloc-hero bloc-hero--<?= e($choix($block, 'height')) ?> bloc-align--<?= e($choix($block, 'align')) ?> bloc-ton--<?= e($choix($block, 'tone')) ?> bloc-voile--<?= e($image instanceof Media ? $choix($block, 'overlay') : 'none') ?>">
+      <?= $partial('partials/bloc-fond', ['media' => $image, 'locale' => $locale, 'label' => $block->text('title')]) ?>
+      <div class="bloc-hero-contenu">
+        <?php if ($block->text('title') !== '') : ?>
+        <h<?= e($niveau) ?> class="bloc-hero-titre"><?= e($block->text('title')) ?></h<?= e($niveau) ?>>
+        <?php endif; ?>
+        <?php if ($block->text('text') !== '') : ?>
+        <div class="bloc-hero-texte"><?= richText($block->text('text')) ?></div>
+        <?php endif; ?>
+        <?php if ($block->text('buttonLabel') !== '') : ?>
+        <p class="bloc-hero-action"><a class="btn btn-plein" href="<?= attr($lien($block->text('buttonUrl'))) ?>"><?= e($block->text('buttonLabel')) ?></a></p>
+        <?php endif; ?>
+      </div>
+    </section>
+
+  <?php elseif ($block->type === 'media-text') : ?>
+    <?php $image = $medias[(int) $block->text('media')] ?? null; ?>
+    <div class="bloc bloc-media-texte bloc-media-texte--<?= e($choix($block, 'position')) ?> bloc-ratio--<?= e($choix($block, 'ratio')) ?>">
+      <?php if ($image instanceof Media) : ?>
+      <figure class="bloc-media-texte-image">
+        <?= $partial('partials/picture', ['media' => $image, 'locale' => $locale, 'sizes' => '(max-width: 700px) 100vw, 50vw']) ?>
+      </figure>
+      <?php endif; ?>
+      <div class="bloc-media-texte-texte"><?= richText($block->text('content')) ?></div>
+    </div>
+
   <?php elseif ($block->type === 'quote') : ?>
     <?php $auteur = $block->text('author'); ?>
     <?php $source = $block->text('source'); ?>
@@ -103,15 +138,19 @@ $alignements = ['center' => 'centre', 'left' => 'gauche', 'right' => 'droite'];
   <?php elseif ($block->type === 'columns') : ?>
     <?php $nb = $parmi($block->text('count', '2'), ['2', '3', '4']); ?>
     <?php $gap = $parmi($block->text('gap', 'md'), ['sm', 'md', 'lg']); ?>
-    <div class="bloc bloc-colonnes bloc-colonnes--<?= e($nb) ?> bloc-gap--<?= e($gap) ?>">
+    <div class="bloc bloc-colonnes bloc-colonnes--<?= e($nb) ?> bloc-gap--<?= e($gap) ?> bloc-ratio--<?= e($choix($block, 'ratio')) ?>">
       <?= $partial('partials/blocks', ['blocks' => $block->children, 'locale' => $locale, 'medias' => $medias]) ?>
     </div>
 
   <?php elseif ($block->type === 'section') : ?>
     <?php $pad = $parmi($block->text('padding', 'md'), ['none', 'sm', 'md', 'lg', 'xl']); ?>
     <?php $largeur = $parmi($block->text('maxWidth', 'prose'), ['prose', 'content', 'wide', 'full']); ?>
-    <section class="bloc bloc-section bloc-pad--<?= e($pad) ?> bloc-max--<?= e($largeur) ?>">
-      <?= $partial('partials/blocks', ['blocks' => $block->children, 'locale' => $locale, 'medias' => $medias]) ?>
+    <?php $image = $medias[(int) $block->text('backgroundMedia')] ?? null; ?>
+    <section class="bloc bloc-section bloc-pad--<?= e($pad) ?> bloc-max--<?= e($largeur) ?> bloc-couleur--<?= e($choix($block, 'background')) ?> bloc-ton--<?= e($choix($block, 'tone')) ?> bloc-align--<?= e($choix($block, 'align')) ?> bloc-voile--<?= e($image instanceof Media ? $choix($block, 'overlay') : 'none') ?>">
+      <?= $partial('partials/bloc-fond', ['media' => $image, 'locale' => $locale, 'label' => '']) ?>
+      <div class="bloc-section-contenu">
+        <?= $partial('partials/blocks', ['blocks' => $block->children, 'locale' => $locale, 'medias' => $medias]) ?>
+      </div>
     </section>
   <?php endif; ?>
   <?php // Un type inconnu ne correspond à aucune branche : ignoré silencieusement. ?>

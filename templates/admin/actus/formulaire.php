@@ -108,6 +108,7 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
                         <textarea id="blocs_<?= attr($langue) ?>" name="blocs_<?= attr($langue) ?>" rows="6"
                                   data-block-editor
                                   data-catalog="<?= jsonAttr(BlockCatalog::all()) ?>"
+                                  data-presets="<?= jsonAttr(BlockCatalog::presets()) ?>"
                                   data-media-picker="<?= attr($base) ?>/admin/medias/choix"><?= e($valeur('blocs', $langue, 'blocks')) ?></textarea>
                         <span class="champ-aide">
                             Titres, images de la médiathèque, citations, boutons, colonnes… affichés sous le corps.
