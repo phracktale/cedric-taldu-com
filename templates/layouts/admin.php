@@ -29,22 +29,9 @@ $chemin = is_string($data['chemin'] ?? null) ? $data['chemin'] : '';
 
 $utilisateur = ($data['utilisateur'] ?? null) instanceof AdminUser ? $data['utilisateur'] : null;
 
-/** @var list<array{chemin: string, libelle: string}> $entrees */
-$entrees = $utilisateur === null ? [] : [
-    ['chemin' => '/admin', 'libelle' => 'Tableau de bord'],
-    ['chemin' => '/admin/accueil', 'libelle' => 'Accueil'],
-    ['chemin' => '/admin/apparence', 'libelle' => 'Apparence'],
-    ['chemin' => '/admin/menu', 'libelle' => 'Menu'],
-    ['chemin' => '/admin/livraison', 'libelle' => 'Livraison'],
-    ['chemin' => '/admin/facturation', 'libelle' => 'Facturation'],
-    ['chemin' => '/admin/galeries', 'libelle' => 'Galeries'],
-    ['chemin' => '/admin/oeuvres', 'libelle' => 'Œuvres'],
-    ['chemin' => '/admin/actus', 'libelle' => 'Actus'],
-    ['chemin' => '/admin/pages', 'libelle' => 'Pages'],
-    ['chemin' => '/admin/medias', 'libelle' => 'Médiathèque'],
-    ['chemin' => '/admin/messages', 'libelle' => 'Messages'],
-    ['chemin' => '/admin/newsletter', 'libelle' => 'Newsletter'],
-];
+// Menu en rubriques (retours du 2026-09-25) : source unique dans AdminMenu.
+$groupes = $utilisateur === null ? [] : App\Service\View\AdminMenu::groups();
+$groupeCourant = App\Service\View\AdminMenu::groupOf($chemin);
 
 ?>
 <!DOCTYPE html>
@@ -69,12 +56,25 @@ $entrees = $utilisateur === null ? [] : [
 
     <?php if ($utilisateur !== null) : ?>
     <nav class="admin-nav" aria-label="Sections">
-        <ul>
-        <?php foreach ($entrees as $entree) : ?>
+        <ul class="admin-groupes">
+        <?php foreach ($groupes as $groupe) : ?>
             <li>
-                <a href="<?= attr($base . $entree['chemin']) ?>"
-                   <?php if ($chemin === $entree['chemin']) : ?>aria-current="page"<?php endif; ?>
-                ><?= e($entree['libelle']) ?></a>
+                <details class="admin-groupe"<?php if ($groupe['label'] === $groupeCourant) : ?> open<?php endif; ?>>
+                    <summary><?= e($groupe['label']) ?></summary>
+                    <ul>
+                    <?php foreach ($groupe['items'] as $entree) : ?>
+                        <?php if ($entree === null) : ?>
+                        <li class="admin-separateur" role="separator"></li>
+                        <?php else : ?>
+                        <li>
+                            <a href="<?= attr($base . $entree['chemin']) ?>"
+                               <?php if (App\Service\View\AdminMenu::isCurrent($chemin, $entree['chemin'])) : ?>aria-current="page"<?php endif; ?>
+                            ><?= e($entree['libelle']) ?></a>
+                        </li>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                    </ul>
+                </details>
             </li>
         <?php endforeach; ?>
         </ul>

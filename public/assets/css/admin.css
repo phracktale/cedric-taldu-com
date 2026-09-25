@@ -435,3 +435,22 @@ legend {
 
 /* Corps de message tel que saisi (retours à la ligne conservés). */
 .message-corps--brut { white-space: pre-wrap; }
+
+/* Menu en rubriques déroulantes (retours du 2026-09-25). Sans JavaScript,
+   <details> suffit à ouvrir et fermer ; admin.js ferme les autres rubriques. */
+.admin-groupes { display: flex; flex-wrap: wrap; gap: 1.6rem; list-style: none; margin: 0; padding: 0; }
+.admin-groupe { position: relative; }
+.admin-groupe > summary { cursor: pointer; font-size: .95rem; list-style: none; padding-bottom: .2rem; }
+.admin-groupe > summary::-webkit-details-marker { display: none; }
+.admin-groupe > summary::after { content: ' ▾'; font-size: .75rem; }
+.admin-groupe[open] > summary { border-bottom: 2px solid var(--encre); }
+.admin-groupe > ul {
+  position: absolute; top: calc(100% + .4rem); left: 0; z-index: 20; min-width: 13rem;
+  display: flex; flex-direction: column; gap: 0; list-style: none; margin: 0; padding: .4rem 0;
+  background: var(--papier); border: 1px solid var(--filet); box-shadow: 0 8px 24px -12px rgba(22, 21, 19, .3);
+}
+.admin-groupe > ul a { display: block; padding: .45rem 1rem; }
+.admin-separateur { height: 1px; margin: .35rem 1rem; background: var(--filet); }
+@media (max-width: 700px) {
+  .admin-groupe > ul { position: static; box-shadow: none; }
+}

@@ -14,6 +14,7 @@
  */
 
 import { monterEditeursDeBlocs } from './block-editor.js';
+import { monterMenuAdmin } from './admin-menu.js';
 
 /* ------------------------------------------------------------- onglets FR/EN */
 
@@ -247,6 +248,7 @@ document.querySelectorAll('form[data-surveiller]').forEach(surveillerLesModifica
 confirmerLesSuppressions(document);
 document.querySelectorAll('[data-cropper]').forEach(activerRecadrage);
 monterEditeursDeBlocs(document);
+monterMenuAdmin(document);
 
 document.querySelectorAll('[data-slug-depuis]').forEach((slug) => {
   const titre = document.getElementById(slug.dataset.slugDepuis);
