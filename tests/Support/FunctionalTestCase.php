@@ -65,6 +65,34 @@ abstract class FunctionalTestCase extends TestCase
         if ($this->pdo->inTransaction()) {
             $this->pdo->rollBack();
         }
+
+        self::supprimerDossier($this->dossierStatique());
+    }
+
+    /**
+     * Dossier du site statique pour ce processus de test : jamais public/static,
+     * qu'une invalidation déclenchée par un test viderait sinon.
+     */
+    protected function dossierStatique(): string
+    {
+        return sys_get_temp_dir() . '/ct-statique-test-' . getmypid();
+    }
+
+    private static function supprimerDossier(string $dossier): void
+    {
+        if (!is_dir($dossier)) {
+            return;
+        }
+
+        $elements = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($dossier, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST,
+        );
+        foreach ($elements as $element) {
+            /** @var \SplFileInfo $element */
+            $element->isDir() ? rmdir($element->getPathname()) : unlink($element->getPathname());
+        }
+        rmdir($dossier);
     }
 
     /**
@@ -122,6 +150,7 @@ abstract class FunctionalTestCase extends TestCase
             'APP_LOCALES' => 'fr,en',
             'TRUSTED_PROXIES' => '',
             'SECURITY_PEPPER' => str_repeat('a', 64),
+            'STATIC_DIR' => $this->dossierStatique(),
             ...$this->env,
         ]);
     }
