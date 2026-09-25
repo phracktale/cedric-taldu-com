@@ -162,6 +162,7 @@ use App\Service\Shipping\ColissimoCarrier;
 use App\Service\Shipping\Geocoder;
 use App\Service\View\Chrome;
 use App\Service\View\CtaLinker;
+use App\Service\View\MenuRenderer;
 
 return static function (Config $config, Request $request, string $rootPath, ?Env $env = null): Container {
     // La connexion se construit depuis l'environnement, comme le reste. Le
@@ -544,6 +545,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(CartRepository::class),
         $c->get(PostRepository::class),
         $c->get(SettingRepository::class),
+        new MenuRenderer($c->get(UrlGenerator::class), $c->get(Translator::class)),
         $matomo,
     ));
 
@@ -806,6 +808,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(AdminChrome::class),
         $c->get(SettingRepository::class),
         $c->get(SettingsAdminRepository::class),
+        $c->get(CategoryRepository::class),
     ));
 
     $container->set(AppearanceController::class, static fn (Container $c): AppearanceController => new AppearanceController(

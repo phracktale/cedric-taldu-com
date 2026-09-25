@@ -15,6 +15,7 @@
 
 import { monterEditeursDeBlocs } from './block-editor.js';
 import { monterMenuAdmin } from './admin-menu.js';
+import { monterCompositeurs } from './composer.js';
 
 /* ------------------------------------------------------------- onglets FR/EN */
 
@@ -249,6 +250,7 @@ confirmerLesSuppressions(document);
 document.querySelectorAll('[data-cropper]').forEach(activerRecadrage);
 monterEditeursDeBlocs(document);
 monterMenuAdmin(document);
+monterCompositeurs(document);
 
 document.querySelectorAll('[data-slug-depuis]').forEach((slug) => {
   const titre = document.getElementById(slug.dataset.slugDepuis);
