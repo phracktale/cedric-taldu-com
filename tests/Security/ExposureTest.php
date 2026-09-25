@@ -66,7 +66,9 @@ final class ExposureTest extends FunctionalTestCase
     public function test_public_ne_contient_que_ce_qui_doit_etre_servi(): void
     {
         // Un fichier depose par erreur dans public/ y reste servi indefiniment.
-        $attendus = ['.', '..', '.htaccess', 'index.php', 'robots.txt', 'assets', 'media'];
+        // static : site statique généré (2026-09-25), jamais servi en direct —
+        // public/.htaccess le refuse hors réécriture (SiteStatiqueTest).
+        $attendus = ['.', '..', '.htaccess', 'index.php', 'robots.txt', 'assets', 'media', 'static'];
 
         $trouves = scandir(self::racine() . '/public') ?: [];
 
