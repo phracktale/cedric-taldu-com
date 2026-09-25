@@ -454,3 +454,32 @@ legend {
 @media (max-width: 700px) {
   .admin-groupe > ul { position: static; box-shadow: none; }
 }
+
+/* ------------------------------------------ compositeur glisser-déposer (2026-09) */
+
+.composer { display: grid; grid-template-columns: minmax(14rem, 18rem) 1fr; gap: 2rem; align-items: start; }
+.composer-palette { border: 1px solid var(--filet); padding: 1rem; position: sticky; top: 1rem; max-height: calc(100vh - 2rem); overflow-y: auto; }
+.composer-palette h2 { font-size: 1rem; margin: 0 0 .8rem; }
+.composer-palette h3 { font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; margin: 1.2rem 0 .5rem; color: var(--encre-70); }
+.composer-palette ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .35rem; }
+.composer-source { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .4rem .6rem; border: 1px dashed var(--filet); cursor: grab; background: var(--papier); }
+.composer-source--prise { opacity: .45; cursor: default; }
+.composer-lien { display: flex; flex-direction: column; gap: .5rem; }
+.composer-lien label { display: flex; flex-direction: column; font-size: .85rem; }
+.composer-zones { display: flex; flex-direction: column; gap: 2rem; }
+.composer-bloc h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
+.composer-zone { list-style: none; margin: 0; padding: .6rem; min-height: 4rem; border: 2px dashed var(--filet); display: flex; flex-direction: column; gap: .4rem; }
+.composer-zone--survol { border-color: var(--encre); background: rgba(22, 21, 19, .03); }
+.composer-zone--vide::before { content: 'Glissez des éléments ici'; color: var(--encre-40); font-size: .9rem; padding: .6rem; }
+.composer-entree { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; padding: .5rem .7rem; border: 1px solid var(--filet); background: var(--papier); cursor: grab; }
+.composer-entree--glisse { opacity: .5; }
+.composer-poignee { color: var(--encre-40); font-size: 1.1rem; }
+.composer-nom { flex: 1 1 auto; font-weight: 500; }
+.composer-libelles { flex-basis: 100%; font-size: .85rem; }
+.composer-libelles label { display: inline-flex; flex-direction: column; margin: .3rem 1rem 0 0; }
+.composer-actions { display: inline-flex; gap: .25rem; }
+.composer-editer { font-size: .85rem; }
+@media (max-width: 800px) {
+  .composer { grid-template-columns: 1fr; }
+  .composer-palette { position: static; max-height: none; }
+}

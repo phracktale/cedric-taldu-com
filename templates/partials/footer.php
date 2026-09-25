@@ -25,20 +25,17 @@ $annee = is_string($data['year'] ?? null) ? $data['year'] : '2026';
 
 ?>
 <?php
-$liensLegaux = [
-    ['route' => 'page.legal', 'cle' => 'footer.legal'],
-    ['route' => 'page.privacy', 'cle' => 'footer.privacy'],
-    ['route' => 'page.terms', 'cle' => 'footer.terms'],
-    ['route' => 'contact.form', 'cle' => 'footer.contact'],
-];
+// Menu du pied de page composé par glisser-déposer (retours du 2026-09-25).
+/** @var list<array{href: string, label: string}> $liensPied */
+$liensPied = is_array($data['footerItems'] ?? null) ? $data['footerItems'] : [];
 ?>
 <footer>
   <div class="foot">
     <p>© 2025–<?= e($annee) ?> Cédric Taldu — <?= $t('footer.role') ?></p>
 
     <nav class="foot-legal" aria-label="<?= $t('footer.legal_label') ?>">
-      <?php foreach ($liensLegaux as $lien) : ?>
-        <a href="<?= attr($url->route($lien['route'], ['locale' => $locale->value])) ?>"><?= $t($lien['cle']) ?></a>
+      <?php foreach ($liensPied as $lien) : ?>
+        <a href="<?= attr($lien['href']) ?>"><?= e($lien['label']) ?></a>
       <?php endforeach; ?>
     </nav>
 

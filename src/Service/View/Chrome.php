@@ -10,7 +10,7 @@ use App\Core\CookieFactory;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Domain\Editorial\HomeSectionForm;
-use App\Domain\Editorial\MainMenu;
+use App\Domain\Editorial\NavMenu;
 use App\Domain\Editorial\Theme;
 use App\Domain\Locale;
 use App\Service\Analytics\MatomoConfig;
@@ -65,6 +65,7 @@ final class Chrome
         private readonly CartRepository $carts,
         private readonly PostRepository $posts,
         private readonly SettingRepository $settings,
+        private readonly MenuRenderer $menus,
         private readonly ?MatomoConfig $matomo = null,
     ) {
     }
@@ -74,16 +75,20 @@ final class Chrome
      */
     public function base(Request $request, Locale $locale): array
     {
+        $categories = $this->categories->findPublished();
+        // L'entrée « Actus » du menu disparaît tant qu'aucun article n'est
+        // publié : un lien vers une page vide donne un site inachevé.
+        $hasNews = $this->posts->countPublished($this->clock->now()) > 0;
+        $ids = array_map(static fn ($c): int => $c->id, $categories);
+
         return [
             'locale' => $locale,
             'nonce' => $request->attribute(SecurityHeaders::NONCE_ATTRIBUTE) ?? '',
             'basePath' => $request->basePath,
             'env' => $this->config->env,
             'isProduction' => $this->config->isProduction(),
-            'menuCategories' => $this->categories->findPublished(),
-            // L'entrée « Actus » du menu disparaît tant qu'aucun article n'est
-            // publié : un lien vers une page vide donne un site inachevé.
-            'hasNews' => $this->posts->countPublished($this->clock->now()) > 0,
+            'menuCategories' => $categories,
+            'hasNews' => $hasNews,
             // Pastille du panier dans l'en-tete : lecture seule, sans jamais
             // creer de panier (voir CartRepository::countByToken).
             'cartCount' => $this->carts->countByToken($request->cookie(self::CART_COOKIE)),
@@ -102,8 +107,19 @@ final class Chrome
             // Entrée de menu active, déduite de la route, et son style (réglage).
             'currentSection' => self::SECTIONS[$request->attribute('route') ?? ''] ?? null,
             'navActiveStyle' => $this->activeStyle(),
-            // Menu principal composé en back-office (ordre, affichage, libellés).
-            'menuItems' => MainMenu::fromStored($this->settings->json(MainMenu::SETTING))->enabledItems(),
+            // Menus composés par glisser-déposer en back-office (retours du 2026-09-25).
+            'menuItems' => $this->menus->resolve(
+                NavMenu::fromStored($this->settings->json(NavMenu::MAIN_SETTING), NavMenu::defaultMain(), $ids),
+                $locale,
+                $categories,
+                $hasNews,
+            ),
+            'footerItems' => $this->menus->resolve(
+                NavMenu::fromStored($this->settings->json(NavMenu::FOOTER_SETTING), NavMenu::defaultFooter(), $ids),
+                $locale,
+                $categories,
+                $hasNews,
+            ),
             // Variables de thème choisies en back-office, servies dans un <style>
             // à nonce (la CSP interdit les attributs style). Couleur #rrggbb seule.
             'themeCss' => $this->themeCss(),

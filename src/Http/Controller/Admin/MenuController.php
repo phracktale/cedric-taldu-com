@@ -7,18 +7,20 @@ namespace App\Http\Controller\Admin;
 use App\Core\RedirectResponse;
 use App\Core\Request;
 use App\Core\Response;
-use App\Domain\Editorial\MainMenu;
+use App\Domain\Editorial\NavMenu;
 use App\Domain\Locale;
 use App\Repository\Admin\SettingsAdminRepository;
+use App\Repository\CategoryRepository;
 use App\Repository\SettingRepository;
 use App\Service\View\AdminChrome;
 
 /**
- * Générateur du menu principal (revue du 2026-09-24).
+ * Menus du site composés par glisser-déposer (retours du 2026-09-25).
  *
- * Même principe que la disposition de l'accueil : une position et une case par
- * rubrique fixe, plus un libellé facultatif par langue. Champs SCALAIRES à plat
- * (Core\Request ne lit pas les tableaux).
+ * Palette : pages à code fixe, rubriques du site, galeries, lien direct. Deux
+ * zones : menu principal et menu du pied de page. Chaque zone poste sa
+ * composition en JSON (champ caché tenu à jour par composer.js) ; NavMenu la
+ * valide entrée par entrée.
  */
 final class MenuController
 {
@@ -26,39 +28,61 @@ final class MenuController
         private readonly AdminChrome $chrome,
         private readonly SettingRepository $settings,
         private readonly SettingsAdminRepository $save,
+        private readonly CategoryRepository $categories,
     ) {
     }
 
     public function edit(Request $request): Response
     {
+        $galeries = [];
+        foreach ($this->categories->findPublished() as $categorie) {
+            $galeries[$categorie->id] = $categorie->title(Locale::Fr);
+        }
+        $ids = array_keys($galeries);
+
         return $this->chrome->page($request, 'admin/menu/index', [
             'titre' => 'Menu',
-            'entrees' => MainMenu::fromStored($this->settings->json(MainMenu::SETTING))->forAdmin(),
+            'galeries' => $galeries,
+            'principal' => NavMenu::fromStored($this->settings->json(NavMenu::MAIN_SETTING), NavMenu::defaultMain(), $ids),
+            'pied' => NavMenu::fromStored($this->settings->json(NavMenu::FOOTER_SETTING), NavMenu::defaultFooter(), $ids),
         ]);
     }
 
     public function update(Request $request): Response
     {
-        $positions = [];
-        $enabled = [];
-        $labels = [];
+        $ids = array_map(static fn ($c): int => $c->id, $this->categories->findPublished());
+        $now = $this->chrome->now();
 
-        foreach (array_keys(MainMenu::ITEMS) as $item) {
-            $positions[$item] = (int) ($request->input('position_' . $item) ?? '0');
-            $enabled[$item] = $request->input('affiche_' . $item) !== null;
+        foreach (['menu_principal' => NavMenu::MAIN_SETTING, 'menu_pied' => NavMenu::FOOTER_SETTING] as $champ => $cle) {
+            $json = $request->input($champ);
 
-            foreach (Locale::cases() as $locale) {
-                $labels[$item][$locale->value] = $request->input('libelle_' . $item . '_' . $locale->value);
+            if ($json !== null) {
+                $this->save->save($cle, NavMenu::fromJson($json, $ids)->toArray(), $now);
             }
         }
 
-        $this->save->save(
-            MainMenu::SETTING,
-            MainMenu::fromInput($positions, $enabled, $labels)->toArray(),
-            $this->chrome->now(),
-        );
-        $this->chrome->audit()->record($this->chrome->currentUserId(), MainMenu::SETTING, $request, 'setting', null);
+        $this->chrome->audit()->record($this->chrome->currentUserId(), NavMenu::MAIN_SETTING, $request, 'setting', null);
 
         return RedirectResponse::to($request->basePath . '/admin/menu');
+    }
+
+    /**
+     * Libellé d'une entrée pour l'administration : libellé choisi, sinon le nom
+     * de la cible.
+     *
+     * @param array{type: string, ref: string|null, labels: array{fr: string, en: string}} $item
+     * @param array<int, string> $galeries
+     */
+    public static function adminLabel(array $item, array $galeries): string
+    {
+        if ($item['labels']['fr'] !== '') {
+            return $item['labels']['fr'];
+        }
+
+        return match ($item['type']) {
+            'page' => NavMenu::PAGES[(string) $item['ref']] ?? 'Page',
+            'category' => $galeries[(int) $item['ref']] ?? 'Galerie',
+            default => NavMenu::SECTIONS[$item['type']] ?? $item['type'],
+        };
     }
 }

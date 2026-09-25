@@ -33,29 +33,15 @@ $localeSwitch = is_array($data['localeSwitch'] ?? null) ? $data['localeSwitch'] 
 // Pastille du panier : fournie par Chrome, lue sans jamais créer de panier.
 $cartCount = is_int($data['cartCount'] ?? null) ? $data['cartCount'] : 0;
 
-// « Actus » n'apparaît que s'il existe au moins un article publié.
-$hasNews = ($data['hasNews'] ?? false) === true;
 
 // Rubrique active (déduite de la route par Chrome) et style choisi en réglage.
 $section = is_string($data['currentSection'] ?? null) ? $data['currentSection'] : null;
 $styleActif = is_string($data['navActiveStyle'] ?? null) ? $data['navActiveStyle'] : 'souligne';
 
-// Menu composé en back-office (revue du 2026-09-24) : ordre, affichage et
-// libellés. Sans réglage, le menu historique. Chaque rubrique : [URL, clef du
-// libellé par défaut] ; une entrée hors de cette table n'est jamais rendue.
-/** @var list<array{item: string, labels: array<string, string>}> $entrees */
-$entrees = is_array($data['menuItems'] ?? null)
-    ? $data['menuItems']
-    : App\Domain\Editorial\MainMenu::default()->enabledItems();
-$langue = ['locale' => $locale->value];
-$liens = [
-    'about' => [$url->route('page.about', $langue), 'nav.about'],
-    'gallery' => [$url->route('gallery.index', $langue), 'nav.gallery'],
-    'works' => [$url->route('artwork.index', $langue), 'gallery.all_works_title'],
-    'news' => [$url->route('blog.index', $langue), 'nav.news'],
-    'booklet' => [$url->route('page.booklet', $langue), 'nav.booklet'],
-    'contact' => [$url->route('contact.form', $langue), 'nav.contact'],
-];
+// Menu principal composé par glisser-déposer (retours du 2026-09-25), déjà
+// résolu par MenuRenderer : adresse, libellé, partie du site, galerie visée.
+/** @var list<array{key: string, href: string, label: string, section: string|null, categoryId: int|null, dropdown: bool}> $entrees */
+$entrees = is_array($data['menuItems'] ?? null) ? $data['menuItems'] : [];
 ?>
 <header class="site-tete">
   <?php // Retours du 2026-09-25 : logo, compte, panier et langues sur une ligne ; menu sur la suivante. ?>
@@ -93,15 +79,12 @@ $liens = [
   <nav aria-label="<?= $t('nav.main_label') ?>" class="nav-bas" data-actif="<?= attr($styleActif) ?>">
       <ul id="menu">
         <?php foreach ($entrees as $entree) : ?>
-          <?php $cle = $entree['item']; ?>
-          <?php if ($cle === 'news' && !$hasNews) : continue; endif; ?>
-          <?php if (!isset($liens[$cle])) : continue; endif; ?>
-          <?php $libellePerso = $entree['labels'][$locale->value] ?? ''; ?>
-        <?php if ($cle === 'gallery') : ?>
+          <?php $actif = ($entree['section'] !== null && $entree['section'] === $section)
+              || ($entree['categoryId'] !== null && $entree['categoryId'] === $rubriqueCourante); ?>
+        <?php if ($entree['dropdown']) : ?>
         <li class="sous-menu">
-          <?php /* « Galerie » mène à la page mère (revue du 2026-09-24) ; le bouton
-                   voisin ouvre le sous-menu des rubriques. */ ?>
-          <a href="<?= attr($liens[$cle][0]) ?>"<?php if ($section === $cle) : ?> aria-current="page"<?php endif; ?>><?php if ($libellePerso !== '') : ?><?= e($libellePerso) ?><?php else : ?><?= $t($liens[$cle][1]) ?><?php endif; ?></a>
+          <?php /* « Galerie » mène à la page mère ; le bouton voisin ouvre le sous-menu des galeries. */ ?>
+          <a href="<?= attr($entree['href']) ?>"<?php if ($actif) : ?> aria-current="page"<?php endif; ?>><?= e($entree['label']) ?></a>
           <button type="button" class="nav-bouton sous-menu-ouvrir" aria-expanded="true" aria-label="<?= $t('nav.gallery_open') ?>">▾</button>
           <ul>
             <?php foreach ($rubriques as $rubrique) : ?>
@@ -116,7 +99,7 @@ $liens = [
         </li>
         <?php else : ?>
         <li>
-          <a href="<?= attr($liens[$cle][0]) ?>"<?php if ($section === $cle) : ?> aria-current="page"<?php endif; ?>><?php if ($libellePerso !== '') : ?><?= e($libellePerso) ?><?php else : ?><?= $t($liens[$cle][1]) ?><?php endif; ?></a>
+          <a href="<?= attr($entree['href']) ?>"<?php if ($actif) : ?> aria-current="page"<?php endif; ?>><?= e($entree['label']) ?></a>
         </li>
         <?php endif; ?>
         <?php endforeach; ?>
