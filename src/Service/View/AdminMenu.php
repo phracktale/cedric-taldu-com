@@ -24,6 +24,7 @@ final class AdminMenu
                 ['chemin' => '/admin/accueil', 'libelle' => 'Accueil'],
                 ['chemin' => '/admin/pages', 'libelle' => 'Pages'],
                 ['chemin' => '/admin/actus', 'libelle' => 'Actus'],
+                ['chemin' => '/admin/blocs', 'libelle' => 'Blocs'],
             ]],
             ['label' => 'Boutique', 'items' => [
                 ['chemin' => '/admin/galeries', 'libelle' => 'Galeries'],

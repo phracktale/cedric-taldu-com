@@ -45,6 +45,8 @@ use App\Http\Controller\Admin\AppearanceController;
 use App\Http\Controller\Admin\DeliveryController;
 use App\Http\Controller\Admin\MenuController;
 use App\Http\Controller\Admin\GenerationController;
+use App\Http\Controller\Admin\ContentBlockController;
+use App\Repository\ContentBlockRepository;
 use App\Http\Controller\Admin\EcoIndexController;
 use App\Http\Controller\Admin\TemplateController;
 use App\Http\Controller\Admin\NewsletterController as AdminNewsletterController;
@@ -1085,6 +1087,14 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         new SecurityHeaders($config, $c->get(RandomInterface::class), $matomo),
         $c->get(ClockInterface::class),
         new PageAnalyzer($rootPath . '/public'),
+    ));
+    $container->set(ContentBlockRepository::class, static fn (Container $c): ContentBlockRepository => new ContentBlockRepository(
+        $c->get(PDO::class),
+    ));
+    $container->set(ContentBlockController::class, static fn (Container $c): ContentBlockController => new ContentBlockController(
+        $c->get(AdminChrome::class),
+        $c->get(ContentBlockRepository::class),
+        $c->get(BlockSanitizer::class),
     ));
     $container->set(EcoIndexController::class, static fn (Container $c): EcoIndexController => new EcoIndexController(
         $c->get(AdminChrome::class),

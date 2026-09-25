@@ -17,7 +17,7 @@ final class AdminMenuTest extends TestCase
         $groupes = AdminMenu::groups();
 
         $this->assertSame(['Contenus', 'Boutique', 'Modules', 'Paramètres'], array_column($groupes, 'label'));
-        $this->assertSame(['Médiathèque', 'Accueil', 'Pages', 'Actus'], $this->libelles($groupes[0]));
+        $this->assertSame(['Médiathèque', 'Accueil', 'Pages', 'Actus', 'Blocs'], $this->libelles($groupes[0]));
         $this->assertSame(['Galeries', 'Œuvres', null, 'Facturation', 'Commandes', 'Livraisons'], $this->libelles($groupes[1]));
         $this->assertSame(['Messages', 'Newsletter'], array_slice($this->libelles($groupes[2]), 0, 2));
         $this->assertSame(['Apparence', 'Menu'], array_values(array_intersect($this->libelles($groupes[3]), ['Apparence', 'Menu'])));
