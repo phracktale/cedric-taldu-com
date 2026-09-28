@@ -227,7 +227,11 @@ final class MediaStore
         $original = dirname($this->storagePath) . '/' . $row['storage_path'];
 
         if (!is_file($original)) {
-            return;
+            $original = $this->rebuildOriginal($mediaId, $basename);
+
+            if ($original === null) {
+                return;
+            }
         }
 
         $keep = array_map('basename', $this->processor->derivatives($original, $this->publicPath, $basename));
@@ -237,6 +241,41 @@ final class MediaStore
                 $this->discard($derivative);
             }
         }
+    }
+
+    /**
+     * Original manquant — cas des médias de démonstration de bin/seed.php, qui
+     * n'ont que des dérivés : le plus grand dérivé JPEG devient l'original,
+     * rangé à l'emplacement normal, et la ligne prend ses dimensions réelles.
+     * Ainsi le gabarit n'annonce aucun dérivé qui ne puisse être produit.
+     *
+     * @return string|null chemin du nouvel original, ou null sans aucun dérivé
+     */
+    private function rebuildOriginal(int $mediaId, string $basename): ?string
+    {
+        $plusGrand = null;
+        $largeurMax = 0;
+
+        foreach (glob($this->publicPath . '/' . $basename . '-*.jpg') ?: [] as $derive) {
+            if (preg_match('/-([0-9]+)\.jpg$/', $derive, $m) === 1 && (int) $m[1] > $largeurMax) {
+                $largeurMax = (int) $m[1];
+                $plusGrand = $derive;
+            }
+        }
+
+        $taille = $plusGrand === null ? false : getimagesize($plusGrand);
+        if ($plusGrand === null || $taille === false) {
+            return null;
+        }
+
+        $destination = $this->storageFileFor($basename, 'jpg');
+        if (!copy($plusGrand, $destination)) {
+            throw new RuntimeException('Original de ' . $basename . ' impossible à reconstituer.');
+        }
+
+        $this->media->updateOriginal($mediaId, $this->relativeStoragePath($basename, 'jpg'), $taille[0], $taille[1]);
+
+        return $destination;
     }
 
     /**
