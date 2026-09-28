@@ -291,6 +291,18 @@ final class MediaAdminRepository
         $statement->execute(['source' => $sourceStoragePath, 'id' => $mediaId]);
     }
 
+    /**
+     * Original reconstitué (MediaStore::regenerate) : nouvel emplacement et
+     * dimensions réelles, sans toucher au point focal ni aux textes.
+     */
+    public function updateOriginal(int $mediaId, string $storagePath, int $width, int $height): void
+    {
+        $statement = $this->pdo->prepare(
+            'UPDATE media SET storage_path = :path, width = :width, height = :height WHERE id = :id'
+        );
+        $statement->execute(['path' => $storagePath, 'width' => $width, 'height' => $height, 'id' => $mediaId]);
+    }
+
     public function delete(int $mediaId): void
     {
         $statement = $this->pdo->prepare('DELETE FROM media WHERE id = :id');
