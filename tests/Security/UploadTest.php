@@ -252,7 +252,8 @@ final class UploadTest extends AdminTestCase
         $base = (string) $this->dernierMedia()['public_basename'];
         $attendus = [];
 
-        foreach (\App\Domain\Catalog\Media::WIDTHS as $largeur) {
+        // Largeurs génériques et largeurs exactes de la fiche (2026-09-28).
+        foreach (\App\Domain\Catalog\Media::derivativeWidthsFor(2400) as $largeur) {
             foreach (\App\Domain\Catalog\Media::FORMATS as $format) {
                 $attendus[] = $base . '-' . $largeur . '.' . $format;
             }

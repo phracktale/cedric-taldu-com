@@ -170,6 +170,40 @@ final class FicheOeuvreTest extends FunctionalTestCase
         $this->assertStringContainsString('alt="Articulation, encre de Chine sur papier"', $corps);
     }
 
+    public function test_le_visuel_a_une_largeur_fixe_par_point_de_rupture_en_1x_et_2x(): void
+    {
+        // Retours du 2026-09-28 : largeur fixe par point de rupture (rem), dérivés
+        // exacts en 1x/2x — l'image est affichée à sa taille native, sans flou.
+        $media = (new MediaFactory($this->pdo))->named('articulation')->sized(2400, 3960)->create();
+        $this->oeuvre()->withPrimaryMedia($media)
+            ->translated('fr', 'articulation', 'Articulation')->create($this->rubrique);
+
+        $corps = $this->get('/cedric-taldu/fr/oeuvre/articulation')->body;
+
+        $this->assertStringContainsString(
+            '<source media="(min-width: 80rem)" type="image/webp" srcset="/cedric-taldu/media/articulation-480.webp 1x, /cedric-taldu/media/articulation-960.webp 2x">',
+            $corps,
+        );
+        $this->assertStringContainsString(
+            '<source media="(min-width: 80rem)" type="image/jpeg" srcset="/cedric-taldu/media/articulation-480.jpg 1x, /cedric-taldu/media/articulation-960.jpg 2x">',
+            $corps,
+        );
+        $this->assertStringContainsString(
+            '<source type="image/webp" srcset="/cedric-taldu/media/articulation-240.webp 1x, /cedric-taldu/media/articulation-480.webp 2x">',
+            $corps,
+        );
+        // Pas de sizes : la largeur vient du fichier choisi, jamais d'un étirement.
+        $this->assertDoesNotMatchRegularExpression('#<div class="visuel">.*?sizes=.*?</picture>#s', $corps);
+    }
+
+    public function test_le_zoom_d_un_grand_original_ouvre_le_plein_format(): void
+    {
+        $media = (new MediaFactory($this->pdo))->named('grand')->sized(6000, 8000)->create();
+        $this->oeuvre()->withPrimaryMedia($media)->translated('fr', 'grand', 'Grand')->create($this->rubrique);
+
+        $this->assertStringContainsString('data-zoom-src="/cedric-taldu/media/grand-full.jpg"', $this->get('/cedric-taldu/fr/oeuvre/grand')->body);
+    }
+
     public function test_l_image_porte_ses_dimensions_pour_reserver_la_place(): void
     {
         $media = (new MediaFactory($this->pdo))->named('articulation')->sized(2400, 3960)->create();
