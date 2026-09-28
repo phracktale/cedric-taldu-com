@@ -84,6 +84,33 @@ final class MediaTest extends TestCase
         );
     }
 
+    public function test_les_derives_produits_couvrent_les_points_de_rupture_sans_agrandir(): void
+    {
+        // Retours du 2026-09-28 : largeurs génériques + largeurs exactes de la
+        // fiche (1x et 2x), jamais au-delà de l'original.
+        $this->assertSame(
+            [240, 288, 320, 352, 384, 416, 480, 512, 576, 640, 704, 768, 832, 960, 1024, 1600, 2400],
+            $this->media(largeur: 5000)->derivativeWidths(),
+        );
+        // Original moyen : ses largeurs, plus sa taille native, pour qu'un point
+        // de rupture plus large l'affiche à sa densité réelle.
+        $this->assertSame([240, 288, 320, 352, 384, 416, 480, 512, 576, 640, 700], $this->media(largeur: 700)->derivativeWidths());
+        // Très petit original : le dérivé historique de 320 (aux pixels de
+        // l'original) et la taille native.
+        $this->assertSame([200, 320], $this->media(largeur: 200)->derivativeWidths());
+    }
+
+    public function test_le_zoom_ouvre_l_image_a_sa_resolution_native(): void
+    {
+        // Au-delà de 2400 px, un JPEG pleine résolution dédié : agrandir le
+        // dérivé de 2400 rendrait les points flous.
+        $this->assertSame('articulation-encre-de-chine-cedric-taldu-full.jpg', $this->media(largeur: 5000)->zoomFilename());
+        $this->assertSame('articulation-encre-de-chine-cedric-taldu-2400.jpg', $this->media(largeur: 2400)->zoomFilename());
+        $this->assertSame('articulation-encre-de-chine-cedric-taldu-700.jpg', $this->media(largeur: 700)->zoomFilename());
+        $this->assertTrue($this->media(largeur: 5000)->hasFullDerivative());
+        $this->assertFalse($this->media(largeur: 2400)->hasFullDerivative());
+    }
+
     public function test_la_largeur_de_repli_vise_mille_vingt_quatre_pixels(): void
     {
         // Largeur du <img src> : celle que reçoit un navigateur qui ne comprend

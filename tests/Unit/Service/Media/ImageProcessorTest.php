@@ -219,6 +219,41 @@ final class ImageProcessorTest extends TestCase
         }
     }
 
+    public function test_les_derives_de_la_fiche_ont_leurs_largeurs_exactes(): void
+    {
+        // Retours du 2026-09-28 : un dérivé par largeur de point de rupture, en
+        // 1x et 2x, aux pixels près — le navigateur n'a rien à redimensionner.
+        $original = $this->reencode($this->fixtures->jpeg(1200, 1600));
+        $repertoire = $this->fixtures->path('derives-fiche');
+        mkdir($repertoire);
+
+        $this->processeur->derivatives($original, $repertoire, 'abcdef');
+
+        foreach ([240, 480, 512, 960, 1024] as $largeur) {
+            $taille = getimagesize($repertoire . '/abcdef-' . $largeur . '.webp');
+            $this->assertIsArray($taille, (string) $largeur);
+            $this->assertSame($largeur, $taille[0]);
+        }
+        // Ni plein format (≤ 2400 px), ni dérivé au-delà de l'original.
+        $this->assertFileDoesNotExist($repertoire . '/abcdef-full.jpg');
+        $this->assertFileDoesNotExist($repertoire . '/abcdef-1600.webp');
+        $this->assertSame(1200, getimagesize($repertoire . '/abcdef-1200.jpg')[0] ?? null);
+    }
+
+    public function test_un_grand_original_a_un_plein_format_jpeg_pour_le_zoom(): void
+    {
+        $original = $this->reencode($this->fixtures->jpeg(3000, 2000));
+        $repertoire = $this->fixtures->path('derives-plein');
+        mkdir($repertoire);
+
+        $ecrits = $this->processeur->derivatives($original, $repertoire, 'abcdef');
+
+        $this->assertContains($repertoire . '/abcdef-full.jpg', $ecrits);
+        $this->assertSame(3000, getimagesize($repertoire . '/abcdef-full.jpg')[0] ?? null);
+        // WebP plein format : trop lent à encoder sur un mutualisé, inutile au zoom.
+        $this->assertFileDoesNotExist($repertoire . '/abcdef-full.webp');
+    }
+
     public function test_aucun_derive_n_agrandit_l_original(): void
     {
         // Agrandir n'ajoute pas d'information et fait telecharger plus d'octets
