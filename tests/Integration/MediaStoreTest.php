@@ -147,6 +147,33 @@ final class MediaStoreTest extends DatabaseTestCase
         $this->assertFileDoesNotExist($dossier . '-999.webp');
     }
 
+    public function test_sans_original_le_plus_grand_derive_devient_l_original(): void
+    {
+        // Médias de démonstration (bin/seed.php) : des dérivés sans original.
+        // La régénération repart du plus grand dérivé JPEG, et la ligne prend
+        // ses dimensions réelles : aucun dérivé annoncé ne manque ensuite.
+        $resultat = $this->store->store($this->televerse($this->fixtures->jpeg(1200, 1600)));
+        $media = $this->depot->findById($resultat->id);
+        $this->assertNotNull($media);
+        $base = (string) $media['public_basename'];
+        $dossier = $this->racine . '/public/media/' . $base;
+        foreach (glob($dossier . '-*') ?: [] as $fichier) {
+            if (!str_ends_with($fichier, '-1024.jpg')) {
+                unlink($fichier);
+            }
+        }
+        unlink($this->racine . '/storage/' . $media['storage_path']);
+
+        $this->store->regenerate($resultat->id);
+
+        $apres = $this->depot->findById($resultat->id);
+        $this->assertSame(1024, (int) ($apres['width'] ?? 0));
+        $this->assertFileExists($this->racine . '/storage/' . $apres['storage_path']);
+        foreach (\App\Domain\Catalog\Media::derivativeWidthsFor(1024) as $largeur) {
+            $this->assertFileExists($dossier . '-' . $largeur . '.webp', (string) $largeur);
+        }
+    }
+
     public function test_un_texte_alternatif_est_enregistre_en_francais(): void
     {
         $resultat = $this->store->store($this->televerse($this->fixtures->jpeg()), 'Encre sur papier');
