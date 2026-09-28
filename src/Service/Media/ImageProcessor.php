@@ -30,9 +30,13 @@ use Throwable;
  */
 final class ImageProcessor
 {
-    /** Qualites de sortie, reprises du generateur de remplissage du lot 1. */
-    private const QUALITY_JPEG = 82;
-    private const QUALITY_WEBP = 80;
+    /**
+     * Qualités de sortie. Relevées le 2026-09-28 (82/80 → 90) : les œuvres sont
+     * dessinées au point, et la compression avec perte est ce qui empâte les
+     * points en premier.
+     */
+    private const QUALITY_JPEG = 90;
+    private const QUALITY_WEBP = 90;
     private const COMPRESSION_PNG = 6;
 
     /**
@@ -98,7 +102,7 @@ final class ImageProcessor
         $written = [];
 
         try {
-            foreach ($this->targetWidths($width) as $target) {
+            foreach (Media::derivativeWidthsFor($width) as $target) {
                 // max(1, ...) n'est pas une precaution decorative : un original
                 // tres large et tres plat — un panoramique de 2400 x 3 — donne
                 // une hauteur arrondie a zero pour les petites largeurs, et GD
@@ -118,6 +122,15 @@ final class ImageProcessor
                 } finally {
                     imagedestroy($resized);
                 }
+            }
+
+            // Plein format pour le zoom (retours du 2026-09-28) : au-delà du plus
+            // grand dérivé, l'original tel quel, en JPEG seulement — un WebP de
+            // cette taille coûterait plusieurs secondes d'encodage à l'envoi.
+            if ($width > Media::MAX_WIDTH) {
+                $plein = $directory . '/' . $basename . '-full.jpg';
+                $this->write($source, $plein, 'jpg');
+                $written[] = $plein;
             }
         } catch (Throwable $exception) {
             // Un jeu de derives incomplet est pire qu'aucun : le gabarit
@@ -219,26 +232,6 @@ final class ImageProcessor
         }
 
         return $mime;
-    }
-
-    /**
-     * Largeurs reellement produites.
-     *
-     * Aucun derive n'agrandit l'original : cela n'ajoute pas d'information et
-     * fait telecharger plus d'octets pour un resultat plus flou. Une image plus
-     * petite que la plus petite largeur garde malgre tout un derive, sans quoi
-     * elle n'aurait aucune source. Meme regle que Media::availableWidths().
-     *
-     * @return list<int>
-     */
-    private function targetWidths(int $width): array
-    {
-        $widths = array_values(array_filter(
-            Media::WIDTHS,
-            static fn (int $candidate): bool => $candidate <= $width,
-        ));
-
-        return $widths === [] ? [Media::WIDTHS[0]] : $widths;
     }
 
     private function decode(ValidatedImage $source): GdImage

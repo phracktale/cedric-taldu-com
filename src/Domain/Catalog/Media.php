@@ -20,6 +20,9 @@ final class Media
     /** Largeurs de derives, en pixels. */
     public const WIDTHS = [320, 640, 1024, 1600, 2400];
 
+    /** Plus grand dérivé ; au-delà, seul un plein format JPEG sert au zoom. */
+    public const MAX_WIDTH = 2400;
+
     /**
      * Formats, DU PLUS EFFICACE AU REPLI. L'ordre compte : <picture> retient la
      * premiere source que le navigateur comprend.
@@ -77,6 +80,71 @@ final class Media
      * comprend ni srcset ni sizes. 1024 px est le compromis — lisible sur un
      * ecran ordinaire sans imposer le fichier de 2400.
      */
+    /**
+     * Toutes les largeurs de dérivés PRODUITES pour cette image (retours du
+     * 2026-09-28) : les largeurs génériques (availableWidths), les largeurs
+     * exactes des points de rupture de la fiche (ImageBreakpoints) qui ne
+     * dépassent pas l'original, et la largeur native jusqu'à 2400 px — pour
+     * qu'un point de rupture plus large que l'original l'affiche à sa densité
+     * réelle plutôt qu'agrandi. Source unique de vérité : l'ImageProcessor
+     * produit exactement ces fichiers, le gabarit ne cite qu'eux.
+     *
+     * @return list<int>
+     */
+    public function derivativeWidths(): array
+    {
+        return self::derivativeWidthsFor($this->width);
+    }
+
+    /**
+     * Même règle, depuis la seule largeur de l'original (ImageProcessor).
+     *
+     * @return list<int>
+     */
+    public static function derivativeWidthsFor(int $width): array
+    {
+        $largeurs = array_values(array_filter(self::WIDTHS, static fn (int $l): bool => $l <= $width)) ?: [self::WIDTHS[0]];
+
+        foreach (ImageBreakpoints::pixelWidths() as $largeur) {
+            if ($largeur <= $width) {
+                $largeurs[] = $largeur;
+            }
+        }
+
+        if ($width <= self::MAX_WIDTH) {
+            $largeurs[] = $width;
+        }
+
+        $largeurs = array_values(array_unique($largeurs));
+        sort($largeurs);
+
+        return $largeurs;
+    }
+
+    /**
+     * Un plein format JPEG (`-full.jpg`) n'existe qu'au-delà du plus grand
+     * dérivé : c'est lui qu'ouvre le zoom, pour que les points restent nets.
+     */
+    public function hasFullDerivative(): bool
+    {
+        return $this->width > self::MAX_WIDTH;
+    }
+
+    public function fullFilename(): string
+    {
+        return $this->publicBasename . '-full.jpg';
+    }
+
+    /**
+     * Fichier ouvert par le zoom : l'image à sa résolution native.
+     */
+    public function zoomFilename(): string
+    {
+        return $this->hasFullDerivative()
+            ? $this->fullFilename()
+            : $this->derivativeFilename($this->width, 'jpg');
+    }
+
     public function defaultWidth(): int
     {
         $widths = $this->availableWidths();

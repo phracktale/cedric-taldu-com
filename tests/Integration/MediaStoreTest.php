@@ -129,6 +129,24 @@ final class MediaStoreTest extends DatabaseTestCase
         }
     }
 
+    public function test_regenerer_reproduit_les_derives_de_l_original_et_purge_les_anciens(): void
+    {
+        // Retours du 2026-09-28 : les images déjà en ligne reçoivent les dérivés
+        // exacts de la fiche ; les fichiers d'un ancien jeu disparaissent.
+        $resultat = $this->store->store($this->televerse($this->fixtures->jpeg(1200, 1600)));
+        $media = $this->depot->findById($resultat->id);
+        $this->assertNotNull($media);
+        $dossier = $this->racine . '/public/media/' . (string) $media['public_basename'];
+
+        unlink($dossier . '-480.webp');
+        touch($dossier . '-999.webp');
+
+        $this->store->regenerate($resultat->id);
+
+        $this->assertSame(480, getimagesize($dossier . '-480.webp')[0] ?? null);
+        $this->assertFileDoesNotExist($dossier . '-999.webp');
+    }
+
     public function test_un_texte_alternatif_est_enregistre_en_francais(): void
     {
         $resultat = $this->store->store($this->televerse($this->fixtures->jpeg()), 'Encre sur papier');

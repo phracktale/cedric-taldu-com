@@ -47,17 +47,18 @@ $media = $medias[$oeuvre->primaryMediaId] ?? null;
                nouvel onglet ; zoom.js intercepte le clic quand il est chargé. */ ?>
       <a
         class="cadre"
-        href="<?= attr($url->media($media->derivativeFilename($media->availableWidths()[count($media->availableWidths()) - 1], 'jpg'))) ?>"
+        href="<?= attr($url->media($media->zoomFilename())) ?>"
         target="_blank"
         rel="noopener"
-        data-zoom-src="<?= attr($url->media($media->derivativeFilename($media->availableWidths()[count($media->availableWidths()) - 1], 'jpg'))) ?>"
+        data-zoom-src="<?= attr($url->media($media->zoomFilename())) ?>"
         data-zoom-alt="<?= attr($media->alt($locale)) ?>"
       ><?= $partial('partials/picture', [
           'media' => $media,
           'locale' => $locale,
           'label' => $oeuvre->title($locale),
           'priority' => true,
-          'sizes' => '(max-width: 860px) 100vw, 55vw',
+          // Largeur fixe par point de rupture, dérivés exacts (2026-09-28).
+          'breakpoints' => App\Domain\Catalog\ImageBreakpoints::FICHE,
       ]) ?></a>
       <p class="vue-detail"><?= $t('artwork.zoom') ?></p>
     <?php else : ?>

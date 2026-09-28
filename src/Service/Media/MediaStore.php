@@ -210,6 +210,36 @@ final class MediaStore
     }
 
     /**
+     * Régénère les dérivés publics depuis l'original rangé, sans toucher à
+     * l'original ni à la ligne (retours du 2026-09-28 : largeurs exactes de la
+     * fiche, plein format du zoom, qualité relevée). Les dérivés d'un ancien
+     * jeu sont purgés. Sans original lisible, rien ne change.
+     */
+    public function regenerate(int $mediaId): void
+    {
+        $row = $this->media->findById($mediaId);
+
+        if ($row === null) {
+            return;
+        }
+
+        $basename = (string) $row['public_basename'];
+        $original = dirname($this->storagePath) . '/' . $row['storage_path'];
+
+        if (!is_file($original)) {
+            return;
+        }
+
+        $keep = array_map('basename', $this->processor->derivatives($original, $this->publicPath, $basename));
+
+        foreach (glob($this->publicPath . '/' . $basename . '-*') ?: [] as $derivative) {
+            if (!in_array(basename($derivative), $keep, true)) {
+                $this->discard($derivative);
+            }
+        }
+    }
+
+    /**
      * Efface un media et tous ses fichiers.
      *
      * Les derives d'abord, l'original ensuite, la ligne en dernier : si

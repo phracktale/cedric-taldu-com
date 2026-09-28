@@ -14,6 +14,12 @@
  * générateur d'URL, donc du préfixe de chemin, et le domaine ne connaît aucune
  * I/O ni aucun service (src/CLAUDE.md).
  *
+ * Avec `breakpoints` (retours du 2026-09-28, fiche œuvre) : une source par
+ * point de rupture, en descripteurs de densité 1x/2x sur des dérivés à la
+ * largeur EXACTE d'affichage (ImageBreakpoints) — sans `sizes`, le navigateur
+ * affiche le fichier à sa taille native, sans le redimensionner : les points
+ * du dessin restent nets.
+ *
  * Sans média, la trame pointillée du design system occupe la place. Elle n'est
  * pas un pis-aller : c'est le motif du site, et elle rend le manque lisible.
  *
@@ -32,6 +38,9 @@ $locale = $data['locale'];
 $sizes = is_string($data['sizes'] ?? null) ? $data['sizes'] : '(max-width: 900px) 100vw, 33vw';
 $prioritaire = ($data['priority'] ?? false) === true;
 $etiquette = is_string($data['label'] ?? null) ? $data['label'] : '';
+/** @var list<array{0: int, 1: int}>|null $pointsDeRupture */
+$pointsDeRupture = is_array($data['breakpoints'] ?? null) ? $data['breakpoints'] : null;
+$types = ['webp' => 'image/webp', 'jpg' => 'image/jpeg'];
 
 /**
  * @param Media $media
@@ -58,11 +67,24 @@ $texteAlternatif = static function (Media $media) use ($locale, $etiquette): str
 <div class="dessin<?php if ($media instanceof Media) : ?> dessin--<?= attr($media->orientation()) ?><?php endif; ?>">
 <?php if ($media instanceof Media) : ?>
   <picture>
+    <?php if ($pointsDeRupture !== null) : ?>
+      <?php foreach (App\Domain\Catalog\ImageBreakpoints::sources($media, $pointsDeRupture) as $source) : ?>
+        <?php foreach ($types as $format => $type) : ?>
+    <source<?php if ($source['media'] !== null) : ?> media="<?= attr($source['media']) ?>"<?php endif; ?> type="<?= attr($type) ?>" srcset="<?= attr(implode(', ', array_map(
+        static fn (array $c): string => $url->media($media->derivativeFilename($c[0], $format)) . ' ' . $c[1],
+        $source['candidates'],
+    ))) ?>">
+        <?php endforeach; ?>
+      <?php endforeach; ?>
+    <img
+      src="<?= attr($url->media($media->derivativeFilename($media->defaultWidth(), 'jpg'))) ?>"
+    <?php else : ?>
     <source type="image/webp" srcset="<?= attr($srcset($media, 'webp')) ?>" sizes="<?= attr($sizes) ?>">
     <img
       src="<?= attr($url->media($media->derivativeFilename($media->defaultWidth(), 'jpg'))) ?>"
       srcset="<?= attr($srcset($media, 'jpg')) ?>"
       sizes="<?= attr($sizes) ?>"
+    <?php endif; ?>
       width="<?= attr($media->width) ?>"
       height="<?= attr($media->height) ?>"
       alt="<?= attr($texteAlternatif($media)) ?>"

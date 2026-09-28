@@ -863,13 +863,27 @@ a.oeuvre:hover .cadre, a.oeuvre:focus-visible .cadre {
 /* ----------------------------------------------------------- fiche œuvre */
 
 .fiche {
-  display: grid; grid-template-columns: 1.15fr 1fr; gap: clamp(2.5rem, 6vw, 5rem);
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(2.5rem, 6vw, 5rem);
   padding: clamp(2rem, 5vh, 3.5rem) 0 clamp(4rem, 9vh, 6rem);
   align-items: start;
 }
-.visuel { position: sticky; top: 96px; }
-.visuel .cadre { padding: 9%; box-shadow: 0 22px 50px -26px rgba(22, 21, 19, .3); }
-.visuel .dessin { max-height: 72vh; margin: 0 auto; }
+/* Visuel (retours du 2026-09-28) : l'œuvre a une largeur FIXE par point de
+   rupture (ImageBreakpoints), servie par des dérivés exacts en 1x/2x. L'image
+   s'affiche à la taille native du fichier choisi (width: auto) : ni rognage,
+   ni gabarit imposé, ni redimensionnement — les points restent nets. Le cadre
+   épouse l'image ; la colonne de la fiche suit le cadre. */
+.visuel .cadre {
+  display: block; width: fit-content; max-width: 100%; margin: 0 auto;
+  padding: 1.5rem; box-shadow: 0 22px 50px -26px rgba(22, 21, 19, .3);
+}
+.visuel .dessin { display: block; aspect-ratio: auto; background: none; overflow: visible; }
+.visuel picture { display: block; }
+.visuel .dessin img { width: auto; height: auto; max-width: 100%; object-fit: fill; scale: 1; }
+@media (min-width: 54rem) {
+  .fiche { grid-template-columns: auto minmax(0, 1fr); }
+  .visuel { position: sticky; top: 96px; }
+  .visuel .cadre { padding: 2.5rem; }
+}
 .vue-detail { margin-top: 1rem; font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; color: var(--encre-70); text-align: center; }
 .vues { display: flex; gap: .8rem; margin-top: 1rem; flex-wrap: wrap; justify-content: center; }
 .vues .cadre { padding: 6%; width: 5.5rem; box-shadow: none; }
@@ -924,10 +938,6 @@ a.oeuvre:hover .cadre, a.oeuvre:focus-visible .cadre {
   background-repeat: no-repeat; background-position: left center;
 }
 
-@media (max-width: 860px) {
-  .fiche { grid-template-columns: 1fr; }
-  .visuel { position: static; }
-}
 
 /* Mention de repli linguistique (05-i18n-seo §3). */
 .repli-langue {
@@ -976,9 +986,12 @@ footer a:hover { text-decoration: underline; }
   background: var(--encre);
   overflow: hidden;
 }
+.zoom[open] { display: flex; align-items: center; justify-content: center; }
 .zoom::backdrop { background: rgba(22, 21, 19, .92); }
+/* Réduite pour tenir à l'écran, jamais agrandie à l'ouverture (2026-09-28) :
+   zoom.js borne ensuite l'agrandissement à la résolution native. */
 .zoom img {
-  width: 100%; height: 100%; object-fit: contain;
+  width: auto; height: auto; max-width: 100%; max-height: 100%;
   transform-origin: center center;
   transition: transform .12s ease-out;
   user-select: none; touch-action: none;

@@ -18,7 +18,6 @@ use App\Domain\Translations;
  */
 final class Category
 {
-
     /**
      * @param Translations<CategoryTranslation> $translations
      */

@@ -8,12 +8,16 @@
  * pleine taille dans un nouvel onglet : c'est le comportement de repli, et il
  * reste correct.
  *
- * La version 2400 px n'est chargée QU'À L'OUVERTURE : elle pèse plusieurs
- * centaines de kilooctets et la plupart des visiteurs ne l'ouvriront jamais.
+ * L'image pleine résolution n'est chargée QU'À L'OUVERTURE : elle pèse lourd
+ * et la plupart des visiteurs ne l'ouvriront jamais.
+ *
+ * Netteté (retours du 2026-09-28) : les œuvres sont dessinées au point. À
+ * l'ouverture l'image est seulement réduite pour tenir à l'écran, jamais
+ * agrandie ; le zoom s'arrête à la résolution native — un pixel de l'image
+ * pour un pixel de l'écran. Au-delà, les points deviendraient flous.
  */
 
 const ECHELLE_MIN = 1;
-const ECHELLE_MAX = 4;
 
 export function initZoom() {
   const declencheurs = document.querySelectorAll('[data-zoom-src]');
@@ -62,8 +66,13 @@ function ouvrir(source, alternative) {
     image.style.cursor = etat.echelle > 1 ? 'grab' : 'zoom-in';
   };
 
+  // Échelle maximale : celle où l'image atteint sa taille native.
+  const echelleMax = () => (image.naturalWidth > 0 && image.clientWidth > 0
+    ? Math.max(ECHELLE_MIN, image.naturalWidth / image.clientWidth)
+    : ECHELLE_MIN);
+
   const zoomer = (facteur) => {
-    etat.echelle = Math.min(ECHELLE_MAX, Math.max(ECHELLE_MIN, etat.echelle * facteur));
+    etat.echelle = Math.min(echelleMax(), Math.max(ECHELLE_MIN, etat.echelle * facteur));
 
     // Revenu à l'échelle d'origine, l'image se recentre : sans cela, elle
     // resterait décalée hors du cadre.
