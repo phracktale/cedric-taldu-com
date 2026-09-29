@@ -46,6 +46,7 @@ use App\Http\Controller\Admin\DeliveryController;
 use App\Http\Controller\Admin\MenuController;
 use App\Http\Controller\Admin\GenerationController;
 use App\Http\Controller\Admin\MapController;
+use App\Http\Controller\Admin\ContactPageController;
 use App\Http\Controller\Admin\GlobalController;
 use App\Http\Controller\Admin\ContentBlockController;
 use App\Repository\ContentBlockRepository;
@@ -1158,6 +1159,11 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(BlockSanitizer::class),
     ));
     $container->set(GlobalController::class, static fn (Container $c): GlobalController => new GlobalController(
+        $c->get(AdminChrome::class),
+        $c->get(SettingRepository::class),
+        $c->get(SettingsAdminRepository::class),
+    ));
+    $container->set(ContactPageController::class, static fn (Container $c): ContactPageController => new ContactPageController(
         $c->get(AdminChrome::class),
         $c->get(SettingRepository::class),
         $c->get(SettingsAdminRepository::class),

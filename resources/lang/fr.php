@@ -163,6 +163,7 @@ return [
     'contact.email' => 'Votre adresse e-mail',
     'contact.message' => 'Votre message',
     'contact.send' => 'Envoyer',
+    'contact.coordinates' => 'Coordonnées',
     'contact.rgpd' => 'Les informations transmises servent uniquement à répondre à votre demande. '
         . 'Vous disposez d’un droit d’accès, de rectification et d’effacement de vos données.',
     'contact.learn_more' => 'En savoir plus',

@@ -40,7 +40,13 @@ $values = is_array($data['values'] ?? null) ? $data['values'] : [];
 /** @var string $csrfToken */
 $csrfToken = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
 
+$contenu = ($data['contactPage'] ?? null) instanceof App\Domain\Editorial\ContactPage ? $data['contactPage'] : null;
+$coordonnees = $contenu !== null && $contenu->hasCoordinates();
 ?>
+<?php // Coordonnées en vis-à-vis du formulaire (retour client du 2026-09-29). ?>
+<?php if ($coordonnees) : ?>
+<div class="contact-colonnes">
+<?php endif; ?>
 <form method="post" action="<?= attr($submitUrl) ?>" class="contact-form">
   <input type="hidden" name="_token" value="<?= attr($csrfToken) ?>">
   <input type="hidden" name="<?= attr($timestampField) ?>" value="<?= attr($timestamp) ?>">
@@ -96,3 +102,19 @@ $csrfToken = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
     <?= $t('contact.send') ?>
   </button>
 </form>
+<?php if ($coordonnees) : ?>
+<aside class="contact-coordonnees" aria-label="<?= attr($t('contact.coordinates')) ?>">
+  <h2><?= $t('contact.coordinates') ?></h2>
+  <?php if ($contenu->addressLines() !== []) : ?>
+  <p class="contact-adresse"><?php foreach ($contenu->addressLines() as $i => $ligne) : ?><?php if ($i > 0) : ?><br>
+<?php endif; ?><?= e($ligne) ?><?php endforeach; ?></p>
+  <?php endif; ?>
+  <?php if ($contenu->phone !== '') : ?>
+  <p class="contact-telephone"><a href="<?= attr($contenu->phoneHref()) ?>"><?= e($contenu->phone) ?></a></p>
+  <?php endif; ?>
+  <?php if ($contenu->email !== '') : ?>
+  <p class="contact-courriel"><a href="mailto:<?= attr($contenu->email) ?>"><?= e($contenu->email) ?></a></p>
+  <?php endif; ?>
+</aside>
+</div>
+<?php endif; ?>

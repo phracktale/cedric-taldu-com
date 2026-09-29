@@ -46,7 +46,9 @@ final class ContentTemplate
         ]],
         'contact' => ['Contact', [
             'header' => ['Titre et introduction', true],
-            'form' => ['Formulaire', true],
+            'form' => ['Formulaire et coordonnées', true],
+            // Retour client du 2026-09-29 : la carte interactive sur la page contact.
+            'map' => ['Carte', false],
             'rgpd' => ['Mention sur les données', false],
         ]],
         'artwork' => ['Œuvre', [
