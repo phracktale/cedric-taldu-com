@@ -41,6 +41,8 @@ final class AccueilSectionsTest extends AdminTestCase
         yield 'hero' => ['hero', 'name="fond_fichier"'];
         yield 'vitrine' => ['vitrine', 'name="vitrine_1"'];
         yield 'triptyque' => ['triptyque', 'name="cellule3_texte_en"'];
+        yield 'triptyque : bouton' => ['triptyque', 'name="cta_target"'];
+        yield 'galeries' => ['galeries', 'name="title_fr"'];
         yield 'boutique' => ['boutique', 'name="cta_target"'];
         yield 'atelier' => ['atelier', 'name="portrait_fichier"'];
         yield 'actus' => ['actus', 'name="title_fr"'];
@@ -58,7 +60,6 @@ final class AccueilSectionsTest extends AdminTestCase
 
     public function test_une_section_sans_contenu_ou_inconnue_repond_404(): void
     {
-        $this->assertSame(404, $this->requete('GET', self::ADMIN . '/galeries')->status);
         $this->assertSame(404, $this->requete('GET', self::ADMIN . '/evil')->status);
     }
 
@@ -77,6 +78,40 @@ final class AccueilSectionsTest extends AdminTestCase
         $this->assertStringContainsString('<h1>Un nouveau titre</h1>', $corps);
         $this->assertMatchesRegularExpression('~href="/cedric-taldu/fr/livret"[^>]*>\s*Lire le livret~', $corps);
         $this->assertStringContainsString('cta-row--gauche', $corps);
+    }
+
+    public function test_le_triptyque_mene_au_livret_par_defaut(): void
+    {
+        // Retour client du 2026-09-29 : un bouton « Lire le livret » sous le triptyque.
+        $this->postAvecJeton(self::ADMIN . '/triptyque', [
+            'title_fr' => 'Trois temps',
+            'cellule1_titre_fr' => 'Voir', 'cellule1_texte_fr' => 'Un.',
+            'cellule2_titre_fr' => 'Tracer', 'cellule2_texte_fr' => 'Deux.',
+            'cellule3_titre_fr' => 'Pointer', 'cellule3_texte_fr' => 'Trois.',
+            'cta_affiche' => '1',
+        ]);
+
+        $section = $this->section($this->requete('GET', self::ACCUEIL)->body, 'class="triptyque"');
+        $this->assertMatchesRegularExpression('~href="/cedric-taldu/fr/livret"[^>]*>\s*Lire le livret~', $section);
+    }
+
+    public function test_le_bloc_galeries_se_modifie(): void
+    {
+        // Retour client du 2026-09-29 : « Le travail, par technique » n'était pas modifiable.
+        (new \Tests\Support\Factory\CategoryFactory($this->pdo))->published()->translated('fr', 'encres', 'Encres')->create();
+        $this->assertStringContainsString('Le travail, par technique', $this->requete('GET', self::ACCUEIL)->body);
+
+        $this->postAvecJeton(self::ADMIN . '/galeries', [
+            'eyebrow_fr' => 'Les séries',
+            'title_fr' => 'Les œuvres, par médium',
+            'intro_fr' => 'Encre, peinture, gravure.',
+        ]);
+
+        $section = $this->section($this->requete('GET', self::ACCUEIL)->body, 'id="galeries"');
+        $this->assertStringContainsString('<h2>Les œuvres, par médium</h2>', $section);
+        $this->assertStringContainsString('Les séries', $section);
+        $this->assertStringContainsString('Encre, peinture, gravure.', $section);
+        $this->assertStringNotContainsString('Le travail, par technique', $section);
     }
 
     public function test_un_cta_decoche_disparait(): void
