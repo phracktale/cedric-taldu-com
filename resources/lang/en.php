@@ -120,6 +120,7 @@ return [
     'home.studio_portrait' => 'Studio portrait',
     'home.studio_cta' => 'Path and approach',
     'home.shop_cta' => 'See available works',
+    'home.triptych_cta' => 'Read the booklet',
     'home.contact_cta' => 'Contact me',
     'home.news_eyebrow' => 'News',
     'home.news_title' => 'Exhibitions and work in progress',

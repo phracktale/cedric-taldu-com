@@ -83,13 +83,15 @@ final class AccueilSectionsTest extends AdminTestCase
     public function test_le_triptyque_mene_au_livret_par_defaut(): void
     {
         // Retour client du 2026-09-29 : un bouton « Lire le livret » sous le triptyque.
-        $this->postAvecJeton(self::ADMIN . '/triptyque', [
-            'title_fr' => 'Trois temps',
-            'cellule1_titre_fr' => 'Voir', 'cellule1_texte_fr' => 'Un.',
-            'cellule2_titre_fr' => 'Tracer', 'cellule2_texte_fr' => 'Deux.',
-            'cellule3_titre_fr' => 'Pointer', 'cellule3_texte_fr' => 'Trois.',
-            'cta_affiche' => '1',
-        ]);
+        // Aucun réglage de bouton enregistré : le défaut de la section s'applique.
+        $this->reglage('home.triptych', ['fr' => ['title' => 'Trois temps', 'cells' => [
+            ['title' => 'Voir', 'text' => 'Un.'],
+            ['title' => 'Tracer', 'text' => 'Deux.'],
+            ['title' => 'Pointer', 'text' => 'Trois.'],
+        ]]]);
+
+        // Le formulaire propose le livret comme cible par défaut.
+        $this->assertMatchesRegularExpression('~<option value="booklet"\s+selected~', $this->requete('GET', self::ADMIN . '/triptyque')->body);
 
         $section = $this->section($this->requete('GET', self::ACCUEIL)->body, 'class="triptyque"');
         $this->assertMatchesRegularExpression('~href="/cedric-taldu/fr/livret"[^>]*>\s*Lire le livret~', $section);
