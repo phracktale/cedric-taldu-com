@@ -27,6 +27,8 @@ final class HomeSectionForm
         'hero' => 'home.hero',
         'vitrine' => 'home.showcase',
         'triptyque' => 'home.triptych',
+        // Retour client du 2026-09-29 : titres du bloc Galeries modifiables.
+        'galeries' => 'home.galleries',
         'boutique' => 'home.shop',
         'atelier' => 'home.studio',
         'actus' => 'home.news',
@@ -46,6 +48,11 @@ final class HomeSectionForm
         ],
         'vitrine' => [],
         'triptyque' => [
+            'eyebrow' => ['Surtitre', 'text', self::SHORT],
+            'title' => ['Titre', 'text', self::SHORT],
+            'intro' => ['Introduction', 'textarea', self::LONG],
+        ],
+        'galeries' => [
             'eyebrow' => ['Surtitre', 'text', self::SHORT],
             'title' => ['Titre', 'text', self::SHORT],
             'intro' => ['Introduction', 'textarea', self::LONG],
@@ -79,6 +86,8 @@ final class HomeSectionForm
      */
     public const CTA_DEFAULTS = [
         'hero' => ['target' => 'galleries', 'style' => 'plein', 'label' => 'home.hero_cta'],
+        // Retour client du 2026-09-29 : lanceur vers le livret sous le triptyque.
+        'triptyque' => ['target' => 'booklet', 'style' => 'vide', 'label' => 'home.triptych_cta'],
         'boutique' => ['target' => 'galleries', 'style' => 'plein', 'label' => 'home.shop_cta'],
         'atelier' => ['target' => 'about', 'style' => 'vide', 'label' => 'home.studio_cta'],
         'contact' => ['target' => 'contact', 'style' => 'vide', 'label' => 'home.contact_cta'],

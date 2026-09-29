@@ -28,6 +28,8 @@ $locale = $data['locale'];
 $hero = $data['hero'];
 /** @var array<string, mixed> $triptych */
 $triptych = $data['triptych'];
+/** @var array<string, mixed> $galleries titres du bloc Galeries (2026-09-29) */
+$galleries = is_array($data['galleries'] ?? null) ? $data['galleries'] : [];
 /** @var array<string, mixed> $shop */
 $shop = $data['shop'];
 /** @var array<string, mixed> $studio */
@@ -67,6 +69,7 @@ $bag = [
     'texte' => $texte,
     'hero' => $hero,
     'triptych' => $triptych,
+    'galleries' => $galleries,
     'cellules' => $cellules,
     'shop' => $shop,
     'studio' => $studio,

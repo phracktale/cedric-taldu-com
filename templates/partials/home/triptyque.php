@@ -29,6 +29,10 @@ $texte = $data['texte'];
       </div>
       <?php endforeach; ?>
     </div>
+    <?php // Lanceur vers le livret (retour client du 2026-09-29), réglable en back-office. ?>
+    <?php if (isset($data['ctas']['triptyque'])) : ?>
+      <?= $partial('partials/cta', $data['ctas']['triptyque']) ?>
+    <?php endif; ?>
   </div>
 </section>
 <?php endif; ?>

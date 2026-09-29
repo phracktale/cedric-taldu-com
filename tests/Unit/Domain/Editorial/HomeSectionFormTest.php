@@ -21,7 +21,8 @@ final class HomeSectionFormTest extends TestCase
     {
         $this->assertTrue(HomeSectionForm::isEditable('hero'));
         $this->assertTrue(HomeSectionForm::isEditable('atelier'));
-        $this->assertFalse(HomeSectionForm::isEditable('galeries'));
+        // Galeries : titres modifiables depuis le retour client du 2026-09-29.
+        $this->assertTrue(HomeSectionForm::isEditable('galeries'));
         $this->assertFalse(HomeSectionForm::isEditable('evil'));
         $this->assertSame('home.studio', HomeSectionForm::settingKey('atelier'));
     }
