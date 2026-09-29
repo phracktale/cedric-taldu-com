@@ -53,6 +53,7 @@ use App\Http\Controller\Front\ContactController;
 use App\Http\Controller\Front\HomeController;
 use App\Http\Controller\Front\PageController;
 use App\Http\Controller\Front\SitemapController;
+use App\Http\Controller\Front\DocumentController;
 use App\Http\Controller\Front\StateController;
 use App\Http\Controller\Front\PrintAssetController;
 use App\Http\Controller\Front\ProdigiWebhookController;
@@ -198,6 +199,9 @@ return [
     // Sitemap : non localise (un seul fichier couvre les deux langues via
     // xhtml:link). En prod il repond a la racine, en preprod sous le prefixe.
     new Route('sitemap', 'GET', '/sitemap.xml', [SitemapController::class, 'show']),
+
+    // Document PDF d'une page (le livret), à une adresse stable par code de page.
+    new Route('page.document', 'GET', '/documents/{code}.pdf', [DocumentController::class, 'show'], requirements: ['code' => '[a-z]+']),
 
     // État du visiteur pour les pages statiques (jeton CSRF, pastille du
     // panier), lu par etat.js. Non localisé, jamais mis en cache.

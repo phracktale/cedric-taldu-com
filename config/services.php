@@ -162,6 +162,8 @@ use App\Http\Controller\Front\ContactController;
 use App\Http\Controller\Front\BlogController;
 use App\Http\Controller\Front\PageController;
 use App\Http\Controller\Front\SitemapController;
+use App\Http\Controller\Front\DocumentController;
+use App\Service\Media\DocumentStore;
 use App\Http\Controller\Front\StateController;
 use App\Service\StaticSite\FileInvalidator;
 use App\Service\StaticSite\GenerationStore;
@@ -389,6 +391,16 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
 
     $container->set(UploadValidator::class, static fn (): UploadValidator => new UploadValidator());
     $container->set(ImageProcessor::class, static fn (): ImageProcessor => new ImageProcessor());
+
+    // Documents PDF des pages (retour client du 2026-09-29), hors du webroot.
+    $container->set(DocumentStore::class, static fn (Container $c): DocumentStore => new DocumentStore(
+        $rootPath . '/storage',
+        $c->get(RandomInterface::class),
+    ));
+    $container->set(DocumentController::class, static fn (Container $c): DocumentController => new DocumentController(
+        $c->get(PageRepository::class),
+        $c->get(DocumentStore::class),
+    ));
 
     $container->set(MediaStore::class, static fn (Container $c): MediaStore => new MediaStore(
         $c->get(UploadValidator::class),
@@ -836,6 +848,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(TranslationInput::class),
             $c->get(CoverUpload::class),
             $c->get(BlockSanitizer::class),
+            $c->get(DocumentStore::class),
         ),
     );
 

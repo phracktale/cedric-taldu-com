@@ -28,7 +28,7 @@ final class ContentTemplate
             'cover' => ['Image de couverture', false],
             'body' => ['Contenu', true],
             'blocks' => ['Blocs', false],
-            'pdf' => ['Lien PDF (CGV)', false],
+            'pdf' => ['Document PDF', false],
         ]],
         'post' => ['Actualité', [
             'breadcrumb' => ['Fil d’Ariane', false],

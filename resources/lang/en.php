@@ -89,6 +89,8 @@ return [
     'checkout.read' => '(read)',
     'checkout.pdf' => '(PDF)',
     'page.download_pdf' => 'Download the terms as PDF',
+    'page.download_booklet' => 'Download the booklet (PDF)',
+    'page.download_document' => 'Download the document (PDF)',
     'checkout.pay' => 'Proceed to payment',
     'checkout.delivery' => 'Delivery',
     'checkout.travel_free' => 'No travel costs',

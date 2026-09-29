@@ -8,6 +8,7 @@
 /storage/logs/*
 /storage/sessions/*
 /storage/uploads/*
+/storage/documents/*
 !/storage/**/.gitkeep
 
 # Site statique généré (retours du 2026-09-25, point 7) et ses dossiers de travail

@@ -106,6 +106,11 @@ C'est la surface la plus dangereuse du projet. Toutes les règles s'appliquent :
 7. `public/media/` et `storage/` portent un `.htaccess` interdisant l'exécution PHP
    (`php_flag engine off`, `RemoveHandler`, `SetHandler none`) — ceinture et bretelles avec
    le point 6.
+8. **Documents PDF des pages** (retour client du 2026-09-29, livret) : seul autre type
+   accepté. Un PDF ne se ré-encode pas : il est CONTRÔLÉ (signature `%PDF-`, type détecté par
+   finfo, 20 Mo au plus), copié sous un nom aléatoire dans `storage/documents/` (hors
+   webroot) et servi uniquement par `DocumentController` (`/documents/{code}.pdf`, page
+   publiée), en `application/pdf` avec `nosniff`. Tests : `PageDocumentTest`.
 8. `X-Content-Type-Options: nosniff` sur les fichiers servis.
 9. Le PDF du livret est servi par un contrôleur PHP avec
    `Content-Disposition: attachment` et `Content-Type: application/pdf`, à partir d'un

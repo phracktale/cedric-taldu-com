@@ -13,6 +13,7 @@ use App\Repository\Admin\PageAdminRepository;
 use App\Service\Content\BlockSanitizer;
 use App\Service\Content\TranslationInput;
 use App\Service\Media\CoverUpload;
+use App\Service\Media\DocumentStore;
 use App\Service\Media\Exception\UploadRejected;
 use App\Service\View\AdminChrome;
 
@@ -43,6 +44,7 @@ final class PageController
         private readonly TranslationInput $translations,
         private readonly CoverUpload $covers,
         private readonly BlockSanitizer $blocks,
+        private readonly DocumentStore $documents,
     ) {
     }
 
@@ -84,12 +86,30 @@ final class PageController
 
         $id = (int) $existing['id'];
 
+        // Document PDF (retour client du 2026-09-29) : un nouveau fichier remplace
+        // l'ancien ; la case « retirer » le supprime. Refusé : rien n'est écrit.
+        $ancien = is_string($existing['attachment_path'] ?? null) ? $existing['attachment_path'] : null;
+        $document = $request->file('document');
+        $nouveau = null;
+        if ($document !== null && !$document->isMissing()) {
+            try {
+                $nouveau = $this->documents->store($document);
+            } catch (\InvalidArgumentException $exception) {
+                return $this->form($request, $existing, $exception->getMessage(), 422);
+            }
+        }
+
         $this->pages->update(
             $id,
             $this->withPreservedSlugs($translations, $existing),
             $cover,
             $this->chrome->now(),
         );
+
+        if ($nouveau !== null || $request->input('document_retirer') !== null) {
+            $this->pages->updateAttachment($id, $nouveau, $this->chrome->now());
+            $this->documents->remove($ancien);
+        }
 
         $this->chrome->audit()->record(
             $this->chrome->currentUserId(),
