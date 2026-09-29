@@ -22,6 +22,15 @@ final class EnteteTest extends FunctionalTestCase
         $this->assertStringNotContainsString('id="menu"', $haut);
     }
 
+    public function test_la_langue_courante_a_le_meme_style_que_les_autres(): void
+    {
+        // Retour client du 2026-09-29 : « Français » (langue courante, simple
+        // texte) n'avait pas la typographie de « English » (lien du menu).
+        $corps = $this->get('/cedric-taldu/fr/a-propos')->body;
+
+        $this->assertStringContainsString('<span class="langue-courante" aria-current="true">Français</span>', $corps);
+    }
+
     public function test_le_menu_est_sur_une_seconde_ligne(): void
     {
         $corps = $this->get('/cedric-taldu/fr/a-propos')->body;
