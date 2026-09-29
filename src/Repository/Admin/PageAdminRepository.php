@@ -68,6 +68,16 @@ final class PageAdminRepository
     }
 
     /**
+     * Document PDF de la page (chemin relatif à storage/, ou null) — le livret
+     * à télécharger (retour client du 2026-09-29).
+     */
+    public function updateAttachment(int $id, ?string $path, DateTimeImmutable $now): void
+    {
+        $statement = $this->pdo->prepare('UPDATE pages SET attachment_path = :path, updated_at = :now WHERE id = :id');
+        $statement->execute(['path' => $path, 'now' => self::toSql($now), 'id' => $id]);
+    }
+
+    /**
      * @param array<string, array<string, string|null>> $translations
      */
     public function replaceTranslations(int $pageId, array $translations): void

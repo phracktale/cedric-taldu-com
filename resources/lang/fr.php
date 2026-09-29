@@ -91,6 +91,8 @@ return [
     'checkout.read' => '(lire)',
     'checkout.pdf' => '(PDF)',
     'page.download_pdf' => 'Télécharger les CGV en PDF',
+    'page.download_booklet' => 'Télécharger le livret (PDF)',
+    'page.download_document' => 'Télécharger le document (PDF)',
     'checkout.pay' => 'Procéder au paiement',
     'checkout.delivery' => 'Livraison',
     'checkout.travel_free' => 'Frais de déplacement offerts',

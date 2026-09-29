@@ -126,6 +126,24 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
             </p>
         </fieldset>
 
+        <fieldset>
+            <legend>Document PDF à télécharger</legend>
+            <?php $adresseDocument = $url->route('page.document', ['code' => (string) ($page['code'] ?? '')]); ?>
+            <?php if (is_string($page['attachment_path'] ?? null)) : ?>
+            <p class="champ">
+                Document en ligne : <a href="<?= attr($adresseDocument) ?>" target="_blank" rel="noopener"><?= e($adresseDocument) ?></a>
+                <span class="champ-aide">Cette adresse ne change pas quand le PDF est remplacé : un bouton peut la viser.
+                Un bouton « Télécharger » s’affiche aussi sur la page (section « Document PDF » du template).</span>
+            </p>
+            <p class="champ"><label class="case"><input type="checkbox" name="document_retirer" value="1"> Retirer le document</label></p>
+            <?php endif; ?>
+            <p class="champ">
+                <label for="document"><?php if (is_string($page['attachment_path'] ?? null)) : ?>Remplacer le PDF<?php else : ?>Déposer un PDF<?php endif; ?></label>
+                <input type="file" id="document" name="document" accept="application/pdf">
+                <span class="champ-aide">PDF de 20 Mo au plus — par exemple le livret de l’atelier.</span>
+            </p>
+        </fieldset>
+
         <p class="actions">
             <button type="submit" class="bouton">Enregistrer</button>
             <a class="bouton bouton--secondaire" href="<?= attr($base . '/admin/pages') ?>">Retour à la liste</a>

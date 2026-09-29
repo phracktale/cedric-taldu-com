@@ -24,8 +24,15 @@ $page = $data['page'];
 /** @var Media|null $cover image de couverture téléversée en back-office */
 $cover = $data['cover'] ?? null;
 ?>
-<?php // Version PDF téléchargeable des CGV (page à code fixe « terms »). ?>
-<?php if ($page->code === 'terms') : ?>
+<?php // Document déposé en back-office (livret…), sinon la version PDF des CGV. ?>
+<?php if ($page->hasAttachment()) : ?>
+<p class="page-pdf">
+  <a class="btn btn-vide" target="_blank" rel="noopener"
+     href="<?= attr($url->route('page.document', ['code' => $page->code])) ?>">
+    <?php if ($page->code === 'booklet') : ?><?= $t('page.download_booklet') ?><?php elseif ($page->code === 'terms') : ?><?= $t('page.download_pdf') ?><?php else : ?><?= $t('page.download_document') ?><?php endif; ?>
+  </a>
+</p>
+<?php elseif ($page->code === 'terms') : ?>
 <p class="page-pdf">
   <a class="btn btn-vide" target="_blank" rel="noopener"
      href="<?= attr($url->asset('documents/cgv-cedric-taldu-' . $locale->value . '.pdf')) ?>">
