@@ -846,6 +846,16 @@ a.oeuvre:hover .cadre, a.oeuvre:focus-visible .cadre {
 /* Mesure courte pour le texte centré de la section contact de l'accueil seulement :
    la page contact prend toute la largeur (retour client du 2026-09-29). */
 section.contact p { max-width: 50ch; }
+/* Page contact (retour client du 2026-09-29) : formulaire et coordonnées en
+   vis-à-vis dès 54rem, empilés en dessous. */
+.contact-intro { max-width: 60rem; }
+.contact-colonnes { display: grid; gap: clamp(2rem, 5vw, 4rem); grid-template-columns: minmax(0, 1fr); align-items: start; text-align: left; }
+.contact-colonnes .contact-form { max-width: none; margin: 0; }
+.contact-coordonnees { border-left: 1px solid var(--filet); padding-left: 1.6rem; }
+.contact-coordonnees h2 { font-size: 1.2rem; margin-bottom: 1rem; }
+.contact-coordonnees p { margin: 0 0 .9rem; max-width: none; }
+.contact-coordonnees a { color: var(--encre); }
+@media (min-width: 54rem) { .contact-colonnes { grid-template-columns: minmax(0, 1fr) minmax(14rem, 20rem); } }
 
 /* -------------------------------------------------------- page rubrique */
 

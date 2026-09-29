@@ -40,8 +40,13 @@ $values = is_array($data['values'] ?? null) ? $data['values'] : [];
 /** @var string $csrfToken */
 $csrfToken = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
 
+$contenu = ($data['contactPage'] ?? null) instanceof App\Domain\Editorial\ContactPage ? $data['contactPage'] : null;
 ?>
-<h1><?= $t('nav.contact') ?></h1>
+<?php // Titre et introduction de Contenus › Contact (retour client du 2026-09-29). ?>
+<h1><?php if ($contenu?->title($locale) !== null) : ?><?= e($contenu->title($locale)) ?><?php else : ?><?= $t('nav.contact') ?><?php endif; ?></h1>
+<?php if ($contenu?->intro($locale) !== null) : ?>
+<p class="contact-intro"><?= e($contenu->intro($locale)) ?></p>
+<?php endif; ?>
 
 <?php if ($sent) : ?>
   <p class="contact-succes" role="status">

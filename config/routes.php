@@ -33,6 +33,7 @@ use App\Http\Controller\Admin\DeliveryController;
 use App\Http\Controller\Admin\MenuController;
 use App\Http\Controller\Admin\GenerationController;
 use App\Http\Controller\Admin\MapController;
+use App\Http\Controller\Admin\ContactPageController;
 use App\Http\Controller\Admin\GlobalController;
 use App\Http\Controller\Admin\ContentBlockController;
 use App\Http\Controller\Admin\EcoIndexController;
@@ -310,6 +311,9 @@ return [
     // Paramètres › Global : identité du site (retours du 2026-09-25).
     new Route('admin.global.edit', 'GET', '/admin/global', [GlobalController::class, 'edit']),
     new Route('admin.global.update', 'POST', '/admin/global', [GlobalController::class, 'update']),
+    // Contenus › Contact (retour client du 2026-09-29).
+    new Route('admin.contact.edit', 'GET', '/admin/contact', [ContactPageController::class, 'edit']),
+    new Route('admin.contact.update', 'POST', '/admin/contact', [ContactPageController::class, 'update']),
     // Carte interactive (retours du 2026-09-25).
     new Route('admin.map.edit', 'GET', '/admin/carte', [MapController::class, 'edit']),
     new Route('admin.map.update', 'POST', '/admin/carte', [MapController::class, 'update']),

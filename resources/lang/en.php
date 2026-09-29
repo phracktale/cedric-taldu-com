@@ -161,6 +161,7 @@ return [
     'contact.email' => 'Your email address',
     'contact.message' => 'Your message',
     'contact.send' => 'Send',
+    'contact.coordinates' => 'Contact details',
     'contact.rgpd' => 'The information you provide is used solely to answer your request. '
         . 'You have the right to access, rectify and erase your data.',
     'contact.learn_more' => 'Learn more',

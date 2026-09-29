@@ -23,6 +23,7 @@ final class AdminMenu
                 ['chemin' => '/admin/medias', 'libelle' => 'Médiathèque'],
                 ['chemin' => '/admin/accueil', 'libelle' => 'Accueil'],
                 ['chemin' => '/admin/pages', 'libelle' => 'Pages'],
+                ['chemin' => '/admin/contact', 'libelle' => 'Contact'],
                 ['chemin' => '/admin/actus', 'libelle' => 'Actus'],
                 ['chemin' => '/admin/blocs', 'libelle' => 'Blocs'],
             ]],

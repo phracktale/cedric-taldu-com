@@ -9,6 +9,7 @@ use App\Core\Config;
 use App\Core\CookieFactory;
 use App\Core\Csrf;
 use App\Core\Request;
+use App\Domain\Editorial\ContactPage;
 use App\Domain\Editorial\ContentTemplate;
 use App\Domain\Editorial\HomeSectionForm;
 use App\Domain\Editorial\MapSettings;
@@ -149,6 +150,14 @@ final class Chrome
     public function template(string $type): array
     {
         return ContentTemplate::fromStored($type, $this->settings->json(ContentTemplate::settingKey($type)))->sections();
+    }
+
+    /**
+     * Contenu de la page contact (Contenus › Contact, retour client du 2026-09-29).
+     */
+    public function contactPage(): ContactPage
+    {
+        return ContactPage::fromStored($this->settings->json(ContactPage::SETTING));
     }
 
     /**
