@@ -145,4 +145,9 @@ php bin/create-admin.php                # crée un compte administrateur
 - **Preprod jamais indexée** : `X-Robots-Tag: noindex` dès que `APP_ENV != prod`, clés
   Stripe de test uniquement. **E-mails réellement envoyés** (décision du 2026-09-29) : relais
   Postfix de Heimdall (`MAIL_HOST=192.168.1.195`, port 587, sans auth ni TLS sur le LAN,
-  Thor seul autorisé) → OVH. MailHog reste disponible (`MAIL_HOST=mailhog`, port 1025).
+  Thor seul autorisé) → OVH, expéditeur `MAIL_FROM_ADDRESS=cedric.taldu@phracktale.com`. MailHog
+  reste disponible (`MAIL_HOST=mailhog`, port 1025).
+- **Expéditeur des e-mails = boîte autorisée par le serveur d'envoi** (constaté le 2026-09-29) :
+  un relais authentifié (OVH) n'accepte que sa boîte ou ses alias comme expéditeur. Toute autre
+  adresse est refusée EN SILENCE : le site n'affiche aucune erreur, rien n'arrive. **À régler
+  avant la mise en production** — voir `09-environnements-deploiement.md` §9.

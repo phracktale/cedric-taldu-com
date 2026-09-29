@@ -204,3 +204,17 @@ déploiement refuse de tourner sur un dépôt avec des modifications non commit�
 2. Réservation effective des ports 18120 / 13306 / 28083 / 8027 dans la table de routage.
 3. Emplacement du dépôt : `HOMELAB_CUSTOMERS/` avec un dossier de référence dans
    `HOMELAB/_CUSTOMERS/cedric-taldu/` (CLAUDE.md + vhost), comme Ateya et Planète Découverte.
+4. **E-mails de production** (noté le 2026-09-29, à régler avant la mise en ligne). En
+   préprod, le relais OVH de Heimdall a refusé en silence `commandes@cedrictaldu.com` puis
+   `commandes@customer.phracktale.com` : seule une boîte (ou un alias) du compte authentifié
+   est acceptée comme expéditeur ; l'adresse retenue en préprod est
+   `cedric.taldu@phracktale.com`. Pour la production :
+   - choisir le serveur d'envoi (SMTP du mutualisé, ou relais transactionnel) et l'adresse
+     expéditrice, **créée comme boîte ou alias de ce compte** (ex. `commandes@cedrictaldu.com`) ;
+   - publier pour `cedrictaldu.com` un **SPF** autorisant ce serveur, activer **DKIM**, et un
+     **DMARC** (au moins `p=none`) — sans quoi Gmail classe en indésirables ou refuse ;
+   - renseigner `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`,
+     `MAIL_ENCRYPTION` et `MAIL_FROM_ADDRESS` dans le `.env` de production ;
+   - **vérifier la réception réelle** : lien de connexion à l'espace client, confirmation
+     de commande, notification de contact — un envoi accepté par le serveur ne prouve pas
+     que l'e-mail arrive.
