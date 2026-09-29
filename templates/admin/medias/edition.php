@@ -25,16 +25,16 @@ $media = is_array($data['media'] ?? null) ? $data['media'] : [];
 /** @var array<string, array{alt: string, caption: string|null}> $traductions */
 $traductions = is_array($data['traductions'] ?? null) ? $data['traductions'] : [];
 
-/** @var array{categories: int, artworks: int, galleries: int} $usages */
+/** @var list<array{label: string, url: string}> $usages */
 $usages = is_array($data['usages'] ?? null)
     ? $data['usages']
-    : ['categories' => 0, 'artworks' => 0, 'galleries' => 0];
+    : [];
 
 $id = (int) ($media['id'] ?? 0);
 $basename = is_string($media['public_basename'] ?? null) ? $media['public_basename'] : '';
 $largeur = (int) ($media['width'] ?? 0);
 $hauteur = (int) ($media['height'] ?? 0);
-$totalUsages = array_sum($usages);
+$totalUsages = count($usages);
 
 // Plus grand derive disponible sous 1600 px, pour un apercu net sans charger
 // l'original. Media::availableWidths() garantit au moins le derive de 320 px.
@@ -204,18 +204,13 @@ $valeur = static function (string $langue, string $colonne) use ($traductions): 
             <button type="submit" class="lien-bouton">Supprimer cette image</button>
         </form>
         <?php else : ?>
+        <p>Utilisée par :</p>
         <ul>
-            <?php if ($usages['artworks'] > 0) : ?>
-            <li>Image principale de <?= e($usages['artworks']) ?> œuvre(s).</li>
-            <?php endif; ?>
-            <?php if ($usages['galleries'] > 0) : ?>
-            <li>Présente dans <?= e($usages['galleries']) ?> galerie(s) d’œuvre.</li>
-            <?php endif; ?>
-            <?php if ($usages['categories'] > 0) : ?>
-            <li>Couverture de <?= e($usages['categories']) ?> galerie(s).</li>
-            <?php endif; ?>
+            <?php foreach ($usages as $usage) : ?>
+            <li><a href="<?= attr($usage['url']) ?>"><?= e($usage['label']) ?></a></li>
+            <?php endforeach; ?>
         </ul>
-        <p class="aide">Retirez l’image de ces emplacements avant de pouvoir la supprimer.</p>
+        <p class="aide">Ouvrez chaque lien pour y retirer ou remplacer l’image ; elle pourra ensuite être supprimée.</p>
         <?php endif; ?>
     </section>
 </div>

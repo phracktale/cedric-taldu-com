@@ -147,6 +147,125 @@ final class MediaAdminRepository
         ];
     }
 
+    /**
+     * Chaque usage d'une image, nommé (retour client du 2026-09-29) : l'artiste
+     * voit OÙ elle sert, et peut l'y retirer. Couvre les liens directs (œuvres,
+     * images secondaires, couvertures de galerie, de page et d'actu), les blocs
+     * (pages, actus, bibliothèque) et l'accueil (fond du hero, portrait).
+     *
+     * @return list<array{type: string, id: int, label: string}>
+     *   type : artwork|category|page|post|block|home ; id : l'entité à ouvrir
+     *   (pour home : 0 = hero, 1 = atelier)
+     */
+    public function usagesOf(int $mediaId): array
+    {
+        $usages = [];
+
+        $requetes = [
+            ['artwork', 'image principale', "SELECT a.id, a.reference AS ref, t.title FROM artworks a
+                LEFT JOIN artwork_translations t ON t.artwork_id = a.id AND t.locale = 'fr'
+                WHERE a.primary_media_id = :id ORDER BY a.id"],
+            ['artwork', 'image secondaire', "SELECT a.id, a.reference AS ref, t.title FROM artwork_media am
+                JOIN artworks a ON a.id = am.artwork_id
+                LEFT JOIN artwork_translations t ON t.artwork_id = a.id AND t.locale = 'fr'
+                WHERE am.media_id = :id ORDER BY a.id"],
+            ['category', 'couverture', "SELECT c.id, NULL AS ref, t.title FROM categories c
+                LEFT JOIN category_translations t ON t.category_id = c.id AND t.locale = 'fr'
+                WHERE c.cover_media_id = :id ORDER BY c.id"],
+            ['page', 'couverture', "SELECT p.id, NULL AS ref, t.title FROM pages p
+                LEFT JOIN page_translations t ON t.page_id = p.id AND t.locale = 'fr'
+                WHERE p.cover_media_id = :id ORDER BY p.id"],
+            ['post', 'couverture', "SELECT p.id, NULL AS ref, t.title FROM posts p
+                LEFT JOIN post_translations t ON t.post_id = p.id AND t.locale = 'fr'
+                WHERE p.cover_media_id = :id ORDER BY p.id"],
+        ];
+
+        foreach ($requetes as [$type, $role, $sql]) {
+            $statement = $this->pdo->prepare($sql);
+            $statement->execute(['id' => $mediaId]);
+            foreach ($statement->fetchAll(PDO::FETCH_ASSOC) as $ligne) {
+                $usages[] = ['type' => $type, 'id' => (int) $ligne['id'], 'label' => self::usageLabel($type, $ligne, $role)];
+            }
+        }
+
+        // Blocs : le JSON est lu par la même règle que le rendu (Block::mediaIdsIn).
+        $blocs = [
+            ['page', "SELECT t.page_id AS id, t.blocks AS json, fr.title FROM page_translations t
+                LEFT JOIN page_translations fr ON fr.page_id = t.page_id AND fr.locale = 'fr'
+                WHERE t.blocks IS NOT NULL"],
+            ['post', "SELECT t.post_id AS id, t.blocks AS json, fr.title FROM post_translations t
+                LEFT JOIN post_translations fr ON fr.post_id = t.post_id AND fr.locale = 'fr'
+                WHERE t.blocks IS NOT NULL"],
+            ['block', "SELECT id, CONCAT('[', COALESCE(blocks_fr, '[]'), ',', COALESCE(blocks_en, '[]'), ']') AS json, name AS title
+                FROM content_blocks"],
+        ];
+        $vus = [];
+        foreach ($blocs as [$type, $sql]) {
+            $statement = $this->pdo->query($sql);
+            foreach ($statement === false ? [] : $statement->fetchAll(PDO::FETCH_ASSOC) as $ligne) {
+                $cle = $type . ':' . $ligne['id'];
+                if (isset($vus[$cle]) || !in_array($mediaId, self::mediaInJson((string) $ligne['json']), true)) {
+                    continue;
+                }
+                $vus[$cle] = true;
+                $usages[] = ['type' => $type, 'id' => (int) $ligne['id'], 'label' => self::usageLabel($type, $ligne, 'bloc image')];
+            }
+        }
+
+        // Accueil : fond du hero, portrait de l'atelier.
+        $statement = $this->pdo->prepare("SELECT `key`, value FROM settings WHERE `key` IN ('home.hero', 'home.studio')");
+        $statement->execute();
+        foreach ($statement->fetchAll(PDO::FETCH_ASSOC) as $ligne) {
+            $document = json_decode((string) $ligne['value'], true);
+            $commun = is_array($document) && is_array($document['common'] ?? null) ? $document['common'] : [];
+            if ($ligne['key'] === 'home.hero' && ($commun['background']['media_id'] ?? null) === $mediaId) {
+                $usages[] = ['type' => 'home', 'id' => 0, 'label' => 'Accueil — fond du hero'];
+            }
+            if ($ligne['key'] === 'home.studio' && ($commun['portrait_media_id'] ?? null) === $mediaId) {
+                $usages[] = ['type' => 'home', 'id' => 1, 'label' => 'Accueil — portrait de l’atelier'];
+            }
+        }
+
+        return $usages;
+    }
+
+    /**
+     * @param array<string, mixed> $ligne
+     */
+    private static function usageLabel(string $type, array $ligne, string $role): string
+    {
+        $titre = is_string($ligne['title'] ?? null) && trim($ligne['title']) !== '' ? trim($ligne['title']) : null;
+        $ref = is_string($ligne['ref'] ?? null) && $ligne['ref'] !== '' ? ' (' . $ligne['ref'] . ')' : '';
+
+        $nom = match ($type) {
+            'artwork' => $titre === null ? 'Œuvre sans titre' : 'Œuvre « ' . $titre . ' »',
+            'category' => 'Galerie « ' . ($titre ?? 'sans titre') . ' »',
+            'page' => 'Page « ' . ($titre ?? 'sans titre') . ' »',
+            'post' => 'Actu « ' . ($titre ?? 'sans titre') . ' »',
+            default => 'Bloc « ' . ($titre ?? 'sans nom') . ' »',
+        };
+
+        return $nom . $ref . ' — ' . $role;
+    }
+
+    /**
+     * @return list<int>
+     */
+    private static function mediaInJson(string $json): array
+    {
+        $donnees = json_decode($json, true);
+        if (!is_array($donnees)) {
+            return [];
+        }
+
+        // Un document de bibliothèque arrive en [[fr…], [en…]] : on aplatit.
+        $liste = array_is_list($donnees) && isset($donnees[0]) && is_array($donnees[0]) && array_is_list($donnees[0])
+            ? array_merge(...array_values(array_filter($donnees, 'is_array')))
+            : $donnees;
+
+        return \App\Domain\Editorial\Block::mediaIdsIn(\App\Domain\Editorial\Block::listFromArray($liste));
+    }
+
     // ------------------------------------------------------------- ecriture
 
     /**

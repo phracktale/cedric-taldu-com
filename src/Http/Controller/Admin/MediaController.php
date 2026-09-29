@@ -252,13 +252,12 @@ final class MediaController
     public function delete(Request $request): Response
     {
         $media = $this->media($request);
-        $usages = $this->medias->usageOf((int) $media['id']);
-
         // 04-back-office §7 : « Suppression refusee si le media est utilise. »
-        if (array_sum($usages) > 0) {
+        // Tout usage compte, blocs et accueil compris (retour client du 2026-09-29).
+        if ($this->medias->usagesOf((int) $media['id']) !== []) {
             return $this->page(
                 $request,
-                erreur: 'Cette image est utilisée : retirez-la d’abord des œuvres et galeries concernées.',
+                erreur: 'Cette image est utilisée : retirez-la d’abord des endroits listés sous « Utilisée par ».',
                 status: 409,
             );
         }
@@ -315,7 +314,18 @@ final class MediaController
             'titre' => 'Modifier une image',
             'media' => $media,
             'traductions' => $this->medias->translationsOf($id),
-            'usages' => $this->medias->usageOf($id),
+            // Chaque usage nommé, avec l'écran où le retirer (retour client du 2026-09-29).
+            'usages' => array_map(fn (array $u): array => [
+                'label' => $u['label'],
+                'url' => $request->basePath . match ($u['type']) {
+                    'artwork' => '/admin/oeuvres/' . $u['id'],
+                    'category' => '/admin/galeries/' . $u['id'],
+                    'page' => '/admin/pages/' . $u['id'],
+                    'post' => '/admin/actus/' . $u['id'],
+                    'block' => '/admin/blocs/' . $u['id'],
+                    default => $u['id'] === 0 ? '/admin/accueil/hero' : '/admin/accueil/atelier',
+                },
+            ], $this->medias->usagesOf($id)),
             'succes' => $succes,
             'erreur' => $erreur,
         ], $status);
