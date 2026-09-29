@@ -143,4 +143,6 @@ php bin/create-admin.php                # crée un compte administrateur
   le permet pas, le `.htaccess` racine réécrit vers `public/`, mais `storage/`, `src/`,
   `.env` et `vendor/` doivent rester inaccessibles dans tous les cas. Test dédié.
 - **Preprod jamais indexée** : `X-Robots-Tag: noindex` dès que `APP_ENV != prod`, clés
-  Stripe de test uniquement, e-mails capturés par MailHog.
+  Stripe de test uniquement. **E-mails réellement envoyés** (décision du 2026-09-29) : relais
+  Postfix de Heimdall (`MAIL_HOST=192.168.1.195`, port 587, sans auth ni TLS sur le LAN,
+  Thor seul autorisé) → OVH. MailHog reste disponible (`MAIL_HOST=mailhog`, port 1025).

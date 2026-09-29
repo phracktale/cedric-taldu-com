@@ -174,8 +174,13 @@ déploiement refuse de tourner sur un dépôt avec des modifications non commit�
   plus un `robots.txt` interdisant tout. Testé.
 - Stripe en **clés de test** exclusivement ; un contrôle au démarrage refuse de démarrer si
   `APP_ENV=prod` avec une clé `sk_test_`, et inversement.
-- Tous les e-mails sortants sont capturés par MailHog : le transport SMTP pointe sur
-  MailHog et un garde-fou interdit tout envoi vers un domaine externe hors production.
+- E-mails sortants (décision du 2026-09-29) : **réellement envoyés**, par le relais Postfix
+  de Heimdall (`MAIL_HOST=192.168.1.195`, `MAIL_PORT=587`, `MAIL_ENCRYPTION` vide — LAN,
+  Thor seul autorisé par `mynetworks`), qui relaie vers OVH (`ssl0.ovh.net`). Pour revenir à
+  la capture, `MAIL_HOST=mailhog` et `MAIL_PORT=1025` dans le `.env` de Thor, puis
+  `docker compose up -d app`. Le garde-fou « aucun envoi vers un domaine externe hors
+  production » prévu ici n'a jamais été implémenté : en preprod, toute adresse saisie (commande
+  de test, contact) reçoit donc un vrai e-mail.
 - Un bandeau visible indique l'environnement de preprod.
 - Aucune donnée client réelle en preprod ; les jeux de données viennent de `bin/seed.php`.
 
