@@ -116,6 +116,20 @@ final class PageRubriqueTest extends FunctionalTestCase
         $this->assertStringContainsString('Toutes', $corps);
     }
 
+    public function test_le_filtre_porte_les_reperes_du_filtrage_sans_rechargement(): void
+    {
+        // Retour client du 2026-09-29 (point 15) : series.js remplace la seule
+        // grille par celle de l'URL filtrée, sans recharger la page. Les liens
+        // restent de vrais liens (sans JavaScript, SEO, URL partageable).
+        (new SeriesFactory($this->pdo))->translated('fr', 'piliers', 'Piliers')->create($this->rubrique);
+
+        $corps = $this->get('/cedric-taldu/fr/galerie/encres')->body;
+
+        $this->assertMatchesRegularExpression('#<nav class="series" aria-label="[^"]+" data-filtre-series>#', $corps);
+        $this->assertMatchesRegularExpression('#<section class="grille wrap" aria-label="[^"]+" aria-live="polite" data-grille-oeuvres>#', $corps);
+        $this->assertStringContainsString("from './series.js'", (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/app.js'));
+    }
+
     public function test_le_filtre_restreint_la_grille_cote_serveur(): void
     {
         // 02-front-public §3.3 : rendu côté serveur, l'URL reste partageable et

@@ -17,6 +17,7 @@ import { initCart } from './cart.js';
 import { initCheckout } from './checkout.js';
 import { initEtat } from './etat.js';
 import { initCarte } from './carte.js';
+import { initSeries } from './series.js';
 
 const base = document.body.dataset.base ?? '/';
 
@@ -27,3 +28,4 @@ initCart();
 initCheckout();
 initEtat(base);
 initCarte();
+initSeries();

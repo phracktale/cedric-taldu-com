@@ -67,7 +67,7 @@ $lienRubrique = static fn (?Series $serie): string => $url->route('category.show
   <?php endif; ?>
 
   <?php if ($series !== []) : ?>
-  <nav class="series" aria-label="<?= $t('category.series') ?>">
+  <nav class="series" aria-label="<?= $t('category.series') ?>" data-filtre-series>
     <a class="serie" href="<?= attr($lienRubrique(null)) ?>"<?php if ($serieChoisie === null) : ?> aria-current="page"<?php endif; ?>><?= $t('category.all') ?></a>
     <?php foreach ($series as $serie) : ?>
     <a class="serie" href="<?= attr($lienRubrique($serie)) ?>"<?php if ($serieChoisie?->id === $serie->id) : ?> aria-current="page"<?php endif; ?>><?= e($serie->title($locale)) ?></a>
