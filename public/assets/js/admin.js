@@ -258,3 +258,29 @@ document.querySelectorAll('[data-slug-depuis]').forEach((slug) => {
   const titre = document.getElementById(slug.dataset.slugDepuis);
   if (titre) proposerLeSlug(titre, slug);
 });
+
+/* ------------------------------------------- séries de la galerie choisie */
+
+/**
+ * Formulaire d'œuvre (retour client du 2026-09-29) : toutes les séries sont
+ * servies, groupées par galerie. Ici, seules celles de la galerie choisie
+ * restent proposées ; une série devenue étrangère est désélectionnée. Sans
+ * JavaScript, le serveur refuse une série d'une autre galerie.
+ */
+function filtrerSeries(galerie, serie) {
+  const appliquer = () => {
+    serie.querySelectorAll('optgroup[data-galerie]').forEach((groupe) => {
+      const visible = groupe.dataset.galerie === galerie.value;
+      groupe.hidden = !visible;
+      groupe.disabled = !visible;
+    });
+    const choisie = serie.selectedOptions[0];
+    if (choisie && choisie.parentElement && choisie.parentElement.disabled) serie.value = '';
+  };
+  galerie.addEventListener('change', appliquer);
+  appliquer();
+}
+
+const galerieOeuvre = document.getElementById('rubrique');
+const serieOeuvre = document.getElementById('serie');
+if (galerieOeuvre && serieOeuvre) filtrerSeries(galerieOeuvre, serieOeuvre);

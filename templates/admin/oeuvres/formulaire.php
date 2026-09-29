@@ -126,13 +126,20 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
                     <label for="serie">Série</label>
                     <select id="serie" name="serie">
                         <option value="">Sans série</option>
-                        <?php foreach ($series as $serie) : ?>
-                        <option value="<?= attr($serie['id']) ?>"
-                            <?php if ((string) $champ('serie', 'series_id') === (string) $serie['id']) : ?>selected<?php endif; ?>
-                        ><?= e($serie['translations']['fr']['title'] ?? 'Sans titre') ?></option>
+                        <?php foreach ($rubriques as $rubrique) : ?>
+                            <?php $seriesDeLaGalerie = array_filter($series, static fn (array $s): bool => (int) $s['category_id'] === (int) $rubrique['id']); ?>
+                            <?php if ($seriesDeLaGalerie !== []) : ?>
+                        <optgroup label="<?= attr($rubrique['translations']['fr']['title'] ?? 'Sans titre') ?>" data-galerie="<?= attr($rubrique['id']) ?>">
+                                <?php foreach ($seriesDeLaGalerie as $serie) : ?>
+                            <option value="<?= attr($serie['id']) ?>"
+                                <?php if ((string) $champ('serie', 'series_id') === (string) $serie['id']) : ?>selected<?php endif; ?>
+                            ><?= e($serie['translations']['fr']['title'] ?? 'Sans titre') ?></option>
+                                <?php endforeach; ?>
+                        </optgroup>
+                            <?php endif; ?>
                         <?php endforeach; ?>
                     </select>
-                    <span class="champ-aide">Les séries se créent depuis la galerie.</span>
+                    <span class="champ-aide">Séries de la galerie choisie. Elles se créent depuis la galerie.</span>
                 </p>
             </div>
         </fieldset>

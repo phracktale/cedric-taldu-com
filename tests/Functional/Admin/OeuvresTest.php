@@ -12,6 +12,7 @@ use Tests\Support\Doubles\SequenceRandom;
 use Tests\Support\Factory\ArtworkFactory;
 use Tests\Support\Factory\CategoryFactory;
 use Tests\Support\Factory\MediaFactory;
+use Tests\Support\Factory\SeriesFactory;
 use Tests\Support\Factory\UserFactory;
 use Tests\Support\ImageFixtures;
 
@@ -49,6 +50,43 @@ final class OeuvresTest extends AdminTestCase
         $this->assertSame(200, $reponse->status);
         $this->assertStringContainsString('name="reference"', $reponse->body);
         $this->assertStringContainsString('name="titre_fr"', $reponse->body);
+    }
+
+    public function test_la_creation_propose_les_series_de_toutes_les_galeries(): void
+    {
+        // Retour client du 2026-09-29 : la liste des séries n'apparaissait
+        // qu'une fois l'œuvre enregistrée (elle dépendait de la galerie déjà
+        // en base). Toutes les séries, groupées par galerie, dès la création.
+        $serie = (new SeriesFactory($this->pdo))->translated('fr', 'piliers', 'Piliers')->create($this->rubrique);
+        $peintures = (new CategoryFactory($this->pdo))->translated('fr', 'peintures', 'Peintures')->create();
+        (new SeriesFactory($this->pdo))->translated('fr', 'fondations', 'Fondations')->create($peintures);
+
+        $corps = $this->get(self::OEUVRES . '/nouvelle')->body;
+
+        $this->assertStringContainsString('<optgroup label="Encres" data-galerie="' . $this->rubrique . '">', $corps);
+        $this->assertStringContainsString('<option value="' . $serie . '"', $corps);
+        $this->assertStringContainsString('<optgroup label="Peintures" data-galerie="' . $peintures . '">', $corps);
+        $this->assertStringContainsString('>Fondations</option>', $corps);
+    }
+
+    public function test_la_serie_s_enregistre_des_la_creation(): void
+    {
+        $serie = (new SeriesFactory($this->pdo))->translated('fr', 'piliers', 'Piliers')->create($this->rubrique);
+
+        $this->assertSame(302, $this->creer(['reference' => 'CT-ENC-002', 'titre_fr' => 'Pilier', 'serie' => (string) $serie])->status);
+        $this->assertSame((string) $serie, $this->valeur('SELECT series_id FROM artworks'));
+    }
+
+    public function test_une_serie_d_une_autre_galerie_est_refusee(): void
+    {
+        $peintures = (new CategoryFactory($this->pdo))->translated('fr', 'peintures', 'Peintures')->create();
+        $ailleurs = (new SeriesFactory($this->pdo))->translated('fr', 'fondations', 'Fondations')->create($peintures);
+
+        $reponse = $this->creer(['reference' => 'CT-ENC-003', 'titre_fr' => 'Pilier', 'serie' => (string) $ailleurs]);
+
+        $this->assertSame(422, $reponse->status);
+        $this->assertStringContainsString('La série choisie appartient à une autre galerie.', $reponse->body);
+        $this->assertSame(0, $this->compter('artworks'));
     }
 
     public function test_une_oeuvre_se_cree_avec_une_reference_une_rubrique_et_un_titre(): void
