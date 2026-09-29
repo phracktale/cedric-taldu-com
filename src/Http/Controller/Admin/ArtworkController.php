@@ -298,6 +298,13 @@ final class ArtworkController
             return 'Choisissez une galerie existante.';
         }
 
+        // Toutes les séries sont proposées dès la création (retour client du
+        // 2026-09-29) : la série doit donc appartenir à la galerie choisie.
+        $seriesId = self::positiveInt($request->input('serie'));
+        if ($seriesId !== null && (int) ($this->series->findById($seriesId)['category_id'] ?? 0) !== $categoryId) {
+            return 'La série choisie appartient à une autre galerie.';
+        }
+
         $price = $request->input('prix');
 
         if ($price !== null && trim($price) !== '' && self::priceInCents($price) === null) {
@@ -368,15 +375,12 @@ final class ArtworkController
      */
     private function form(Request $request, ?array $artwork, ?string $erreur = null, int $status = 200): Response
     {
-        $categoryId = $artwork === null
-            ? self::positiveInt($request->input('rubrique'))
-            : (int) $artwork['category_id'];
-
         return $this->chrome->page($request, 'admin/oeuvres/formulaire', [
             'titre' => $artwork === null ? 'Nouvelle œuvre' : 'Modifier l’œuvre',
             'oeuvre' => $artwork,
             'rubriques' => $this->categories->findAll(),
-            'series' => $categoryId === null ? [] : $this->series->findByCategory($categoryId),
+            // Toutes les séries, groupées par galerie dans le formulaire.
+            'series' => $this->series->findAll(),
             'statuts' => ArtworkStatus::cases(),
             'erreur' => $erreur,
             'saisie' => $request->post,

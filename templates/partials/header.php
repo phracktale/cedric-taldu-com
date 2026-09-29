@@ -68,7 +68,7 @@ $site = ($data['site'] ?? null) instanceof App\Domain\Editorial\SiteIdentity
     <nav class="langues" aria-label="<?= $t('nav.language') ?>">
       <?php foreach (Locale::cases() as $autre) : ?>
         <?php if ($autre === $locale) : ?>
-          <span aria-current="true"><?= e($autre->nativeName()) ?></span>
+          <span class="langue-courante" aria-current="true"><?= e($autre->nativeName()) ?></span>
         <?php elseif (isset($localeSwitch[$autre->value])) : ?>
           <a href="<?= attr($localeSwitch[$autre->value]) ?>" hreflang="<?= attr($autre->value) ?>"><?= e($autre->nativeName()) ?></a>
         <?php endif; ?>

@@ -45,6 +45,19 @@ final class SeriesAdminRepository
     }
 
     /**
+     * Toutes les séries, par galerie puis par position (formulaire d'œuvre :
+     * la galerie n'est pas encore enregistrée à la création).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function findAll(): array
+    {
+        $statement = $this->pdo->query(self::SELECT . ' ORDER BY s.category_id ASC, s.position ASC, s.id ASC');
+
+        return $statement === false ? [] : $this->hydrateAll($statement->fetchAll());
+    }
+
+    /**
      * @return array<string, mixed>|null
      */
     public function findById(int $id): ?array

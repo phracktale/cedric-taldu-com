@@ -176,6 +176,12 @@ nav a, .nav-bouton {
 }
 nav a:hover, nav a:focus-visible,
 .nav-bouton:hover, .nav-bouton:focus-visible { color: var(--encre); border-bottom-color: var(--encre); }
+/* Langue courante (texte, pas un lien) : même typographie que « English »
+   (retour client du 2026-09-29). */
+.langue-courante {
+  font-size: .86rem; letter-spacing: .12em; text-transform: uppercase; color: var(--encre);
+  padding-bottom: .2rem; border-bottom: 1px solid transparent;
+}
 
 /* Panier : lien global + pastille du nombre d'articles. */
 .panier-lien {
@@ -202,8 +208,12 @@ nav[data-actif="souligne"] a[aria-current],
 nav[data-actif="souligne"] .nav-bouton[aria-current] { border-bottom-color: var(--encre); }
 nav[data-actif="gras"] a[aria-current],
 nav[data-actif="gras"] .nav-bouton[aria-current] { font-weight: 500; }
+/* Inversé : la même marge intérieure pour TOUTES les entrées, sans quoi
+   l'onglet actif dépasse des autres (retour client du 2026-09-29). */
+nav[data-actif="inverse"] a,
+nav[data-actif="inverse"] .nav-bouton { padding: .2rem .5rem; }
 nav[data-actif="inverse"] a[aria-current],
-nav[data-actif="inverse"] .nav-bouton[aria-current] { background: var(--encre); color: var(--papier); padding: .2rem .5rem; }
+nav[data-actif="inverse"] .nav-bouton[aria-current] { background: var(--encre); color: var(--papier); }
 nav[data-actif="couleur"] a[aria-current],
 nav[data-actif="couleur"] .nav-bouton[aria-current] { color: var(--actif); }
 
@@ -640,7 +650,7 @@ button.btn { font-family: inherit; cursor: pointer; }
 
 /* --------------------------------------------------------- œuvres, cadres */
 
-.vitrine { padding: 0 0 clamp(3.5rem, 8vh, 6rem); }
+.vitrine { padding: 0 0 clamp(3.5rem, 8vh, 6rem); padding-top: 3.125rem; /* 50px sous le hero (2026-09-29) */ }
 .vitrine-grid { display: grid; grid-template-columns: 1.2fr 1fr 1.2fr; gap: 1.4rem; align-items: end; }
 
 .oeuvre { position: relative; display: block; text-decoration: none; }
@@ -669,6 +679,9 @@ a.oeuvre:hover .cadre, a.oeuvre:focus-visible .cadre {
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
 }
+/* Image présente : fond blanc, pas la trame d'attente, là où elle ne remplit
+   pas sa vignette (retour client du 2026-09-29). */
+.dessin:has(picture) { background: #fff; }
 .dessin img {
   width: 100%; height: 100%; object-fit: contain;
   /* Point focal (classes fx-/fy-) et facteur de zoom réglable en back-office. */
@@ -810,10 +823,29 @@ a.oeuvre:hover .cadre, a.oeuvre:focus-visible .cadre {
 
 @media (max-width: 640px) { .actu { grid-template-columns: 1fr; } }
 
+/* Liste des actus (retour client du 2026-09-29) : chaque actu tombait dans la
+   première colonne (8,5rem) de la grille compacte de l'accueil. Ici : photo à
+   gauche, date, titre, lieu et extrait sur toute la largeur restante. */
+.actus-liste { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--filet); }
+.actus-liste .actu { display: block; padding: 2rem 0; border-bottom: 1px solid var(--filet); }
+.actus-liste .actu-lien {
+  display: grid; grid-template-columns: minmax(12rem, 20rem) minmax(0, 1fr);
+  gap: clamp(1.5rem, 4vw, 3rem); align-items: start; text-decoration: none; color: inherit;
+}
+.actu-date { font-size: .8rem; letter-spacing: .16em; text-transform: uppercase; color: var(--encre-70); margin-bottom: .5rem; }
+.actu-titre { font-family: 'Marcellus', Georgia, serif; font-weight: 400; font-size: clamp(1.3rem, 2.4vw, 1.7rem); margin-bottom: .5rem; }
+.actu-lien:hover .actu-titre, .actu-lien:focus-visible .actu-titre { text-decoration: underline; text-underline-offset: .2em; }
+.actu-lieu { font-size: .92rem; color: var(--encre-70); margin-bottom: .9rem; }
+.actu-extrait { color: var(--encre-70); line-height: 1.7; }
+@media (max-width: 40rem) { .actus-liste .actu-lien { grid-template-columns: minmax(0, 1fr); } }
+
 /* ---------------------------------------------------------------- contact */
 
 .contact { padding: clamp(4rem, 9vh, 6rem) 0; text-align: center; }
-.contact p { max-width: 50ch; margin: 0 auto 2rem; color: var(--encre-70); }
+.contact p { margin: 0 auto 2rem; color: var(--encre-70); }
+/* Mesure courte pour le texte centré de la section contact de l'accueil seulement :
+   la page contact prend toute la largeur (retour client du 2026-09-29). */
+section.contact p { max-width: 50ch; }
 
 /* -------------------------------------------------------- page rubrique */
 
@@ -967,6 +999,14 @@ footer { border-top: 1px solid var(--filet); padding: 2.5rem 0; font-size: .85re
 }
 footer a { color: var(--encre-70); text-decoration: none; }
 footer a:hover { text-decoration: underline; }
+/* Menu du pied de page (retour client du 2026-09-29) : il héritait du style du
+   menu principal (capitales, bordure au survol) en plus du soulignement —
+   deux traits. Ici : soulignés, en minuscules, un seul trait. */
+.foot-legal a {
+  text-transform: none; letter-spacing: normal; font-size: inherit; padding-bottom: 0;
+  text-decoration: underline; text-underline-offset: .2em; border-bottom: 0;
+}
+.foot-legal a:hover, .foot-legal a:focus-visible { color: var(--encre); border-bottom: 0; }
 
 /* Bandeau d'environnement — jamais visible en production
    (09-environnements §7). */
