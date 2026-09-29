@@ -127,7 +127,7 @@ final class PageRubriqueTest extends FunctionalTestCase
 
         $this->assertMatchesRegularExpression('#<nav class="series" aria-label="[^"]+" data-filtre-series>#', $corps);
         $this->assertMatchesRegularExpression('#<section class="grille wrap" aria-label="[^"]+" aria-live="polite" data-grille-oeuvres>#', $corps);
-        $this->assertStringContainsString('js/series.js', (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/app.js'));
+        $this->assertStringContainsString("from './series.js'", (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/app.js'));
     }
 
     public function test_le_filtre_restreint_la_grille_cote_serveur(): void

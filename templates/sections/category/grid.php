@@ -41,7 +41,7 @@ $lienRubrique = static fn (?Series $serie): string => $url->route('category.show
 ]));
 
 ?>
-<section class="grille wrap" aria-label="<?= $t('category.works') ?>">
+<section class="grille wrap" aria-label="<?= $t('category.works') ?>" aria-live="polite" data-grille-oeuvres>
   <?php if ($oeuvres === []) : ?>
     <p class="vide"><?= $t('category.empty') ?></p>
   <?php else : ?>
