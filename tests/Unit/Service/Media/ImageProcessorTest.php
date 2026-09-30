@@ -254,6 +254,20 @@ final class ImageProcessorTest extends TestCase
         $this->assertFileDoesNotExist($repertoire . '/abcdef-full.jpg');
     }
 
+    public function test_les_largeurs_des_vignettes_sont_produites_en_plus(): void
+    {
+        // Vignettes nettes (2026-09-30) : largeurs exactes calculées par
+        // ThumbnailLayout, passées en plus des largeurs génériques.
+        $original = $this->reencode($this->fixtures->jpeg(1200, 1600));
+        $repertoire = $this->fixtures->path('derives-vignettes');
+        mkdir($repertoire);
+
+        $this->processeur->derivatives($original, $repertoire, 'abcdef', [245, 490]);
+
+        $this->assertSame(245, getimagesize($repertoire . '/abcdef-245.webp')[0] ?? null);
+        $this->assertSame(490, getimagesize($repertoire . '/abcdef-490.jpg')[0] ?? null);
+    }
+
     public function test_aucun_derive_n_agrandit_l_original(): void
     {
         // Agrandir n'ajoute pas d'information et fait telecharger plus d'octets

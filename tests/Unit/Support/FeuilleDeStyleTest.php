@@ -85,6 +85,16 @@ final class FeuilleDeStyleTest extends TestCase
         $this->assertMatchesRegularExpression('~scale:\s*var\(--vignette-zoom,\s*1\)~', $this->regle('.dessin img'));
     }
 
+    public function test_la_vignette_d_oeuvre_s_affiche_a_la_taille_de_son_fichier(): void
+    {
+        // Vignettes nettes (2026-09-30) : ni redimensionnement ni zoom par la
+        // CSS — le facteur de zoom est déjà dans le fichier choisi.
+        $regle = $this->regle('.oeuvre .dessin img');
+        $this->assertStringContainsString('width: auto', $regle);
+        $this->assertStringContainsString('height: auto', $regle);
+        $this->assertStringContainsString('scale: 1', $regle);
+    }
+
     /**
      * @return iterable<string, array{string}>
      */
