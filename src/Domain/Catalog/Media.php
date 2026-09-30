@@ -20,8 +20,15 @@ final class Media
     /** Largeurs de derives, en pixels. */
     public const WIDTHS = [320, 640, 1024, 1600, 2400];
 
-    /** Plus grand dérivé ; au-delà, seul un plein format JPEG sert au zoom. */
+    /** Plus grand dérivé. */
     public const MAX_WIDTH = 2400;
+
+    /**
+     * Image du zoom : 2000 px au plus grand côté (demande du 2026-09-30,
+     * « 2000 px sont suffisants »). Remplace le plein format, qui pèserait près
+     * de 100 Mo pour une image HD de 150 Mpx.
+     */
+    public const ZOOM_MAX = 2000;
 
     /**
      * Formats, DU PLUS EFFICACE AU REPLI. L'ordre compte : <picture> retient la
@@ -122,27 +129,39 @@ final class Media
     }
 
     /**
-     * Un plein format JPEG (`-full.jpg`) n'existe qu'au-delà du plus grand
-     * dérivé : c'est lui qu'ouvre le zoom, pour que les points restent nets.
-     */
-    public function hasFullDerivative(): bool
-    {
-        return $this->width > self::MAX_WIDTH;
-    }
-
-    public function fullFilename(): string
-    {
-        return $this->publicBasename . '-full.jpg';
-    }
-
-    /**
-     * Fichier ouvert par le zoom : l'image à sa résolution native.
+     * Fichier ouvert par le zoom : un JPEG dédié, voir zoomSize().
      */
     public function zoomFilename(): string
     {
-        return $this->hasFullDerivative()
-            ? $this->fullFilename()
-            : $this->derivativeFilename($this->width, 'jpg');
+        return $this->publicBasename . '-zoom.jpg';
+    }
+
+    /**
+     * Dimensions de l'image du zoom : ZOOM_MAX au plus grand côté, jamais
+     * d'agrandissement.
+     *
+     * @return array{0: int<1, max>, 1: int<1, max>}
+     */
+    public function zoomSize(): array
+    {
+        return self::fitWithin($this->width, $this->height, self::ZOOM_MAX);
+    }
+
+    /**
+     * @return array{0: int<1, max>, 1: int<1, max>}
+     */
+    public static function fitWithin(int $width, int $height, int $longest): array
+    {
+        $cote = max($width, $height);
+
+        if ($cote <= $longest) {
+            return [max(1, $width), max(1, $height)];
+        }
+
+        return [
+            max(1, (int) round($width * $longest / $cote)),
+            max(1, (int) round($height * $longest / $cote)),
+        ];
     }
 
     public function defaultWidth(): int
