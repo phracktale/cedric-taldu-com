@@ -14,6 +14,7 @@ use App\Domain\Locale;
 use App\Repository\Admin\SettingsAdminRepository;
 use App\Repository\CategoryRepository;
 use App\Repository\SettingRepository;
+use App\Service\Media\MediaStore;
 use App\Service\View\AdminChrome;
 use App\Service\View\Chrome;
 
@@ -43,6 +44,8 @@ final class AppearanceController
         private readonly SettingRepository $settings,
         private readonly SettingsAdminRepository $save,
         private readonly CategoryRepository $categories,
+        // Vignettes nettes (2026-09-30) : le zoom changé, leurs fichiers sont refaits.
+        private readonly ?MediaStore $medias = null,
     ) {
     }
 
@@ -81,11 +84,13 @@ final class AppearanceController
             'color' => HomeSectionForm::color($request->input('couleur')),
         ], $this->chrome->now());
 
-        $this->save->save(
-            Theme::IMAGES_SETTING,
-            ['zoom' => Theme::zoom($request->input('zoom'))],
-            $this->chrome->now(),
-        );
+        $zoomAvant = Theme::zoom($this->settings->json(Theme::IMAGES_SETTING)['zoom'] ?? null);
+        $zoom = Theme::zoom($request->input('zoom'));
+        $this->save->save(Theme::IMAGES_SETTING, ['zoom' => $zoom], $this->chrome->now());
+
+        if ($zoom !== $zoomAvant) {
+            $this->medias?->regenerateThumbnails($zoom);
+        }
 
         $input = [];
         foreach (array_keys(HomeSectionForm::ctaToForm('blog', [])) as $champ) {

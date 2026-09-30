@@ -278,12 +278,33 @@ final class UploadTest extends AdminTestCase
                 $attendus[] = $base . '-' . $largeur . '.' . $format;
             }
         }
+        // Vignettes nettes (2026-09-30), au facteur de zoom par défaut.
+        foreach (\App\Domain\Catalog\ThumbnailLayout::pixelWidths(2400, 1800, 100) as $largeur) {
+            foreach (\App\Domain\Catalog\Media::FORMATS as $format) {
+                $attendus[] = $base . '-' . $largeur . '.' . $format;
+            }
+        }
+        $attendus = array_values(array_unique($attendus));
         // Image du zoom, 2000 px au plus grand côté (2026-09-30).
         $attendus[] = $base . '-zoom.jpg';
 
         sort($attendus);
 
         $this->assertSame($attendus, $this->derivesPublies());
+    }
+
+    public function test_changer_le_zoom_des_vignettes_refait_leurs_fichiers(): void
+    {
+        // Vignettes nettes (2026-09-30) : le facteur de zoom d'Apparence est
+        // intégré aux largeurs ; le changer produit les nouvelles tailles.
+        $this->televerse($this->fixtures->jpeg(1200, 1600));
+        $base = (string) $this->dernierMedia()['public_basename'];
+        $this->assertFileDoesNotExist($this->racine() . '/public/media/' . $base . '-196.webp');
+
+        $this->postAvecJeton('/cedric-taldu/admin/apparence', ['style' => 'souligne', 'zoom' => '80']);
+
+        $this->assertFileExists($this->racine() . '/public/media/' . $base . '-196.webp');
+        $this->assertFileExists($this->racine() . '/public/media/' . $base . '-196.jpg');
     }
 
     // -------------------------------------------------------- deduplication

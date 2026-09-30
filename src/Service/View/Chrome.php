@@ -11,6 +11,7 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Domain\Editorial\ContactPage;
 use App\Domain\Editorial\ContentTemplate;
+use App\Domain\Catalog\ThumbnailLayout;
 use App\Domain\Editorial\HomeSectionForm;
 use App\Domain\Editorial\MapSettings;
 use App\Domain\Editorial\SiteIdentity;
@@ -215,6 +216,8 @@ final class Chrome
             $declarations .= Theme::zoomCss(Theme::zoom($images['zoom'])) . ' ';
         }
 
-        return $declarations === '' ? '' : ':root { ' . $declarations . '}';
+        // Grilles de vignettes d'œuvres à colonnes fixes (vignettes nettes,
+        // 2026-09-30), engendrées des mêmes tables que les fichiers.
+        return ($declarations === '' ? '' : ':root { ' . $declarations . '} ') . ThumbnailLayout::css();
     }
 }

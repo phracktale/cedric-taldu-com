@@ -53,6 +53,7 @@ use App\Http\Controller\Admin\GlobalController;
 use App\Http\Controller\Admin\ContentBlockController;
 use App\Repository\ContentBlockRepository;
 use App\Domain\Editorial\SiteIdentity;
+use App\Domain\Editorial\Theme;
 use App\Service\View\SiteIdentityProvider;
 use App\Repository\Admin\ShippingAdminRepository;
 use App\Service\Fulfillment\ShipmentRecorder;
@@ -277,6 +278,8 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $view = new View($rootPath . '/templates', $c->get(UrlGenerator::class), $c->get(Translator::class));
         // Identité du site (Paramètres › Global), commune à tous les gabarits.
         $view->share('site', static fn (): SiteIdentity => $c->get(SiteIdentityProvider::class)->get());
+        // Vignettes nettes (2026-09-30) : le facteur de zoom entre dans le choix des fichiers.
+        $view->share('vignetteZoom', static fn (): int => Theme::zoom($c->get(SettingRepository::class)->json(Theme::IMAGES_SETTING)['zoom'] ?? null));
 
         return $view;
     });
@@ -414,6 +417,8 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(ClockInterface::class),
         $rootPath . '/storage/uploads',
         $rootPath . '/public/media',
+        // Vignettes nettes (2026-09-30) : facteur de zoom d'Apparence.
+        static fn (): int => Theme::zoom($c->get(SettingRepository::class)->json(Theme::IMAGES_SETTING)['zoom'] ?? null),
     ));
 
     // Resout la couverture d'une entite : fichier joint enregistre dans la
@@ -920,6 +925,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(SettingRepository::class),
         $c->get(SettingsAdminRepository::class),
         $c->get(CategoryRepository::class),
+        $c->get(MediaStore::class),
     ));
 
     $container->set(MediaController::class, static fn (Container $c): MediaController => new MediaController(
