@@ -79,6 +79,41 @@ final class ImageProcessor
     }
 
     /**
+     * Range l'original TEL QUEL, sans recompression (demande du 2026-09-30) :
+     * la même image sert à l'impression — pleine qualité, profil couleur
+     * conservé. Il reste hors webroot et n'est jamais servi au public ; seul
+     * l'imprimeur le reçoit, par un lien signé. Tout fichier PUBLIC (dérivés,
+     * plein format du zoom) est, lui, ré-encodé par derivatives() : la charge
+     * éventuelle et les métadonnées n'en sortent jamais (06-securite §5.4).
+     *
+     * @throws UploadRejected si la copie échoue
+     */
+    public function keep(ValidatedImage $source, string $destination): ProcessedImage
+    {
+        if (!copy($source->path, $destination)) {
+            throw UploadRejected::because(UploadRejection::Corrupt, 'copie impossible');
+        }
+
+        $checksum = hash_file('sha256', $destination);
+
+        if ($checksum === false) {
+            $this->discard($destination);
+
+            throw UploadRejected::because(UploadRejection::Corrupt, 'empreinte illisible');
+        }
+
+        return new ProcessedImage(
+            path: $destination,
+            mime: $source->mime,
+            extension: $source->extension(),
+            width: $source->width,
+            height: $source->height,
+            bytes: (int) filesize($destination),
+            checksum: $checksum,
+        );
+    }
+
+    /**
      * Engendre les derives publics : Media::WIDTHS x Media::FORMATS.
      *
      * Les deux constantes du domaine font autorite (01-modele §2) : le gabarit
@@ -102,6 +137,22 @@ final class ImageProcessor
         $written = [];
 
         try {
+            // Original très grand (tirage d'art, ~50 Mpx) : le plein format du
+            // zoom d'abord, puis UNE réduction à 2400 px d'où partent toutes les
+            // autres largeurs — sans recalculer cinquante millions de pixels à
+            // chaque dérivé (demande du 2026-09-30).
+            if ($width > Media::MAX_WIDTH) {
+                $plein = $directory . '/' . $basename . '-full.jpg';
+                $this->write($source, $plein, 'jpg');
+                $written[] = $plein;
+
+                $base = $this->resize($source, Media::MAX_WIDTH, max(1, (int) round(Media::MAX_WIDTH * $height / $width)));
+                imagedestroy($source);
+                $source = $base;
+                $height = imagesy($source);
+                $width = imagesx($source);
+            }
+
             foreach (Media::derivativeWidthsFor($width) as $target) {
                 // max(1, ...) n'est pas une precaution decorative : un original
                 // tres large et tres plat — un panoramique de 2400 x 3 — donne
@@ -122,15 +173,6 @@ final class ImageProcessor
                 } finally {
                     imagedestroy($resized);
                 }
-            }
-
-            // Plein format pour le zoom (retours du 2026-09-28) : au-delà du plus
-            // grand dérivé, l'original tel quel, en JPEG seulement — un WebP de
-            // cette taille coûterait plusieurs secondes d'encodage à l'envoi.
-            if ($width > Media::MAX_WIDTH) {
-                $plein = $directory . '/' . $basename . '-full.jpg';
-                $this->write($source, $plein, 'jpg');
-                $written[] = $plein;
             }
         } catch (Throwable $exception) {
             // Un jeu de derives incomplet est pire qu'aucun : le gabarit

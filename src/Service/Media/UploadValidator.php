@@ -27,8 +27,12 @@ use finfo;
  */
 final class UploadValidator
 {
-    /** 06-securite §5.3 : taille maximale de 25 Mo. */
-    public const MAX_BYTES = 25 * 1024 * 1024;
+    /**
+     * 06-securite §5.3 : 150 Mo (25 Mo avant le 2026-09-30). Une seule image
+     * haute définition sert aussi à l'impression : un tirage 50 × 70 cm à
+     * 300 dpi pèse plusieurs dizaines de Mo.
+     */
+    public const MAX_BYTES = 150 * 1024 * 1024;
 
     /** 06-securite §5.3 : 12 000 px de cote au plus. */
     public const MAX_DIMENSION = 12000;
@@ -37,9 +41,10 @@ final class UploadValidator
      * Budget de pixels, plus contraignant que la borne de dimension.
      *
      * GD travaille en couleurs vraies : quatre octets par pixel, pour l'image
-     * source ET pour le derive en cours d'ecriture. Avec `memory_limit = 256M`
-     * (docker/php/php.ini), quarante megapixels occupent 160 Mo, auxquels
-     * s'ajoute le plus grand derive (2400 px de large, une trentaine de Mo).
+     * source ET pour le derive en cours d'ecriture. Avec `memory_limit = 1024M`
+     * (docker/php/php.ini, relevé le 2026-09-30), quatre-vingts megapixels
+     * occupent 320 Mo, auxquels s'ajoute la base de 2400 px (une trentaine de
+     * Mo). 80 Mpx couvrent un tirage 50 × 70 cm à 300 dpi (~49 Mpx).
      *
      * La borne de 12 000 x 12 000 de la spec vaut 144 megapixels, soit 576 Mo :
      * elle passerait ce validateur pour mourir en cours de decodage, sur une
@@ -47,7 +52,7 @@ final class UploadValidator
      * que l'autre laisse passer — un ruban de 50 000 x 100 ne fait que cinq
      * megapixels.
      */
-    public const MAX_PIXELS = 40_000_000;
+    public const MAX_PIXELS = 80_000_000;
 
     /**
      * 06-securite §5.1 : « Types acceptes : image/jpeg, image/png, image/webp

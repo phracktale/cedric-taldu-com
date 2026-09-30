@@ -57,7 +57,8 @@ final class MediaStore
         // l'empreinte porte sur le fichier re-encode (01-modele §2), et c'est
         // elle qui dit si l'image existe deja.
         $temporary = $this->temporaryPath($validated->extension());
-        $processed = $this->processor->reencode($validated, $temporary);
+        // Original gardé intact pour l'impression (demande du 2026-09-30).
+        $processed = $this->processor->keep($validated, $temporary);
 
         $existing = $this->media->findByChecksum($processed->checksum);
 
@@ -123,7 +124,8 @@ final class MediaStore
 
         $validated = $this->validator->validate($file);
         $temporary = $this->temporaryPath($validated->extension());
-        $processed = $this->processor->reencode($validated, $temporary);
+        // Original gardé intact pour l'impression (demande du 2026-09-30).
+        $processed = $this->processor->keep($validated, $temporary);
 
         $this->guardAgainstForeignDuplicate($processed->checksum, $mediaId, $temporary);
 
