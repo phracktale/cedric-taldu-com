@@ -21,29 +21,38 @@ final class FulfillmentRepository
     }
 
     /**
-     * Fichier d'impression d'une œuvre, ou null si aucun n'a été téléversé.
+     * Fichier d'impression d'une œuvre, ou null s'il n'y en a aucun.
+     *
+     * Depuis le 2026-09-30, une seule image HD sert à tout : c'est l'original
+     * de l'image principale, gardé intact par la Médiathèque. Un fichier
+     * d'impression déposé avant cette date reste prioritaire tant qu'il existe.
+     * Les deux chemins sont relatifs à storage/.
      *
      * @return array{path: string, mime: string}|null
      */
     public function printAssetOf(int $artworkId): ?array
     {
         $statement = $this->pdo->prepare(
-            'SELECT print_asset_path, print_asset_mime FROM artworks WHERE id = :id'
+            'SELECT COALESCE(a.print_asset_path, m.storage_path) AS path,
+                    CASE WHEN a.print_asset_path IS NULL THEN m.mime ELSE a.print_asset_mime END AS mime
+               FROM artworks a
+               LEFT JOIN media m ON m.id = a.primary_media_id
+              WHERE a.id = :id'
         );
         $statement->execute(['id' => $artworkId]);
 
         /** @var array<string, mixed>|false $row */
         $row = $statement->fetch();
 
-        if ($row === false || $row['print_asset_path'] === null) {
+        if ($row === false || $row['path'] === null) {
             return null;
         }
 
         return [
-            'path' => (string) $row['print_asset_path'],
-            'mime' => $row['print_asset_mime'] === null
+            'path' => (string) $row['path'],
+            'mime' => $row['mime'] === null
                 ? 'application/octet-stream'
-                : (string) $row['print_asset_mime'],
+                : (string) $row['mime'],
         ];
     }
 
@@ -52,7 +61,8 @@ final class FulfillmentRepository
      *
      * Jointe jusqu'à l'œuvre pour ramener le SKU Prodigi, le cadrage, la
      * quantité, l'identifiant d'œuvre (pour l'URL du fichier) et le chemin du
-     * fichier d'impression. Une variante supprimée depuis (variant_id NULL) sort
+     * fichier d'impression (à défaut, l'original de l'image principale — voir
+     * printAssetOf). Une variante supprimée depuis (variant_id NULL) sort
      * de la jointure : la ligne n'est alors pas soumissible, et c'est visible.
      *
      * @return list<array{sku: string, sizing: string, copies: int, artworkId: int, printAssetPath: string|null, processingMode: string}>
@@ -60,11 +70,13 @@ final class FulfillmentRepository
     public function reproductionLinesFor(int $orderId): array
     {
         $statement = $this->pdo->prepare(
-            'SELECT oi.qty, pv.prodigi_sku, pv.prodigi_sizing, p.artwork_id, p.processing_mode, a.print_asset_path
+            'SELECT oi.qty, pv.prodigi_sku, pv.prodigi_sizing, p.artwork_id, p.processing_mode,
+                    COALESCE(a.print_asset_path, m.storage_path) AS print_asset_path
                FROM order_items oi
                JOIN product_variants pv ON pv.id = oi.variant_id
                JOIN products p ON p.id = pv.product_id
                JOIN artworks a ON a.id = p.artwork_id
+               LEFT JOIN media m ON m.id = a.primary_media_id
               WHERE oi.order_id = :id AND oi.kind = :kind'
         );
         $statement->execute(['id' => $orderId, 'kind' => 'reproduction']);
