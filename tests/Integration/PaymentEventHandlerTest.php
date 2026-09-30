@@ -38,6 +38,7 @@ use App\Service\Payment\WebhookOutcome;
 use DateTimeImmutable;
 use Tests\Support\DatabaseTestCase;
 use Tests\Support\Doubles\RecordingLogger;
+use Tests\Support\Factory\MediaFactory;
 
 /**
  * Traitement d'un evenement Stripe verifie (03-boutique §6).
@@ -361,6 +362,41 @@ final class PaymentEventHandlerTest extends DatabaseTestCase
         $this->assertSame(2, $charge['items'][0]['copies']);
         $this->assertStringContainsString('/webhooks/prodigi/', (string) $charge['callbackUrl']);
         $this->assertNotNull($this->valeur("SELECT prodigi_order_id FROM orders WHERE id = {$commande->id}"));
+    }
+
+    public function test_une_reproduction_sans_fichier_d_impression_part_avec_l_image_principale(): void
+    {
+        // Demande du 2026-09-30 : plus de fichier d'impression séparé, l'image
+        // HD de la Médiathèque suffit.
+        $client = new FakeProdigiClient();
+        $this->activerFulfillment($client);
+        $this->mapperVariante('GLOBAL-HGE-16X20');
+        $media = (new MediaFactory($this->pdo))->sized(4800, 3600)->create();
+        $this->pdo->prepare('UPDATE artworks SET print_asset_path = NULL, print_asset_mime = NULL, primary_media_id = :m WHERE id = :id')
+            ->execute(['m' => $media, 'id' => $this->artwork]);
+
+        $commande = $this->creerCommande();
+        $this->adresser($commande->id);
+
+        $this->traiter($commande->reference, $commande->id);
+
+        $this->assertCount(1, $client->orders);
+    }
+
+    public function test_une_reproduction_sans_aucune_image_n_est_pas_soumise(): void
+    {
+        $client = new FakeProdigiClient();
+        $this->activerFulfillment($client);
+        $this->mapperVariante('GLOBAL-HGE-16X20');
+        $this->pdo->prepare('UPDATE artworks SET print_asset_path = NULL, print_asset_mime = NULL, primary_media_id = NULL WHERE id = :id')
+            ->execute(['id' => $this->artwork]);
+
+        $commande = $this->creerCommande();
+        $this->adresser($commande->id);
+
+        $this->traiter($commande->reference, $commande->id);
+
+        $this->assertCount(0, $client->orders);
     }
 
     public function test_une_edition_limitee_n_est_pas_soumise_meme_mappee(): void
