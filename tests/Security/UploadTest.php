@@ -316,7 +316,7 @@ final class UploadTest extends AdminTestCase
 
         $reponse = $this->requete('POST', self::MEDIAS, files: $this->champ($chemin));
 
-        $this->assertSame(419, $reponse->status);
+        $this->assertSame(403, $reponse->status);
         $this->assertSame(0, $this->nombreDeMedias());
     }
 

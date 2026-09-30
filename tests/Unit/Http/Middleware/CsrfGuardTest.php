@@ -104,13 +104,16 @@ final class CsrfGuardTest extends TestCase
         $this->traiter('POST');
     }
 
-    public function test_le_rejet_repond_419(): void
+    public function test_le_rejet_repond_403(): void
     {
+        // Constaté le 2026-09-30 : Apache ne connaît pas 419 et le réécrit en
+        // « 500 Internal Server Error ». 403 est un statut normalisé ; la page
+        // garde le message « formulaire expiré ».
         try {
             $this->traiter('POST');
             $this->fail('Un rejet CSRF etait attendu.');
         } catch (CsrfTokenMismatch $exception) {
-            $this->assertSame(419, $exception->statusCode());
+            $this->assertSame(403, $exception->statusCode());
         }
     }
 

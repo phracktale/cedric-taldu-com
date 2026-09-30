@@ -164,6 +164,16 @@ final class CsrfTest extends AdminTestCase
         $this->assertSame(302, $reponse->status);
     }
 
+    public function test_le_refus_csrf_repond_403_et_invite_a_recharger(): void
+    {
+        // 419 n'est pas normalisé : Apache le transformait en 500 (2026-09-30).
+        $reponse = $this->requete('POST', '/cedric-taldu/admin/connexion', post: [Csrf::FIELD => 'faux']);
+
+        $this->assertSame(403, $reponse->status);
+        $this->assertStringContainsString('Formulaire expiré', $reponse->body);
+        $this->assertStringContainsString('Rechargez la page', $reponse->body);
+    }
+
     public function test_le_refus_csrf_ne_revele_pas_le_jeton_attendu(): void
     {
         // Le journal comme la page d'erreur : ni l'un ni l'autre ne doit
