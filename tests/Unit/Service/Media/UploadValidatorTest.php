@@ -170,6 +170,43 @@ final class UploadValidatorTest extends TestCase
         $this->assertRefus(UploadRejection::TooLarge, $refuse);
     }
 
+    public function test_une_image_hd_de_13000_pixels_de_cote_passe(): void
+    {
+        // Constaté le 2026-09-30 sur Thor : une image de 13 000 x 6 000 (76 Mo)
+        // était refusée pour « plus de 12 000 pixels de côté ». Une seule image
+        // HD sert à l'impression : un grand format scanné dépasse 12 000 px.
+        $image = $this->fixtures->bombeDeDecompression(13000, 6000, 'hd-large.png');
+
+        $this->assertSame(13000, $this->validateur->validate($this->televerse($image))->width);
+    }
+
+    public function test_une_image_hd_de_150_megapixels_passe(): void
+    {
+        // Même constat : 9 000 x 9 000 (81 Mpx, 79 Mo) était refusée, alors
+        // qu'un fichier de 150 Mo compte de l'ordre de 150 mégapixels.
+        $image = $this->fixtures->bombeDeDecompression(15000, 10000, 'hd-150mpx.png');
+
+        $this->assertSame(10000, $this->validateur->validate($this->televerse($image))->height);
+    }
+
+    public function test_les_messages_annoncent_les_limites_en_vigueur(): void
+    {
+        // Le message « 25 Mo » était resté après le relèvement à 150 Mo.
+        $this->assertStringContainsString('150 Mo', UploadRejection::TooHeavy->message());
+        $this->assertStringContainsString('30 000 pixels', UploadRejection::TooLarge->message());
+    }
+
+    public function test_la_memoire_de_php_suffit_au_budget_de_pixels(): void
+    {
+        // Mesuré sur Thor le 2026-09-30 : ~8,7 octets par pixel au pic (décodage
+        // GD en couleurs vraies, rotation EXIF, plein format du zoom). Sans cette
+        // marge, l'image passerait le validateur pour mourir faute de mémoire.
+        $ini = (string) file_get_contents(dirname(__DIR__, 4) . '/docker/php/php.ini');
+        $this->assertSame(1, preg_match('/^memory_limit\s*=\s*(\d+)M/m', $ini, $m));
+
+        $this->assertGreaterThanOrEqual(UploadValidator::MAX_PIXELS * 9, (int) $m[1] * 1024 * 1024);
+    }
+
     public function test_un_fichier_de_plus_de_vingt_cinq_megaoctets_est_refuse(): void
     {
         $this->assertRefus(
