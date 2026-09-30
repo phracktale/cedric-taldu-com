@@ -234,24 +234,24 @@ final class ImageProcessorTest extends TestCase
             $this->assertIsArray($taille, (string) $largeur);
             $this->assertSame($largeur, $taille[0]);
         }
-        // Ni plein format (≤ 2400 px), ni dérivé au-delà de l'original.
-        $this->assertFileDoesNotExist($repertoire . '/abcdef-full.jpg');
+        // Aucun dérivé au-delà de l'original ; le zoom garde la taille native.
+        $this->assertSame([1200, 1600], array_slice(getimagesize($repertoire . '/abcdef-zoom.jpg') ?: [], 0, 2));
         $this->assertFileDoesNotExist($repertoire . '/abcdef-1600.webp');
         $this->assertSame(1200, getimagesize($repertoire . '/abcdef-1200.jpg')[0] ?? null);
     }
 
-    public function test_un_grand_original_a_un_plein_format_jpeg_pour_le_zoom(): void
+    public function test_le_zoom_d_un_grand_original_fait_2000_pixels_au_plus_grand_cote(): void
     {
-        $original = $this->reencode($this->fixtures->jpeg(3000, 2000));
-        $repertoire = $this->fixtures->path('derives-plein');
+        // Demande du 2026-09-30 : 2000 px suffisent au zoom ; plus de plein format.
+        $original = $this->reencode($this->fixtures->jpeg(3000, 4500));
+        $repertoire = $this->fixtures->path('derives-zoom');
         mkdir($repertoire);
 
         $ecrits = $this->processeur->derivatives($original, $repertoire, 'abcdef');
 
-        $this->assertContains($repertoire . '/abcdef-full.jpg', $ecrits);
-        $this->assertSame(3000, getimagesize($repertoire . '/abcdef-full.jpg')[0] ?? null);
-        // WebP plein format : trop lent à encoder sur un mutualisé, inutile au zoom.
-        $this->assertFileDoesNotExist($repertoire . '/abcdef-full.webp');
+        $this->assertContains($repertoire . '/abcdef-zoom.jpg', $ecrits);
+        $this->assertSame([1333, 2000], array_slice(getimagesize($repertoire . '/abcdef-zoom.jpg') ?: [], 0, 2));
+        $this->assertFileDoesNotExist($repertoire . '/abcdef-full.jpg');
     }
 
     public function test_aucun_derive_n_agrandit_l_original(): void

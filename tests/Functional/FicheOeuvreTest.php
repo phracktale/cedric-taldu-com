@@ -196,12 +196,12 @@ final class FicheOeuvreTest extends FunctionalTestCase
         $this->assertDoesNotMatchRegularExpression('#<div class="visuel">.*?sizes=.*?</picture>#s', $corps);
     }
 
-    public function test_le_zoom_d_un_grand_original_ouvre_le_plein_format(): void
+    public function test_le_zoom_ouvre_l_image_dediee_de_2000_pixels(): void
     {
         $media = (new MediaFactory($this->pdo))->named('grand')->sized(6000, 8000)->create();
         $this->oeuvre()->withPrimaryMedia($media)->translated('fr', 'grand', 'Grand')->create($this->rubrique);
 
-        $this->assertStringContainsString('data-zoom-src="/cedric-taldu/media/grand-full.jpg"', $this->get('/cedric-taldu/fr/oeuvre/grand')->body);
+        $this->assertStringContainsString('data-zoom-src="/cedric-taldu/media/grand-zoom.jpg"', $this->get('/cedric-taldu/fr/oeuvre/grand')->body);
     }
 
     public function test_l_image_porte_ses_dimensions_pour_reserver_la_place(): void
@@ -238,7 +238,7 @@ final class FicheOeuvreTest extends FunctionalTestCase
 
         $corps = $this->get('/cedric-taldu/fr/oeuvre/articulation')->body;
 
-        $this->assertStringContainsString('data-zoom-src="/cedric-taldu/media/articulation-2400.jpg"', $corps);
+        $this->assertStringContainsString('href="/cedric-taldu/media/articulation-zoom.jpg"', $corps);
         $this->assertStringContainsString('target="_blank"', $corps);
     }
 

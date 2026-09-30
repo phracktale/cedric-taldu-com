@@ -137,15 +137,23 @@ final class ImageProcessor
         $written = [];
 
         try {
-            // Original très grand (tirage d'art, ~50 Mpx) : le plein format du
-            // zoom d'abord, puis UNE réduction à 2400 px d'où partent toutes les
-            // autres largeurs — sans recalculer cinquante millions de pixels à
-            // chaque dérivé (demande du 2026-09-30).
-            if ($width > Media::MAX_WIDTH) {
-                $plein = $directory . '/' . $basename . '-full.jpg';
-                $this->write($source, $plein, 'jpg');
-                $written[] = $plein;
+            // Image du zoom : 2000 px au plus grand côté, tirée de l'original
+            // pour la meilleure netteté (demande du 2026-09-30). JPEG seul : le
+            // zoom l'ouvre directement.
+            [$zoomWidth, $zoomHeight] = Media::fitWithin($width, $height, Media::ZOOM_MAX);
+            $zoom = $this->resize($source, $zoomWidth, $zoomHeight);
+            try {
+                $fichierZoom = $directory . '/' . $basename . '-zoom.jpg';
+                $this->write($zoom, $fichierZoom, 'jpg');
+                $written[] = $fichierZoom;
+            } finally {
+                imagedestroy($zoom);
+            }
 
+            // Original très grand (tirage d'art, ~150 Mpx) : UNE réduction à
+            // 2400 px d'où partent toutes les autres largeurs — sans recalculer
+            // des dizaines de millions de pixels à chaque dérivé.
+            if ($width > Media::MAX_WIDTH) {
                 $base = $this->resize($source, Media::MAX_WIDTH, max(1, (int) round(Media::MAX_WIDTH * $height / $width)));
                 imagedestroy($source);
                 $source = $base;
