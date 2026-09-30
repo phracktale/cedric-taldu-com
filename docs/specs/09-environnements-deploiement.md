@@ -167,13 +167,13 @@ script refuse de tourner en root.
 
 **Limites d'envoi des images** (décision du 2026-09-30) : une seule image haute
 définition par œuvre sert à l'affichage, au zoom et à l'impression. L'application accepte
-150 Mo et 80 Mpx (`UploadValidator`) ; chaque maillon doit laisser passer autant :
+150 Mo, 200 Mpx et 30 000 px de côté (`UploadValidator`) ; chaque maillon doit laisser passer autant :
 
 | Maillon | Réglage |
 | --- | --- |
-| PHP, Thor | `docker/php/php.ini` : `upload_max_filesize 150M`, `post_max_size 160M`, `memory_limit 1024M`, `max_execution_time 180` |
+| PHP, Thor | `docker/php/php.ini` : `upload_max_filesize 150M`, `post_max_size 160M`, `memory_limit 3072M` (~8,7 octets par pixel au pic), `max_execution_time 180` |
 | Heimdall (preprod) | `location /cedric-taldu/` : `client_max_body_size 160m`, `proxy_read_timeout 180s` (HOMELAB `_CUSTOMERS/cedric-taldu/nginx/`) |
-| Mutualisé (prod) | `.user.ini` dans `public/` avec les quatre valeurs PHP ci-dessus, **si l'offre les autorise** : à vérifier avant la mise en production (o2switch permet d'ordinaire 1 Go de mémoire ; OVH mutualisé plafonne souvent plus bas). À défaut, abaisser `UploadValidator::MAX_BYTES`/`MAX_PIXELS` à ce que l'hébergeur accepte |
+| Mutualisé (prod) | `.user.ini` dans `public/` avec les quatre valeurs PHP ci-dessus, **si l'offre les autorise** : à vérifier avant la mise en production (3 Go de mémoire sont rarement accordés : o2switch permet d'ordinaire 1 Go, soit ~110 Mpx ; OVH mutualisé plafonne souvent plus bas). À défaut, abaisser `UploadValidator::MAX_BYTES`/`MAX_PIXELS` à ce que l'hébergeur accepte |
 | `composer serve` (local) | options `-d` du script `serve` |
 
 Une limite plus basse sur un seul maillon produit une erreur 413 (nginx) ou un formulaire

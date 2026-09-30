@@ -94,8 +94,9 @@ C'est la surface la plus dangereuse du projet. Toutes les règles s'appliquent :
    réservé au rôle `admin`.
 2. Le type est déterminé par `finfo_file` **et** `getimagesize`, jamais par l'extension ni
    par le `Content-Type` envoyé par le client.
-3. Taille max **150 Mo** (25 Mo jusqu'au 2026-09-30), dimensions max 12 000 × 12 000 px,
-   **80 mégapixels** au plus, contrôlés avant traitement (« bombe de décompression »). Relevés
+3. Taille max **150 Mo** (25 Mo jusqu'au 2026-09-30), dimensions max 30 000 × 30 000 px,
+   **200 mégapixels** au plus (12 000 px et 80 Mpx jusqu'au 2026-09-30 : ils refusaient des
+   fichiers HD de moins de 80 Mo), contrôlés avant traitement (« bombe de décompression »). Relevés
    parce qu'une seule image haute définition sert aussi à l'impression.
 4. **Ré-encodage par GD de tout fichier PUBLIC** (dérivés, plein format du zoom) : l'image est
    décodée puis réécrite. **Exception décidée le 2026-09-30 : l'original est gardé intact**
