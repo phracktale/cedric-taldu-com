@@ -10,6 +10,8 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Domain\Editorial\ContentTemplate;
 use App\Domain\Editorial\HomeSectionForm;
+use App\Repository\Admin\PageAdminRepository;
+use App\Repository\Admin\PostAdminRepository;
 use App\Repository\Admin\RevisionRepository;
 use App\Repository\Admin\SettingsAdminRepository;
 use App\Repository\ContentBlockRepository;
@@ -33,6 +35,8 @@ final class HistoryController
         private readonly RevisionRepository $revisions,
         private readonly SettingsAdminRepository $settings,
         private readonly ContentBlockRepository $blocks,
+        private readonly PageAdminRepository $pages,
+        private readonly PostAdminRepository $posts,
     ) {
     }
 
@@ -91,6 +95,10 @@ final class HistoryController
                 'blocks_fr' => is_string($etat['blocks_fr'] ?? null) ? $etat['blocks_fr'] : null,
                 'blocks_en' => is_string($etat['blocks_en'] ?? null) ? $etat['blocks_en'] : null,
             ], $now);
+        } elseif ($version['type'] === 'page' && is_array($etat)) {
+            $this->pages->restore((int) $version['key'], self::stringKeys($etat), $now);
+        } elseif ($version['type'] === 'post' && is_array($etat)) {
+            $this->posts->restore((int) $version['key'], self::stringKeys($etat), $now);
         } else {
             throw new NotFoundException('Cette version ne peut pas être restaurée.');
         }
@@ -139,12 +147,34 @@ final class HistoryController
     }
 
     /**
+     * @param  array<mixed>         $state
+     * @return array<string, mixed>
+     */
+    private static function stringKeys(array $state): array
+    {
+        $clean = [];
+        foreach ($state as $key => $value) {
+            $clean[(string) $key] = $value;
+        }
+
+        return $clean;
+    }
+
+    /**
      * Nom lisible d'un élément de l'historique.
      */
     public static function title(string $type, string $key, string $label): string
     {
         if ($type === 'content_block') {
             return 'Bloc « ' . $label . ' »';
+        }
+
+        if ($type === 'page') {
+            return 'Page « ' . $label . ' »';
+        }
+
+        if ($type === 'post') {
+            return 'Actu « ' . $label . ' »';
         }
 
         if (str_starts_with($key, 'template.')) {

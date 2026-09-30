@@ -559,7 +559,11 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
 
     $container->set(
         PostAdminRepository::class,
-        static fn (Container $c): PostAdminRepository => new PostAdminRepository($c->get(PDO::class)),
+        static fn (Container $c): PostAdminRepository => new PostAdminRepository(
+            $c->get(PDO::class),
+            $c->get(RevisionRepository::class),
+            static fn (): ?int => $c->get(AdminSession::class)->currentUser()?->id,
+        ),
     );
 
     $container->set(
@@ -574,7 +578,11 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
 
     $container->set(
         PageAdminRepository::class,
-        static fn (Container $c): PageAdminRepository => new PageAdminRepository($c->get(PDO::class)),
+        static fn (Container $c): PageAdminRepository => new PageAdminRepository(
+            $c->get(PDO::class),
+            $c->get(RevisionRepository::class),
+            static fn (): ?int => $c->get(AdminSession::class)->currentUser()?->id,
+        ),
     );
 
     $container->set(AdminSession::class, static fn (Container $c): AdminSession => new AdminSession(
@@ -869,6 +877,8 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(RevisionRepository::class),
         $c->get(SettingsAdminRepository::class),
         $c->get(ContentBlockRepository::class),
+        $c->get(PageAdminRepository::class),
+        $c->get(PostAdminRepository::class),
     ));
     $container->set(AdminHomeController::class, static fn (Container $c): AdminHomeController => new AdminHomeController(
         $c->get(AdminChrome::class),

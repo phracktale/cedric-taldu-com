@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository\Admin;
 
 use App\Domain\Locale;
+use Closure;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
@@ -29,8 +30,15 @@ final class PageAdminRepository
         LEFT JOIN page_translations t ON t.page_id = p.id
         SQL;
 
-    public function __construct(private readonly PDO $pdo)
-    {
+    /**
+     * @param (Closure(): ?int)|null $actor auteur d'une modification (historique)
+     */
+    public function __construct(
+        private readonly PDO $pdo,
+        // Historique (demande du 2026-09-30) : le contenu de la page gardé avant modification.
+        private readonly ?RevisionRepository $revisions = null,
+        private readonly ?Closure $actor = null,
+    ) {
     }
 
     /**
@@ -59,12 +67,81 @@ final class PageAdminRepository
      */
     public function update(int $id, array $translations, ?int $coverMediaId, DateTimeImmutable $now): void
     {
+        $this->writeVersioned($id, $translations, $coverMediaId, $now, 'update');
+    }
+
+    /**
+     * Remet une page dans l'état qu'une version a gardé : textes et couverture.
+     * Le code, la publication et le document PDF ne sont pas concernés.
+     *
+     * @param array<string, mixed> $state
+     */
+    public function restore(int $id, array $state, DateTimeImmutable $now): void
+    {
+        $translations = [];
+        foreach (is_array($state['translations'] ?? null) ? $state['translations'] : [] as $locale => $fields) {
+            if (Locale::tryFrom((string) $locale) === null || !is_array($fields)) {
+                continue;
+            }
+            $clean = [];
+            foreach ($fields as $column => $value) {
+                $clean[(string) $column] = is_string($value) ? $value : null;
+            }
+            $translations[(string) $locale] = $clean;
+        }
+
+        $cover = is_int($state['cover_media_id'] ?? null) ? $state['cover_media_id'] : null;
+        $statement = $this->pdo->prepare('SELECT id FROM media WHERE id = :id');
+        $statement->execute(['id' => $cover ?? 0]);
+
+        $this->writeVersioned($id, $translations, $statement->fetchColumn() === false ? null : $cover, $now, 'restore');
+    }
+
+    /**
+     * @param array<string, array<string, string|null>> $translations
+     */
+    private function writeVersioned(int $id, array $translations, ?int $coverMediaId, DateTimeImmutable $now, string $action): void
+    {
+        $before = $this->findById($id);
         $statement = $this->pdo->prepare(
             'UPDATE pages SET cover_media_id = :cover, updated_at = :now WHERE id = :id'
         );
         $statement->execute(['cover' => $coverMediaId, 'now' => self::toSql($now), 'id' => $id]);
 
         $this->replaceTranslations($id, $translations);
+
+        if ($before === null || $this->revisions === null) {
+            return;
+        }
+
+        $after = $this->findById($id);
+        if ($after !== null && self::content($after) === self::content($before)) {
+            return;
+        }
+
+        $translationsAvant = is_array($before['translations'] ?? null) ? $before['translations'] : [];
+        $fr = is_array($translationsAvant['fr'] ?? null) ? $translationsAvant['fr'] : [];
+
+        $this->revisions->record(
+            'page',
+            (string) $id,
+            is_string($fr['title'] ?? null) ? $fr['title'] : (string) ($before['code'] ?? 'Page'),
+            $action,
+            $before,
+            $this->actor === null ? null : ($this->actor)(),
+            $now,
+        );
+    }
+
+    /**
+     * Contenu versionné : textes et couverture — pas la publication ni le PDF.
+     *
+     * @param  array<string, mixed> $page
+     * @return array<string, mixed>
+     */
+    private static function content(array $page): array
+    {
+        return ['cover_media_id' => $page['cover_media_id'] ?? null, 'translations' => $page['translations'] ?? []];
     }
 
     /**

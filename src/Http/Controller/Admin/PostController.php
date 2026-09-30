@@ -193,7 +193,7 @@ final class PostController
         $post = $this->post($request);
         $id = (int) $post['id'];
 
-        $this->posts->delete($id);
+        $this->posts->delete($id, $this->chrome->now());
         $this->chrome->audit()->record($this->chrome->currentUserId(), 'post.delete', $request, 'post', $id);
 
         return RedirectResponse::to($request->basePath . '/admin/actus');
