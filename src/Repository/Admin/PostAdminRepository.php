@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Repository\Admin;
 
 use App\Domain\Locale;
+use App\Domain\Exception\InvalidSlug;
 use App\Domain\Slug;
+use Closure;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
@@ -30,8 +32,15 @@ final class PostAdminRepository
         LEFT JOIN post_translations t ON t.post_id = p.id
         SQL;
 
-    public function __construct(private readonly PDO $pdo)
-    {
+    /**
+     * @param (Closure(): ?int)|null $actor auteur d'une modification (historique)
+     */
+    public function __construct(
+        private readonly PDO $pdo,
+        // Historique (demande du 2026-09-30) : le contenu de l'actu gardé avant modification.
+        private readonly ?RevisionRepository $revisions = null,
+        private readonly ?Closure $actor = null,
+    ) {
     }
 
     // -------------------------------------------------------------- lecture
@@ -145,6 +154,19 @@ final class PostAdminRepository
         array $event,
         DateTimeImmutable $now,
     ): void {
+        $before = $this->findById($id);
+
+        $this->write($id, $translations, $coverMediaId, $event, $now);
+
+        $this->keepIfChanged($id, $before, 'update', $now);
+    }
+
+    /**
+     * @param array<string, array<string, string|null>> $translations
+     * @param array{date: ?string, end: ?string, place: ?string, address: ?string, url: ?string} $event
+     */
+    private function write(int $id, array $translations, ?int $coverMediaId, array $event, DateTimeImmutable $now): void
+    {
         $statement = $this->pdo->prepare(
             'UPDATE posts
              SET cover_media_id = :cover, event_date = :eventDate, event_end_date = :eventEnd,
@@ -200,8 +222,13 @@ final class PostAdminRepository
         return $nowPublished;
     }
 
-    public function delete(int $id): void
+    public function delete(int $id, ?DateTimeImmutable $now = null): void
     {
+        $before = $this->findById($id);
+        if ($before !== null) {
+            $this->remember($id, $before, 'delete', $now ?? new DateTimeImmutable());
+        }
+
         $statement = $this->pdo->prepare('DELETE FROM posts WHERE id = :id');
         $statement->execute(['id' => $id]);
     }
@@ -241,7 +268,159 @@ final class PostAdminRepository
         }
     }
 
+    /**
+     * Remet une actu dans l'état qu'une version de l'historique a gardé. Une
+     * actu supprimée est recréée sous le même identifiant, publiée comme elle
+     * l'était ; un slug repris entre-temps par une autre actu est suffixé.
+     *
+     * @param array<string, mixed> $state
+     */
+    public function restore(int $id, array $state, DateTimeImmutable $now): void
+    {
+        $before = $this->findById($id);
+        $translations = $this->restorableTranslations($state['translations'] ?? null, $id);
+        $event = [
+            'date' => self::stringOrNull($state['event_date'] ?? null),
+            'end' => self::stringOrNull($state['event_end_date'] ?? null),
+            'place' => self::stringOrNull($state['event_place'] ?? null),
+            'address' => self::stringOrNull($state['event_address'] ?? null),
+            'url' => self::stringOrNull($state['event_url'] ?? null),
+        ];
+        $cover = is_int($state['cover_media_id'] ?? null) ? $state['cover_media_id'] : null;
+
+        if ($before === null) {
+            $statement = $this->pdo->prepare(
+                'INSERT INTO posts
+                    (id, cover_media_id, author_id, event_date, event_end_date, event_place, event_address, event_url,
+                     is_published, published_at, created_at, updated_at)
+                 VALUES (:id, :cover, NULL, :eventDate, :eventEnd, :eventPlace, :eventAddress, :eventUrl,
+                         :published, :publishedAt, :now, :now2)'
+            );
+            $statement->execute([
+                'id' => $id,
+                'cover' => $this->existingMedia($cover),
+                ...self::eventParameters($event),
+                'published' => ($state['is_published'] ?? false) === true ? 1 : 0,
+                'publishedAt' => self::stringOrNull($state['published_at'] ?? null),
+                'now' => self::toSql($now),
+                'now2' => self::toSql($now),
+            ]);
+            $this->replaceTranslations($id, $translations);
+
+            return;
+        }
+
+        $this->write($id, $translations, $this->existingMedia($cover), $event, $now);
+        $this->keepIfChanged($id, $before, 'restore', $now);
+    }
+
     // -------------------------------------------------------------- interne
+
+    /**
+     * @param array<string, mixed>|null $before
+     */
+    private function keepIfChanged(int $id, ?array $before, string $action, DateTimeImmutable $now): void
+    {
+        if ($before === null || $this->revisions === null) {
+            return;
+        }
+
+        $after = $this->findById($id);
+
+        if ($after !== null && self::content($after) === self::content($before)) {
+            return;
+        }
+
+        $this->remember($id, $before, $action, $now);
+    }
+
+    /**
+     * @param array<string, mixed> $state
+     */
+    private function remember(int $id, array $state, string $action, DateTimeImmutable $now): void
+    {
+        $this->revisions?->record(
+            'post',
+            (string) $id,
+            self::titleOf($state),
+            $action,
+            $state,
+            $this->actor === null ? null : ($this->actor)(),
+            $now,
+        );
+    }
+
+    /**
+     * Ce qui compte pour l'historique : ni la publication ni les dates techniques.
+     *
+     * @param  array<string, mixed> $post
+     * @return array<string, mixed>
+     */
+    private static function content(array $post): array
+    {
+        unset($post['is_published'], $post['published_at']);
+
+        return $post;
+    }
+
+    /**
+     * @param array<string, mixed> $state
+     */
+    private static function titleOf(array $state): string
+    {
+        $translations = is_array($state['translations'] ?? null) ? $state['translations'] : [];
+        $fr = is_array($translations['fr'] ?? null) ? $translations['fr'] : [];
+
+        return is_string($fr['title'] ?? null) ? $fr['title'] : 'Actu';
+    }
+
+    /**
+     * @return array<string, array<string, string|null>>
+     */
+    private function restorableTranslations(mixed $raw, int $id): array
+    {
+        $translations = [];
+
+        foreach (is_array($raw) ? $raw : [] as $locale => $fields) {
+            $langue = Locale::tryFrom((string) $locale);
+            if ($langue === null || !is_array($fields)) {
+                continue;
+            }
+
+            $clean = [];
+            foreach ($fields as $column => $value) {
+                $clean[(string) $column] = is_string($value) ? $value : null;
+            }
+
+            try {
+                $slug = Slug::fromString((string) ($clean['slug'] ?? ''));
+            } catch (InvalidSlug) {
+                $slug = Slug::fromString('article');
+            }
+            $clean['slug'] = $this->availableSlug($langue, $slug, $id)->value;
+            $translations[$langue->value] = $clean;
+        }
+
+        return $translations;
+    }
+
+    /** Une couverture effacée entre-temps de la médiathèque n'est pas remise. */
+    private function existingMedia(?int $mediaId): ?int
+    {
+        if ($mediaId === null) {
+            return null;
+        }
+
+        $statement = $this->pdo->prepare('SELECT id FROM media WHERE id = :id');
+        $statement->execute(['id' => $mediaId]);
+
+        return $statement->fetchColumn() === false ? null : $mediaId;
+    }
+
+    private static function stringOrNull(mixed $value): ?string
+    {
+        return is_string($value) ? $value : null;
+    }
 
     /**
      * @param  array<int, array<string, mixed>> $rows
