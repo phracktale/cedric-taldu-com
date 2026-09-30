@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core;
 
+use App\Core\Exception\CsrfTokenMismatch;
 use App\Core\Exception\HttpException;
 use App\Core\Exception\MethodNotAllowedException;
 use Throwable;
@@ -57,11 +58,17 @@ final class ErrorResponder
 
     private function httpError(HttpException $exception, Request $request): Response
     {
+        // Jeton CSRF expiré ou absent : un 403 qui invite à recharger, pas un
+        // « accès interdit ».
+        $expire = $exception instanceof CsrfTokenMismatch;
+
         $response = $this->page(
             status: $exception->statusCode(),
             request: $request,
-            titre: self::title($exception->statusCode()),
-            message: self::message($exception->statusCode()),
+            titre: $expire ? 'Formulaire expiré' : self::title($exception->statusCode()),
+            message: $expire
+                ? 'Votre formulaire a expiré. Rechargez la page et recommencez.'
+                : self::message($exception->statusCode()),
         );
 
         if ($exception instanceof MethodNotAllowedException) {
@@ -98,7 +105,6 @@ final class ErrorResponder
             400 => 'Requête invalide',
             404 => 'Page introuvable',
             405 => 'Méthode non autorisée',
-            419 => 'Formulaire expiré',
             default => 'Erreur',
         };
     }
@@ -108,7 +114,6 @@ final class ErrorResponder
         return match ($status) {
             404 => 'Cette page n’existe pas, ou n’existe plus.',
             405 => 'Cette adresse n’accepte pas ce type de requête.',
-            419 => 'Votre formulaire a expiré. Rechargez la page et recommencez.',
             default => 'La requête n’a pas pu être traitée.',
         };
     }
