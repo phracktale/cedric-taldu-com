@@ -534,3 +534,18 @@ body.admin { padding-bottom: 3.5rem; }
 .impression--optimal { background: #e3f1e5; color: #1f6b32; }
 .impression--acceptable { background: #fbf1d9; color: #7a5a00; }
 .impression--insuffisant { background: #f8e0dd; color: #8c2f1f; }
+
+/* Paramètres › Historique (2026-09-30) : purge irréversible, zone d'alerte. */
+.fil-admin { margin-bottom: .6rem; font-size: .9rem; }
+.zone-danger {
+  margin-top: 3rem; padding: 1.4rem 1.6rem; max-width: 46rem;
+  border: 2px solid var(--alerte); border-radius: var(--rayon-petit);
+  background: rgba(140, 47, 31, .04);
+}
+.zone-danger h2 { color: var(--alerte); margin-top: 0; }
+.zone-danger-alerte {
+  color: var(--alerte); background: var(--papier); border-left: 4px solid var(--alerte);
+  padding: .9rem 1.1rem; margin: 1rem 0 1.4rem;
+}
+.champ-choix { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .4rem 0; }
+.champ-choix input[type="number"] { width: 6rem; }

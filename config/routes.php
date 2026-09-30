@@ -32,6 +32,7 @@ use App\Http\Controller\Admin\BillingController;
 use App\Http\Controller\Admin\DeliveryController;
 use App\Http\Controller\Admin\MenuController;
 use App\Http\Controller\Admin\GenerationController;
+use App\Http\Controller\Admin\HistoryController;
 use App\Http\Controller\Admin\MapController;
 use App\Http\Controller\Admin\PrintSettingsController;
 use App\Http\Controller\Admin\ContactPageController;
@@ -315,6 +316,17 @@ return [
     // Contenus › Contact (retour client du 2026-09-29).
     new Route('admin.contact.edit', 'GET', '/admin/contact', [ContactPageController::class, 'edit']),
     new Route('admin.contact.update', 'POST', '/admin/contact', [ContactPageController::class, 'update']),
+    // Paramètres › Historique des versions (demande du 2026-09-30).
+    new Route('admin.history.index', 'GET', '/admin/historique', [HistoryController::class, 'index']),
+    new Route('admin.history.purge', 'POST', '/admin/historique/purge', [HistoryController::class, 'purge']),
+    new Route('admin.history.restore', 'POST', '/admin/historique/{id}/restaurer', [HistoryController::class, 'restore'], requirements: $id),
+    new Route(
+        'admin.history.show',
+        'GET',
+        '/admin/historique/{type}/{key}',
+        [HistoryController::class, 'show'],
+        requirements: ['type' => '[a-z0-9_]{1,30}', 'key' => '[a-z0-9_.]{1,190}'],
+    ),
     // Paramètres › Impression (demande du 2026-09-30).
     new Route('admin.print.edit', 'GET', '/admin/impression', [PrintSettingsController::class, 'edit']),
     new Route('admin.print.update', 'POST', '/admin/impression', [PrintSettingsController::class, 'update']),

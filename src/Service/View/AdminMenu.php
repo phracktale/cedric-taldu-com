@@ -47,6 +47,8 @@ final class AdminMenu
                 ['chemin' => '/admin/templates', 'libelle' => 'Templates'],
                 ['chemin' => '/admin/impression', 'libelle' => 'Impression'],
                 ['chemin' => '/admin/ecoindex', 'libelle' => 'EcoIndex'],
+                // Historique des versions (demande du 2026-09-30).
+                ['chemin' => '/admin/historique', 'libelle' => 'Historique'],
             ]],
         ];
     }
