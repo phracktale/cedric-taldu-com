@@ -100,15 +100,19 @@ final class MediaTest extends TestCase
         $this->assertSame([200, 320], $this->media(largeur: 200)->derivativeWidths());
     }
 
-    public function test_le_zoom_ouvre_l_image_a_sa_resolution_native(): void
+    public function test_le_zoom_ouvre_une_image_de_2000_pixels_au_plus_grand_cote(): void
     {
-        // Au-delà de 2400 px, un JPEG pleine résolution dédié : agrandir le
-        // dérivé de 2400 rendrait les points flous.
-        $this->assertSame('articulation-encre-de-chine-cedric-taldu-full.jpg', $this->media(largeur: 5000)->zoomFilename());
-        $this->assertSame('articulation-encre-de-chine-cedric-taldu-2400.jpg', $this->media(largeur: 2400)->zoomFilename());
-        $this->assertSame('articulation-encre-de-chine-cedric-taldu-700.jpg', $this->media(largeur: 700)->zoomFilename());
-        $this->assertTrue($this->media(largeur: 5000)->hasFullDerivative());
-        $this->assertFalse($this->media(largeur: 2400)->hasFullDerivative());
+        // Demande du 2026-09-30 : « 2000 px sont suffisants » pour le zoom. Le
+        // plein format d'une image HD de 150 Mpx pèserait près de 100 Mo.
+        $this->assertSame('articulation-encre-de-chine-cedric-taldu-zoom.jpg', $this->media(largeur: 5000)->zoomFilename());
+        $this->assertSame('articulation-encre-de-chine-cedric-taldu-zoom.jpg', $this->media(largeur: 700)->zoomFilename());
+
+        // Le plus grand côté, pas la largeur : une œuvre verticale ne doit pas
+        // faire 2000 px de large et 3000 de haut.
+        $this->assertSame([2000, 1200], $this->media(largeur: 5000, hauteur: 3000)->zoomSize());
+        $this->assertSame([1000, 2000], $this->media(largeur: 3000, hauteur: 6000)->zoomSize());
+        // Jamais d'agrandissement : une petite image garde sa taille.
+        $this->assertSame([700, 500], $this->media(largeur: 700, hauteur: 500)->zoomSize());
     }
 
     public function test_la_largeur_de_repli_vise_mille_vingt_quatre_pixels(): void
