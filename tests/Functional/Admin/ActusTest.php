@@ -35,6 +35,83 @@ final class ActusTest extends AdminTestCase
         $this->assertStringContainsString('name="corps_fr"', $reponse->body);
     }
 
+    public function test_le_formulaire_propose_les_champs_d_exposition(): void
+    {
+        // Demande du 2026-09-30 : début, fin, lieu, adresse, lien, description.
+        $corps = $this->get(self::ACTUS . '/nouvel-article')->body;
+
+        $champs = ['date_evenement', 'date_fin', 'lieu_evenement', 'adresse_evenement', 'lien_evenement',
+            'description_evenement_fr', 'description_evenement_en'];
+        foreach ($champs as $champ) {
+            $this->assertStringContainsString('name="' . $champ . '"', $corps, $champ);
+        }
+        $this->assertStringContainsString('Date de début', $corps);
+        $this->assertStringContainsString('Date de fin', $corps);
+    }
+
+    public function test_une_exposition_s_enregistre_avec_tous_ses_champs(): void
+    {
+        $reponse = $this->postAvecJeton(self::ACTUS, [
+            'titre_fr' => 'Traits',
+            'date_evenement' => '2026-10-12',
+            'date_fin' => '2026-11-20',
+            'lieu_evenement' => 'Galerie du Beffroi',
+            'adresse_evenement' => '3 rue des Sergents, 80000 Amiens',
+            'lien_evenement' => 'https://galerie.example/traits',
+            'description_evenement_fr' => 'Encres récentes, vernissage le 12 à 18 h.',
+            'description_evenement_en' => 'Recent inks.',
+        ]);
+
+        $this->assertSame(302, $reponse->status);
+        $requete = $this->pdo->query(
+            'SELECT event_date, event_end_date, event_place, event_address, event_url FROM posts'
+        );
+        $this->assertNotFalse($requete);
+        $this->assertSame([
+            'event_date' => '2026-10-12',
+            'event_end_date' => '2026-11-20',
+            'event_place' => 'Galerie du Beffroi',
+            'event_address' => '3 rue des Sergents, 80000 Amiens',
+            'event_url' => 'https://galerie.example/traits',
+        ], $requete->fetch(\PDO::FETCH_ASSOC));
+        $this->assertSame(
+            'Encres récentes, vernissage le 12 à 18 h.',
+            $this->valeur("SELECT event_description FROM post_translations WHERE locale = 'fr'"),
+        );
+    }
+
+    public function test_une_fin_avant_le_debut_est_refusee(): void
+    {
+        $reponse = $this->postAvecJeton(self::ACTUS, [
+            'titre_fr' => 'Traits', 'date_evenement' => '2026-10-12', 'date_fin' => '2026-10-01',
+        ]);
+
+        $this->assertSame(422, $reponse->status);
+        $this->assertStringContainsString('La date de fin ne peut pas précéder la date de début', $reponse->body);
+        $this->assertSame(0, $this->compter('posts'));
+    }
+
+    public function test_une_fin_sans_debut_est_refusee(): void
+    {
+        $reponse = $this->postAvecJeton(self::ACTUS, ['titre_fr' => 'Traits', 'date_fin' => '2026-10-01']);
+
+        $this->assertSame(422, $reponse->status);
+        $this->assertStringContainsString('Indiquez la date de début', $reponse->body);
+    }
+
+    public function test_un_lien_qui_n_est_pas_une_adresse_web_est_refuse(): void
+    {
+        // 06-securite §2 : un lien « javascript: » affiché sur le site public
+        // serait une XSS. Seuls http et https passent.
+        $reponse = $this->postAvecJeton(self::ACTUS, [
+            'titre_fr' => 'Traits', 'lien_evenement' => 'javascript:alert(1)',
+        ]);
+
+        $this->assertSame(422, $reponse->status);
+        $this->assertStringContainsString('Le lien doit être une adresse web', $reponse->body);
+        $this->assertSame(0, $this->compter('posts'));
+    }
+
     public function test_un_article_se_cree_avec_le_seul_titre_francais(): void
     {
         $reponse = $this->postAvecJeton(self::ACTUS, ['titre_fr' => 'Mon exposition']);

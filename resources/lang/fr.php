@@ -211,4 +211,5 @@ return [
     'blog.previous' => 'Précédent',
     'blog.next' => 'Suivant',
     'blog.back_to_list' => '← Toutes les actus',
+    'blog.event_link' => 'Informations pratiques ↗',
 ];

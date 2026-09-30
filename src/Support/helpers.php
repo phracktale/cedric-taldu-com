@@ -154,3 +154,38 @@ function dateLong(?DateTimeImmutable $date, App\Domain\Locale $locale): string
         ? $date->format('j') . ' ' . $month . ' ' . $date->format('Y')
         : $month . ' ' . $date->format('j') . ', ' . $date->format('Y');
 }
+
+/**
+ * Période d'une exposition (demande du 2026-09-30), sans répéter ce que les
+ * deux dates partagent : « du 12 au 20 octobre 2026 », « October 12–20, 2026 ».
+ * Sans fin, ou fin égale au début : la date seule.
+ */
+function datePeriode(DateTimeImmutable $debut, ?DateTimeImmutable $fin, App\Domain\Locale $locale): string
+{
+    if ($fin === null || $fin->format('Y-m-d') === $debut->format('Y-m-d')) {
+        return dateLong($debut, $locale);
+    }
+
+    $memeAnnee = $debut->format('Y') === $fin->format('Y');
+    $memeMois = $memeAnnee && $debut->format('n') === $fin->format('n');
+
+    if ($locale === App\Domain\Locale::Fr) {
+        $jour = static fn (DateTimeImmutable $d): string => $d->format('j') === '1' ? '1er' : $d->format('j');
+        $complet = dateLong($fin, $locale);
+        $finTexte = $jour($fin) . substr($complet, strlen($fin->format('j')));
+
+        if ($memeMois) {
+            return 'du ' . $jour($debut) . ' au ' . $finTexte;
+        }
+
+        $debutTexte = $jour($debut) . substr(dateLong($debut, $locale), strlen($debut->format('j')));
+
+        return 'du ' . ($memeAnnee ? substr($debutTexte, 0, -5) : $debutTexte) . ' au ' . $finTexte;
+    }
+
+    if ($memeMois) {
+        return $fin->format('F') . ' ' . $debut->format('j') . '–' . $fin->format('j') . ', ' . $fin->format('Y');
+    }
+
+    return ($memeAnnee ? $debut->format('F j') : dateLong($debut, $locale)) . ' – ' . dateLong($fin, $locale);
+}

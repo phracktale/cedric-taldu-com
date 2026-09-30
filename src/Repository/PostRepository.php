@@ -31,7 +31,9 @@ final class PostRepository
 
     private const SELECT = <<<'SQL'
         SELECT p.id, p.cover_media_id, p.author_id, p.event_date, p.event_place, p.published_at,
-               t.locale, t.slug, t.title, t.excerpt, t.body, t.blocks, t.meta_title, t.meta_description
+               p.event_end_date, p.event_address, p.event_url,
+               t.locale, t.slug, t.title, t.excerpt, t.body, t.blocks, t.meta_title, t.meta_description,
+               t.event_description
         FROM posts p
         INNER JOIN post_translations t ON t.post_id = p.id
         SQL;
@@ -126,6 +128,7 @@ final class PostRepository
     {
         /** @var array<int, array{id: int, cover: int|null, author: int|null, eventDate: string|null,
          *                         eventPlace: string|null, publishedAt: string|null,
+         *                         eventEnd: string|null, eventAddress: string|null, eventUrl: string|null,
          *                         translations: array<string, PostTranslation>}> $grouped */
         $grouped = [];
 
@@ -139,6 +142,9 @@ final class PostRepository
                 'eventDate' => self::nullableString($row['event_date']),
                 'eventPlace' => self::nullableString($row['event_place']),
                 'publishedAt' => self::nullableString($row['published_at']),
+                'eventEnd' => self::nullableString($row['event_end_date']),
+                'eventAddress' => self::nullableString($row['event_address']),
+                'eventUrl' => self::nullableString($row['event_url']),
                 'translations' => [],
             ];
 
@@ -157,6 +163,7 @@ final class PostRepository
                 metaTitle: self::nullableString($row['meta_title']),
                 metaDescription: self::nullableString($row['meta_description']),
                 blocksJson: self::nullableString($row['blocks']),
+                eventDescription: self::nullableString($row['event_description']),
             );
         }
 
@@ -169,6 +176,9 @@ final class PostRepository
                 eventPlace: $data['eventPlace'],
                 publishedAt: self::toDate($data['publishedAt']),
                 translations: new Translations($data['translations']),
+                eventEndDate: self::toDate($data['eventEnd']),
+                eventAddress: $data['eventAddress'],
+                eventUrl: $data['eventUrl'],
             ),
             $grouped,
         ));

@@ -26,10 +26,14 @@ $texte = $data['texte'];
     <h2><?php if ($texte($news, 'title') !== null) : ?><?= e($texte($news, 'title')) ?><?php else : ?><?= $t('home.news_title') ?><?php endif; ?></h2>
     <div class="actu-liste">
       <?php foreach ($recentPosts as $post) : ?>
-        <?php $dateAffichee = $post->eventDate ?? $post->publishedAt; ?>
+        <?php
+        $dateAffichee = $post->eventDate ?? $post->publishedAt;
+        $dateTexte = $post->eventDate === null ? dateLong($dateAffichee, $locale)
+            : datePeriode($post->eventDate, $post->eventEndDate, $locale);
+        ?>
       <article class="actu">
         <?php if ($dateAffichee !== null) : ?>
-        <time datetime="<?= attr($dateAffichee->format('Y-m-d')) ?>"><?= e(dateLong($dateAffichee, $locale)) ?></time>
+        <time datetime="<?= attr($dateAffichee->format('Y-m-d')) ?>"><?= e($dateTexte) ?></time>
         <?php endif; ?>
         <h3><a href="<?= attr($articleUrl($post)) ?>"><?= e($post->title($locale)) ?></a></h3>
         <?php if ($post->isEvent() && $post->eventPlace !== null) : ?>

@@ -367,8 +367,11 @@ CREATE TABLE posts (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   cover_media_id INT UNSIGNED NULL,
   author_id INT UNSIGNED NULL,
-  event_date DATE NULL,                     -- date de l'exposition, si applicable
+  event_date DATE NULL,                     -- début de l'exposition, si applicable
+  event_end_date DATE NULL,                 -- fin (0022, 2026-09-30) ; NULL = un seul jour
   event_place VARCHAR(200) NULL,
+  event_address VARCHAR(300) NULL,          -- 0022
+  event_url VARCHAR(500) NULL,              -- 0022 : http(s) seulement, contrôlé à l'écriture
   is_published TINYINT(1) NOT NULL DEFAULT 0,
   published_at DATETIME NULL,
   created_at DATETIME NOT NULL, updated_at DATETIME NOT NULL,
@@ -381,6 +384,7 @@ CREATE TABLE post_translations (
   post_id INT UNSIGNED NOT NULL, locale CHAR(2) NOT NULL,
   slug VARCHAR(190) NOT NULL, title VARCHAR(220) NOT NULL,
   excerpt VARCHAR(400) NULL, body LONGTEXT NULL,   -- HTML assaini à l'écriture
+  event_description TEXT NULL,              -- 0022 : description de l'exposition, texte brut
   meta_title VARCHAR(180) NULL, meta_description VARCHAR(300) NULL,
   PRIMARY KEY (post_id, locale), UNIQUE KEY uq_post_slug (locale, slug),
   CONSTRAINT fk_pot_post FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE

@@ -28,13 +28,30 @@ $listUrl = $data['listUrl'];
 
 $dateAffichee = $post->eventDate ?? $post->publishedAt;
 ?>
+<?php
+// Exposition : sa période (demande du 2026-09-30) ; sinon la date de publication.
+$dateTexte = $post->eventDate === null ? dateLong($dateAffichee, $locale)
+    : datePeriode($post->eventDate, $post->eventEndDate, $locale);
+$description = $post->isEvent() ? $post->eventDescription($locale) : null;
+?>
 <header class="article-tete">
   <?php if ($dateAffichee !== null) : ?>
-    <p class="article-date"><?= e(dateLong($dateAffichee, $locale)) ?></p>
+    <p class="article-date"><?= e($dateTexte) ?></p>
   <?php endif; ?>
   <h1><?= e($post->title($locale)) ?></h1>
   <?php if ($post->isEvent() && $post->eventPlace !== null) : ?>
     <p class="article-lieu"><?= e($post->eventPlace) ?></p>
+  <?php endif; ?>
+  <?php if ($post->isEvent() && $post->eventAddress !== null) : ?>
+    <p class="article-adresse"><?= e($post->eventAddress) ?></p>
+  <?php endif; ?>
+  <?php if ($post->isEvent() && $description !== null) : ?>
+    <p class="article-expo-description"><?= e($description) ?></p>
+  <?php endif; ?>
+  <?php if ($post->isEvent() && $post->eventUrl !== null) : ?>
+    <p class="article-expo-lien">
+      <a href="<?= attr($post->eventUrl) ?>" rel="noopener noreferrer" target="_blank"><?= $t('blog.event_link') ?></a>
+    </p>
   <?php endif; ?>
 </header>
 

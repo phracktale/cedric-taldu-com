@@ -49,6 +49,33 @@ final class BlogTest extends FunctionalTestCase
         $this->assertStringContainsString('Le corps de l’article.', $response->body);
     }
 
+    public function test_une_exposition_montre_sa_periode_son_adresse_son_lien_et_sa_description(): void
+    {
+        (new PostFactory($this->pdo))->publishedAt('2026-06-01 09:00:00')
+            ->event('2026-10-12', 'Galerie du Beffroi')
+            ->exposition('2026-11-20', '3 rue des Sergents, 80000 Amiens', 'https://galerie.example/traits')
+            ->translated('fr', 'traits', 'Traits')
+            ->eventDescription('fr', 'Encres récentes.')
+            ->create();
+
+        $corps = $this->get('/cedric-taldu/fr/actus/traits')->body;
+
+        $this->assertStringContainsString('du 12 octobre au 20 novembre 2026', $corps);
+        $this->assertStringContainsString('Galerie du Beffroi', $corps);
+        $this->assertStringContainsString('3 rue des Sergents, 80000 Amiens', $corps);
+        $this->assertStringContainsString('href="https://galerie.example/traits"', $corps);
+        $this->assertStringContainsString('rel="noopener', $corps);
+        $this->assertStringContainsString('Encres récentes.', $corps);
+    }
+
+    public function test_la_liste_montre_la_periode_d_une_exposition(): void
+    {
+        (new PostFactory($this->pdo))->event('2026-10-12', 'Amiens')->exposition('2026-10-20')
+            ->translated('fr', 'traits', 'Traits')->create();
+
+        $this->assertStringContainsString('du 12 au 20 octobre 2026', $this->get('/cedric-taldu/fr/actus')->body);
+    }
+
     public function test_l_article_porte_son_canonique(): void
     {
         (new PostFactory($this->pdo))->publishedAt('2026-06-01 09:00:00')

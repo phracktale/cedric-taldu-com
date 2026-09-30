@@ -143,7 +143,8 @@ final class StructuredData
      * Article : Event si une date d'événement est présente, sinon BlogPosting.
      *
      * @param array{name: string, url: string, datePublished?: string|null,
-     *              eventDate?: string|null, eventPlace?: string|null, image?: string|null} $p
+     *              eventDate?: string|null, eventEndDate?: string|null, eventPlace?: string|null,
+     *              eventAddress?: string|null, eventDescription?: string|null, image?: string|null} $p
      * @return array<string, mixed>
      */
     public function article(array $p): array
@@ -157,8 +158,20 @@ final class StructuredData
                 'startDate' => $p['eventDate'],
             ];
 
-            if (($p['eventPlace'] ?? null) !== null) {
-                $data['location'] = ['@type' => 'Place', 'name' => $p['eventPlace']];
+            if (($p['eventEndDate'] ?? null) !== null) {
+                $data['endDate'] = $p['eventEndDate'];
+            }
+
+            if (($p['eventPlace'] ?? null) !== null || ($p['eventAddress'] ?? null) !== null) {
+                $data['location'] = array_filter([
+                    '@type' => 'Place',
+                    'name' => $p['eventPlace'] ?? $p['eventAddress'] ?? null,
+                    'address' => $p['eventAddress'] ?? null,
+                ], static fn (?string $v): bool => $v !== null);
+            }
+
+            if (($p['eventDescription'] ?? null) !== null) {
+                $data['description'] = $p['eventDescription'];
             }
         } else {
             $data = [

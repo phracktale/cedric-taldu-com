@@ -36,6 +36,7 @@ final class PostController
         'title' => 'titre',
         'excerpt' => 'extrait',
         'body' => 'corps',
+        'event_description' => 'description_evenement',
         'meta_title' => 'meta_titre',
         'meta_description' => 'meta_description',
     ];
@@ -80,6 +81,12 @@ final class PostController
             return $this->form($request, null, 'Le titre en français est obligatoire.', 422);
         }
 
+        $erreur = $this->eventError($request);
+
+        if ($erreur !== null) {
+            return $this->form($request, null, $erreur, 422);
+        }
+
         try {
             $cover = $this->covers->resolve($request, 'couverture_fichier', 'couverture');
         } catch (UploadRejected $exception) {
@@ -90,8 +97,7 @@ final class PostController
             $this->withSlugs($translations, $request, null),
             $this->chrome->currentUserId(),
             $cover,
-            $request->input('date_evenement'),
-            $request->input('lieu_evenement'),
+            $this->event($request),
             $this->chrome->now(),
         );
 
@@ -123,6 +129,12 @@ final class PostController
             return $this->form($request, $existing, 'Le titre en français est obligatoire.', 422);
         }
 
+        $erreur = $this->eventError($request);
+
+        if ($erreur !== null) {
+            return $this->form($request, $existing, $erreur, 422);
+        }
+
         try {
             $cover = $this->covers->resolve($request, 'couverture_fichier', 'couverture');
         } catch (UploadRejected $exception) {
@@ -142,8 +154,7 @@ final class PostController
             $id,
             $slugged,
             $cover,
-            $request->input('date_evenement'),
-            $request->input('lieu_evenement'),
+            $this->event($request),
             $this->chrome->now(),
         );
 
@@ -201,6 +212,52 @@ final class PostController
             'erreur' => $erreur,
             'saisie' => $request->post,
         ], $status);
+    }
+
+    /**
+     * Champs d'exposition du formulaire (demande du 2026-09-30).
+     *
+     * @return array{date: ?string, end: ?string, place: ?string, address: ?string, url: ?string}
+     */
+    private function event(Request $request): array
+    {
+        return [
+            'date' => $request->input('date_evenement'),
+            'end' => $request->input('date_fin'),
+            'place' => $request->input('lieu_evenement'),
+            'address' => $request->input('adresse_evenement'),
+            'url' => $request->input('lien_evenement'),
+        ];
+    }
+
+    /**
+     * Cohérence de l'exposition : fin après le début, lien web seulement — un
+     * « javascript: » affiché sur le site public serait une XSS (06-securite §2).
+     */
+    private function eventError(Request $request): ?string
+    {
+        $debut = trim($request->input('date_evenement') ?? '');
+        $fin = trim($request->input('date_fin') ?? '');
+        $lien = trim($request->input('lien_evenement') ?? '');
+
+        if ($fin !== '' && $debut === '') {
+            return 'Indiquez la date de début de l’exposition avant sa date de fin.';
+        }
+
+        // Dates AAAA-MM-JJ : l'ordre alphabétique est l'ordre chronologique.
+        if ($fin !== '' && strcmp($fin, $debut) < 0) {
+            return 'La date de fin ne peut pas précéder la date de début.';
+        }
+
+        if ($lien !== '' && (preg_match('#^https?://[^\s/]+#i', $lien) !== 1 || strlen($lien) > 500)) {
+            return 'Le lien doit être une adresse web commençant par http:// ou https://.';
+        }
+
+        if (mb_strlen(trim($request->input('adresse_evenement') ?? '')) > 300) {
+            return 'L’adresse ne peut pas dépasser 300 caractères.';
+        }
+
+        return null;
     }
 
     /**

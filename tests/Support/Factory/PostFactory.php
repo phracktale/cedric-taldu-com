@@ -17,6 +17,10 @@ final class PostFactory extends Factory
     private ?string $eventDate = null;
     private ?string $eventPlace = null;
     private ?int $coverMediaId = null;
+    /** @var array<string, string|null> colonnes d'exposition ajoutées le 2026-09-30 */
+    private array $exposition = [];
+    /** @var array<string, string> description d'exposition par langue */
+    private array $descriptions = [];
 
     /** @var array<string, array{slug: string, title: string, excerpt: string|null, body: string|null}> */
     private array $translations = [];
@@ -48,6 +52,21 @@ final class PostFactory extends Factory
     {
         $this->eventDate = $date;
         $this->eventPlace = $place;
+
+        return $this;
+    }
+
+    /** Exposition du 2026-09-30 : date de fin, adresse et lien. */
+    public function exposition(?string $endDate, ?string $address = null, ?string $url = null): self
+    {
+        $this->exposition = ['event_end_date' => $endDate, 'event_address' => $address, 'event_url' => $url];
+
+        return $this;
+    }
+
+    public function eventDescription(string $locale, string $text): self
+    {
+        $this->descriptions[$locale] = $text;
 
         return $this;
     }
@@ -111,6 +130,25 @@ final class PostFactory extends Factory
                     'excerpt' => $translation['excerpt'],
                     'body' => $translation['body'],
                 ],
+            );
+        }
+
+        if ($this->exposition !== []) {
+            $this->insert(
+                'UPDATE posts SET event_end_date = :fin, event_address = :adresse, event_url = :lien WHERE id = :id',
+                [
+                    'fin' => $this->exposition['event_end_date'],
+                    'adresse' => $this->exposition['event_address'],
+                    'lien' => $this->exposition['event_url'],
+                    'id' => $id,
+                ],
+            );
+        }
+
+        foreach ($this->descriptions as $locale => $texte) {
+            $this->insert(
+                'UPDATE post_translations SET event_description = :d WHERE post_id = :id AND locale = :l',
+                ['d' => $texte, 'id' => $id, 'l' => $locale],
             );
         }
 
