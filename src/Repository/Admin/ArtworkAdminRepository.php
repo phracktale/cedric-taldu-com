@@ -342,25 +342,6 @@ final class ArtworkAdminRepository
     }
 
     /**
-     * Fichier d'impression haute définition de l'œuvre (Prodigi).
-     *
-     * NULL retire la référence (le fichier lui-même est effacé par le service).
-     */
-    public function setPrintAsset(int $artworkId, ?string $path, ?string $mime, DateTimeImmutable $now): void
-    {
-        $statement = $this->pdo->prepare(
-            'UPDATE artworks SET print_asset_path = :path, print_asset_mime = :mime, updated_at = :now
-              WHERE id = :id'
-        );
-        $statement->execute([
-            'path' => $path,
-            'mime' => $mime,
-            'now' => $now->format('Y-m-d H:i:s'),
-            'id' => $artworkId,
-        ]);
-    }
-
-    /**
      * @return list<int>
      */
     private function orderedIds(int $categoryId): array

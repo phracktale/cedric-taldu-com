@@ -45,6 +45,7 @@ final class AdminMenu
                 ['chemin' => '/admin/apparence', 'libelle' => 'Apparence'],
                 ['chemin' => '/admin/menu', 'libelle' => 'Menu'],
                 ['chemin' => '/admin/templates', 'libelle' => 'Templates'],
+                ['chemin' => '/admin/impression', 'libelle' => 'Impression'],
                 ['chemin' => '/admin/ecoindex', 'libelle' => 'EcoIndex'],
             ]],
         ];

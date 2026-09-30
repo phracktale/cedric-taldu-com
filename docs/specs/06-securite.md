@@ -94,9 +94,16 @@ C'est la surface la plus dangereuse du projet. Toutes les règles s'appliquent :
    réservé au rôle `admin`.
 2. Le type est déterminé par `finfo_file` **et** `getimagesize`, jamais par l'extension ni
    par le `Content-Type` envoyé par le client.
-3. Taille max 25 Mo, dimensions max 12 000 × 12 000 px, contrôle du nombre de pixels avant
-   traitement pour éviter la « bombe de décompression ».
-4. **Ré-encodage systématique par GD** : l'image est décodée puis réécrite. Cela détruit
+3. Taille max **150 Mo** (25 Mo jusqu'au 2026-09-30), dimensions max 12 000 × 12 000 px,
+   **80 mégapixels** au plus, contrôlés avant traitement (« bombe de décompression »). Relevés
+   parce qu'une seule image haute définition sert aussi à l'impression.
+4. **Ré-encodage par GD de tout fichier PUBLIC** (dérivés, plein format du zoom) : l'image est
+   décodée puis réécrite. **Exception décidée le 2026-09-30 : l'original est gardé intact**
+   (octets reçus, profil couleur compris) parce qu'il sert à l'impression. Il reste hors
+   webroot, n'est jamais servi au public (`.htaccess` + test) et ne sort que vers
+   l'imprimeur, par un lien signé ; seul l'artiste authentifié peut le déposer. Tests :
+   `UploadTest` (fichiers publics sans charge ni GPS, original intact).
+   Pour les fichiers publics : Cela détruit
    toute charge utile embarquée (polyglotte GIFAR, PHP en commentaire EXIF) et supprime les
    métadonnées, y compris la géolocalisation.
 5. Nom de fichier aléatoire (`bin2hex(random_bytes(16))`), extension déduite du type réel.

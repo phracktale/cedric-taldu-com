@@ -7,6 +7,9 @@ namespace App\Http\Controller\Admin;
 use App\Core\Exception\NotFoundException;
 use App\Core\RedirectResponse;
 use App\Core\Request;
+use App\Domain\Catalog\ImageBreakpoints;
+use App\Domain\Catalog\PrintSettings;
+use App\Repository\SettingRepository;
 use App\Core\Response;
 use App\Core\Rule;
 use App\Core\Validator;
@@ -44,6 +47,7 @@ final class MediaController
         private readonly MediaStore $store,
         private readonly Validator $validator,
         private readonly UrlGenerator $url,
+        private readonly SettingRepository $settings,
     ) {
     }
 
@@ -326,6 +330,10 @@ final class MediaController
                     default => $u['id'] === 0 ? '/admin/accueil/hero' : '/admin/accueil/atelier',
                 },
             ], $this->medias->usagesOf($id)),
+            // Une image HD pour tout (demande du 2026-09-30) : impression, affichage.
+            'impression' => PrintSettings::fromStored($this->settings->json(PrintSettings::SETTING))
+                ->evaluate((int) $media['width'], (int) $media['height']),
+            'tailles' => ImageBreakpoints::sourcesForWidth((int) $media['width'], ImageBreakpoints::FICHE),
             'succes' => $succes,
             'erreur' => $erreur,
         ], $status);

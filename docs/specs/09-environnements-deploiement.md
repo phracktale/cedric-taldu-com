@@ -165,6 +165,20 @@ php bin/generate.php                                          # mutualisé (cron
 Des fichiers créés par root ne pourraient plus être supprimés à l'invalidation ; le
 script refuse de tourner en root.
 
+**Limites d'envoi des images** (décision du 2026-09-30) : une seule image haute
+définition par œuvre sert à l'affichage, au zoom et à l'impression. L'application accepte
+150 Mo et 80 Mpx (`UploadValidator`) ; chaque maillon doit laisser passer autant :
+
+| Maillon | Réglage |
+| --- | --- |
+| PHP, Thor | `docker/php/php.ini` : `upload_max_filesize 150M`, `post_max_size 160M`, `memory_limit 1024M`, `max_execution_time 180` |
+| Heimdall (preprod) | `location /cedric-taldu/` : `client_max_body_size 160m`, `proxy_read_timeout 180s` (HOMELAB `_CUSTOMERS/cedric-taldu/nginx/`) |
+| Mutualisé (prod) | `.user.ini` dans `public/` avec les quatre valeurs PHP ci-dessus, **si l'offre les autorise** : à vérifier avant la mise en production (o2switch permet d'ordinaire 1 Go de mémoire ; OVH mutualisé plafonne souvent plus bas). À défaut, abaisser `UploadValidator::MAX_BYTES`/`MAX_PIXELS` à ce que l'hébergeur accepte |
+| `composer serve` (local) | options `-d` du script `serve` |
+
+Une limite plus basse sur un seul maillon produit une erreur 413 (nginx) ou un formulaire
+vide (PHP) sans message clair : c'est le premier suspect quand un gros envoi échoue.
+
 Aucun déploiement ne s'exécute si la suite de tests n'est pas verte. Le script de
 déploiement refuse de tourner sur un dépôt avec des modifications non commitées.
 

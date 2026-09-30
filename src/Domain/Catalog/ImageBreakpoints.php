@@ -62,7 +62,17 @@ final class ImageBreakpoints
      */
     public static function sources(Media $media, array $breakpoints): array
     {
-        $natif = $media->width;
+        return self::sourcesForWidth($media->width, $breakpoints);
+    }
+
+    /**
+     * Même calcul depuis la seule largeur de l'original (fiche média).
+     *
+     * @param list<array{0: int, 1: int}> $breakpoints
+     * @return list<array{media: string|null, candidates: list<array{0: int, 1: string}>}>
+     */
+    public static function sourcesForWidth(int $natif, array $breakpoints): array
+    {
         $sources = [];
 
         foreach (array_reverse($breakpoints) as [$min, $rem]) {

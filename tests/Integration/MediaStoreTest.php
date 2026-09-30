@@ -197,16 +197,17 @@ final class MediaStoreTest extends DatabaseTestCase
         $this->assertSame(1, $this->depot->countAll());
     }
 
-    public function test_deux_exports_differant_par_leurs_seules_metadonnees_se_confondent(): void
+    public function test_deux_exports_differant_par_leurs_metadonnees_restent_distincts(): void
     {
-        // Le cas reel : la meme photo exportee deux fois, avec deux horodatages
-        // EXIF differents. Le re-encodage les a effaces, l'empreinte les
-        // rapproche.
+        // Depuis le 2026-09-30, l'original est gardé INTACT (impression) :
+        // l'empreinte porte sur les octets reçus. Deux exports aux métadonnées
+        // différentes (profil couleur, EXIF) sont deux fichiers d'impression
+        // distincts — le fichier identique, lui, reste dédoublonné.
         $sans = $this->store->store($this->televerse($this->fixtures->jpeg(400, 300, 'sans.jpg')));
         $avec = $this->store->store($this->televerse($this->fixtures->jpegAvecGps('avec.jpg')));
 
-        $this->assertSame($sans->id, $avec->id);
-        $this->assertSame(1, $this->depot->countAll());
+        $this->assertNotSame($sans->id, $avec->id);
+        $this->assertSame(2, $this->depot->countAll());
     }
 
     public function test_un_doublon_ne_laisse_aucun_fichier_supplementaire(): void

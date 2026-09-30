@@ -10,6 +10,7 @@ use App\Service\Fulfillment\PrintAssetUrl;
 use Tests\Support\Doubles\SequenceRandom;
 use Tests\Support\Factory\ArtworkFactory;
 use Tests\Support\Factory\CategoryFactory;
+use Tests\Support\Factory\MediaFactory;
 use Tests\Support\FunctionalTestCase;
 use Tests\Support\ImageFixtures;
 
@@ -58,6 +59,24 @@ final class PrintAssetTest extends FunctionalTestCase
         )->execute(['p' => $this->relativePath, 'm' => 'image/jpeg', 'id' => $this->artwork]);
     }
 
+    /**
+     * Image principale de l'œuvre, avec son original réellement rangé sous storage/.
+     */
+    private function originalDeMedia(int $largeur, int $hauteur): string
+    {
+        $media = (new MediaFactory($this->pdo))->sized($largeur, $hauteur)->create();
+        $relatif = 'uploads/ab/cd/original-' . $media . '.jpg';
+        $absolu = $this->fixtures->path('impr') . '/storage/' . $relatif;
+        mkdir(dirname($absolu), 0o775, true);
+        copy($this->fixtures->jpeg(300, 200, 'original.jpg'), $absolu);
+
+        $this->pdo->prepare('UPDATE media SET storage_path = :p WHERE id = :id')->execute(['p' => $relatif, 'id' => $media]);
+        $this->pdo->prepare('UPDATE artworks SET primary_media_id = :m WHERE id = :id')
+            ->execute(['m' => $media, 'id' => $this->artwork]);
+
+        return $absolu;
+    }
+
     protected function tearDown(): void
     {
         parent::tearDown();
@@ -82,6 +101,31 @@ final class PrintAssetTest extends FunctionalTestCase
         $reponse = $this->get('/cedric-taldu/impression/' . $this->artwork . '.' . str_repeat('0', 32));
 
         $this->assertSame(404, $reponse->status);
+    }
+
+    public function test_sans_fichier_d_impression_l_original_de_l_image_principale_est_servi(): void
+    {
+        // Demande du 2026-09-30 : une seule image HD sert à tout, impression
+        // comprise. L'original gardé intact de la Médiathèque part chez Prodigi.
+        $original = $this->originalDeMedia(3000, 2000);
+        $this->pdo->prepare('UPDATE artworks SET print_asset_path = NULL, print_asset_mime = NULL WHERE id = :id')
+            ->execute(['id' => $this->artwork]);
+
+        $reponse = $this->get('/cedric-taldu/impression/' . (new PrintAssetUrl(self::SECRET))->token($this->artwork));
+
+        $this->assertSame(200, $reponse->status);
+        $this->assertSame('image/jpeg', $reponse->header('Content-Type'));
+        $this->assertSame((string) file_get_contents($original), $reponse->body);
+    }
+
+    public function test_un_fichier_d_impression_deja_depose_reste_prioritaire(): void
+    {
+        // Fichiers déposés avant le 2026-09-30 : toujours utilisés tant qu'ils existent.
+        $this->originalDeMedia(3000, 2000);
+
+        $reponse = $this->get('/cedric-taldu/impression/' . (new PrintAssetUrl(self::SECRET))->token($this->artwork));
+
+        $this->assertSame((string) file_get_contents($this->source), $reponse->body);
     }
 
     public function test_une_oeuvre_sans_fichier_reste_introuvable(): void
