@@ -27,8 +27,8 @@ final class HistoriqueTest extends AdminTestCase
 
     public function test_un_template_modifie_apparait_dans_l_historique(): void
     {
+        $this->template([['type' => 'header'], ['type' => 'cover'], ['type' => 'body']]);
         $this->template([['type' => 'header'], ['type' => 'body']]);
-        $this->template([['type' => 'body']]);
 
         $liste = $this->get(self::HISTORIQUE)->body;
         $this->assertStringContainsString('Template « Actualité »', $liste);
@@ -40,17 +40,15 @@ final class HistoriqueTest extends AdminTestCase
 
     public function test_restaurer_remet_le_template_et_garde_l_etat_remplace(): void
     {
+        $this->template([['type' => 'header'], ['type' => 'cover'], ['type' => 'body']]);
         $this->template([['type' => 'header'], ['type' => 'body']]);
-        $this->template([['type' => 'body']]);
         $version = $this->derniereVersion('setting', 'template.post');
 
         $reponse = $this->postAvecJeton(self::HISTORIQUE . '/' . $version . '/restaurer');
 
         $this->assertSame(302, $reponse->status);
-        $this->assertSame(
-            ['header', 'body'],
-            array_column($this->reglage('template.post'), 'type'),
-        );
+        // Le template est rangé comme une liste de clés de sections.
+        $this->assertContains('cover', $this->reglage('template.post'));
         // La restauration se versionne elle-même : on peut revenir en arrière.
         $this->assertSame(2, $this->compterVersions('setting', 'template.post'));
         $this->assertSame(
@@ -94,8 +92,8 @@ final class HistoriqueTest extends AdminTestCase
 
     public function test_la_purge_sans_taper_purger_est_refusee(): void
     {
-        $this->template([['type' => 'header']]);
-        $this->template([['type' => 'body']]);
+        $this->template([['type' => 'header'], ['type' => 'cover'], ['type' => 'body']]);
+        $this->template([['type' => 'header'], ['type' => 'body']]);
 
         foreach (['', 'purger', 'PURGE', ' PURGER x'] as $saisie) {
             $reponse = $this->postAvecJeton(self::HISTORIQUE . '/purge', ['portee' => 'tout', 'confirmation' => $saisie]);
@@ -109,8 +107,8 @@ final class HistoriqueTest extends AdminTestCase
 
     public function test_la_purge_confirmee_efface_tout_l_historique(): void
     {
-        $this->template([['type' => 'header']]);
-        $this->template([['type' => 'body']]);
+        $this->template([['type' => 'header'], ['type' => 'cover'], ['type' => 'body']]);
+        $this->template([['type' => 'header'], ['type' => 'body']]);
 
         $reponse = $this->postAvecJeton(self::HISTORIQUE . '/purge', ['portee' => 'tout', 'confirmation' => 'PURGER']);
 
@@ -122,9 +120,9 @@ final class HistoriqueTest extends AdminTestCase
 
     public function test_la_purge_des_anciennes_versions_garde_les_recentes(): void
     {
-        $this->template([['type' => 'header']]);
-        $this->template([['type' => 'body']]);
-        $this->template([['type' => 'cover']]);
+        $this->template([['type' => 'header'], ['type' => 'cover'], ['type' => 'body']]);
+        $this->template([['type' => 'header'], ['type' => 'body']]);
+        $this->template([['type' => 'header'], ['type' => 'body'], ['type' => 'back']]);
         $this->pdo->exec(
             "UPDATE revisions SET created_at = '2020-01-01 00:00:00' ORDER BY id LIMIT 1"
         );
@@ -183,14 +181,14 @@ final class HistoriqueTest extends AdminTestCase
     }
 
     /**
-     * @return list<array<string, mixed>>
+     * @return list<string>
      */
     private function reglage(string $cle): array
     {
         $statement = $this->pdo->prepare('SELECT value FROM settings WHERE `key` = :k');
         $statement->execute(['k' => $cle]);
 
-        /** @var list<array<string, mixed>> $valeur */
+        /** @var list<string> $valeur */
         $valeur = json_decode((string) $statement->fetchColumn(), true);
 
         return $valeur;
