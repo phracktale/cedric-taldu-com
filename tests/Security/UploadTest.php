@@ -278,6 +278,8 @@ final class UploadTest extends AdminTestCase
                 $attendus[] = $base . '-' . $largeur . '.' . $format;
             }
         }
+        // Image du zoom, 2000 px au plus grand côté (2026-09-30).
+        $attendus[] = $base . '-zoom.jpg';
 
         sort($attendus);
 
