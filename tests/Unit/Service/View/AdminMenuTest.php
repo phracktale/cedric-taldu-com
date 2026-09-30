@@ -21,6 +21,8 @@ final class AdminMenuTest extends TestCase
         $this->assertSame(['Galeries', 'Œuvres', null, 'Facturation', 'Commandes', 'Livraisons'], $this->libelles($groupes[1]));
         $this->assertSame(['Messages', 'Newsletter'], array_slice($this->libelles($groupes[2]), 0, 2));
         $this->assertSame(['Apparence', 'Menu'], array_values(array_intersect($this->libelles($groupes[3]), ['Apparence', 'Menu'])));
+        // Historique des versions (demande du 2026-09-30), en fin de Paramètres.
+        $this->assertSame('Historique', array_slice($this->libelles($groupes[3]), -1)[0]);
     }
 
     public function test_la_rubrique_de_la_page_courante_est_reperee(): void
