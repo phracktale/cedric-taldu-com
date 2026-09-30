@@ -22,8 +22,10 @@ final class PostAdminRepository
 {
     private const SELECT = <<<'SQL'
         SELECT p.id, p.cover_media_id, p.author_id, p.event_date, p.event_place,
+               p.event_end_date, p.event_address, p.event_url,
                p.is_published, p.published_at,
-               t.locale, t.slug, t.title, t.excerpt, t.body, t.blocks, t.meta_title, t.meta_description
+               t.locale, t.slug, t.title, t.excerpt, t.body, t.blocks, t.meta_title, t.meta_description,
+               t.event_description
         FROM posts p
         LEFT JOIN post_translations t ON t.post_id = p.id
         SQL;
@@ -99,27 +101,28 @@ final class PostAdminRepository
 
     /**
      * @param array<string, array<string, string|null>> $translations
+     * @param array{date: ?string, end: ?string, place: ?string, address: ?string, url: ?string} $event
      */
     public function insert(
         array $translations,
         ?int $authorId,
         ?int $coverMediaId,
-        ?string $eventDate,
-        ?string $eventPlace,
+        array $event,
         DateTimeImmutable $now,
     ): int {
         // Un article naît DÉPUBLIÉ et sans date de publication : rien n'apparaît
         // dans les actus sans que l'artiste l'ait décidé.
         $statement = $this->pdo->prepare(
             'INSERT INTO posts
-                (cover_media_id, author_id, event_date, event_place, is_published, published_at, created_at, updated_at)
-             VALUES (:cover, :author, :eventDate, :eventPlace, 0, NULL, :now, :now2)'
+                (cover_media_id, author_id, event_date, event_end_date, event_place, event_address, event_url,
+                 is_published, published_at, created_at, updated_at)
+             VALUES (:cover, :author, :eventDate, :eventEnd, :eventPlace, :eventAddress, :eventUrl,
+                     0, NULL, :now, :now2)'
         );
         $statement->execute([
             'cover' => $coverMediaId,
             'author' => $authorId,
-            'eventDate' => self::nullableDate($eventDate),
-            'eventPlace' => self::blankToNull($eventPlace),
+            ...self::eventParameters($event),
             'now' => self::toSql($now),
             'now2' => self::toSql($now),
         ]);
@@ -133,24 +136,24 @@ final class PostAdminRepository
 
     /**
      * @param array<string, array<string, string|null>> $translations
+     * @param array{date: ?string, end: ?string, place: ?string, address: ?string, url: ?string} $event
      */
     public function update(
         int $id,
         array $translations,
         ?int $coverMediaId,
-        ?string $eventDate,
-        ?string $eventPlace,
+        array $event,
         DateTimeImmutable $now,
     ): void {
         $statement = $this->pdo->prepare(
             'UPDATE posts
-             SET cover_media_id = :cover, event_date = :eventDate, event_place = :eventPlace, updated_at = :now
+             SET cover_media_id = :cover, event_date = :eventDate, event_end_date = :eventEnd,
+                 event_place = :eventPlace, event_address = :eventAddress, event_url = :eventUrl, updated_at = :now
              WHERE id = :id'
         );
         $statement->execute([
             'cover' => $coverMediaId,
-            'eventDate' => self::nullableDate($eventDate),
-            'eventPlace' => self::blankToNull($eventPlace),
+            ...self::eventParameters($event),
             'now' => self::toSql($now),
             'id' => $id,
         ]);
@@ -213,8 +216,9 @@ final class PostAdminRepository
 
         $insert = $this->pdo->prepare(
             'INSERT INTO post_translations
-                (post_id, locale, slug, title, excerpt, body, blocks, meta_title, meta_description)
-             VALUES (:id, :locale, :slug, :title, :excerpt, :body, :blocks, :meta_title, :meta_description)'
+                (post_id, locale, slug, title, excerpt, body, event_description, blocks, meta_title, meta_description)
+             VALUES (:id, :locale, :slug, :title, :excerpt, :body, :event_description, :blocks,
+                     :meta_title, :meta_description)'
         );
 
         foreach ($translations as $locale => $fields) {
@@ -229,6 +233,7 @@ final class PostAdminRepository
                 'title' => $fields['title'] ?? '',
                 'excerpt' => $fields['excerpt'] ?? null,
                 'body' => $fields['body'] ?? null,
+                'event_description' => $fields['event_description'] ?? null,
                 'blocks' => $fields['blocks'] ?? null,
                 'meta_title' => $fields['meta_title'] ?? null,
                 'meta_description' => $fields['meta_description'] ?? null,
@@ -256,6 +261,9 @@ final class PostAdminRepository
                 'author_id' => $row['author_id'] === null ? null : (int) $row['author_id'],
                 'event_date' => self::nullableString($row['event_date']),
                 'event_place' => self::nullableString($row['event_place']),
+                'event_end_date' => self::nullableString($row['event_end_date']),
+                'event_address' => self::nullableString($row['event_address']),
+                'event_url' => self::nullableString($row['event_url']),
                 'is_published' => (bool) $row['is_published'],
                 'published_at' => self::nullableString($row['published_at']),
                 'translations' => [],
@@ -275,6 +283,7 @@ final class PostAdminRepository
                 'title' => self::nullableString($row['title']),
                 'excerpt' => self::nullableString($row['excerpt']),
                 'body' => self::nullableString($row['body']),
+                'event_description' => self::nullableString($row['event_description']),
                 'blocks' => self::nullableString($row['blocks']),
                 'meta_title' => self::nullableString($row['meta_title']),
                 'meta_description' => self::nullableString($row['meta_description']),
@@ -284,6 +293,21 @@ final class PostAdminRepository
         }
 
         return array_values($grouped);
+    }
+
+    /**
+     * @param  array{date: ?string, end: ?string, place: ?string, address: ?string, url: ?string} $event
+     * @return array<string, string|null>
+     */
+    private static function eventParameters(array $event): array
+    {
+        return [
+            'eventDate' => self::nullableDate($event['date']),
+            'eventEnd' => self::nullableDate($event['end']),
+            'eventPlace' => self::blankToNull($event['place']),
+            'eventAddress' => self::blankToNull($event['address']),
+            'eventUrl' => self::blankToNull($event['url']),
+        ];
     }
 
     private static function nullableString(mixed $value): ?string

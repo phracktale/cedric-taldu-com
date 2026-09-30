@@ -30,6 +30,10 @@ final class Post
         public readonly ?string $eventPlace,
         public readonly ?DateTimeImmutable $publishedAt,
         public readonly Translations $translations,
+        // Exposition (demande du 2026-09-30) : fin, adresse, lien http(s).
+        public readonly ?DateTimeImmutable $eventEndDate = null,
+        public readonly ?string $eventAddress = null,
+        public readonly ?string $eventUrl = null,
     ) {
     }
 
@@ -61,6 +65,11 @@ final class Post
     public function blocks(Locale $locale): array
     {
         return $this->translations->for($locale)->blocks();
+    }
+
+    public function eventDescription(Locale $locale): ?string
+    {
+        return $this->translations->for($locale)->eventDescription;
     }
 
     public function isTranslatedIn(Locale $locale): bool

@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 use App\Domain\Editorial\BlockCatalog;
 
-$base =is_string($data['basePath'] ?? null) ? $data['basePath'] : '';
+$base = is_string($data['basePath'] ?? null) ? $data['basePath'] : '';
 $jeton = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
 
 /** @var array<string, mixed>|null $article */
@@ -139,17 +139,46 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
             <legend>Exposition (facultatif)</legend>
             <div class="grille-champs">
                 <p class="champ">
-                    <label for="date_evenement">Date de l’événement</label>
+                    <label for="date_evenement">Date de début</label>
                     <input type="date" id="date_evenement" name="date_evenement"
                            value="<?= attr($champNeutre('date_evenement', 'event_date')) ?>">
                     <span class="champ-aide">Renseignée, l’article est présenté comme une exposition.</span>
                 </p>
                 <p class="champ">
+                    <label for="date_fin">Date de fin</label>
+                    <input type="date" id="date_fin" name="date_fin"
+                           value="<?= attr($champNeutre('date_fin', 'event_end_date')) ?>">
+                    <span class="champ-aide">Vide pour un événement d’un seul jour.</span>
+                </p>
+                <p class="champ">
                     <label for="lieu_evenement">Lieu</label>
                     <input type="text" id="lieu_evenement" name="lieu_evenement" maxlength="200"
                            value="<?= attr($champNeutre('lieu_evenement', 'event_place')) ?>">
+                    <span class="champ-aide">Nom de la galerie, du musée, du salon…</span>
+                </p>
+                <p class="champ">
+                    <label for="adresse_evenement">Adresse</label>
+                    <input type="text" id="adresse_evenement" name="adresse_evenement" maxlength="300"
+                           value="<?= attr($champNeutre('adresse_evenement', 'event_address')) ?>">
+                </p>
+                <p class="champ">
+                    <label for="lien_evenement">Lien (site du lieu, billetterie…)</label>
+                    <input type="url" id="lien_evenement" name="lien_evenement" maxlength="500"
+                           placeholder="https://"
+                           value="<?= attr($champNeutre('lien_evenement', 'event_url')) ?>">
                 </p>
             </div>
+            <?php foreach ($langues as $langue => $libelle) : ?>
+            <p class="champ">
+                <label for="description_evenement_<?= attr($langue) ?>">Description (<?= e($libelle) ?>)</label>
+                <textarea id="description_evenement_<?= attr($langue) ?>"
+                          name="description_evenement_<?= attr($langue) ?>" rows="3"
+                          maxlength="2000"><?= e($valeur('description_evenement', $langue, 'event_description')) ?></textarea>
+                <?php if ($langue === 'fr') : ?>
+                <span class="champ-aide">Horaires, vernissage, œuvres présentées… Texte simple, affiché avec les dates.</span>
+                <?php endif; ?>
+            </p>
+            <?php endforeach; ?>
         </fieldset>
 
         <fieldset>

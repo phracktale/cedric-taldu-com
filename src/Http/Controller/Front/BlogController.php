@@ -165,7 +165,10 @@ final class BlogController
             'url' => $url,
             'datePublished' => $post->publishedAt?->format('Y-m-d'),
             'eventDate' => $post->eventDate?->format('Y-m-d'),
+            'eventEndDate' => $post->eventEndDate?->format('Y-m-d'),
             'eventPlace' => $post->eventPlace,
+            'eventAddress' => $post->eventAddress,
+            'eventDescription' => $post->eventDescription($locale),
             'image' => null,
         ]);
 

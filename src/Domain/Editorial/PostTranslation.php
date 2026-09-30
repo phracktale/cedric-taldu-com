@@ -25,6 +25,8 @@ final class PostTranslation
         public readonly ?string $metaDescription,
         // Blocs éditoriaux (editor-core), rendus APRÈS le corps ; null = aucun.
         public readonly ?string $blocksJson = null,
+        // Description de l'exposition, texte brut (demande du 2026-09-30).
+        public readonly ?string $eventDescription = null,
     ) {
     }
 

@@ -209,4 +209,5 @@ return [
     'blog.previous' => 'Previous',
     'blog.next' => 'Next',
     'blog.back_to_list' => '← All news',
+    'blog.event_link' => 'Visitor information ↗',
 ];

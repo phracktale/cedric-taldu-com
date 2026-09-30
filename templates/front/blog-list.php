@@ -42,7 +42,13 @@ $pages = is_int($data['pages'] ?? null) ? $data['pages'] : 1;
         <?php
         $lien = $articleUrl($post->slug($locale)->value);
         $couverture = $post->coverMediaId === null ? null : ($medias[$post->coverMediaId] ?? null);
-        $dateAffichee = $post->eventDate ?? $post->publishedAt;
+        // Exposition : sa période (demande du 2026-09-30) ; sinon la date de publication.
+        $dateTexte = null;
+        if ($post->eventDate !== null) {
+            $dateTexte = datePeriode($post->eventDate, $post->eventEndDate, $locale);
+        } elseif ($post->publishedAt !== null) {
+            $dateTexte = dateLong($post->publishedAt, $locale);
+        }
         ?>
         <li class="actu">
           <a class="actu-lien" href="<?= attr($lien) ?>">
@@ -55,8 +61,8 @@ $pages = is_int($data['pages'] ?? null) ? $data['pages'] : 1;
               ]) ?>
             </div>
             <div class="actu-texte">
-              <?php if ($dateAffichee !== null) : ?>
-                <p class="actu-date"><?= e(dateLong($dateAffichee, $locale)) ?></p>
+              <?php if ($dateTexte !== null) : ?>
+                <p class="actu-date"><?= e($dateTexte) ?></p>
               <?php endif; ?>
               <h2 class="actu-titre"><?= e($post->title($locale)) ?></h2>
               <?php if ($post->isEvent() && $post->eventPlace !== null) : ?>
