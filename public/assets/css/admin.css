@@ -528,3 +528,9 @@ body.admin { padding-bottom: 3.5rem; }
 .zone-tarifs { border: 1px solid #ddd; border-radius: 6px; padding: 1rem; margin: 0 0 1.2rem; }
 .zone-tarifs > legend { font-weight: 600; padding: 0 .4rem; }
 .tableau-tarifs input { width: 8rem; }
+
+/* Qualité d'impression d'une image (demande du 2026-09-30). */
+.impression { display: inline-block; padding: .1rem .5rem; border-radius: 3px; font-size: .85rem; font-weight: 600; }
+.impression--optimal { background: #e3f1e5; color: #1f6b32; }
+.impression--acceptable { background: #fbf1d9; color: #7a5a00; }
+.impression--insuffisant { background: #f8e0dd; color: #8c2f1f; }

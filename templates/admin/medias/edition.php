@@ -193,6 +193,8 @@ $valeur = static function (string $langue, string $colonne) use ($traductions): 
         </form>
     </section>
 
+    <?= $partial('admin/medias/tailles-impression', $data) ?>
+
     <section>
         <h2>Utilisation</h2>
         <?php if ($totalUsages === 0) : ?>

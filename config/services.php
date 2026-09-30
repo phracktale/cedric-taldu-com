@@ -46,6 +46,7 @@ use App\Http\Controller\Admin\DeliveryController;
 use App\Http\Controller\Admin\MenuController;
 use App\Http\Controller\Admin\GenerationController;
 use App\Http\Controller\Admin\MapController;
+use App\Http\Controller\Admin\PrintSettingsController;
 use App\Http\Controller\Admin\ContactPageController;
 use App\Http\Controller\Admin\GlobalController;
 use App\Http\Controller\Admin\ContentBlockController;
@@ -903,6 +904,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(MediaStore::class),
         $c->get(Validator::class),
         $c->get(UrlGenerator::class),
+        $c->get(SettingRepository::class),
     ));
 
     $container->set(CheckoutController::class, static fn (Container $c): CheckoutController => new CheckoutController(
@@ -1164,6 +1166,11 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(SettingsAdminRepository::class),
     ));
     $container->set(ContactPageController::class, static fn (Container $c): ContactPageController => new ContactPageController(
+        $c->get(AdminChrome::class),
+        $c->get(SettingRepository::class),
+        $c->get(SettingsAdminRepository::class),
+    ));
+    $container->set(PrintSettingsController::class, static fn (Container $c): PrintSettingsController => new PrintSettingsController(
         $c->get(AdminChrome::class),
         $c->get(SettingRepository::class),
         $c->get(SettingsAdminRepository::class),
