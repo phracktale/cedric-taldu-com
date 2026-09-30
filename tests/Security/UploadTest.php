@@ -132,12 +132,13 @@ final class UploadTest extends AdminTestCase
         $this->assertStringNotContainsString('storage/', $reponse->body);
     }
 
-    public function test_un_fichier_de_plus_de_vingt_cinq_megaoctets_est_refuse(): void
+    public function test_un_fichier_de_plus_de_cent_cinquante_megaoctets_est_refuse(): void
     {
-        // 06-securite §5.3. Le fichier est creuse et non ecrit octet par octet :
-        // le test ne doit pas couter vingt-cinq megaoctets d'ecriture reelle.
+        // 06-securite §5.3. Limite relevée de 25 à 150 Mo le 2026-09-30 : une
+        // seule image haute définition sert aussi à l'impression. Le fichier
+        // est creusé, non écrit octet par octet.
         $reponse = $this->televerse(
-            $this->fixtures->volumineux(25 * 1024 * 1024 + 1)
+            $this->fixtures->volumineux(150 * 1024 * 1024 + 1)
         );
 
         $this->assertSame(422, $reponse->status);
@@ -215,7 +216,11 @@ final class UploadTest extends AdminTestCase
         $this->assertSame(200, $reponse->status);
         $this->assertSame(1, $this->nombreDeMedias());
 
-        foreach ($this->fichiersEcrits() as $fichier) {
+        // Depuis le 2026-09-30, l'original est gardé INTACT (impression) : la
+        // charge disparaît de tout fichier PUBLIC, ré-encodé ; l'original, hors
+        // webroot et jamais servi (test_l_original_n_est_pas_servi_par_le_web),
+        // garde ses octets.
+        foreach ($this->fichiersPublics() as $fichier) {
             $octets = (string) file_get_contents($fichier);
 
             $this->assertStringNotContainsString('<?php', $octets, basename($fichier));
@@ -223,17 +228,32 @@ final class UploadTest extends AdminTestCase
         }
     }
 
-    public function test_la_geolocalisation_disparait_de_tous_les_fichiers_produits(): void
+    public function test_l_original_est_garde_intact_pour_l_impression(): void
+    {
+        // Demande du 2026-09-30 : l'image déposée sert aussi à l'impression —
+        // profil couleur et pleine qualité conservés, sans recompression.
+        $source = $this->fixtures->jpeg(1600, 1200);
+        $empreinte = hash_file('sha256', $source);
+
+        $this->televerse($source);
+
+        $media = $this->dernierMedia();
+        $this->assertSame($empreinte, hash_file('sha256', $this->racine() . '/storage/' . $media['storage_path']));
+        $this->assertSame($empreinte, $media['checksum']);
+    }
+
+    public function test_la_geolocalisation_disparait_de_tous_les_fichiers_publies(): void
     {
         // 06-securite §5.4 et §9 : la latitude de l'atelier n'a rien a faire
-        // dans une image publiee. Verifie sur les OCTETS : l'extension exif
+        // dans une image publiee. L'original, gardé intact pour l'impression, ne
+        // sort que vers l'imprimeur (lien signé). Verifie sur les OCTETS : l'extension exif
         // n'est garantie ni sur le poste de developpement ni sur le mutualise.
         $source = $this->fixtures->jpegAvecGps();
         $this->assertStringContainsString("Exif\x00\x00", (string) file_get_contents($source));
 
         $this->televerse($source);
 
-        $fichiers = $this->fichiersEcrits();
+        $fichiers = $this->fichiersPublics();
         $this->assertNotSame([], $fichiers);
 
         foreach ($fichiers as $fichier) {
@@ -355,22 +375,16 @@ final class UploadTest extends AdminTestCase
     }
 
     /**
-     * Tous les fichiers reellement ecrits par le televersement : l'original
-     * archive ET les derives publics. La charge doit avoir disparu de TOUS.
+     * Fichiers PUBLICS écrits par le téléversement (dérivés, plein format du
+     * zoom) : tous ré-encodés, la charge doit en avoir disparu.
      *
      * @return list<string>
      */
-    private function fichiersEcrits(): array
+    private function fichiersPublics(): array
     {
         $media = $this->dernierMedia();
 
-        $fichiers = [$this->racine() . '/storage/' . $media['storage_path']];
-
-        foreach (glob($this->racine() . '/public/media/' . $media['public_basename'] . '-*') ?: [] as $derive) {
-            $fichiers[] = $derive;
-        }
-
-        return $fichiers;
+        return glob($this->racine() . '/public/media/' . $media['public_basename'] . '-*') ?: [];
     }
 
     /**
