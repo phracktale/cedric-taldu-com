@@ -79,6 +79,23 @@ final class StructuredDataTest extends TestCase
         $this->assertSame('2026-06-01', $data['startDate']);
     }
 
+    public function test_une_exposition_porte_sa_fin_son_adresse_et_sa_description(): void
+    {
+        $data = $this->seo->article([
+            'name' => 'Traits',
+            'url' => 'https://x.test/fr/actus/traits',
+            'eventDate' => '2026-10-12',
+            'eventEndDate' => '2026-11-20',
+            'eventPlace' => 'Galerie du Beffroi',
+            'eventAddress' => '3 rue des Sergents, 80000 Amiens',
+            'eventDescription' => 'Encres récentes.',
+        ]);
+
+        $this->assertSame('2026-11-20', $data['endDate']);
+        $this->assertSame('3 rue des Sergents, 80000 Amiens', $data['location']['address']);
+        $this->assertSame('Encres récentes.', $data['description']);
+    }
+
     public function test_un_article_sans_date_est_un_blogposting(): void
     {
         $data = $this->seo->article([
