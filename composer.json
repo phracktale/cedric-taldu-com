@@ -38,7 +38,7 @@
         "sort-packages": true
     },
     "scripts": {
-        "serve": "php -d upload_max_filesize=150M -d post_max_size=160M -d memory_limit=1024M -S localhost:8000 -t public bin/router.php",
+        "serve": "php -d upload_max_filesize=150M -d post_max_size=160M -d memory_limit=3072M -S localhost:8000 -t public bin/router.php",
         "test": "phpunit",
         "lint": [
             "@lint:syntax",
