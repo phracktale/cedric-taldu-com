@@ -82,7 +82,7 @@ final class ContentBlockController
 
         // Placé dans l'accueil ou un template, il disparaît simplement de la
         // page : une clef block:{id} sans bloc n'est pas rendue.
-        $this->blocks->delete($bloc->id);
+        $this->blocks->delete($bloc->id, $this->chrome->now());
         $this->chrome->audit()->record($this->chrome->currentUserId(), 'content_block.delete', $request, 'content_block', $bloc->id);
 
         return RedirectResponse::to($request->basePath . '/admin/blocs');

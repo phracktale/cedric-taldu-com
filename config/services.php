@@ -45,6 +45,7 @@ use App\Http\Controller\Admin\AppearanceController;
 use App\Http\Controller\Admin\DeliveryController;
 use App\Http\Controller\Admin\MenuController;
 use App\Http\Controller\Admin\GenerationController;
+use App\Http\Controller\Admin\HistoryController;
 use App\Http\Controller\Admin\MapController;
 use App\Http\Controller\Admin\PrintSettingsController;
 use App\Http\Controller\Admin\ContactPageController;
@@ -95,6 +96,7 @@ use App\Repository\Admin\MediaAdminRepository;
 use App\Repository\Admin\OrderAdminRepository;
 use App\Repository\Admin\ProductAdminRepository;
 use App\Repository\Admin\SeriesAdminRepository;
+use App\Repository\Admin\RevisionRepository;
 use App\Repository\Admin\SettingsAdminRepository;
 use App\Repository\ArtworkRepository;
 use App\Repository\AuditLogRepository;
@@ -853,8 +855,21 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         ),
     );
 
+    // Historique des versions (demande du 2026-09-30) : réglages et blocs réutilisables.
+    $container->set(RevisionRepository::class, static fn (Container $c): RevisionRepository
+        => new RevisionRepository($c->get(PDO::class)));
     $container->set(SettingsAdminRepository::class, static fn (Container $c): SettingsAdminRepository
-        => new SettingsAdminRepository($c->get(PDO::class)));
+        => new SettingsAdminRepository(
+            $c->get(PDO::class),
+            $c->get(RevisionRepository::class),
+            static fn (): ?int => $c->get(AdminSession::class)->currentUser()?->id,
+        ));
+    $container->set(HistoryController::class, static fn (Container $c): HistoryController => new HistoryController(
+        $c->get(AdminChrome::class),
+        $c->get(RevisionRepository::class),
+        $c->get(SettingsAdminRepository::class),
+        $c->get(ContentBlockRepository::class),
+    ));
     $container->set(AdminHomeController::class, static fn (Container $c): AdminHomeController => new AdminHomeController(
         $c->get(AdminChrome::class),
         $c->get(SettingRepository::class),
@@ -1153,6 +1168,8 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
     ));
     $container->set(ContentBlockRepository::class, static fn (Container $c): ContentBlockRepository => new ContentBlockRepository(
         $c->get(PDO::class),
+        $c->get(RevisionRepository::class),
+        static fn (): ?int => $c->get(AdminSession::class)->currentUser()?->id,
     ));
     $container->set(ContentBlockController::class, static fn (Container $c): ContentBlockController => new ContentBlockController(
         $c->get(AdminChrome::class),
