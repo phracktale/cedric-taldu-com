@@ -120,9 +120,13 @@ final class ImageProcessor
      * `picture` engendre ses <source> a partir des memes valeurs, et un decalage
      * produirait des balises pointant des fichiers inexistants.
      *
+     * `$extraWidths` : largeurs exactes des vignettes d'œuvres (ThumbnailLayout,
+     * 2026-09-30), produites en plus, jamais au-delà de l'original.
+     *
+     * @param list<int> $extraWidths
      * @return list<string> fichiers ecrits
      */
-    public function derivatives(string $sourcePath, string $directory, string $basename): array
+    public function derivatives(string $sourcePath, string $directory, string $basename, array $extraWidths = []): array
     {
         $source = $this->decodeFile($sourcePath);
         $width = imagesx($source);
@@ -161,7 +165,14 @@ final class ImageProcessor
                 $width = imagesx($source);
             }
 
-            foreach (Media::derivativeWidthsFor($width) as $target) {
+            $largeurs = Media::derivativeWidthsFor($width);
+            foreach ($extraWidths as $extra) {
+                if ($extra >= 1 && $extra <= $width && !in_array($extra, $largeurs, true)) {
+                    $largeurs[] = $extra;
+                }
+            }
+
+            foreach ($largeurs as $target) {
                 // max(1, ...) n'est pas une precaution decorative : un original
                 // tres large et tres plat — un panoramique de 2400 x 3 — donne
                 // une hauteur arrondie a zero pour les petites largeurs, et GD
@@ -195,6 +206,44 @@ final class ImageProcessor
         }
 
         imagedestroy($source);
+
+        return $written;
+    }
+
+    /**
+     * Produit seulement les largeurs demandées (WebP et JPEG), depuis une image
+     * source déjà réduite — le plus grand dérivé : refaire les vignettes quand
+     * le facteur de zoom d'Apparence change, sans redécoder chaque original.
+     *
+     * @param  list<int>    $widths
+     * @return list<string> fichiers écrits
+     */
+    public function resizedCopies(string $sourcePath, string $directory, string $basename, array $widths): array
+    {
+        $source = $this->decodeFile($sourcePath);
+        $width = imagesx($source);
+        $height = imagesy($source);
+        $written = [];
+
+        try {
+            foreach ($widths as $target) {
+                if ($target < 1 || $target > $width) {
+                    continue;
+                }
+                $resized = $this->resize($source, $target, max(1, (int) round($target * $height / $width)));
+                try {
+                    foreach (Media::FORMATS as $format) {
+                        $file = $directory . '/' . $basename . '-' . $target . '.' . $format;
+                        $this->write($resized, $file, $format);
+                        $written[] = $file;
+                    }
+                } finally {
+                    imagedestroy($resized);
+                }
+            }
+        } finally {
+            imagedestroy($source);
+        }
 
         return $written;
     }

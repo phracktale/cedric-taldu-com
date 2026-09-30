@@ -25,6 +25,7 @@ $medias = $data['medias'];
           'locale' => $locale,
           'media' => $medias[$oeuvre->primaryMediaId] ?? null,
           'class' => $rang === 1 ? 'large' : '',
+          'context' => $rang === 1 ? 'vitrine-large' : 'vitrine',
           'priority' => $rang < 2,
       ]) ?>
     <?php endforeach; ?>

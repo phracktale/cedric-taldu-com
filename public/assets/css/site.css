@@ -651,7 +651,8 @@ button.btn { font-family: inherit; cursor: pointer; }
 /* --------------------------------------------------------- œuvres, cadres */
 
 .vitrine { padding: 0 0 clamp(3.5rem, 8vh, 6rem); padding-top: 3.125rem; /* 50px sous le hero (2026-09-29) */ }
-.vitrine-grid { display: grid; grid-template-columns: 1.2fr 1fr 1.2fr; gap: 1.4rem; align-items: end; }
+/* Colonnes de largeur fixe par palier : engendrées par ThumbnailLayout::css(). */
+.vitrine-grid { display: grid; gap: 1.4rem; align-items: end; }
 
 .oeuvre { position: relative; display: block; text-decoration: none; }
 
@@ -693,6 +694,10 @@ a.oeuvre:hover .cadre, a.oeuvre:focus-visible .cadre {
 .dessin--portrait { aspect-ratio: 3 / 4; }
 .dessin--paysage { aspect-ratio: 4 / 3; }
 .dessin--carre { aspect-ratio: 1 / 1; }
+/* Vignette d'œuvre nette (2026-09-30) : affichée à la taille de son fichier,
+   choisi à la largeur exacte (ThumbnailLayout) — le facteur de zoom y est déjà.
+   max-* : filet de sécurité si la police racine n'est pas de 16 px. */
+.oeuvre .dessin img { width: auto; height: auto; max-width: 100%; max-height: 100%; scale: 1; }
 /* Le zoom ne vise que les vignettes : pas la fiche, ni les visuels de mise en page. */
 .visuel .dessin img, .bloc-image .dessin img, .portrait .dessin img, .hero-fond .dessin img { scale: 1; }
 /* Fond du hero et portrait : l'image couvre son cadre (point focal respecté). */
@@ -727,10 +732,6 @@ a.oeuvre:hover .cadre, a.oeuvre:focus-visible .cadre {
   border-bottom: 1px solid var(--encre); color: var(--encre);
 }
 
-@media (max-width: 760px) {
-  .vitrine-grid { grid-template-columns: 1fr 1fr; }
-  .oeuvre.large { grid-column: 1 / -1; }
-}
 
 /* -------------------------------------------------------------- triptyque */
 
@@ -886,10 +887,8 @@ section.contact p { max-width: 50ch; }
 .serie[aria-current] { background: var(--encre); border-color: var(--encre); color: var(--papier); }
 
 .grille { padding: clamp(3rem, 7vh, 5rem) 0 clamp(4rem, 9vh, 6rem); }
-.oeuvres { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.4rem 1.8rem; }
-
-@media (max-width: 900px) { .oeuvres { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 560px) { .oeuvres { grid-template-columns: 1fr; } }
+/* Colonnes de largeur fixe par palier : engendrées par ThumbnailLayout::css(). */
+.oeuvres { display: grid; gap: 2.4rem 1.8rem; }
 
 .vide { text-align: center; color: var(--encre-70); padding: 3rem 0; }
 
@@ -995,14 +994,13 @@ section.contact p { max-width: 50ch; }
 
 .liees { background: var(--papier-chaud); padding: clamp(3.5rem, 8vh, 5.5rem) 0; }
 .liees h2 { font-size: clamp(1.5rem, 3vw, 2rem); margin-bottom: 2rem; text-align: center; }
-.liees-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.8rem; }
+.liees-grid { display: grid; gap: 1.8rem; } /* colonnes : ThumbnailLayout::css() */
 .liee { display: block; text-decoration: none; }
 .liee .cadre { padding: 8%; box-shadow: 0 14px 30px -20px rgba(22, 21, 19, .22); }
 .liee .dessin { aspect-ratio: 3 / 4; max-height: none; }
 .liee .legende { margin-top: .8rem; font-size: .8rem; color: var(--encre-70); }
 .liee .legende strong { display: block; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; font-size: .76rem; color: var(--encre); }
 
-@media (max-width: 760px) { .liees-grid { grid-template-columns: 1fr; } }
 
 /* ----------------------------------------------------------------- footer */
 

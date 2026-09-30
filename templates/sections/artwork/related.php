@@ -47,6 +47,7 @@ $media = $medias[$oeuvre->primaryMediaId] ?? null;
     <div class="liees-grid">
       <?php foreach ($liees as $liee) : ?>
         <?= $partial('partials/artwork-card', [
+            'context' => 'liees',
             'artwork' => $liee,
             'locale' => $locale,
             'media' => $medias[$liee->primaryMediaId] ?? null,

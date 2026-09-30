@@ -40,6 +40,9 @@ $prioritaire = ($data['priority'] ?? false) === true;
 $etiquette = is_string($data['label'] ?? null) ? $data['label'] : '';
 /** @var list<array{0: int, 1: int}>|null $pointsDeRupture */
 $pointsDeRupture = is_array($data['breakpoints'] ?? null) ? $data['breakpoints'] : null;
+// Vignette d'œuvre nette (2026-09-30) : contexte de ThumbnailLayout.
+$vignette = is_string($data['thumbnail'] ?? null) ? $data['thumbnail'] : null;
+$zoomVignettes = is_int($data['vignetteZoom'] ?? null) ? $data['vignetteZoom'] : 100;
 $types = ['webp' => 'image/webp', 'jpg' => 'image/jpeg'];
 
 /**
@@ -67,8 +70,11 @@ $texteAlternatif = static function (Media $media) use ($locale, $etiquette): str
 <div class="dessin<?php if ($media instanceof Media) : ?> dessin--<?= attr($media->orientation()) ?><?php endif; ?>">
 <?php if ($media instanceof Media) : ?>
   <picture>
-    <?php if ($pointsDeRupture !== null) : ?>
-      <?php foreach (App\Domain\Catalog\ImageBreakpoints::sources($media, $pointsDeRupture) as $source) : ?>
+    <?php if ($pointsDeRupture !== null || $vignette !== null) : ?>
+        <?php $sourcesExactes = $vignette !== null
+            ? App\Domain\Catalog\ThumbnailLayout::sources($media->width, $media->height, $vignette, $zoomVignettes)
+            : App\Domain\Catalog\ImageBreakpoints::sources($media, $pointsDeRupture ?? []); ?>
+      <?php foreach ($sourcesExactes as $source) : ?>
         <?php foreach ($types as $format => $type) : ?>
     <source<?php if ($source['media'] !== null) : ?> media="<?= attr($source['media']) ?>"<?php endif; ?> type="<?= attr($type) ?>" srcset="<?= attr(implode(', ', array_map(
         static fn (array $c): string => $url->media($media->derivativeFilename($c[0], $format)) . ' ' . $c[1],

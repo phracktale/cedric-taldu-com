@@ -7,8 +7,10 @@ namespace App\Service\Media;
 use App\Core\ClockInterface;
 use App\Core\RandomInterface;
 use App\Core\UploadedFile;
+use App\Domain\Catalog\ThumbnailLayout;
 use App\Domain\Locale;
 use App\Repository\Admin\MediaAdminRepository;
+use Closure;
 use RuntimeException;
 use Throwable;
 
@@ -43,6 +45,13 @@ final class MediaStore
         private readonly string $storagePath,
         /** public/media — derives seulement. */
         private readonly string $publicPath,
+        /**
+         * Facteur de zoom des vignettes d'Apparence, en % (vignettes nettes,
+         * 2026-09-30) ; 100 sans réglage.
+         *
+         * @var (Closure(): int)|null
+         */
+        private readonly ?Closure $thumbnailZoom = null,
     ) {
     }
 
@@ -80,7 +89,12 @@ final class MediaStore
         $derivatives = [];
 
         try {
-            $derivatives = $this->processor->derivatives($storageFile, $this->publicPath, $basename);
+            $derivatives = $this->processor->derivatives(
+                $storageFile,
+                $this->publicPath,
+                $basename,
+                $this->thumbnailWidths($processed->width, $processed->height),
+            );
 
             $id = $this->media->insert(
                 storagePath: $this->relativeStoragePath($basename, $processed->extension),
@@ -236,13 +250,68 @@ final class MediaStore
             }
         }
 
-        $keep = array_map('basename', $this->processor->derivatives($original, $this->publicPath, $basename));
+        $taille = getimagesize($original);
+        $vignettes = $taille === false ? [] : $this->thumbnailWidths($taille[0], $taille[1]);
+        $keep = array_map('basename', $this->processor->derivatives($original, $this->publicPath, $basename, $vignettes));
 
         foreach (glob($this->publicPath . '/' . $basename . '-*') ?: [] as $derivative) {
             if (!in_array(basename($derivative), $keep, true)) {
                 $this->discard($derivative);
             }
         }
+    }
+
+    /**
+     * Refait les vignettes d'œuvres de toute la médiathèque au facteur de zoom
+     * donné (Apparence, 2026-09-30) : seules les largeurs manquantes sont
+     * produites, depuis le plus grand dérivé JPEG. Renvoie le nombre de
+     * fichiers écrits.
+     */
+    public function regenerateThumbnails(int $zoom): int
+    {
+        $ecrits = 0;
+
+        foreach ($this->media->findRecent($this->media->countAll()) as $row) {
+            $basename = (string) $row['public_basename'];
+            $manquantes = array_values(array_filter(
+                ThumbnailLayout::pixelWidths((int) $row['width'], (int) $row['height'], $zoom),
+                fn (int $largeur): bool => !is_file($this->publicPath . '/' . $basename . '-' . $largeur . '.webp'),
+            ));
+            $source = $this->largestDerivative($basename);
+
+            if ($manquantes === [] || $source === null) {
+                continue;
+            }
+
+            $ecrits += count($this->processor->resizedCopies($source, $this->publicPath, $basename, $manquantes));
+        }
+
+        return $ecrits;
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function thumbnailWidths(int $width, int $height): array
+    {
+        $zoom = $this->thumbnailZoom === null ? 100 : ($this->thumbnailZoom)();
+
+        return ThumbnailLayout::pixelWidths($width, $height, $zoom);
+    }
+
+    private function largestDerivative(string $basename): ?string
+    {
+        $plusGrand = null;
+        $largeurMax = 0;
+
+        foreach (glob($this->publicPath . '/' . $basename . '-*.jpg') ?: [] as $derive) {
+            if (preg_match('/-([0-9]+)\.jpg$/', $derive, $m) === 1 && (int) $m[1] > $largeurMax) {
+                $largeurMax = (int) $m[1];
+                $plusGrand = $derive;
+            }
+        }
+
+        return $plusGrand;
     }
 
     /**
@@ -330,7 +399,12 @@ final class MediaStore
 
         // 1. Regenerer les derives depuis le nouvel original (memes noms, ecrases).
         try {
-            $fresh = $this->processor->derivatives($temporary, $this->publicPath, $basename);
+            $fresh = $this->processor->derivatives(
+                $temporary,
+                $this->publicPath,
+                $basename,
+                $this->thumbnailWidths($processed->width, $processed->height),
+            );
         } catch (Throwable $exception) {
             $this->discard($temporary);
 

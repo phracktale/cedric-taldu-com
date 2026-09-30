@@ -24,6 +24,8 @@ $locale = $data['locale'];
 $media = $data['media'] ?? null;
 $classe = is_string($data['class'] ?? null) ? $data['class'] : '';
 $prioritaire = ($data['priority'] ?? false) === true;
+// Vignettes nettes (2026-09-30) : grille, liees, vitrine ou vitrine-large.
+$contexte = is_string($data['context'] ?? null) ? $data['context'] : 'grille';
 
 $caracteristiques = array_filter([
     $artwork->technique,
@@ -37,6 +39,7 @@ $caracteristiques = array_filter([
       'locale' => $locale,
       'label' => $artwork->title($locale),
       'priority' => $prioritaire,
+      'thumbnail' => $contexte,
   ]) ?></div>
   <p class="legende">
     <strong><?= e($artwork->caption($locale)) ?></strong>
