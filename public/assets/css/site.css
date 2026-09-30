@@ -1040,16 +1040,35 @@ footer a:hover { text-decoration: underline; }
   background: var(--encre);
   overflow: hidden;
 }
-.zoom[open] { display: flex; align-items: center; justify-content: center; }
+.zoom[open] { display: block; }
 .zoom::backdrop { background: rgba(22, 21, 19, .92); }
-/* Réduite pour tenir à l'écran, jamais agrandie à l'ouverture (2026-09-28) :
-   zoom.js borne ensuite l'agrandissement à la résolution native. */
+/* Explorateur (2026-09-30) : zoom.js calcule taille et position à partir du
+   coin haut gauche ; réduite pour tenir à l'écran, jamais agrandie à
+   l'ouverture, agrandie au plus jusqu'à la résolution native. */
 .zoom img {
-  width: auto; height: auto; max-width: 100%; max-height: 100%;
-  transform-origin: center center;
-  transition: transform .12s ease-out;
+  position: absolute; top: 0; left: 0;
+  max-width: none; max-height: none;
+  transform-origin: 0 0;
+  transition: transform .12s ease-out, opacity .2s;
+  opacity: 0;
+  cursor: zoom-in;
   user-select: none; touch-action: none;
 }
+.zoom--pret img { opacity: 1; }
+.zoom--agrandi img { cursor: grab; }
+.zoom--glisse img { cursor: grabbing; transition: opacity .2s; }
+.zoom-outils {
+  position: absolute; bottom: 1.2rem; left: 50%; translate: -50% 0; z-index: 2;
+  display: flex; gap: .4rem;
+}
+.zoom-outil {
+  min-width: 2.6rem; height: 2.6rem; padding: 0 .8rem;
+  background: rgba(22, 21, 19, .6); border: 1px solid rgba(250, 249, 246, .5); color: var(--papier);
+  font: inherit; font-size: 1.1rem; line-height: 1; cursor: pointer;
+}
+.zoom-outil--texte { font-size: .72rem; letter-spacing: .16em; text-transform: uppercase; }
+.zoom-outil:hover, .zoom-outil:focus-visible { background: var(--papier); color: var(--encre); }
+.zoom-outil:disabled { opacity: .35; cursor: default; background: rgba(22, 21, 19, .6); color: var(--papier); }
 .zoom-fermer {
   position: absolute; top: 1rem; right: 1rem; z-index: 2;
   background: none; border: 1px solid rgba(250, 249, 246, .5); color: var(--papier);

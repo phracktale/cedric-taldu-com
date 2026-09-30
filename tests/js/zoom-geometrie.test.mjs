@@ -31,12 +31,13 @@ test("à l'ouverture, l'image est centrée à l'échelle 1", () => {
 test('la molette zoome vers le curseur : le point visé ne bouge pas', () => {
   const taille = { largeur: 1000, hauteur: 500 };
   const etat = initial(taille, vue);
-  // Curseur sur le point (250, 275) de l'écran, soit (250, 125) dans l'image.
-  const apres = zoomerVers(etat, 2, 250, 275, taille, vue, 2);
+  // Curseur sur le point (250, 400) de l'écran, soit (250, 250) dans l'image —
+  // assez loin des bords pour que l'image n'ait pas à être retenue.
+  const apres = zoomerVers(etat, 2, 250, 400, taille, vue, 2);
 
   assert.equal(apres.echelle, 2);
   assert.equal(apres.x + 250 * apres.echelle, 250);
-  assert.equal(apres.y + 125 * apres.echelle, 275);
+  assert.equal(apres.y + 250 * apres.echelle, 400);
 });
 
 test("le zoom est borné entre l'échelle 1 et la résolution native", () => {
