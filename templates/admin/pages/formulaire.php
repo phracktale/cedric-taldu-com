@@ -50,6 +50,31 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
           enctype="multipart/form-data">
         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
 
+        <?php /* Document PDF (retour client du 2026-09-29). EN TÊTE de fiche depuis le
+                 compte rendu du 2026-10-12 : tout en bas, sous les deux langues, les
+                 blocs et la couverture, le champ n'avait pas été trouvé. L'ancre
+                 #document-pdf est visée depuis la médiathèque. */ ?>
+        <fieldset id="document-pdf">
+            <legend>Document PDF à télécharger</legend>
+            <?php $adresseDocument = $url->route('page.document', ['code' => (string) ($page['code'] ?? '')]); ?>
+            <?php if (is_string($page['attachment_path'] ?? null)) : ?>
+            <p class="champ">
+                Document en ligne : <a href="<?= attr($adresseDocument) ?>" target="_blank" rel="noopener"><?= e($adresseDocument) ?></a>
+                <span class="champ-aide">Cette adresse ne change pas quand le PDF est remplacé : un bouton peut la viser.
+                Un bouton « Télécharger » s’affiche aussi sur la page (section « Document PDF » du template).</span>
+            </p>
+            <p class="champ"><label class="case"><input type="checkbox" name="document_retirer" value="1"> Retirer le document</label></p>
+            <?php endif; ?>
+            <p class="champ">
+                <label for="document"><?php if (is_string($page['attachment_path'] ?? null)) : ?>Remplacer le PDF<?php else : ?>Déposer un PDF<?php endif; ?></label>
+                <input type="file" id="document" name="document" accept="application/pdf">
+                <span class="champ-aide">
+                    PDF de 20 Mo au plus — par exemple le livret de l’atelier. Une fois la page enregistrée,
+                    un bouton « Télécharger » s’affiche sur la page publique.
+                </span>
+            </p>
+        </fieldset>
+
         <div data-onglets-langue>
         <?php foreach ($langues as $langue => $libelle) : ?>
             <section class="panneau-langue" data-langue="<?= attr($langue) ?>" data-libelle="<?= attr($libelle) ?>">
@@ -123,24 +148,6 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
                     Le numéro affiché dans la <a href="<?= attr($base . '/admin/medias') ?>">médiathèque</a>.
                     Un fichier téléversé a la priorité.
                 </span>
-            </p>
-        </fieldset>
-
-        <fieldset>
-            <legend>Document PDF à télécharger</legend>
-            <?php $adresseDocument = $url->route('page.document', ['code' => (string) ($page['code'] ?? '')]); ?>
-            <?php if (is_string($page['attachment_path'] ?? null)) : ?>
-            <p class="champ">
-                Document en ligne : <a href="<?= attr($adresseDocument) ?>" target="_blank" rel="noopener"><?= e($adresseDocument) ?></a>
-                <span class="champ-aide">Cette adresse ne change pas quand le PDF est remplacé : un bouton peut la viser.
-                Un bouton « Télécharger » s’affiche aussi sur la page (section « Document PDF » du template).</span>
-            </p>
-            <p class="champ"><label class="case"><input type="checkbox" name="document_retirer" value="1"> Retirer le document</label></p>
-            <?php endif; ?>
-            <p class="champ">
-                <label for="document"><?php if (is_string($page['attachment_path'] ?? null)) : ?>Remplacer le PDF<?php else : ?>Déposer un PDF<?php endif; ?></label>
-                <input type="file" id="document" name="document" accept="application/pdf">
-                <span class="champ-aide">PDF de 20 Mo au plus — par exemple le livret de l’atelier.</span>
             </p>
         </fieldset>
 

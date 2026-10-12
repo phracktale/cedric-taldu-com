@@ -33,7 +33,9 @@ $pages = is_int($data['pages'] ?? null) ? $data['pages'] : 1;
   <h1><?= $t('nav.news') ?></h1>
 </section>
 
-<div class="wrap actus">
+<?php /* « actus-page », non « actus » : cette dernière est la bande beige de la
+         section de l'accueil (compte rendu client du 2026-10-12). */ ?>
+<div class="wrap actus-page">
   <?php if ($posts === []) : ?>
     <p class="actus-vide"><?= $t('blog.empty') ?></p>
   <?php else : ?>

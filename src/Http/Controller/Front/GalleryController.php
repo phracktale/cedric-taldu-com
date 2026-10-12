@@ -9,9 +9,11 @@ use App\Core\Response;
 use App\Core\View;
 use App\Domain\Catalog\Artwork;
 use App\Domain\Catalog\Category;
+use App\Domain\Editorial\GalleryPage;
 use App\Domain\Locale;
 use App\Repository\ArtworkRepository;
 use App\Repository\MediaRepository;
+use App\Repository\SettingRepository;
 use App\Service\I18n\UrlGenerator;
 use App\Service\Seo\StructuredData;
 use App\Service\View\Chrome;
@@ -35,6 +37,7 @@ final class GalleryController
         private readonly MediaRepository $medias,
         private readonly UrlGenerator $url,
         private readonly StructuredData $seo,
+        private readonly SettingRepository $settings,
     ) {
     }
 
@@ -62,6 +65,8 @@ final class GalleryController
             ])],
             'categories' => $rubriques,
             'covers' => $this->medias->findByIds($couvertures),
+            // Texte explicatif saisi en back-office (compte rendu client du 2026-10-12).
+            'galleryPage' => GalleryPage::fromStored($this->settings->json(GalleryPage::SETTING)),
         ], layout: 'layouts/public'));
     }
 

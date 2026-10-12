@@ -15,6 +15,7 @@ use App\Core\Rule;
 use App\Core\Validator;
 use App\Domain\Locale;
 use App\Repository\Admin\MediaAdminRepository;
+use App\Repository\Admin\PageAdminRepository;
 use App\Service\Media\CropRegion;
 use App\Service\Media\Exception\UploadRejected;
 use App\Service\I18n\UrlGenerator;
@@ -48,6 +49,7 @@ final class MediaController
         private readonly Validator $validator,
         private readonly UrlGenerator $url,
         private readonly SettingRepository $settings,
+        private readonly PageAdminRepository $pages,
     ) {
     }
 
@@ -296,10 +298,38 @@ final class MediaController
             'medias' => $medias,
             'usages' => $usages,
             'total' => $this->medias->countAll(),
+            'documents' => $this->documents(),
             'succes' => $succes,
             'erreur' => $erreur,
             'refus' => $refus,
         ], $status);
+    }
+
+    /**
+     * Documents PDF des pages (compte rendu client du 2026-10-12). La
+     * médiathèque ne range que des images ; un PDF — le livret — se dépose sur
+     * la fiche de sa page. L'artiste l'a cherché ici : la liste l'y conduit.
+     *
+     * @return list<array{id: int, code: string, titre: string, depose: bool}>
+     */
+    private function documents(): array
+    {
+        $documents = [];
+
+        foreach ($this->pages->findAll() as $page) {
+            $translations = is_array($page['translations'] ?? null) ? $page['translations'] : [];
+            $fr = is_array($translations['fr'] ?? null) ? $translations['fr'] : [];
+            $code = is_string($page['code'] ?? null) ? $page['code'] : '';
+
+            $documents[] = [
+                'id' => is_int($page['id'] ?? null) ? $page['id'] : 0,
+                'code' => $code,
+                'titre' => is_string($fr['title'] ?? null) && $fr['title'] !== '' ? $fr['title'] : $code,
+                'depose' => is_string($page['attachment_path'] ?? null),
+            ];
+        }
+
+        return $documents;
     }
 
     /**

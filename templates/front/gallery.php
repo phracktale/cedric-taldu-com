@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 use App\Domain\Catalog\Category;
 use App\Domain\Catalog\Media;
+use App\Domain\Editorial\GalleryPage;
 use App\Domain\Locale;
 
 /** @var Locale $locale */
@@ -24,6 +25,8 @@ $locale = $data['locale'];
 $rubriques = $data['categories'];
 /** @var array<int, Media> $couvertures */
 $couvertures = $data['covers'];
+// Texte explicatif saisi en back-office (compte rendu client du 2026-10-12).
+$texteGalerie = ($data['galleryPage'] ?? null) instanceof GalleryPage ? $data['galleryPage'] : null;
 ?>
 <section class="page-head wrap">
   <nav class="fil" aria-label="<?= $t('nav.breadcrumb') ?>">
@@ -34,7 +37,20 @@ $couvertures = $data['covers'];
   </nav>
 
   <h1><?= $t('nav.gallery') ?></h1>
+  <?php if ($texteGalerie !== null && $texteGalerie->hasContent($locale)) : ?>
+  <?php /* Texte SIMPLE, jamais du HTML : chaque ligne est échappée ici. Une ligne
+           vide sépare deux paragraphes, un retour simple reste un retour. */ ?>
+  <div class="intro">
+    <?php if ($texteGalerie->heading($locale) !== null) : ?>
+    <h2><?= e($texteGalerie->heading($locale)) ?></h2>
+    <?php endif; ?>
+    <?php foreach ($texteGalerie->paragraphs($locale) as $lignes) : ?>
+    <p><?php foreach ($lignes as $rang => $ligne) : ?><?php if ($rang > 0) : ?><br><?php endif; ?><?= e($ligne) ?><?php endforeach; ?></p>
+    <?php endforeach; ?>
+  </div>
+  <?php else : ?>
   <p class="intro"><?= $t('gallery.intro') ?></p>
+  <?php endif; ?>
 </section>
 
 <section class="galeries wrap" aria-label="<?= $t('nav.gallery') ?>">
