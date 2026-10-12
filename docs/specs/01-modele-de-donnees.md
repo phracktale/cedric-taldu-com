@@ -148,11 +148,13 @@ CREATE TABLE artworks (
   reserved_until DATETIME NULL,             -- réservation temporaire pendant le paiement
   weight_grams SMALLINT UNSIGNED NULL,      -- pour le calcul du port
   primary_media_id INT UNSIGNED NULL,
-  position SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  position SMALLINT UNSIGNED NOT NULL DEFAULT 0,          -- rang DANS la galerie : ne se compare pas entre galeries
+  works_position INT UNSIGNED NOT NULL DEFAULT 0,         -- 0024 : rang dans l'ordre libre de « Toutes les œuvres »
   is_published TINYINT(1) NOT NULL DEFAULT 0,
   published_at DATETIME NULL,
   created_at DATETIME NOT NULL, updated_at DATETIME NOT NULL,
   INDEX (category_id, is_published, position), INDEX (status),
+  INDEX (is_published, works_position),
   CONSTRAINT fk_art_cat FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT,
   CONSTRAINT fk_art_series FOREIGN KEY (series_id) REFERENCES series(id) ON DELETE SET NULL,
   CONSTRAINT fk_art_media FOREIGN KEY (primary_media_id) REFERENCES media(id) ON DELETE SET NULL

@@ -9,6 +9,7 @@ use App\Core\Response;
 use App\Core\View;
 use App\Domain\Catalog\Artwork;
 use App\Domain\Catalog\Category;
+use App\Domain\Catalog\WorksSort;
 use App\Domain\Editorial\GalleryPage;
 use App\Domain\Locale;
 use App\Repository\ArtworkRepository;
@@ -76,7 +77,14 @@ final class GalleryController
         $pages = max(1, (int) ceil($this->artworks->countPublished() / self::PAR_PAGE));
         // Page bornée aux pages qui existent : « ?page=9999… » ne déborde pas l'OFFSET.
         $page = min(self::page($request->query('page')), $pages);
-        $oeuvres = $this->artworks->findPublished(self::PAR_PAGE, ($page - 1) * self::PAR_PAGE);
+        // Classement choisi par l'artiste (demande du 2026-10-12) : ordre libre,
+        // alphabétique dans la langue affichée, ou les plus récentes d'abord.
+        $oeuvres = $this->artworks->findPublished(
+            self::PAR_PAGE,
+            ($page - 1) * self::PAR_PAGE,
+            WorksSort::fromStored($this->settings->json(WorksSort::SETTING)),
+            $locale,
+        );
 
         $images = array_values(array_filter(
             array_map(static fn (Artwork $a): ?int => $a->primaryMediaId, $oeuvres),

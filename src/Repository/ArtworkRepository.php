@@ -8,6 +8,8 @@ use App\Domain\Catalog\Artwork;
 use App\Domain\Catalog\ArtworkStatus;
 use App\Domain\Catalog\ArtworkTranslation;
 use App\Domain\Catalog\Dimensions;
+use App\Domain\Catalog\TitleOrder;
+use App\Domain\Catalog\WorksSort;
 use App\Domain\Locale;
 use App\Domain\Money;
 use App\Domain\Slug;
@@ -41,6 +43,16 @@ final class ArtworkRepository
 
     /** Un brouillon n'atteint jamais le public, publie ou non. */
     private const VISIBLE = "a.is_published = 1 AND a.status <> 'draft'";
+
+    /**
+     * Ordres SQL de la page « Toutes les œuvres », en LISTE BLANCHE EN DUR
+     * (src/CLAUDE.md), par valeur de WorksSort. L'ordre alphabétique n'y est
+     * pas : il est trié en PHP (voir visibleIdsByTitle()).
+     */
+    private const WORKS_ORDER = [
+        'libre' => 'a.works_position ASC, a.id ASC',
+        'recentes' => 'a.year IS NULL ASC, a.year DESC, a.id DESC',
+    ];
 
     public function __construct(private readonly PDO $pdo)
     {
@@ -88,30 +100,75 @@ final class ArtworkRepository
 
     /**
      * Page « Toutes les œuvres » (revue du 2026-09-24) : œuvres visibles de
-     * toutes les rubriques, paginées, dans l'ordre de la rubrique puis de l'œuvre.
+     * toutes les rubriques, paginées, dans le classement choisi par l'artiste
+     * (demande du 2026-10-12).
+     *
+     * Jusque-là, la page triait sur `position`, qui ne vaut que DANS une
+     * galerie : comparée entre galeries, elle donnait un ordre inexplicable.
      *
      * @return list<Artwork>
      */
-    public function findPublished(int $limit, int $offset): array
-    {
+    public function findPublished(
+        int $limit,
+        int $offset,
+        WorksSort $sort = WorksSort::Manual,
+        Locale $locale = Locale::Fr,
+    ): array {
         $limit = max(0, $limit);
+        $offset = max(0, $offset);
 
         if ($limit === 0) {
             return [];
         }
 
+        if ($sort === WorksSort::Alphabetical) {
+            return $this->findByIds(array_slice($this->visibleIdsByTitle($locale), $offset, $limit));
+        }
+
+        // Le seul élément interpolé est un ordre de la liste blanche : jamais
+        // une valeur venant du client.
         $statement = $this->pdo->prepare(
             'SELECT a.id FROM artworks a
                JOIN categories c ON c.id = a.category_id
               WHERE c.is_published = 1 AND ' . self::VISIBLE . '
-              ORDER BY a.position ASC, c.position ASC, a.id ASC
+              ORDER BY ' . self::WORKS_ORDER[$sort->value] . '
               LIMIT :limit OFFSET :offset'
         );
         $statement->bindValue('limit', $limit, PDO::PARAM_INT);
-        $statement->bindValue('offset', max(0, $offset), PDO::PARAM_INT);
+        $statement->bindValue('offset', $offset, PDO::PARAM_INT);
         $statement->execute();
 
         return $this->findByIds(self::identifiers($statement));
+    }
+
+    /**
+     * Identifiants des œuvres visibles, par titre dans la langue affichée —
+     * le titre français quand la traduction manque. Le tri est fait en PHP
+     * (TitleOrder) : sans accents ni casse, numéros dans l'ordre.
+     *
+     * @return list<int>
+     */
+    private function visibleIdsByTitle(Locale $locale): array
+    {
+        $statement = $this->pdo->prepare(
+            'SELECT a.id, COALESCE(tl.title, tf.title) AS title
+               FROM artworks a
+               JOIN categories c ON c.id = a.category_id
+               LEFT JOIN artwork_translations tl ON tl.artwork_id = a.id AND tl.locale = :locale
+               LEFT JOIN artwork_translations tf ON tf.artwork_id = a.id AND tf.locale = :reference
+              WHERE c.is_published = 1 AND ' . self::VISIBLE
+        );
+        $statement->execute(['locale' => $locale->value, 'reference' => Locale::reference()->value]);
+
+        /** @var array<int, string> $titres titre par identifiant */
+        $titres = [];
+        foreach ($statement->fetchAll(PDO::FETCH_ASSOC) as $ligne) {
+            $titres[(int) $ligne['id']] = (string) ($ligne['title'] ?? '');
+        }
+
+        uasort($titres, TitleOrder::compare(...));
+
+        return array_keys($titres);
     }
 
     public function countPublished(): int

@@ -822,6 +822,8 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(UrlGenerator::class),
             $c->get(SlugHistory::class),
             $c->get(CoverUpload::class),
+            $c->get(SettingRepository::class),
+            $c->get(SettingsAdminRepository::class),
         ),
     );
 

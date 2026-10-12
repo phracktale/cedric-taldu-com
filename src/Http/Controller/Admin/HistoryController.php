@@ -195,6 +195,7 @@ final class HistoryController
             'site.identity' => 'Identité du site',
             'contact.page' => 'Page contact',
             'gallery.page' => 'Page « Galerie »',
+            'works.sort' => 'Classement de « Toutes les œuvres »',
             'map' => 'Carte interactive',
             'print.settings' => 'Formats d’impression',
             'shipping' => 'Livraisons',

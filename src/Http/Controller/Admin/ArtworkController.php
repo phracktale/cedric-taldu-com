@@ -9,12 +9,16 @@ use App\Core\RedirectResponse;
 use App\Core\Request;
 use App\Core\Response;
 use App\Domain\Catalog\ArtworkStatus;
+use App\Domain\Catalog\TitleOrder;
+use App\Domain\Catalog\WorksSort;
 use App\Domain\Exception\InvalidSlug;
 use App\Domain\Locale;
 use App\Domain\Slug;
 use App\Repository\Admin\ArtworkAdminRepository;
 use App\Repository\Admin\CategoryAdminRepository;
 use App\Repository\Admin\SeriesAdminRepository;
+use App\Repository\Admin\SettingsAdminRepository;
+use App\Repository\SettingRepository;
 use App\Service\Content\PreviewToken;
 use App\Service\Content\TranslationInput;
 use App\Service\I18n\UrlGenerator;
@@ -67,6 +71,9 @@ final class ArtworkController
         private readonly UrlGenerator $url,
         private readonly \App\Service\Seo\SlugHistory $slugHistory,
         private readonly CoverUpload $covers,
+        // Classement de la page « Toutes les œuvres » (demande du 2026-10-12).
+        private readonly SettingRepository $settings,
+        private readonly SettingsAdminRepository $save,
     ) {
     }
 
@@ -74,19 +81,112 @@ final class ArtworkController
 
     public function index(Request $request): Response
     {
+        return $this->liste($request);
+    }
+
+    /**
+     * La liste montre l'ordre de la page publique correspondante (demande du
+     * 2026-10-12) : sans filtre de galerie, celui de « Toutes les œuvres » dans
+     * le classement choisi ; filtrée sur une galerie, celui de la galerie.
+     */
+    private function liste(Request $request, ?string $erreur = null, int $status = 200): Response
+    {
         $categoryId = self::positiveInt($request->query('rubrique'));
-        $status = ArtworkStatus::tryFrom($request->query('statut') ?? '');
+        $statut = ArtworkStatus::tryFrom($request->query('statut') ?? '');
+        $classement = WorksSort::fromStored($this->settings->json(WorksSort::SETTING));
+
+        $tri = match (true) {
+            $categoryId !== null => 'position',
+            $classement === WorksSort::Recent => 'year',
+            default => 'works',
+        };
+        $oeuvres = $this->artworks->findFiltered(['category' => $categoryId, 'status' => $statut?->value], $tri);
+
+        if ($categoryId === null && $classement === WorksSort::Alphabetical) {
+            usort($oeuvres, static fn (array $a, array $b): int => TitleOrder::compare(self::titre($a), self::titre($b)));
+        }
+
+        // Ce que l'on peut réordonner ici : l'ordre libre (« toutes »), ou une
+        // galerie. Rien sous un filtre de statut — réordonner une liste
+        // partielle serait ambigu — ni dans un classement automatique.
+        $portee = match (true) {
+            $statut !== null => null,
+            $categoryId !== null => (string) $categoryId,
+            $classement === WorksSort::Manual => 'toutes',
+            default => null,
+        };
 
         return $this->chrome->page($request, 'admin/oeuvres/index', [
             'titre' => 'Œuvres',
-            'oeuvres' => $this->artworks->findFiltered([
-                'category' => $categoryId,
-                'status' => $status?->value,
-            ]),
+            'oeuvres' => $oeuvres,
             'rubriques' => $this->categories->findAll(),
             'rubriqueChoisie' => $categoryId,
-            'statutChoisi' => $status?->value,
-        ]);
+            'statutChoisi' => $statut?->value,
+            'classement' => $classement,
+            'portee' => $portee,
+            'erreur' => $erreur,
+            'ordreEnregistre' => $request->query('ordre') !== null,
+            'classementEnregistre' => $request->query('classement') !== null,
+        ], $status);
+    }
+
+    /**
+     * Classement de la page « Toutes les œuvres » : libre, alphabétique ou les
+     * plus récentes d'abord.
+     */
+    public function sortMode(Request $request): Response
+    {
+        $classement = WorksSort::tryFrom((string) $request->input('mode'));
+
+        if ($classement === null) {
+            return $this->liste($request, 'Ce classement n’existe pas.', 422);
+        }
+
+        $this->save->save(WorksSort::SETTING, $classement->toArray(), $this->chrome->now());
+        $this->chrome->audit()->record($this->chrome->currentUserId(), WorksSort::SETTING, $request, 'setting', null);
+
+        return RedirectResponse::to($request->basePath . '/admin/oeuvres?classement=1', 303);
+    }
+
+    /**
+     * Nouvel ordre, envoyé par le glisser-déposer : `ordre` (identifiants
+     * séparés par des virgules) et `portee` — « toutes » pour l'ordre libre de
+     * la page « Toutes les œuvres », ou l'identifiant d'une galerie. Le dépôt
+     * écarte ce qui est inconnu ou étranger : aucun envoi ne perd d'œuvre.
+     */
+    public function reorder(Request $request): Response
+    {
+        $ids = [];
+        foreach (explode(',', (string) $request->input('ordre')) as $morceau) {
+            $id = self::positiveInt(trim($morceau));
+            if ($id !== null) {
+                $ids[] = $id;
+            }
+        }
+
+        $portee = (string) $request->input('portee');
+        $galerie = self::positiveInt($portee);
+
+        if ($portee === 'toutes') {
+            $this->artworks->reorderWorks($ids);
+            $retour = '/admin/oeuvres?ordre=1';
+        } elseif ($galerie !== null) {
+            $this->artworks->reorderInCategory($galerie, $ids);
+            $retour = '/admin/oeuvres?rubrique=' . $galerie . '&ordre=1';
+        } else {
+            return $this->liste($request, 'Cet ordre ne peut pas être enregistré.', 422);
+        }
+
+        $this->chrome->audit()->record(
+            $this->chrome->currentUserId(),
+            'artwork.reorder',
+            $request,
+            'artwork',
+            null,
+            ['portee' => $portee, 'oeuvres' => count($ids)],
+        );
+
+        return RedirectResponse::to($request->basePath . $retour, 303);
     }
 
     // ------------------------------------------------------------- creation
@@ -235,9 +335,24 @@ final class ArtworkController
         $artwork = $this->artwork($request);
         $direction = $request->input('direction') === 'haut' ? 'haut' : 'bas';
 
-        $this->artworks->move((int) $artwork['id'], $direction);
+        // Les flèches agissent sur l'ordre que la liste montrait (demande du
+        // 2026-10-12) : « toutes », l'ordre libre de la page « Toutes les
+        // œuvres » ; sinon le rang de l'œuvre dans sa galerie, et l'on revient
+        // à la liste filtrée d'où l'on vient.
+        $portee = (string) $request->input('portee');
 
-        return RedirectResponse::to($request->basePath . '/admin/oeuvres');
+        if ($portee === 'toutes') {
+            $this->artworks->moveInWorks((int) $artwork['id'], $direction);
+
+            return RedirectResponse::to($request->basePath . '/admin/oeuvres');
+        }
+
+        $this->artworks->move((int) $artwork['id'], $direction);
+        $galerie = self::positiveInt($portee);
+
+        return RedirectResponse::to(
+            $request->basePath . '/admin/oeuvres' . ($galerie === null ? '' : '?rubrique=' . $galerie),
+        );
     }
 
     public function delete(Request $request): Response
@@ -455,6 +570,19 @@ final class ArtworkController
         }
 
         return $cents;
+    }
+
+    /**
+     * Titre français d'une ligne de la liste, pour le classement alphabétique.
+     *
+     * @param array<string, mixed> $oeuvre
+     */
+    private static function titre(array $oeuvre): string
+    {
+        $translations = is_array($oeuvre['translations'] ?? null) ? $oeuvre['translations'] : [];
+        $fr = is_array($translations['fr'] ?? null) ? $translations['fr'] : [];
+
+        return is_string($fr['title'] ?? null) ? $fr['title'] : '';
     }
 
     private static function positiveInt(?string $value): ?int
