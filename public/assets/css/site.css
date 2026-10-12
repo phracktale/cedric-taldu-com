@@ -1135,3 +1135,12 @@ footer a:hover { text-decoration: underline; }
 
 /* Réseaux sociaux du pied de page (Paramètres › Global, retours du 2026-09-25). */
 .foot-reseaux { display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem 1.2rem; }
+
+/* Gouttière latérale garantie (contrôle du rendu, 2026-10-12). Les sections
+   « X wrap » — .page-head, .contact, .grille, .fiche, .galeries, .atelier,
+   .vitrine… — déclarent leur padding par un raccourci vertical, hérité de la
+   maquette, qui ANNULE les 5vw du .wrap : sous la largeur du site, leur contenu
+   touchait les bords de l'écran. Cette règle DOIT rester la dernière : à
+   spécificité égale, c'est la dernière déclarée qui l'emporte. Au-delà de
+   82rem, les marges automatiques du .wrap suffisent et rien ne change. */
+@media (max-width: 82rem) { .wrap { padding-left: 5vw; padding-right: 5vw; } }
