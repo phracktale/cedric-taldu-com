@@ -30,7 +30,16 @@ final class ArtworkAdminRepository
         'position' => 'a.position ASC, a.id ASC',
         'recent' => 'a.id DESC',
         'reference' => 'a.reference ASC',
+        // Ordres de la page « Toutes les œuvres » (demande du 2026-10-12) :
+        // l'ordre libre, et les plus récentes d'abord par année de l'œuvre.
+        'works' => 'a.works_position ASC, a.id ASC',
+        'year' => 'a.year IS NULL ASC, a.year DESC, a.id DESC',
     ];
+
+    /** Écritures de rang : deux requêtes figées, aucun nom de colonne interpolé. */
+    private const SET_POSITION = 'UPDATE artworks SET position = :rang WHERE id = :id';
+
+    private const SET_WORKS_POSITION = 'UPDATE artworks SET works_position = :rang WHERE id = :id';
 
     private const SELECT = <<<'SQL'
         SELECT a.id, a.category_id, a.series_id, a.reference, a.year, a.technique,
@@ -177,15 +186,18 @@ final class ArtworkAdminRepository
             'INSERT INTO artworks
                 (category_id, series_id, reference, year, technique, width_mm, height_mm, depth_mm, is_oversized,
                  is_signed, price_cents, vat_category, status, weight_grams,
-                 primary_media_id, position, is_published, created_at, updated_at)
+                 primary_media_id, position, works_position, is_published, created_at, updated_at)
              VALUES (:category, :series, :reference, :year, :technique, :width, :height, :depth, :oversized,
                      :signed, :price, :vat, :status, :weight,
-                     :media, :position, 0, :now, :now2)'
+                     :media, :position, :works, 0, :now, :now2)'
         );
 
         $statement->execute([
             ...$this->bindable($fields),
             'position' => $this->nextPosition((int) $fields['category_id']),
+            // Une nouvelle œuvre se range à la fin de l'ordre libre de la page
+            // « Toutes les œuvres » (demande du 2026-10-12).
+            'works' => $this->nextWorksPosition(),
             'now' => self::toSql($now),
             'now2' => self::toSql($now),
         ]);
@@ -308,6 +320,51 @@ final class ArtworkAdminRepository
         }
     }
 
+    // ---- ordre libre de la page « Toutes les œuvres » (demande du 2026-10-12) ----
+
+    /**
+     * Range les œuvres d'une galerie dans l'ordre donné (glisser-déposer). Les
+     * identifiants étrangers à la galerie sont ignorés ; les œuvres absentes
+     * de l'envoi suivent, dans leur ordre actuel — aucune ne se perd.
+     *
+     * @param list<int> $ids
+     */
+    public function reorderInCategory(int $categoryId, array $ids): void
+    {
+        $this->writeOrder(self::SET_POSITION, self::merged($this->orderedIds($categoryId), $ids));
+    }
+
+    /**
+     * Range TOUTES les œuvres dans l'ordre donné : l'ordre libre de la page
+     * « Toutes les œuvres », distinct du rang de chaque œuvre dans sa galerie.
+     * Mêmes garanties que reorderInCategory().
+     *
+     * @param list<int> $ids
+     */
+    public function reorderWorks(array $ids): void
+    {
+        $this->writeOrder(self::SET_WORKS_POSITION, self::merged($this->orderedWorksIds(), $ids));
+    }
+
+    /**
+     * Monte ou descend une œuvre d'un cran dans l'ordre libre — les flèches,
+     * pour qui n'a pas le glisser-déposer.
+     */
+    public function moveInWorks(int $id, string $direction): void
+    {
+        $order = $this->orderedWorksIds();
+        $index = array_search($id, $order, true);
+        $target = $index === false ? -1 : ($direction === 'haut' ? $index - 1 : $index + 1);
+
+        if ($index === false || $target < 0 || $target >= count($order)) {
+            return;
+        }
+
+        [$order[$index], $order[$target]] = [$order[$target], $order[$index]];
+
+        $this->writeOrder(self::SET_WORKS_POSITION, array_values($order));
+    }
+
     public function delete(int $id): void
     {
         $statement = $this->pdo->prepare('DELETE FROM artworks WHERE id = :id');
@@ -365,6 +422,69 @@ final class ArtworkAdminRepository
         $statement->execute(['id' => $categoryId]);
 
         return (int) $statement->fetchColumn();
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function orderedWorksIds(): array
+    {
+        $statement = $this->pdo->query('SELECT id FROM artworks ORDER BY works_position ASC, id ASC');
+
+        /** @var list<int|string> $ids */
+        $ids = $statement === false ? [] : $statement->fetchAll(PDO::FETCH_COLUMN);
+
+        return array_map(intval(...), $ids);
+    }
+
+    private function nextWorksPosition(): int
+    {
+        $statement = $this->pdo->query('SELECT COALESCE(MAX(works_position), -1) + 1 FROM artworks');
+
+        return $statement === false ? 0 : (int) $statement->fetchColumn();
+    }
+
+    /**
+     * L'ordre voulu, réduit aux identifiants connus et sans doublon, suivi de
+     * ceux qu'il ne cite pas, dans leur ordre actuel.
+     *
+     * @param  list<int> $current
+     * @param  list<int> $wanted
+     * @return list<int>
+     */
+    private static function merged(array $current, array $wanted): array
+    {
+        $wanted = array_values(array_unique(array_filter(
+            $wanted,
+            static fn (int $id): bool => in_array($id, $current, true),
+        )));
+
+        return [...$wanted, ...array_values(array_diff($current, $wanted))];
+    }
+
+    /**
+     * Écrit les rangs 0, 1, 2… dans l'ordre donné. `$sql` est l'une des deux
+     * constantes SET_* : aucun nom de colonne ne vient d'une donnée.
+     *
+     * @param list<int> $ids
+     */
+    private function writeOrder(string $sql, array $ids): void
+    {
+        $own = !$this->pdo->inTransaction();
+
+        if ($own) {
+            $this->pdo->beginTransaction();
+        }
+
+        $statement = $this->pdo->prepare($sql);
+
+        foreach ($ids as $rang => $id) {
+            $statement->execute(['rang' => $rang, 'id' => $id]);
+        }
+
+        if ($own) {
+            $this->pdo->commit();
+        }
     }
 
     /**

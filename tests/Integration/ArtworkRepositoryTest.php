@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Integration;
 
 use App\Domain\Catalog\Artwork;
+use App\Domain\Catalog\WorksSort;
 use App\Domain\Locale;
 use App\Domain\Slug;
 use App\Repository\ArtworkRepository;
@@ -47,8 +48,8 @@ final class ArtworkRepositoryTest extends DatabaseTestCase
     public function test_toutes_les_oeuvres_publiees_toutes_rubriques_confondues(): void
     {
         $autre = (new CategoryFactory($this->pdo))->translated('fr', 'huiles', 'Huiles')->create();
-        $this->oeuvre()->translated('fr', 'pilier-i', 'Pilier I')->atPosition(2)->create($this->rubriqueId);
-        $this->oeuvre()->translated('fr', 'rouge', 'Rouge')->atPosition(1)->create($autre);
+        $this->oeuvre()->translated('fr', 'pilier-i', 'Pilier I')->atWorksPosition(2)->create($this->rubriqueId);
+        $this->oeuvre()->translated('fr', 'rouge', 'Rouge')->atWorksPosition(1)->create($autre);
         $this->oeuvre()->draft()->translated('fr', 'brouillon', 'Brouillon')->create($autre);
 
         $oeuvres = $this->depot->findPublished(24, 0);
@@ -60,11 +61,76 @@ final class ArtworkRepositoryTest extends DatabaseTestCase
     public function test_toutes_les_oeuvres_se_paginent(): void
     {
         foreach (['a', 'b', 'c'] as $rang => $slug) {
-            $this->oeuvre()->translated('fr', $slug, strtoupper($slug))->atPosition($rang)->create($this->rubriqueId);
+            $this->oeuvre()->translated('fr', $slug, strtoupper($slug))->atWorksPosition($rang)->create($this->rubriqueId);
         }
 
         $this->assertSame(['B'], $this->titres($this->depot->findPublished(1, 1)));
         $this->assertSame([], $this->depot->findPublished(0, 0));
+    }
+
+    // ---- classement au choix de l'artiste (demande du 2026-10-12) ----
+
+    public function test_l_ordre_libre_ne_suit_pas_le_rang_dans_la_galerie(): void
+    {
+        // Jusque-là, la page comparait entre elles des positions qui ne valent
+        // que dans une galerie : un ordre que personne ne pouvait expliquer.
+        // L'ordre libre a son propre rang, réglé par glisser-déposer.
+        $autre = (new CategoryFactory($this->pdo))->translated('fr', 'huiles', 'Huiles')->create();
+        $this->oeuvre()->translated('fr', 'a', 'A')->atPosition(0)->atWorksPosition(2)->create($this->rubriqueId);
+        $this->oeuvre()->translated('fr', 'b', 'B')->atPosition(5)->atWorksPosition(0)->create($autre);
+        $this->oeuvre()->translated('fr', 'c', 'C')->atPosition(1)->atWorksPosition(1)->create($this->rubriqueId);
+
+        $this->assertSame(['B', 'C', 'A'], $this->titres($this->depot->findPublished(24, 0, WorksSort::Manual)));
+    }
+
+    public function test_les_plus_recentes_d_abord_suivent_l_annee_de_l_oeuvre(): void
+    {
+        $this->oeuvre()->translated('fr', 'ancienne', 'Ancienne')->madeIn(1998)->create($this->rubriqueId);
+        $this->oeuvre()->translated('fr', 'sans-date', 'Sans date')->madeIn(null)->create($this->rubriqueId);
+        $this->oeuvre()->translated('fr', 'recente', 'Récente')->madeIn(2026)->create($this->rubriqueId);
+        $this->oeuvre()->translated('fr', 'recente-bis', 'Récente bis')->madeIn(2026)->create($this->rubriqueId);
+
+        // Même année : la dernière ajoutée d'abord. Sans année : à la fin.
+        $this->assertSame(
+            ['Récente bis', 'Récente', 'Ancienne', 'Sans date'],
+            $this->titres($this->depot->findPublished(24, 0, WorksSort::Recent)),
+        );
+    }
+
+    public function test_l_ordre_alphabetique_ignore_accents_et_casse_et_suit_les_numeros(): void
+    {
+        foreach (['repli-10' => 'Repli 10', 'zenith' => 'Zénith', 'ecorche' => 'Écorché', 'repli-2' => 'Repli 2', 'articulation' => 'articulation'] as $slug => $titre) {
+            $this->oeuvre()->translated('fr', $slug, $titre)->create($this->rubriqueId);
+        }
+
+        $this->assertSame(
+            ['articulation', 'Écorché', 'Repli 2', 'Repli 10', 'Zénith'],
+            $this->titres($this->depot->findPublished(24, 0, WorksSort::Alphabetical)),
+        );
+        // La pagination suit le même ordre.
+        $this->assertSame(
+            ['Repli 2', 'Repli 10'],
+            $this->titres($this->depot->findPublished(2, 2, WorksSort::Alphabetical)),
+        );
+    }
+
+    public function test_l_ordre_alphabetique_suit_les_titres_de_la_langue_affichee(): void
+    {
+        // « Knee » passe avant « Pillar » en anglais ; « Genou » et « Pilier »
+        // gardent leur ordre français. Sans traduction, le titre français sert.
+        $this->oeuvre()->translated('fr', 'pilier', 'Pilier')->translated('en', 'pillar', 'Pillar')->create($this->rubriqueId);
+        $this->oeuvre()->translated('fr', 'vertebre', 'Vertèbre')->translated('en', 'backbone', 'Backbone')->create($this->rubriqueId);
+        $this->oeuvre()->translated('fr', 'genou', 'Genou')->create($this->rubriqueId);
+
+        $this->assertSame(
+            ['Genou', 'Pilier', 'Vertèbre'],
+            $this->titres($this->depot->findPublished(24, 0, WorksSort::Alphabetical, Locale::Fr)),
+        );
+        // En anglais : Backbone, Genou (repli français), Pillar.
+        $this->assertSame(
+            ['Vertèbre', 'Genou', 'Pilier'],
+            $this->titres($this->depot->findPublished(24, 0, WorksSort::Alphabetical, Locale::En)),
+        );
     }
 
     // ------------------------------------------------------ page rubrique

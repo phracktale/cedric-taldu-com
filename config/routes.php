@@ -272,6 +272,10 @@ return [
     new Route('admin.artwork.index', 'GET', '/admin/oeuvres', [AdminArtworkController::class, 'index']),
     new Route('admin.artwork.create', 'GET', '/admin/oeuvres/nouvelle', [AdminArtworkController::class, 'create']),
     new Route('admin.artwork.store', 'POST', '/admin/oeuvres', [AdminArtworkController::class, 'store']),
+    // Classement de la page « Toutes les œuvres » et ordre par glisser-déposer
+    // (demande du 2026-10-12).
+    new Route('admin.artwork.sort', 'POST', '/admin/oeuvres/classement', [AdminArtworkController::class, 'sortMode']),
+    new Route('admin.artwork.reorder', 'POST', '/admin/oeuvres/ordre', [AdminArtworkController::class, 'reorder']),
     new Route('admin.artwork.edit', 'GET', '/admin/oeuvres/{id}', [AdminArtworkController::class, 'edit'], requirements: $id),
     new Route('admin.artwork.update', 'POST', '/admin/oeuvres/{id}', [AdminArtworkController::class, 'update'], requirements: $id),
     new Route('admin.artwork.publish', 'POST', '/admin/oeuvres/{id}/publication', [AdminArtworkController::class, 'togglePublication'], requirements: $id),

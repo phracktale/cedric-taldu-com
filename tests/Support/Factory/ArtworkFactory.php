@@ -27,6 +27,7 @@ final class ArtworkFactory extends Factory
     private bool $signed = true;
     private bool $oversized = false;
     private int $position = 0;
+    private ?int $worksPosition = null;
     private ?int $seriesId = null;
     private ?int $primaryMediaId = null;
     private ?string $publishedAt = null;
@@ -128,6 +129,17 @@ final class ArtworkFactory extends Factory
         return $this;
     }
 
+    /**
+     * Rang dans l'ordre libre de la page « Toutes les œuvres » (demande du
+     * 2026-10-12) — distinct du rang dans la galerie.
+     */
+    public function atWorksPosition(int $position): self
+    {
+        $this->worksPosition = $position;
+
+        return $this;
+    }
+
     public function inSeries(?int $seriesId): self
     {
         $this->seriesId = $seriesId;
@@ -219,6 +231,13 @@ final class ArtworkFactory extends Factory
 
         if ($this->oversized) {
             $this->insert('UPDATE artworks SET is_oversized = 1 WHERE id = :id', ['id' => $id]);
+        }
+
+        if ($this->worksPosition !== null) {
+            $this->insert(
+                'UPDATE artworks SET works_position = :rang WHERE id = :id',
+                ['rang' => $this->worksPosition, 'id' => $id],
+            );
         }
 
         foreach ($this->translations as $locale => $translation) {

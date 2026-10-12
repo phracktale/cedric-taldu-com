@@ -549,3 +549,15 @@ body.admin { padding-bottom: 3.5rem; }
 }
 .champ-choix { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .4rem 0; }
 .champ-choix input[type="number"] { width: 6rem; }
+
+/* Glisser-déposer de la liste des œuvres (2026-10-12) : la poignée seule
+   déplace la ligne ; un filet marque l'endroit où elle sera déposée. */
+.tableau .tri-colonne { width: 2.2rem; text-align: center; }
+.tri-poignee { cursor: grab; color: var(--encre-40); font-size: 1.1rem; line-height: 1; user-select: none; }
+.tri-poignee:hover { color: var(--encre); }
+.tri-ligne--glisse { opacity: .45; }
+.tri-ligne--avant td { box-shadow: inset 0 2px 0 var(--encre); }
+.tri-ligne--apres td { box-shadow: inset 0 -2px 0 var(--encre); }
+/* Écran des œuvres : le classement de « Toutes les œuvres » suit le filtre. */
+.classement-oeuvres { margin-top: 2rem; }
+.classement-oeuvres .champ-choix label { margin: 0; cursor: pointer; }
