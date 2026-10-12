@@ -162,7 +162,10 @@ final class UploadTest extends AdminTestCase
         ]);
 
         $this->assertSame(422, $reponse->status);
-        $this->assertStringContainsString('25 Mo', $reponse->body);
+        // Le MESSAGE de refus, et la limite en vigueur. Ce test cherchait
+        // « 25 Mo » et le trouvait dans le texte d'aide de la page, resté en
+        // retard : il passait sans rien prouver (constaté le 2026-10-12).
+        $this->assertStringContainsString('dépasse la taille maximale de 150 Mo', $reponse->body);
     }
 
     // ------------------------------------------------------------- accepte
