@@ -36,6 +36,7 @@ use App\Http\Controller\Admin\HistoryController;
 use App\Http\Controller\Admin\MapController;
 use App\Http\Controller\Admin\PrintSettingsController;
 use App\Http\Controller\Admin\ContactPageController;
+use App\Http\Controller\Admin\GalleryPageController;
 use App\Http\Controller\Admin\GlobalController;
 use App\Http\Controller\Admin\ContentBlockController;
 use App\Http\Controller\Admin\EcoIndexController;
@@ -255,6 +256,9 @@ return [
     // Ancienne adresse (« rubriques », avant les retours du 2026-09-25).
     new Route('admin.category.legacy', 'GET', '/admin/rubriques', [AdminCategoryController::class, 'legacy']),
     new Route('admin.category.create', 'GET', '/admin/galeries/nouvelle', [AdminCategoryController::class, 'create']),
+    // Texte explicatif de la page Galerie (compte rendu client du 2026-10-12).
+    new Route('admin.gallery_page.edit', 'GET', '/admin/galeries/page', [GalleryPageController::class, 'edit']),
+    new Route('admin.gallery_page.update', 'POST', '/admin/galeries/page', [GalleryPageController::class, 'update']),
     new Route('admin.category.store', 'POST', '/admin/galeries', [AdminCategoryController::class, 'store']),
     new Route('admin.category.edit', 'GET', '/admin/galeries/{id}', [AdminCategoryController::class, 'edit'], requirements: $id),
     new Route('admin.category.update', 'POST', '/admin/galeries/{id}', [AdminCategoryController::class, 'update'], requirements: $id),

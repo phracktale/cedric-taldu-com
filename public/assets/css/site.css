@@ -55,6 +55,10 @@
   --max: 1180px;
   /* Largeur des pages de contenu (éditoriales, articles) : revue du 2026-09-24. */
   --contenu: 72rem;
+  /* Largeur des blocs de texte courant : 1050 px, demandée par le client pour
+     les pages (2026-09-29) puis pour les introductions, restées « serrées »
+     à une cinquantaine de caractères (2026-10-12). */
+  --mesure: 65.625rem;
   /* Teinte du style d'entrée active « couleur ». */
   --actif: #8C5A2B;
 }
@@ -736,7 +740,10 @@ a.oeuvre:hover .cadre, a.oeuvre:focus-visible .cadre {
 /* -------------------------------------------------------------- triptyque */
 
 .triptyque { background: var(--papier-chaud); padding: clamp(4rem, 9vh, 6.5rem) 0; text-align: center; }
-.triptyque .intro { max-width: 56ch; margin: 0 auto 3rem; color: var(--encre-70); }
+.triptyque .intro { max-width: var(--mesure); margin: 0 auto 3rem; color: var(--encre-70); }
+/* Le bouton suivait la grille sans aucun espace : il touchait son filet du bas
+   (compte rendu client du 2026-10-12). */
+.triptyque .cta-row { margin-top: 2.6rem; }
 .tri-grid {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
   border-top: 1px solid var(--filet); border-bottom: 1px solid var(--filet);
@@ -786,7 +793,7 @@ a.oeuvre:hover .cadre, a.oeuvre:focus-visible .cadre {
   padding: clamp(4rem, 9vh, 6.5rem) 0; text-align: center;
 }
 .boutique .eyebrow, .passerelle .eyebrow { color: rgba(250, 249, 246, .72); }
-.boutique p, .passerelle p { max-width: 54ch; margin: 0 auto 2.2rem; color: rgba(250, 249, 246, .82); }
+.boutique p, .passerelle p { max-width: var(--mesure); margin: 0 auto 2.2rem; color: rgba(250, 249, 246, .82); }
 .boutique .btn, .passerelle .btn { border-color: var(--papier); color: var(--papier); }
 .boutique .btn:hover, .boutique .btn:focus-visible,
 .passerelle .btn:hover, .passerelle .btn:focus-visible { background: var(--papier); color: var(--encre); }
@@ -826,16 +833,20 @@ a.oeuvre:hover .cadre, a.oeuvre:focus-visible .cadre {
 
 /* Liste des actus (retour client du 2026-09-29) : chaque actu tombait dans la
    première colonne (8,5rem) de la grille compacte de l'accueil. Ici : photo à
-   gauche, date, titre, lieu et extrait sur toute la largeur restante. */
-.actus-liste { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--filet); }
-.actus-liste .actu { display: block; padding: 2rem 0; border-bottom: 1px solid var(--filet); }
+   gauche, date, titre, lieu et extrait sur toute la largeur restante.
+   Compte rendu du 2026-10-12 : plus de bande beige — la page portait la classe
+   de la section « Actualités » de l'accueil, qui annulait aussi ses marges
+   latérales — et chaque actu dans un cadre au filet gris léger (30 %). */
+.actus-page { padding-bottom: clamp(4rem, 9vh, 6.5rem); }
+.actus-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.6rem; }
+.actus-liste .actu { display: block; padding: clamp(1.2rem, 3vw, 2rem); border: 1px solid rgba(128, 128, 128, .3); }
 .actus-liste .actu-lien {
   display: grid; grid-template-columns: minmax(12rem, 20rem) minmax(0, 1fr);
   gap: clamp(1.5rem, 4vw, 3rem); align-items: start; text-decoration: none; color: inherit;
 }
 /* Fiche d'exposition dans l'article (2026-09-30). */
 .article-adresse { font-size: .92rem; color: var(--encre-70); margin: .2rem 0 0; }
-.article-expo-description { max-width: 42rem; margin: .9rem 0 0; }
+.article-expo-description { max-width: var(--mesure); margin: .9rem 0 0; }
 .article-expo-lien { margin: .9rem 0 0; font-size: .92rem; }
 .actu-date { font-size: .8rem; letter-spacing: .16em; text-transform: uppercase; color: var(--encre-70); margin-bottom: .5rem; }
 .actu-titre { font-family: 'Marcellus', Georgia, serif; font-weight: 400; font-size: clamp(1.3rem, 2.4vw, 1.7rem); margin-bottom: .5rem; }
@@ -848,9 +859,10 @@ a.oeuvre:hover .cadre, a.oeuvre:focus-visible .cadre {
 
 .contact { padding: clamp(4rem, 9vh, 6rem) 0; text-align: center; }
 .contact p { margin: 0 auto 2rem; color: var(--encre-70); }
-/* Mesure courte pour le texte centré de la section contact de l'accueil seulement :
-   la page contact prend toute la largeur (retour client du 2026-09-29). */
-section.contact p { max-width: 50ch; }
+/* Section contact de l'accueil : texte centré, à la mesure commune (50ch
+   jusqu'au 2026-10-12). La page contact, elle, prend toute la largeur
+   (retour client du 2026-09-29). */
+section.contact p { max-width: var(--mesure); }
 /* Page contact (retour client du 2026-09-29) : formulaire et coordonnées en
    vis-à-vis dès 54rem, empilés en dessous. */
 .contact-intro { max-width: 60rem; }
@@ -866,8 +878,10 @@ section.contact p { max-width: 50ch; }
 
 .page-head { padding: clamp(3.5rem, 8vh, 5.5rem) 0 clamp(2.5rem, 6vh, 4rem); text-align: center; }
 .page-head h1 { font-size: clamp(1.9rem, 4.4vw, 3rem); max-width: 24ch; margin: 0 auto 1.5rem; }
-.page-head .intro { max-width: 58ch; margin: 0 auto; color: var(--encre-70); }
+.page-head .intro { max-width: var(--mesure); margin: 0 auto; color: var(--encre-70); }
 .page-head .intro p { margin-bottom: 1rem; }
+/* Titre du texte explicatif de la page Galerie (compte rendu du 2026-10-12). */
+.page-head .intro h2 { font-size: clamp(1.3rem, 2.6vw, 1.75rem); margin: 0 0 1rem; color: var(--encre); }
 
 /* Fil d'Ariane : à gauche, discret, en casse naturelle. Les niveaux parents
    sont soulignés et cliquables ; le niveau courant reste texte simple. */
@@ -902,7 +916,7 @@ section.contact p { max-width: 50ch; }
 
 .methode { background: var(--papier-chaud); padding: clamp(3.5rem, 8vh, 5.5rem) 0; text-align: center; }
 .methode h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); margin-bottom: 1.2rem; }
-.methode p { max-width: 56ch; margin: 0 auto 1rem; color: var(--encre-70); }
+.methode p { max-width: var(--mesure); margin: 0 auto 1rem; color: var(--encre-70); }
 .methode .stipple { margin: 1.8rem auto 0; }
 
 /* ----------------------------------------------------------- fiche œuvre */

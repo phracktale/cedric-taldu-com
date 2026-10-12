@@ -31,6 +31,8 @@ $rubriques = is_array($data['rubriques'] ?? null) ? $data['rubriques'] : [];
 
     <p class="actions">
         <a class="bouton" href="<?= attr($base . '/admin/galeries/nouvelle') ?>">Nouvelle galerie</a>
+        <?php // Texte explicatif de la page qui liste les galeries (compte rendu client du 2026-10-12). ?>
+        <a class="bouton bouton--secondaire" href="<?= attr($base . '/admin/galeries/page') ?>">Texte de la page « Galerie »</a>
     </p>
 
     <?php if ($rubriques === []) : ?>

@@ -49,6 +49,7 @@ use App\Http\Controller\Admin\HistoryController;
 use App\Http\Controller\Admin\MapController;
 use App\Http\Controller\Admin\PrintSettingsController;
 use App\Http\Controller\Admin\ContactPageController;
+use App\Http\Controller\Admin\GalleryPageController;
 use App\Http\Controller\Admin\GlobalController;
 use App\Http\Controller\Admin\ContentBlockController;
 use App\Repository\ContentBlockRepository;
@@ -760,6 +761,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(MediaRepository::class),
         $c->get(UrlGenerator::class),
         $c->get(StructuredData::class),
+        $c->get(SettingRepository::class),
     ));
 
     $container->set(CategoryController::class, static fn (Container $c): CategoryController => new CategoryController(
@@ -935,6 +937,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(Validator::class),
         $c->get(UrlGenerator::class),
         $c->get(SettingRepository::class),
+        $c->get(PageAdminRepository::class),
     ));
 
     $container->set(CheckoutController::class, static fn (Container $c): CheckoutController => new CheckoutController(
@@ -1198,6 +1201,11 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(SettingsAdminRepository::class),
     ));
     $container->set(ContactPageController::class, static fn (Container $c): ContactPageController => new ContactPageController(
+        $c->get(AdminChrome::class),
+        $c->get(SettingRepository::class),
+        $c->get(SettingsAdminRepository::class),
+    ));
+    $container->set(GalleryPageController::class, static fn (Container $c): GalleryPageController => new GalleryPageController(
         $c->get(AdminChrome::class),
         $c->get(SettingRepository::class),
         $c->get(SettingsAdminRepository::class),

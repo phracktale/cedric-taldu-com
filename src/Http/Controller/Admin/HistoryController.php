@@ -194,6 +194,7 @@ final class HistoryController
             'nav.footer' => 'Pied de page',
             'site.identity' => 'Identité du site',
             'contact.page' => 'Page contact',
+            'gallery.page' => 'Page « Galerie »',
             'map' => 'Carte interactive',
             'print.settings' => 'Formats d’impression',
             'shipping' => 'Livraisons',

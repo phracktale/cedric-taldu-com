@@ -17,8 +17,17 @@
 
 declare(strict_types=1);
 
+use App\Service\Media\UploadValidator;
+
 $base = is_string($data['basePath'] ?? null) ? $data['basePath'] : '';
 $jeton = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
+
+// Limite lue dans le validateur : le texte ne peut plus rester en retard sur
+// elle (« 25 Mo » était resté affiché après le passage à 150 Mo).
+$limiteMo = intdiv(UploadValidator::MAX_BYTES, 1024 * 1024);
+
+/** @var list<array{id: int, code: string, titre: string, depose: bool}> $documents */
+$documents = is_array($data['documents'] ?? null) ? $data['documents'] : [];
 
 /** @var list<array<string, mixed>> $medias */
 $medias = is_array($data['medias'] ?? null) ? $data['medias'] : [];
@@ -61,9 +70,10 @@ $refus = is_array($data['refus'] ?? null) ? $data['refus'] : [];
             <input type="file" id="images" name="images[]" multiple
                    accept="image/jpeg,image/png,image/webp" required>
             <span class="champ-aide">
-                JPEG, PNG ou WebP. 25 Mo au maximum par fichier. Les images sont
-                ré-encodées à l’enregistrement : les données de l’appareil photo,
-                géolocalisation comprise, sont supprimées.
+                JPEG, PNG ou WebP, <?= e($limiteMo . ' Mo') ?> au maximum par fichier. Les fichiers
+                affichés sur le site sont ré-encodés : les données de l’appareil photo, géolocalisation
+                comprise, n’y figurent pas. L’original est conservé tel quel pour l’impression, hors
+                du site public.
             </span>
         </p>
 
@@ -71,6 +81,45 @@ $refus = is_array($data['refus'] ?? null) ? $data['refus'] : [];
             <button type="submit" class="bouton">Téléverser</button>
         </p>
     </form>
+
+    <?php /* Compte rendu client du 2026-10-12 : « dans la médiathèque on ne peut
+             envoyer que de l'image ? » — le PDF du livret se dépose sur la fiche
+             de sa page ; c'est ici que l'artiste l'a cherché. */ ?>
+    <?php if ($documents !== []) : ?>
+    <section aria-labelledby="documents-titre">
+        <h2 id="documents-titre">Documents PDF</h2>
+        <p class="aide">
+            La médiathèque range les images. Un PDF — le livret, par exemple — se dépose sur la fiche
+            de sa page : un bouton « Télécharger » s’affiche alors sur la page publique.
+        </p>
+        <div class="tableau-defilant">
+            <table class="tableau">
+                <thead>
+                    <tr>
+                        <th scope="col">Page</th>
+                        <th scope="col">Document</th>
+                        <th scope="col" class="colonne-actions">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($documents as $document) : ?>
+                    <?php $fiche = $base . '/admin/pages/' . $document['id'] . '#document-pdf'; ?>
+                    <tr>
+                        <td><?= e($document['titre']) ?></td>
+                        <?php if ($document['depose']) : ?>
+                        <td><a href="<?= attr($url->route('page.document', ['code' => $document['code']])) ?>" target="_blank" rel="noopener">Voir le PDF</a></td>
+                        <td><a class="bouton bouton--secondaire" href="<?= attr($fiche) ?>">Remplacer</a></td>
+                        <?php else : ?>
+                        <td>Aucun PDF</td>
+                        <td><a class="bouton bouton--secondaire" href="<?= attr($fiche) ?>">Déposer un PDF</a></td>
+                        <?php endif; ?>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </section>
+    <?php endif; ?>
 
     <h2><?= e($data['total'] ?? 0) ?> image(s)</h2>
 
