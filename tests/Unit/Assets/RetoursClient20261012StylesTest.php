@@ -61,6 +61,28 @@ final class RetoursClient20261012StylesTest extends TestCase
         $this->assertDoesNotMatchRegularExpression('~max-width:\s*\d+ch~', $regle);
     }
 
+    public function test_la_gouttiere_laterale_est_garantie_sous_la_largeur_du_site(): void
+    {
+        // Constaté en contrôlant le rendu, le 2026-10-12. Les sections « X wrap »
+        // (.page-head, .contact, .grille, .fiche…) déclarent leur padding par un
+        // raccourci vertical — hérité de la maquette — qui ANNULE la gouttière de
+        // 5vw du .wrap. Sous la largeur du site, leur contenu touchait les bords
+        // de l'écran : déjà vrai sur téléphone, et un texte élargi à 1050 px
+        // l'aurait montré dès la tablette. Une règle la rétablit, placée APRÈS
+        // ces sections (même spécificité : la dernière déclarée l'emporte).
+        $css = self::css();
+        $regle = '@media (max-width: 82rem) { .wrap { padding-left: 5vw; padding-right: 5vw; } }';
+
+        $position = strpos($css, $regle);
+        $this->assertNotFalse($position, 'Règle absente : ' . $regle);
+
+        foreach (['.page-head {', '.contact {', '.grille {', '.fiche {', '.galeries {', '.atelier {', '.vitrine {'] as $section) {
+            $declaration = strpos($css, "\n" . $section);
+            $this->assertNotFalse($declaration, 'Section absente : ' . $section);
+            $this->assertGreaterThan($declaration, $position, $section);
+        }
+    }
+
     // --------------------------------------------- 3. bouton de l'accueil
 
     public function test_le_bouton_du_triptyque_ne_colle_plus_au_filet(): void
