@@ -62,11 +62,12 @@ final class RetoursClientStylesTest extends TestCase
 
     public function test_les_paragraphes_du_contact_ne_sont_plus_restreints(): void
     {
-        // La page contact (<div class="wrap contact">) n'est plus bridée à 50ch ;
-        // seule la section contact de l'accueil (<section>, texte centré) garde
-        // sa mesure courte.
+        // La page contact (<div class="wrap contact">) n'est plus bridée à 50ch.
+        // La section contact de l'accueil (<section>, texte centré) gardait sa
+        // mesure courte ; le compte rendu du 2026-10-12 demande des textes plus
+        // larges « sur presque toutes les pages » : elle suit la mesure commune.
         $this->assertStringNotContainsString('max-width', implode('', self::regles('.contact p')));
-        $this->assertStringContainsString('max-width: 50ch', implode('', self::regles('section.contact p')));
+        $this->assertStringContainsString('max-width: var(--mesure)', implode('', self::regles('section.contact p')));
     }
 
     public function test_les_liens_du_pied_de_page_sont_soulignes_en_minuscules_sans_double_trait(): void

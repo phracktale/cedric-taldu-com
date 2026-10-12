@@ -26,6 +26,19 @@ final class BlogTest extends FunctionalTestCase
         $this->assertStringContainsString('Un aperçu du vernissage.', $response->body);
     }
 
+    public function test_la_page_des_actus_n_est_plus_une_bande_beige(): void
+    {
+        // Compte rendu client du 2026-10-12 : la liste portait la classe de la
+        // section « Actualités » de l'accueil, donc son fond beige — et perdait
+        // au passage les marges latérales de la page.
+        (new PostFactory($this->pdo))->translated('fr', 'mon-expo', 'Mon exposition')->create();
+
+        $corps = $this->get('/cedric-taldu/fr/actus')->body;
+
+        $this->assertStringContainsString('<div class="wrap actus-page">', $corps);
+        $this->assertStringNotContainsString('class="wrap actus"', $corps);
+    }
+
     public function test_un_brouillon_n_apparait_pas_dans_la_liste(): void
     {
         (new PostFactory($this->pdo))->draft()->translated('fr', 'secret', 'Article secret')->create();

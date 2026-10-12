@@ -104,6 +104,47 @@ final class PageDocumentTest extends AdminTestCase
         $this->assertSame(404, $this->requete('GET', '/cedric-taldu/documents/inconnu.pdf')->status);
     }
 
+    // ---- compte rendu client du 2026-10-12 : le champ n'avait pas été trouvé ----
+
+    public function test_le_depot_du_pdf_precede_les_textes_de_la_page(): void
+    {
+        // Tout en bas d'une longue fiche (deux langues, blocs, couverture), le
+        // champ est passé inaperçu : l'artiste a enregistré la page Livret
+        // quatre fois sans jamais y déposer son PDF.
+        $corps = $this->requete('GET', '/cedric-taldu/admin/pages/' . $this->livret)->body;
+
+        $this->assertStringContainsString('id="document-pdf"', $corps);
+        $this->assertLessThan(strpos($corps, 'name="titre_fr"'), strpos($corps, 'name="document"'));
+    }
+
+    public function test_la_mediatheque_dit_ou_deposer_un_pdf(): void
+    {
+        // « Dans la médiathèque on ne peut envoyer que de l'image ? » : c'est là
+        // que l'artiste a cherché. Elle renvoie désormais vers la fiche de
+        // chaque page, et donne le lien du document une fois déposé.
+        $avant = $this->requete('GET', '/cedric-taldu/admin/medias')->body;
+
+        $this->assertStringContainsString('Documents PDF', $avant);
+        $this->assertStringContainsString('href="/cedric-taldu/admin/pages/' . $this->livret . '#document-pdf"', $avant);
+        $this->assertStringNotContainsString('href="/cedric-taldu/documents/booklet.pdf"', $avant);
+
+        $this->deposer(self::PDF, 'livret.pdf');
+
+        $this->assertStringContainsString(
+            'href="/cedric-taldu/documents/booklet.pdf"',
+            $this->requete('GET', '/cedric-taldu/admin/medias')->body,
+        );
+    }
+
+    public function test_la_mediatheque_annonce_les_limites_en_vigueur(): void
+    {
+        // « 25 Mo » était resté affiché après le passage à 150 Mo (2026-09-30).
+        $corps = $this->requete('GET', '/cedric-taldu/admin/medias')->body;
+
+        $this->assertStringContainsString('150 Mo', $corps);
+        $this->assertStringNotContainsString('25 Mo', $corps);
+    }
+
     /**
      * @return array<string, string>
      */
