@@ -53,7 +53,9 @@ final class NavigationActiveTest extends FunctionalTestCase
     {
         $nav = $this->nav($this->get('/cedric-taldu/fr/')->body);
 
-        $this->assertStringNotContainsString('aria-current', $nav);
+        // Aucune PAGE active. Le menu reprend aussi les langues pour le mobile
+        // (2026-10-13) : la langue courante y porte aria-current="true".
+        $this->assertStringNotContainsString('aria-current="page"', $nav);
     }
 
     public function test_le_style_actif_par_defaut_est_le_soulignement(): void
