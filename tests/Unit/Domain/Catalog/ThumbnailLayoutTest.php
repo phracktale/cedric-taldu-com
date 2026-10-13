@@ -50,6 +50,28 @@ final class ThumbnailLayoutTest extends TestCase
         $this->assertSame(218, ThumbnailLayout::displayWidth(3000, 3000, 'vitrine-large', 16.0, 100));
     }
 
+    public function test_sur_mobile_les_trois_cartes_de_la_vitrine_prennent_toute_la_largeur(): void
+    {
+        // Demande du 2026-10-13 : sous 47,5rem, les deux cartes latérales
+        // étaient côte à côte, à mi-largeur. Les trois s'empilent désormais,
+        // chacune sur toute la largeur du contenu.
+        foreach ([0.0, 30.0, 40.0] as $ecran) {
+            $this->assertSame(
+                ThumbnailLayout::cardWidth('vitrine-large', $ecran),
+                ThumbnailLayout::cardWidth('vitrine', $ecran),
+                'écran de ' . $ecran . 'rem',
+            );
+            $this->assertSame([['vitrine'], ['vitrine-large'], ['vitrine']], ThumbnailLayout::rowsAt('vitrine', $ecran)[1]);
+        }
+
+        $css = ThumbnailLayout::css();
+        $this->assertStringContainsString('.vitrine-grid { grid-template-columns: 18rem; }', $css);
+        $this->assertStringContainsString('@media (min-width: 30rem) { .vitrine-grid { grid-template-columns: 26rem; }', $css);
+        $this->assertStringNotContainsString('.vitrine-grid { grid-template-columns: repeat(2', $css);
+        // Au-delà, les trois colonnes d'origine.
+        $this->assertSame(14.0, ThumbnailLayout::cardWidth('vitrine', 47.5));
+    }
+
     public function test_les_oeuvres_liees_ont_un_cadre_plus_large(): void
     {
         // `.liee .cadre` : padding de 8 %. Carte de 18rem : 288 × 0,84 − 2.

@@ -34,14 +34,16 @@ final class ThumbnailLayout
         // Œuvres liées (.liees-grid) : 1 puis 3 colonnes.
         'liees' => [[0, 18], [30, 24], [47.5, 13], [56.25, 15.5], [64, 18], [80, 22.5], [82, 23]],
         // Vitrine de l'accueil : deux cartes latérales et une centrale.
-        'vitrine' => [[0, 8], [30, 12.5], [40, 17], [47.5, 14], [64, 19], [80, 24], [82, 25]],
+        // Sous 47,5rem, les trois cartes s'empilent en pleine largeur (2026-10-13).
+        'vitrine' => [[0, 18], [30, 26], [40, 35], [47.5, 14], [64, 19], [80, 24], [82, 25]],
         'vitrine-large' => [[0, 18], [30, 26], [40, 35], [47.5, 11.5], [64, 16], [80, 20], [82, 20.5]],
     ];
 
     /**
      * Dispositions des grilles : [écran minimal, rangées de contextes, gouttière].
-     * Sous 47,5rem, la vitrine a deux rangées : les cartes latérales côte à côte,
-     * la centrale seule en dessous.
+     * Sous 47,5rem, la vitrine empile ses trois cartes, chacune en pleine largeur
+     * (demande du 2026-10-13 ; avant : les cartes latérales côte à côte,
+     * la centrale seule en dessous).
      *
      * @var array<string, list<array{0: int|float, 1: list<list<string>>, 2: int|float}>>
      */
@@ -56,7 +58,7 @@ final class ThumbnailLayout
             [47.5, [['liees', 'liees', 'liees']], 1.8],
         ],
         'vitrine' => [
-            [0, [['vitrine', 'vitrine'], ['vitrine-large']], 1.4],
+            [0, [['vitrine'], ['vitrine-large'], ['vitrine']], 1.4],
             [47.5, [['vitrine', 'vitrine-large', 'vitrine']], 1.4],
         ],
     ];
@@ -203,8 +205,9 @@ final class ThumbnailLayout
             $corps = $troisColonnes
                 ? '.vitrine-grid { grid-template-columns: ' . $cote . ' ' . $centre . ' ' . $cote . '; }'
                     . ' .vitrine-grid .oeuvre.large { grid-column: auto; width: auto; }'
-                : '.vitrine-grid { grid-template-columns: repeat(2, ' . $cote . '); }'
-                    . ' .vitrine-grid .oeuvre.large { grid-column: 1 / -1; justify-self: center; width: ' . $centre . '; }';
+                // Une seule colonne : les trois cartes, de même largeur, s'empilent.
+                : '.vitrine-grid { grid-template-columns: ' . $cote . '; }'
+                    . ' .vitrine-grid .oeuvre.large { grid-column: auto; width: auto; }';
 
             $regles[] = $min <= 0
                 ? $corps . ' .vitrine-grid { justify-content: center; }'
