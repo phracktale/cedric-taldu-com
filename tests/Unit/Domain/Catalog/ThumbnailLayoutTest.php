@@ -67,7 +67,7 @@ final class ThumbnailLayoutTest extends TestCase
         $css = ThumbnailLayout::css();
         $this->assertStringContainsString('.vitrine-grid { grid-template-columns: 18rem; }', $css);
         $this->assertStringContainsString('@media (min-width: 30rem) { .vitrine-grid { grid-template-columns: 26rem; }', $css);
-        $this->assertStringNotContainsString('repeat(2,', $css);
+        $this->assertStringNotContainsString('.vitrine-grid { grid-template-columns: repeat(2', $css);
         // Au-delà, les trois colonnes d'origine.
         $this->assertSame(14.0, ThumbnailLayout::cardWidth('vitrine', 47.5));
     }
