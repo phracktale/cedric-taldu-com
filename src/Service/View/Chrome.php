@@ -138,6 +138,8 @@ final class Chrome
             'metaDescription' => null,
             // Carte interactive, rendue par le bloc « Carte » (retours du 2026-09-25).
             'map' => MapSettings::fromStored($this->settings->json(MapSettings::SETTING)),
+            // Coordonnées de l'artiste, reprises en bas du menu mobile (demande du 2026-10-13).
+            'contactInfo' => $this->contactPage(),
         ];
     }
 

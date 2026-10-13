@@ -22,9 +22,24 @@ function initBurger() {
     return;
   }
 
-  bouton.addEventListener('click', () => {
-    const ouvert = menu.classList.toggle('open');
+  const ouvrir = (ouvert) => {
+    menu.classList.toggle('open', ouvert);
     bouton.setAttribute('aria-expanded', String(ouvert));
+  };
+
+  bouton.addEventListener('click', () => ouvrir(bouton.getAttribute('aria-expanded') !== 'true'));
+
+  // Menu mobile (demande du 2026-10-13) : Échap et un clic ailleurs le referment.
+  document.addEventListener('keydown', (evenement) => {
+    if (evenement.key === 'Escape' && bouton.getAttribute('aria-expanded') === 'true') {
+      ouvrir(false);
+      bouton.focus();
+    }
+  });
+  document.addEventListener('click', (evenement) => {
+    if (!menu.contains(evenement.target) && !bouton.contains(evenement.target)) {
+      ouvrir(false);
+    }
   });
 }
 

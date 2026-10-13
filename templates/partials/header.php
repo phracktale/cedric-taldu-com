@@ -42,6 +42,8 @@ $styleActif = is_string($data['navActiveStyle'] ?? null) ? $data['navActiveStyle
 // résolu par MenuRenderer : adresse, libellé, partie du site, galerie visée.
 /** @var list<array{key: string, href: string, label: string, section: string|null, categoryId: int|null, dropdown: bool}> $entrees */
 $entrees = is_array($data['menuItems'] ?? null) ? $data['menuItems'] : [];
+// Coordonnées de l'artiste (Contenus › Contact), pour le bas du menu mobile.
+$coordonnees = ($data['contactInfo'] ?? null) instanceof App\Domain\Editorial\ContactPage ? $data['contactInfo'] : null;
 // Identité du site (Paramètres › Global), partagée par View::share.
 $site = ($data['site'] ?? null) instanceof App\Domain\Editorial\SiteIdentity
     ? $data['site']
@@ -77,7 +79,11 @@ $site = ($data['site'] ?? null) instanceof App\Domain\Editorial\SiteIdentity
     <?php endif; ?>
     </div>
 
-    <button class="burger" aria-expanded="false" aria-controls="menu"><?= $t('nav.menu') ?></button>
+    <?php /* Burger, dernier élément de la barre (demande du 2026-10-13) : sous
+             900 px il ouvre le menu, qui reprend compte, langues et coordonnées. */ ?>
+    <button type="button" class="burger" aria-expanded="false" aria-controls="menu" aria-label="<?= $t('nav.menu') ?>">
+      <span class="burger-barres" aria-hidden="true"></span>
+    </button>
   </div><!-- /nav-haut -->
 
   <nav aria-label="<?= $t('nav.main_label') ?>" class="nav-bas" data-actif="<?= attr($styleActif) ?>">
@@ -107,6 +113,41 @@ $site = ($data['site'] ?? null) instanceof App\Domain\Editorial\SiteIdentity
         </li>
         <?php endif; ?>
         <?php endforeach; ?>
+
+        <?php /* Reprises du menu mobile (demande du 2026-10-13), masquées sur grand
+                 écran où la barre du haut les porte déjà. Ordre d'usage : les pages,
+                 puis le compte, les langues, et les coordonnées pour finir. */ ?>
+        <li class="menu-mobile menu-mobile-compte">
+          <a href="<?= attr($url->route('account.index', ['locale' => $locale->value])) ?>"><?= $t('nav.account') ?></a>
+        </li>
+        <?php if ($localeSwitch !== []) : ?>
+        <li class="menu-mobile menu-mobile-langues">
+          <?php foreach (Locale::cases() as $autre) : ?>
+            <?php if ($autre === $locale) : ?>
+          <span class="langue-courante" aria-current="true"><?= e($autre->nativeName()) ?></span>
+            <?php elseif (isset($localeSwitch[$autre->value])) : ?>
+          <a href="<?= attr($localeSwitch[$autre->value]) ?>" hreflang="<?= attr($autre->value) ?>"><?= e($autre->nativeName()) ?></a>
+            <?php endif; ?>
+          <?php endforeach; ?>
+        </li>
+        <?php endif; ?>
+        <?php if ($coordonnees !== null && $coordonnees->hasCoordinates()) : ?>
+        <li class="menu-mobile menu-mobile-coordonnees">
+          <?php if ($coordonnees->address !== '') : ?>
+          <address>
+            <?php foreach ($coordonnees->addressLines() as $ligne) : ?>
+            <span><?= e($ligne) ?></span>
+            <?php endforeach; ?>
+          </address>
+          <?php endif; ?>
+          <?php if ($coordonnees->phone !== '') : ?>
+          <a href="<?= attr($coordonnees->phoneHref()) ?>"><?= e($coordonnees->phone) ?></a>
+          <?php endif; ?>
+          <?php if ($coordonnees->email !== '') : ?>
+          <a href="<?= attr('mailto:' . $coordonnees->email) ?>"><?= e($coordonnees->email) ?></a>
+          <?php endif; ?>
+        </li>
+        <?php endif; ?>
       </ul>
   </nav>
 </header>
