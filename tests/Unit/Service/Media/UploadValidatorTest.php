@@ -207,6 +207,26 @@ final class UploadValidatorTest extends TestCase
         $this->assertGreaterThanOrEqual(UploadValidator::MAX_PIXELS * 9, (int) $m[1] * 1024 * 1024);
     }
 
+    public function test_le_mutualise_recoit_les_memes_limites_que_le_conteneur(): void
+    {
+        // Production OVH (2026-10-14) : 512 Mo de mémoire et 128 Mo d'envoi par
+        // défaut — une image HD de 150 Mo y serait refusée par PHP, une de
+        // 60 Mpx y mourrait au décodage. PHP-FPM y lit un .user.ini (vérifié
+        // sur l'hébergement), le conteneur l'ignore : les deux fichiers portent
+        // les mêmes valeurs.
+        $racine = dirname(__DIR__, 4);
+        $conteneur = (string) file_get_contents($racine . '/docker/php/php.ini');
+        $this->assertFileExists($racine . '/public/.user.ini');
+        $mutualise = (string) file_get_contents($racine . '/public/.user.ini');
+
+        foreach (['upload_max_filesize', 'post_max_size', 'memory_limit'] as $cle) {
+            $motif = '/^' . $cle . '\s*=\s*(\S+)/m';
+            $this->assertSame(1, preg_match($motif, $conteneur, $attendu), $cle . ' absent de php.ini');
+            $this->assertSame(1, preg_match($motif, $mutualise, $trouve), $cle . ' absent de .user.ini');
+            $this->assertSame($attendu[1], $trouve[1], $cle);
+        }
+    }
+
     public function test_un_fichier_de_plus_de_vingt_cinq_megaoctets_est_refuse(): void
     {
         $this->assertRefus(
