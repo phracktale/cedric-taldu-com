@@ -68,11 +68,27 @@ final class ExposureTest extends FunctionalTestCase
         // Un fichier depose par erreur dans public/ y reste servi indefiniment.
         // static : site statique généré (2026-09-25), jamais servi en direct —
         // public/.htaccess le refuse hors réécriture (SiteStatiqueTest).
-        $attendus = ['.', '..', '.htaccess', 'index.php', 'robots.txt', 'assets', 'media', 'static'];
+        // .user.ini : limites de PHP du mutualisé (2026-10-14), jamais servi
+        // (test_le_user_ini_n_est_jamais_servi).
+        $attendus = ['.', '..', '.htaccess', '.user.ini', 'index.php', 'robots.txt', 'assets', 'media', 'static'];
 
         $trouves = scandir(self::racine() . '/public') ?: [];
 
         $this->assertSame([], array_values(array_diff($trouves, $attendus)));
+    }
+
+    public function test_le_user_ini_n_est_jamais_servi(): void
+    {
+        // Il ne contient que des limites, mais il dit comment le serveur est
+        // configuré : les deux .htaccess le refusent, quel que soit le
+        // DocumentRoot.
+        $this->assertFileExists(self::racine() . '/public/.user.ini');
+
+        foreach (['/.htaccess', '/public/.htaccess'] as $fichier) {
+            $htaccess = (string) file_get_contents(self::racine() . $fichier);
+            $this->assertSame(1, preg_match('~<FilesMatch "([^"]+)">\s*Require all denied~', $htaccess, $m), $fichier);
+            $this->assertSame(1, preg_match('~' . $m[1] . '~', '.user.ini'), $fichier);
+        }
     }
 
     public function test_le_dossier_de_stockage_est_hors_webroot(): void
