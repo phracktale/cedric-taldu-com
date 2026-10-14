@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Functional;
 
-use App\Core\HttpException;
+use App\Core\Exception\HttpException;
 use App\Core\Request;
 use App\Core\Router;
 use PHPUnit\Framework\Attributes\DataProvider;
