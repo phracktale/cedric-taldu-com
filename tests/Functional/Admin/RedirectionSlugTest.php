@@ -47,6 +47,23 @@ final class RedirectionSlugTest extends AdminTestCase
         $this->assertSame('/cedric-taldu/fr/galerie/encres-de-chine', $reponse->header('Location'));
     }
 
+    public function test_une_ancienne_adresse_wordpress_suit_le_renommage(): void
+    {
+        // Migration 0025 : /gallery/encres/ mène à /fr/galerie/encres. Renommer
+        // la galerie ne doit pas la laisser pointer vers un 404.
+        $id = (new CategoryFactory($this->pdo))->published()
+            ->translated('fr', 'encres', 'Encres')->create();
+
+        $this->postAvecJeton('/cedric-taldu/admin/galeries/' . $id, [
+            'titre_fr' => 'Encres',
+            'slug_fr' => 'encres-de-chine',
+        ]);
+
+        $reponse = $this->get('/cedric-taldu/gallery/encres/');
+        $this->assertSame(301, $reponse->status);
+        $this->assertSame('/cedric-taldu/fr/galerie/encres-de-chine', $reponse->header('Location'));
+    }
+
     public function test_une_url_inconnue_sans_redirection_reste_en_404(): void
     {
         $this->assertSame(404, $this->get('/cedric-taldu/fr/galerie/jamais-existe')->status);
