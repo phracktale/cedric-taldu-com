@@ -18,6 +18,12 @@ ServerSignature Off
     Require all denied
 </FilesMatch>
 
+# /sitemap.xml est une ROUTE : Apache refuserait ce *.xml avant la réécriture
+# (403 constaté en production le 2026-10-14). Même exception que public/.htaccess.
+<Files "sitemap.xml">
+    Require all granted
+</Files>
+
 RedirectMatch 404 ^/(?:\.git|storage|src|tests|vendor|migrations|docker|docs|config|templates|maquette|bin)(?:/|$)
 
 # --- Redirection vers public/ ------------------------------------------------

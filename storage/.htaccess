@@ -4,7 +4,12 @@
 
 Require all denied
 
-php_flag engine off
+# php_flag n'existe qu'avec mod_php (Thor) : sous PHP-FPM (production OVH),
+# Apache la tient pour une commande inconnue et répond 500. RemoveHandler et
+# SetHandler none coupent l'exécution dans les deux cas.
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
 RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .php8
 RemoveType .php .phtml
 SetHandler none

@@ -1,0 +1,17 @@
+# Dérivés d'images : rien ne s'y exécute, rien ne s'y liste (06-securite §5.7).
+#
+# php_flag n'existe qu'avec mod_php (Thor) : sous PHP-FPM (production OVH),
+# Apache la tient pour une commande inconnue et répond 500 — toutes les images
+# du site cassées. RemoveHandler et SetHandler none coupent l'exécution dans
+# les deux cas.
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .php8
+RemoveType .php .phtml
+SetHandler none
+Options -Indexes -ExecCGI
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+</IfModule>
