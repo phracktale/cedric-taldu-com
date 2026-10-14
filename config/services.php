@@ -1248,7 +1248,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             new Locale($config),
             // Sur un 404 public, tente une redirection 301 d'un ancien slug avant
             // de rendre la page d'erreur (05-i18n-seo §5).
-            new RedirectMiddleware($c->get(RedirectRepository::class)),
+            new RedirectMiddleware($c->get(RedirectRepository::class), $config->defaultLocale),
             new CsrfGuard($c->get(Csrf::class), $c->get(LoggerInterface::class)),
             new AuthGuard($c->get(AdminSession::class), $c->get(LoggerInterface::class)),
             // En dernier : seule une écriture authentifiée, au jeton valide et
