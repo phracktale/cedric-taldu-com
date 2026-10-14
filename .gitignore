@@ -18,6 +18,8 @@
 # Dérivés d'images générés à l'upload
 /public/media/*
 !/public/media/.gitkeep
+# Garde-fou d’exécution : versionné pour être déployé (ExposureTest).
+!/public/media/.htaccess
 
 # Outillage
 /.phpunit.cache/
