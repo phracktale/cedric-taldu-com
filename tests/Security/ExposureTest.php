@@ -158,6 +158,52 @@ final class ExposureTest extends FunctionalTestCase
         }
     }
 
+    public function test_les_directives_de_mod_php_ne_sont_lues_que_sous_mod_php(): void
+    {
+        // Production OVH (2026-10-14) : PHP-FPM, sans mod_php. Apache y tient
+        // `php_flag` pour une commande inconnue et répond 500 pour TOUT le
+        // dossier — toutes les images du site étaient cassées. Sous
+        // <IfModule mod_php.c>, Thor (mod_php) la garde, OVH l'ignore ; RemoveHandler
+        // et SetHandler none coupent l'exécution partout.
+        foreach (['/.htaccess', '/public/.htaccess', '/storage/.htaccess', '/public/media/.htaccess'] as $fichier) {
+            $modules = [];
+            foreach (file(self::racine() . $fichier, FILE_IGNORE_NEW_LINES) ?: [] as $n => $ligne) {
+                if (preg_match('~^\s*<IfModule\s+([^>]+)>~i', $ligne, $m) === 1) {
+                    $modules[] = trim($m[1]);
+                } elseif (preg_match('~^\s*</IfModule>~i', $ligne) === 1) {
+                    array_pop($modules);
+                } elseif (preg_match('~^\s*php_(?:admin_)?(?:flag|value)\b~i', $ligne) === 1) {
+                    $this->assertContains('mod_php.c', $modules, $fichier . ', ligne ' . ($n + 1));
+                }
+            }
+        }
+    }
+
+    public function test_le_garde_fou_des_medias_est_versionne_donc_deploye(): void
+    {
+        // public/media/* est ignoré (fichiers engendrés) : sans exception, son
+        // .htaccess n'existait que là où on l'avait posé à la main.
+        $gitignore = (string) file_get_contents(self::racine() . '/.gitignore');
+
+        $this->assertStringContainsString("\n!/public/media/.htaccess\n", $gitignore);
+    }
+
+    public function test_le_sitemap_echappe_au_refus_des_xml_dans_les_deux_htaccess(): void
+    {
+        // Apache refuse un *.xml demandé à la racine AVANT la réécriture ; or
+        // /sitemap.xml est une route. Le .htaccess racine (mutualisé dont le
+        // DocumentRoot ne peut pas être public/) répondait 403 en production.
+        foreach (['/.htaccess', '/public/.htaccess'] as $fichier) {
+            $htaccess = (string) file_get_contents(self::racine() . $fichier);
+            $refus = strpos($htaccess, '<FilesMatch');
+            $exception = strpos($htaccess, '<Files "sitemap.xml">');
+
+            $this->assertNotFalse($exception, $fichier);
+            $this->assertGreaterThan($refus, $exception, $fichier . ' : l’exception doit suivre le refus');
+            $this->assertMatchesRegularExpression('~<Files "sitemap\.xml">\s*Require all granted\s*</Files>~', $htaccess, $fichier);
+        }
+    }
+
     public function test_la_signature_du_serveur_est_masquee(): void
     {
         $this->assertStringContainsString(
