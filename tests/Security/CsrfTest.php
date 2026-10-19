@@ -36,9 +36,16 @@ final class CsrfTest extends AdminTestCase
                 continue;
             }
 
+            // Une valeur que la route accepte : sinon le 404 du routeur
+            // masquerait le refus CSRF. Le jeton des liens « mot de passe
+            // oublié » fait 64 caractères hexadécimaux.
             yield $route->method . ' ' . $route->path => [
                 $route->method,
-                (string) preg_replace('/\{[a-z_]+\}/', '1', $route->path),
+                (string) preg_replace_callback(
+                    '/\{([a-z_]+)\}/',
+                    static fn (array $m): string => $m[1] === 'token' ? str_repeat('a', 64) : '1',
+                    $route->path,
+                ),
                 $route->csrfConfirm !== [],
             ];
         }

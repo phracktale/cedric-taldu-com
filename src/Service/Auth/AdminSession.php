@@ -153,7 +153,9 @@ final class AdminSession
 
         $user = $this->users->findById((int) $id);
 
-        if ($user === null) {
+        // Mot de passe changé depuis l'ouverture de la session (2026-10-19) :
+        // elle tombe avec l'ancien mot de passe.
+        if ($user === null || $user->sessionPredatesPasswordChange($issuedAt)) {
             $this->destroy();
             $this->resolved = true;
 

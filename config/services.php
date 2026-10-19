@@ -38,6 +38,7 @@ use App\Core\View;
 use App\Domain\Admin\SessionPolicy;
 use App\Http\Controller\Admin\AccountController;
 use App\Http\Controller\Admin\AuthController;
+use App\Http\Controller\Admin\PasswordController;
 use App\Http\Controller\Admin\ArtworkController as AdminArtworkController;
 use App\Http\Controller\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controller\Admin\DashboardController;
@@ -67,6 +68,7 @@ use App\Http\Controller\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controller\Front\NewsletterController;
 use App\Http\Controller\Front\AccountController as CustomerAccountController;
 use App\Repository\CustomerLoginRepository;
+use App\Repository\PasswordResetRepository;
 use App\Service\Account\CustomerLogin;
 use App\Service\Account\CustomerSession;
 use App\Service\Mail\AccountMailer;
@@ -115,6 +117,7 @@ use App\Service\Auth\AuditTrail;
 use App\Service\Auth\Authenticator;
 use App\Service\Auth\BackupCodes;
 use App\Service\Auth\PasswordHasher;
+use App\Service\Auth\PasswordReset;
 use App\Service\Auth\Totp;
 use App\Service\Content\BlockSanitizer;
 use App\Service\Content\HtmlSanitizer;
@@ -800,6 +803,20 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(BackupCodes::class),
     ));
 
+    $container->set(PasswordController::class, static fn (Container $c): PasswordController => new PasswordController(
+        $c->get(AdminChrome::class),
+        $c->get(AdminSession::class),
+        $c->get(UserRepository::class),
+        $c->get(PasswordHasher::class),
+        $c->get(Authenticator::class),
+        $c->get(PasswordReset::class),
+        $c->get(AccountMailer::class),
+        $c->get(RateLimiter::class),
+        $c->get(Validator::class),
+        $c->get(UrlGenerator::class),
+        $c->get(LoggerInterface::class),
+    ));
+
     $container->set(AccountController::class, static fn (Container $c): AccountController => new AccountController(
         $c->get(AdminChrome::class),
         $c->get(AdminSession::class),
@@ -1040,6 +1057,13 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         => new CustomerLoginRepository($c->get(PDO::class)));
     $container->set(CustomerLogin::class, static fn (Container $c): CustomerLogin => new CustomerLogin(
         $c->get(CustomerLoginRepository::class),
+        $c->get(ClockInterface::class),
+    ));
+    // Mot de passe oublié de l'administration (2026-10-19).
+    $container->set(PasswordResetRepository::class, static fn (Container $c): PasswordResetRepository
+        => new PasswordResetRepository($c->get(PDO::class)));
+    $container->set(PasswordReset::class, static fn (Container $c): PasswordReset => new PasswordReset(
+        $c->get(PasswordResetRepository::class),
         $c->get(ClockInterface::class),
     ));
     $container->set(CustomerSession::class, static fn (Container $c): CustomerSession => new CustomerSession(

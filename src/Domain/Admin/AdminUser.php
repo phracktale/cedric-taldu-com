@@ -40,6 +40,11 @@ final class AdminUser
          * Nullable et en fin de liste : un compte sans 2FA n'en a jamais eu.
          */
         public readonly ?int $totpLastCounter = null,
+        /**
+         * Dernier changement de mot de passe (migration 0026). Une session
+         * ouverte avant cette date n'est plus valable.
+         */
+        public readonly ?DateTimeImmutable $passwordChangedAt = null,
     ) {
     }
 
@@ -77,6 +82,15 @@ final class AdminUser
     public function withSuccess(DateTimeImmutable $now): self
     {
         return $this->with(failedAttempts: 0, lockedUntil: null, lastLoginAt: $now);
+    }
+
+    /**
+     * Une session ouverte avant le dernier changement de mot de passe est
+     * fermée : changer de mot de passe doit chasser qui l'aurait pris.
+     */
+    public function sessionPredatesPasswordChange(DateTimeImmutable $issuedAt): bool
+    {
+        return $this->passwordChangedAt !== null && $issuedAt < $this->passwordChangedAt;
     }
 
     // -------------------------------------------------------------------- 2FA
@@ -130,6 +144,7 @@ final class AdminUser
             lockedUntil: $lockedUntil === false ? $this->lockedUntil : $lockedUntil,
             lastLoginAt: $lastLoginAt === false ? $this->lastLoginAt : $lastLoginAt,
             totpLastCounter: $this->totpLastCounter,
+            passwordChangedAt: $this->passwordChangedAt,
         );
     }
 }

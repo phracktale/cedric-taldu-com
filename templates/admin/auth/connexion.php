@@ -18,10 +18,15 @@ $base = is_string($data['basePath'] ?? null) ? $data['basePath'] : '';
 $jeton = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
 $erreur = is_string($data['erreur'] ?? null) ? $data['erreur'] : null;
 $email = is_string($data['email'] ?? null) ? $data['email'] : '';
+$reinitialise = ($data['reinitialise'] ?? false) === true;
 
 ?>
 <div class="admin-connexion">
     <h1>Administration</h1>
+
+    <?php if ($reinitialise) : ?>
+    <p class="succes" role="status">Votre mot de passe a été modifié. Connectez-vous avec le nouveau.</p>
+    <?php endif; ?>
 
     <?php if ($erreur !== null) : ?>
     <p class="erreur" role="alert"><?= e($erreur) ?></p>
@@ -46,4 +51,6 @@ $email = is_string($data['email'] ?? null) ? $data['email'] : '';
             <button type="submit" class="bouton">Se connecter</button>
         </p>
     </form>
+
+    <p class="aide"><a href="<?= attr($base . '/admin/mot-de-passe-oublie') ?>">Mot de passe oublié ?</a></p>
 </div>

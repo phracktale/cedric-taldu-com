@@ -200,7 +200,13 @@ final class AuthController
         return $this->chrome->page(
             $request,
             'admin/auth/connexion',
-            ['titre' => 'Connexion', 'erreur' => $erreur, 'email' => $request->input('email') ?? ''],
+            [
+                'titre' => 'Connexion',
+                'erreur' => $erreur,
+                'email' => $request->input('email') ?? '',
+                // Retour d'un lien « mot de passe oublié » (PasswordController).
+                'reinitialise' => $erreur === null && $request->query('reinitialise') === '1',
+            ],
             $status,
         );
     }

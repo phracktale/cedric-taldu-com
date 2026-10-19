@@ -22,6 +22,20 @@ URL : `/admin` (non localisée, interface en français). Aucune inscription publ
 - Rôles : `admin` (tout) et `editor` (contenu éditorial et catalogue, **pas** les
   commandes, les réglages ni les utilisateurs).
 - Déconnexion : destruction de session côté serveur, pas seulement suppression du cookie.
+- **Mot de passe** (2026-10-19) : 12 caractères au moins, 200 au plus (la limite du
+  formulaire de connexion), saisi deux fois.
+  - *Changer* : `/admin/compte/mot-de-passe`, le mot de passe actuel est redemandé ; un
+    mot de passe actuel faux compte comme un échec de connexion.
+  - *Oublié* : lien depuis la page de connexion. Un e-mail porte un lien à usage
+    unique, valable 30 minutes (jeton de 32 octets, seule son empreinte SHA-256 est
+    stockée, table `admin_password_resets`). Réponse identique que l'adresse ait un
+    compte ou non ; 5 demandes par quart d'heure et par IP. La réinitialisation lève
+    le verrouillage et ne connecte pas : la 2FA reste exigée à la connexion suivante.
+  - Tout changement date `users.password_changed_at` : les sessions ouvertes avant
+    sont fermées (celle de la personne qui change elle-même repart aussitôt), et les
+    autres liens encore ouverts deviennent caducs. Audit : `auth.password_changed`,
+    `auth.password_change_failed`, `auth.password_reset_requested`,
+    `auth.password_reset`.
 
 ## 2. Tableau de bord
 
