@@ -78,12 +78,18 @@ final class AuthTest extends AdminTestCase
 
         sort($ouvertes);
 
+        // Mot de passe oublié (2026-10-19) : la demande de lien et le formulaire
+        // du lien sont, par nature, ouverts à qui n'a plus de session.
         $this->assertSame([
             'GET /admin/connexion',
             'GET /admin/connexion/2fa',
+            'GET /admin/mot-de-passe-oublie',
+            'GET /admin/mot-de-passe/{token}',
             'POST /admin/connexion',
             'POST /admin/connexion/2fa',
             'POST /admin/deconnexion',
+            'POST /admin/mot-de-passe-oublie',
+            'POST /admin/mot-de-passe/{token}',
         ], $ouvertes);
     }
 
