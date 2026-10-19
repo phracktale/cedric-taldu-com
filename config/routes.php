@@ -21,6 +21,7 @@ use App\Core\Route;
 use App\Http\Controller\Admin\AccountController;
 use App\Http\Controller\Admin\ArtworkController as AdminArtworkController;
 use App\Http\Controller\Admin\AuthController;
+use App\Http\Controller\Admin\PasswordController;
 use App\Http\Controller\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controller\Admin\DashboardController;
 use App\Http\Controller\Admin\MediaController;
@@ -67,6 +68,8 @@ $slug = ['slug' => Route::SLUG];
 $id = ['id' => Route::ID];
 // Clef de section : validée sur liste blanche par le contrôleur (404 sinon).
 $section = ['section' => '[a-z0-9]{1,20}'];
+// Jeton des liens « mot de passe oublié » : 32 octets en hexadécimal.
+$jeton = ['token' => '[0-9a-f]{64}'];
 $idEtSerie = ['id' => Route::ID, 'serie' => Route::ID];
 
 return [
@@ -244,12 +247,19 @@ return [
     new Route('admin.2fa', 'GET', '/admin/connexion/2fa', [AuthController::class, 'showTwoFactor'], guest: true),
     new Route('admin.2fa.submit', 'POST', '/admin/connexion/2fa', [AuthController::class, 'verifyTwoFactor'], guest: true),
     new Route('admin.logout', 'POST', '/admin/deconnexion', [AuthController::class, 'logout'], guest: true),
+    // Mot de passe oublié (2026-10-19) : ouvert par nature à qui n'a plus de session.
+    new Route('admin.password.forgot', 'GET', '/admin/mot-de-passe-oublie', [PasswordController::class, 'showForgot'], guest: true),
+    new Route('admin.password.forgot.submit', 'POST', '/admin/mot-de-passe-oublie', [PasswordController::class, 'requestReset'], guest: true),
+    new Route('admin.password.reset', 'GET', '/admin/mot-de-passe/{token}', [PasswordController::class, 'showReset'], guest: true, requirements: $jeton),
+    new Route('admin.password.reset.submit', 'POST', '/admin/mot-de-passe/{token}', [PasswordController::class, 'reset'], guest: true, requirements: $jeton),
 
     new Route('admin.dashboard', 'GET', '/admin', [DashboardController::class, 'show']),
 
     new Route('admin.account.2fa', 'GET', '/admin/compte/2fa', [AccountController::class, 'showTwoFactor']),
     new Route('admin.account.2fa.enable', 'POST', '/admin/compte/2fa', [AccountController::class, 'enableTwoFactor']),
     new Route('admin.account.2fa.disable', 'POST', '/admin/compte/2fa/retrait', [AccountController::class, 'disableTwoFactor']),
+    new Route('admin.account.password', 'GET', '/admin/compte/mot-de-passe', [PasswordController::class, 'showChange']),
+    new Route('admin.account.password.update', 'POST', '/admin/compte/mot-de-passe', [PasswordController::class, 'change']),
 
     // Rubriques et series
     new Route('admin.category.index', 'GET', '/admin/galeries', [AdminCategoryController::class, 'index']),

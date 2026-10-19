@@ -34,4 +34,22 @@ final class AccountMailer
             replyTo: $this->artistEmail,
         ));
     }
+
+    /**
+     * Lien « mot de passe oublié » de l'administration (2026-10-19). En
+     * français seulement, comme toute l'administration.
+     */
+    public function sendAdminPasswordReset(string $email, string $link): void
+    {
+        $subject = 'Réinitialisation de votre mot de passe';
+        $data = ['locale' => Locale::Fr, 'link' => $link, 'docTitle' => $subject, 'strings' => []];
+
+        $this->mailer->send(new Email(
+            to: $email,
+            toName: '',
+            subject: $subject,
+            html: $this->view->render('emails/admin-password-reset', $data, layout: 'layouts/email'),
+            text: trim(html_entity_decode(strip_tags($this->view->render('emails/admin-password-reset', $data)), ENT_QUOTES)),
+        ));
+    }
 }

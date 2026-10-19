@@ -87,6 +87,7 @@ $site = ($data['site'] ?? null) instanceof App\Domain\Editorial\SiteIdentity
     <div class="admin-compte">
         <a href="<?= attr($base . '/admin/compte/2fa') ?>"><?= e($utilisateur->displayName) ?></a>
         <span class="admin-role"><?= e($utilisateur->role->label()) ?></span>
+        <a href="<?= attr($base . '/admin/compte/mot-de-passe') ?>">Mot de passe</a>
         <form method="post" action="<?= attr($base . '/admin/deconnexion') ?>">
             <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
             <button type="submit" class="lien-bouton">Se déconnecter</button>

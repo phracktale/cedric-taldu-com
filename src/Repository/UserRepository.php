@@ -20,7 +20,7 @@ use PDO;
 final class UserRepository
 {
     private const SELECT = <<<'SQL'
-        SELECT id, email, password_hash, display_name, role, totp_secret, totp_last_counter,
+        SELECT id, email, password_hash, password_changed_at, display_name, role, totp_secret, totp_last_counter,
                failed_attempts, locked_until, last_login_at
         FROM users
         SQL;
@@ -87,6 +87,27 @@ final class UserRepository
         );
 
         $statement->execute(['hash' => $hash, 'id' => $id]);
+    }
+
+    /**
+     * Nouveau mot de passe choisi par son titulaire (changement ou lien
+     * « mot de passe oublié »). La date ferme les sessions ouvertes avant elle ;
+     * le verrou tombe, celui qui a perdu son mot de passe ayant souvent épuisé
+     * ses essais.
+     */
+    public function changePassword(int $id, string $hash, DateTimeImmutable $now): void
+    {
+        $statement = $this->pdo->prepare(
+            'UPDATE users
+                SET password_hash = :hash,
+                    password_changed_at = :changed,
+                    failed_attempts = 0,
+                    locked_until = NULL,
+                    updated_at = NOW()
+              WHERE id = :id'
+        );
+
+        $statement->execute(['hash' => $hash, 'changed' => self::toSql($now), 'id' => $id]);
     }
 
     /**
@@ -232,6 +253,7 @@ final class UserRepository
             lockedUntil: self::toDate($row['locked_until']),
             lastLoginAt: self::toDate($row['last_login_at']),
             totpLastCounter: $row['totp_last_counter'] === null ? null : (int) $row['totp_last_counter'],
+            passwordChangedAt: self::toDate($row['password_changed_at']),
         );
     }
 
