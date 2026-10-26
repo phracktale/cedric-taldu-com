@@ -723,6 +723,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
                 ['locale' => $order->locale->value, 'reference' => $order->reference],
             ) . '?t=' . $order->accessToken,
             $c->get(FulfillmentService::class),
+            $c->get(Invalidator::class),
         ));
 
     $container->set(CheckoutService::class, static fn (Container $c): CheckoutService => new CheckoutService(

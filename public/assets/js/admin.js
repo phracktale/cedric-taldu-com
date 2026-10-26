@@ -305,3 +305,23 @@ function masquerLePoidsSurDevis(caseDevis) {
 }
 
 document.querySelectorAll('[data-port-sur-devis]').forEach(masquerLePoidsSurDevis);
+
+/* ------------------------------------------------------------ technique */
+
+/**
+ * Formulaire d'œuvre (2026-10-26) : le champ « Autre technique » n'apparaît
+ * que pour ce choix. Sans JavaScript, il reste visible ; le serveur ne le lit
+ * que si « Autre technique… » est choisi.
+ */
+function montrerAutreTechnique(liste) {
+  const autre = liste.form ? liste.form.querySelector('[data-technique-autre]') : null;
+  if (!autre) return;
+  const appliquer = () => {
+    autre.hidden = liste.value !== 'autre';
+  };
+  liste.addEventListener('change', appliquer);
+  appliquer();
+}
+
+const listeTechniques = document.getElementById('technique');
+if (listeTechniques && listeTechniques.tagName === 'SELECT') montrerAutreTechnique(listeTechniques);

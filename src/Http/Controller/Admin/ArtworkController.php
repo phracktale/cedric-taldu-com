@@ -9,6 +9,7 @@ use App\Core\RedirectResponse;
 use App\Core\Request;
 use App\Core\Response;
 use App\Domain\Catalog\ArtworkStatus;
+use App\Domain\Catalog\Technique;
 use App\Domain\Catalog\TitleOrder;
 use App\Domain\Catalog\WorksSort;
 use App\Domain\Exception\InvalidSlug;
@@ -433,6 +434,22 @@ final class ArtworkController
     }
 
     /**
+     * Technique (2026-10-26) : un code de la liste de l'atelier, ou le texte
+     * libre de « Autre technique… ». Un ancien libellé envoyé tel quel devient
+     * le code de sa technique.
+     */
+    private static function technique(Request $request): ?string
+    {
+        $choix = trim($request->input('technique') ?? '');
+
+        if ($choix === 'autre') {
+            return self::nullableText($request->input('technique_autre'), 160);
+        }
+
+        return Technique::resolve($choix)->value ?? self::nullableText($choix, 160);
+    }
+
+    /**
      * Erreurs rattachées à un champ, affichées sous lui.
      *
      * Le poids (2026-10-26) : sans lui le port ne se calcule pas, et une œuvre
@@ -474,7 +491,7 @@ final class ArtworkController
             'series_id' => self::positiveInt($request->input('serie')),
             'reference' => trim($request->input('reference') ?? ''),
             'year' => self::positiveInt($request->input('annee')),
-            'technique' => self::nullableText($request->input('technique'), 160),
+            'technique' => self::technique($request),
             'width_mm' => self::positiveInt($request->input('largeur')),
             'height_mm' => self::positiveInt($request->input('hauteur')),
             'depth_mm' => self::positiveInt($request->input('profondeur')),

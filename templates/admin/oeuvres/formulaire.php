@@ -28,6 +28,17 @@ $oeuvre = is_array($data['oeuvre'] ?? null) ? $data['oeuvre'] : null;
 $saisie = is_array($data['saisie'] ?? null) ? $data['saisie'] : [];
 /** @var array<string, string> $erreurs erreurs par champ */
 $erreurs = is_array($data['erreurs'] ?? null) ? $data['erreurs'] : [];
+// Technique (2026-10-26) : liste de l'atelier, ou texte libre (« autre »). Un
+// ancien libellé, en français comme en anglais, présélectionne sa technique.
+$techniqueEnregistree = is_string($oeuvre['technique'] ?? null) ? $oeuvre['technique'] : '';
+$techniqueConnue = App\Domain\Catalog\Technique::resolve($techniqueEnregistree);
+if (is_string($saisie['technique'] ?? null)) {
+    $techniqueChoisie = $saisie['technique'];
+    $techniqueAutre = is_string($saisie['technique_autre'] ?? null) ? $saisie['technique_autre'] : '';
+} else {
+    $techniqueChoisie = $techniqueConnue?->value ?? ($techniqueEnregistree === '' ? '' : 'autre');
+    $techniqueAutre = $techniqueConnue === null ? $techniqueEnregistree : '';
+}
 // Port sur devis (2026-10-26) : la saisie renvoyée prime sur l'œuvre enregistrée.
 $surDevis = $saisie !== []
     ? isset($saisie['port_sur_devis'])
@@ -213,9 +224,20 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
 
             <p class="champ">
                 <label for="technique">Technique</label>
-                <input type="text" id="technique" name="technique"
-                       value="<?= attr($champ('technique')) ?>" maxlength="160"
-                       placeholder="Encre de Chine sur papier">
+                <select id="technique" name="technique">
+                    <option value="">—</option>
+                    <?php foreach (App\Domain\Catalog\Technique::cases() as $technique) : ?>
+                    <option value="<?= attr($technique->value) ?>"<?php if ($technique->value === $techniqueChoisie) : ?> selected<?php endif; ?>><?= e($technique->label(App\Domain\Locale::Fr)) ?></option>
+                    <?php endforeach; ?>
+                    <option value="autre"<?php if ($techniqueChoisie === 'autre') : ?> selected<?php endif; ?>>Autre technique…</option>
+                </select>
+                <span class="champ-aide">Traduite sur la page anglaise. Une autre technique s’affiche telle que saisie, dans les deux langues.</span>
+            </p>
+            <?php // Montré seulement pour « Autre technique… » (admin.js). ?>
+            <p class="champ" data-technique-autre>
+                <label for="technique_autre">Autre technique</label>
+                <input type="text" id="technique_autre" name="technique_autre" maxlength="160"
+                       value="<?= attr($techniqueAutre) ?>">
             </p>
 
             <div class="grille-champs">

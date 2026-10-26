@@ -14,6 +14,7 @@ use App\Repository\PersistedOrder;
 use App\Repository\StockRepository;
 use App\Repository\StripeEventRepository;
 use App\Service\Fulfillment\FulfillmentService;
+use App\Service\StaticSite\Invalidator;
 use App\Service\Mail\OrderMailer;
 use DateTimeImmutable;
 use PDO;
@@ -59,6 +60,12 @@ final class PaymentEventHandler
          * soumission à Prodigi — dégradation acceptable, jamais un paiement perdu.
          */
         private readonly ?FulfillmentService $fulfillment = null,
+        /**
+         * Site statique (retours Search Console du 2026-10-26) : une vente le
+         * périme, pour que la page de l'œuvre cesse d'annoncer « disponible »
+         * — et InStock à Google — jusqu'à la génération suivante.
+         */
+        private readonly ?Invalidator $staticSite = null,
     ) {
     }
 
@@ -100,6 +107,7 @@ final class PaymentEventHandler
                 // Soumission Prodigi APRÈS commit, comme les courriels : une panne
                 // du fournisseur ne remet jamais en cause un encaissement.
                 $this->submitFulfillment($event, $now);
+                $this->refreshStaticSite();
             }
 
             return $outcome;
@@ -115,6 +123,25 @@ final class PaymentEventHandler
             ]);
 
             throw $e;
+        }
+    }
+
+    /**
+     * Périme le site statique après une vente. Comme un courriel, jamais une
+     * condition de validité de la commande : l'échec est journalisé, avalé.
+     */
+    private function refreshStaticSite(): void
+    {
+        if ($this->staticSite === null) {
+            return;
+        }
+
+        try {
+            $this->staticSite->invalidate();
+        } catch (Throwable $e) {
+            $this->logger->log(LogLevel::Error, 'Site statique non périmé après une vente', [
+                'exception' => $e::class,
+            ]);
         }
     }
 

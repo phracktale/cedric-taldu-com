@@ -84,12 +84,24 @@ Les URL absolues sont construites depuis `APP_URL`, jamais depuis l'en-tête `Ho
 
 **Données structurées JSON-LD**, reprises des maquettes et alimentées par la base :
 - Accueil : `Person` (nom, métier, lieu, formation, contacts) + `WebSite`.
-- Fiche œuvre : `Product` avec `offers` (prix réel, `priceCurrency: EUR`, `availability`
-  `InStock` / `SoldOut` selon le statut, `itemCondition`, `url`), `brand` = `Person`,
-  `material` = technique, plus `VisualArtwork` (`artform`, `artMedium`, `width`, `height`)
-  qui décrit l'œuvre bien mieux que `Product` seul.
+- Fiche œuvre : `Product` avec `description`, `brand` = `Person`, `material` = technique
+  dans la langue de la page, et `offers` (prix réel, `priceCurrency: EUR`, `availability`
+  `InStock` / `SoldOut` selon le statut, `itemCondition`, `url`, `hasMerchantReturnPolicy`
+  des CGV : 14 jours, retour par courrier à la charge du client). `subjectOf` porte un
+  `VisualArtwork` : `name`, `creator` (`Person`, URL de la page À propos), `dateCreated`,
+  et la technique décomposée en `artform` (Peinture, Dessin), `artMedium` (Huile, Encre de
+  Chine) et `artworkSurface` (Toile, Papier) — table dans `Domain\Catalog\Technique`.
+  Une vente périme le site statique : la page passe à `SoldOut` sans attendre une
+  génération (retours Search Console du 2026-10-26).
 - Rubrique : `CollectionPage` + `ItemList` des œuvres.
-- Article : `BlogPosting` ou `Event` quand `event_date` est renseignée.
+- Article : `BlogPosting` (image, extrait) ou `Event` quand `event_date` est renseignée.
+  L'`Event` ne porte que les dates de l'événement, jamais celle de publication (affichée à
+  part, « Publié le ») : `location` en `Place` + `PostalAddress` (adresse en champs
+  séparés), `eventStatus`, `eventAttendanceMode` (sur place), l'artiste en `performer`, et
+  `organizer`, `offers` (entrée ; 0 = libre), `description`, `image` quand ils sont connus.
+- Avertissements `review` / `aggregateRating` : attendus et laissés tels quels. Une œuvre
+  unique n'a pas d'avis, et Google interdit les avis fictifs. Pas de `gtin` non plus : une
+  œuvre unique n'a pas de code-barres.
 - Fil d'Ariane : `BreadcrumbList` sur toutes les pages profondes.
 - **Le JSON-LD est produit par `Service\Seo\StructuredData` avec `json_encode` et les
   drapeaux `JSON_HEX_*`** — jamais par concaténation de chaînes dans un template.
