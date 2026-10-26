@@ -47,7 +47,20 @@ final class PurchasableItem
          * automatique, livraison organisée sur rendez-vous.
          */
         public readonly bool $isOversized = false,
+        /** Port établi sur devis (2026-10-26) : pas de paiement en ligne. */
+        public readonly bool $isShippingOnQuote = false,
     ) {
+    }
+
+    /**
+     * Expédiée par l'atelier mais sans tarif calculable : port sur devis
+     * choisi, ou poids absent. L'achat passe alors par un message.
+     */
+    public function needsShippingQuote(): bool
+    {
+        return !$this->isPrintOnDemand()
+            && !$this->isOversized
+            && ($this->isShippingOnQuote || $this->weightGrams === null);
     }
 
     public function matches(LineKind $kind, int $targetId): bool

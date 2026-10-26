@@ -26,9 +26,29 @@ $compteurs = is_array($data['compteurs'] ?? null) ? $data['compteurs'] : [];
 /** @var list<array<string, mixed>> $actions */
 $actions = is_array($data['actions'] ?? null) ? $data['actions'] : [];
 
+/** @var list<array{id: int, title: string}> $sansPoids */
+$sansPoids = is_array($data['sansPoids'] ?? null) ? $data['sansPoids'] : [];
+
 ?>
 <div class="admin-page">
     <h1>Bonjour <?= e($utilisateur?->displayName ?? '') ?></h1>
+
+    <?php // 2026-10-26 : une œuvre en vente sans poids ne peut pas être payée. ?>
+    <?php if ($sansPoids !== []) : ?>
+    <section class="alertes" aria-label="Alertes">
+        <p class="erreur" role="status">
+            <?= e(count($sansPoids) === 1
+                ? 'Œuvre en vente sans poids : elle ne peut pas être payée en ligne.'
+                : 'Œuvres en vente sans poids : elles ne peuvent pas être payées en ligne.') ?>
+            Indiquez le poids, ou cochez « Port sur devis ».
+        </p>
+        <ul>
+            <?php foreach ($sansPoids as $oeuvre) : ?>
+            <li><a href="<?= attr($base . '/admin/oeuvres/' . $oeuvre['id']) ?>"><?= e($oeuvre['title']) ?></a></li>
+            <?php endforeach; ?>
+        </ul>
+    </section>
+    <?php endif; ?>
 
     <section class="cartes" aria-label="État du catalogue">
         <article class="carte">

@@ -95,6 +95,10 @@ return [
     'checkout.delivery' => 'Delivery',
     'checkout.travel_free' => 'No travel costs',
     'checkout.on_request' => 'On request',
+    // Shipping on quote (2026-10-26).
+    'checkout.quote_required' => 'Shipping for “:oeuvre” is quoted on request: write to us to order it, and we will reply with the amount.',
+    'checkout.quote_contact' => 'Request a shipping quote',
+    'checkout.quote_rejected' => 'Shipping for this order is quoted on request: write to us to order it.',
     'checkout.shipping_cost' => 'Shipping',
     'checkout.total' => 'Total',
     'checkout.delivery_estimate' => 'Estimated delivery between :from and :to.',

@@ -286,3 +286,22 @@ function filtrerSeries(galerie, serie) {
 const galerieOeuvre = document.getElementById('rubrique');
 const serieOeuvre = document.getElementById('serie');
 if (galerieOeuvre && serieOeuvre) filtrerSeries(galerieOeuvre, serieOeuvre);
+
+/* ------------------------------------------------------- port sur devis */
+
+/**
+ * Formulaire d'œuvre (2026-10-26) : « Port sur devis » coché, le poids n'est
+ * pas demandé et disparaît ; décoché, il revient. Sans JavaScript, le champ
+ * reste visible et le serveur ignore le poids d'une œuvre au port sur devis.
+ */
+function masquerLePoidsSurDevis(caseDevis) {
+  const poids = caseDevis.form ? caseDevis.form.querySelector('[data-poids]') : null;
+  if (!poids) return;
+  const appliquer = () => {
+    poids.hidden = caseDevis.checked;
+  };
+  caseDevis.addEventListener('change', appliquer);
+  appliquer();
+}
+
+document.querySelectorAll('[data-port-sur-devis]').forEach(masquerLePoidsSurDevis);

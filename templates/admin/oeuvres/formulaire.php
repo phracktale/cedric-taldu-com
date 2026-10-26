@@ -26,6 +26,12 @@ $oeuvre = is_array($data['oeuvre'] ?? null) ? $data['oeuvre'] : null;
 
 /** @var array<string, string> $saisie */
 $saisie = is_array($data['saisie'] ?? null) ? $data['saisie'] : [];
+/** @var array<string, string> $erreurs erreurs par champ */
+$erreurs = is_array($data['erreurs'] ?? null) ? $data['erreurs'] : [];
+// Port sur devis (2026-10-26) : la saisie renvoyée prime sur l'œuvre enregistrée.
+$surDevis = $saisie !== []
+    ? isset($saisie['port_sur_devis'])
+    : ($oeuvre['shipping_on_quote'] ?? false) === true;
 
 /** @var list<array<string, mixed>> $rubriques */
 $rubriques = is_array($data['rubriques'] ?? null) ? $data['rubriques'] : [];
@@ -232,13 +238,28 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
                     <span class="champ-aide">Épaisseur du châssis ou du cadre.</span>
                 </p>
 
-                <p class="champ">
-                    <label for="poids">Poids (g)</label>
+                <?php // Masqué quand le port est sur devis (admin.js) ; obligatoire sinon, pour une œuvre en vente. ?>
+                <p class="champ" data-poids>
+                    <label for="poids">Poids emballé (g)</label>
                     <input type="number" id="poids" name="poids" min="1"
-                           value="<?= attr($champ('poids', 'weight_grams')) ?>">
+                           value="<?= attr($champ('poids', 'weight_grams')) ?>"<?php if (isset($erreurs['poids'])) : ?> aria-invalid="true"<?php endif; ?>>
+                    <?php if (isset($erreurs['poids'])) : ?>
+                    <span class="champ-erreur" role="alert"><?= e($erreurs['poids']) ?></span>
+                    <?php endif; ?>
                     <span class="champ-aide">Sert au calcul des frais de port.</span>
                 </p>
             </div>
+
+            <?php // 2026-10-26 : port établi sur devis, choisi expressément ; le poids n'est alors pas demandé. ?>
+            <p class="champ champ-inline">
+                <input type="checkbox" id="port_sur_devis" name="port_sur_devis" value="1" data-port-sur-devis
+                    <?php if ($surDevis) : ?>checked<?php endif; ?>>
+                <label for="port_sur_devis">Port sur devis</label>
+            </p>
+            <p class="champ-aide">
+                Le port n’est pas calculé : l’acheteur est invité à écrire pour obtenir un devis,
+                et le paiement en ligne n’est pas proposé. Le poids n’est alors pas demandé.
+            </p>
 
             <?php // Revue du 2026-09-24 : pas d'expédition automatique d'une œuvre hors gabarit. ?>
             <p class="champ champ-inline">

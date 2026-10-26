@@ -97,6 +97,10 @@ return [
     'checkout.delivery' => 'Livraison',
     'checkout.travel_free' => 'Frais de déplacement offerts',
     'checkout.on_request' => 'Sur devis',
+    // Port sur devis (2026-10-26) : le tunnel l'explique au lieu de renvoyer au panier.
+    'checkout.quote_required' => 'Les frais de port de « :oeuvre » sont établis sur devis : écrivez-nous pour la commander, nous vous répondrons avec le montant.',
+    'checkout.quote_contact' => 'Demander le devis de port',
+    'checkout.quote_rejected' => 'Les frais de port de cette commande sont établis sur devis : écrivez-nous pour la commander.',
     'checkout.shipping_cost' => 'Frais de port',
     'checkout.total' => 'Total',
     'checkout.delivery_estimate' => 'Réception estimée entre le :from et le :to.',

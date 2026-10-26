@@ -63,6 +63,34 @@ final class DashboardRepository
     }
 
     /**
+     * Œuvres en vente sans poids ni « Port sur devis » (2026-10-26) : leur port
+     * ne se calcule pas, elles ne peuvent pas être payées en ligne. Le
+     * formulaire l'interdit désormais ; restent celles enregistrées avant.
+     *
+     * @return list<array{id: int, title: string}>
+     */
+    public function weightlessForSale(): array
+    {
+        $statement = $this->pdo->query(
+            "SELECT a.id, COALESCE(t.title, a.reference) AS title
+               FROM artworks a
+               LEFT JOIN artwork_translations t ON t.artwork_id = a.id AND t.locale = 'fr'
+              WHERE a.is_published = 1 AND a.status = 'available'
+                AND a.weight_grams IS NULL AND a.shipping_on_quote = 0 AND a.is_oversized = 0
+              ORDER BY a.id"
+        );
+
+        if ($statement === false) {
+            return [];
+        }
+
+        return array_values(array_map(
+            static fn (array $row): array => ['id' => (int) $row['id'], 'title' => (string) $row['title']],
+            $statement->fetchAll(),
+        ));
+    }
+
+    /**
      * @return array{categories: int, categories_published: int, series: int,
      *               artworks: int, artworks_published: int, artworks_draft: int, media: int}
      */
