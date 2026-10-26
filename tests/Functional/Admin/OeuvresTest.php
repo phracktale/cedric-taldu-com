@@ -180,6 +180,52 @@ final class OeuvresTest extends AdminTestCase
         ])->status);
     }
 
+    // ------------------------------------------- technique (2026-10-26)
+
+    public function test_la_technique_se_choisit_dans_la_liste_de_l_atelier(): void
+    {
+        // Retours Search Console du 2026-10-26 : la technique saisie en texte
+        // libre sortait en anglais sur la page française. Une liste, traduite.
+        $formulaire = $this->requete('GET', self::OEUVRES . '/nouvelle')->body;
+
+        $this->assertStringContainsString('<select id="technique" name="technique">', $formulaire);
+        $this->assertStringContainsString('<option value="ink_on_paper">Encre de Chine sur papier</option>', $formulaire);
+        $this->assertStringContainsString('<option value="oil_on_canvas">Huile sur toile</option>', $formulaire);
+        $this->assertStringContainsString('<option value="autre">Autre technique…</option>', $formulaire);
+        $this->assertStringContainsString('name="technique_autre"', $formulaire);
+    }
+
+    public function test_une_technique_hors_liste_s_enregistre_en_texte_libre(): void
+    {
+        $this->creer([
+            'reference' => 'CT-ENC-001', 'titre_fr' => 'Étude',
+            'technique' => 'autre', 'technique_autre' => 'Graphite sur papier',
+        ]);
+
+        $this->assertSame('Graphite sur papier', $this->valeur('SELECT technique FROM artworks'));
+    }
+
+    public function test_une_ancienne_saisie_preselectionne_sa_technique(): void
+    {
+        $id = (new ArtworkFactory($this->pdo))->usingTechnique('Oil on canvas')
+            ->translated('fr', 'autoportrait', 'Autoportrait')->create($this->rubrique);
+
+        $formulaire = $this->requete('GET', self::OEUVRES . '/' . $id)->body;
+
+        $this->assertStringContainsString('<option value="oil_on_canvas" selected>Huile sur toile</option>', $formulaire);
+    }
+
+    public function test_une_technique_libre_existante_reste_dans_le_champ_autre(): void
+    {
+        $id = (new ArtworkFactory($this->pdo))->usingTechnique('Graphite sur papier')
+            ->translated('fr', 'etude', 'Étude')->create($this->rubrique);
+
+        $formulaire = $this->requete('GET', self::OEUVRES . '/' . $id)->body;
+
+        $this->assertStringContainsString('<option value="autre" selected>Autre technique…</option>', $formulaire);
+        $this->assertMatchesRegularExpression('~name="technique_autre"[^>]*value="Graphite sur papier"~', $formulaire);
+    }
+
     public function test_une_oeuvre_nait_en_brouillon_et_non_publiee(): void
     {
         // Rien ne se publie par accident : la fiche est invisible tant que
@@ -377,14 +423,14 @@ final class OeuvresTest extends AdminTestCase
             'reference' => 'CT-ENC-002',
             'titre_fr' => 'Articulation II',
             'slug_fr' => 'articulation',
-            'technique' => 'Encre de Chine sur papier',
+            'technique' => 'ink_on_paper',
             'largeur' => '400',
             'hauteur' => '600',
             'annee' => '2026',
         ]);
 
         $this->assertSame('CT-ENC-002', $this->valeur('SELECT reference FROM artworks'));
-        $this->assertSame('Encre de Chine sur papier', $this->valeur('SELECT technique FROM artworks'));
+        $this->assertSame('ink_on_paper', $this->valeur('SELECT technique FROM artworks'));
         $this->assertSame('400', $this->valeur('SELECT width_mm FROM artworks'));
         $this->assertSame('2026', $this->valeur('SELECT year FROM artworks'));
     }

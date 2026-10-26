@@ -95,6 +95,27 @@ final class FicheOeuvreTest extends FunctionalTestCase
         $this->assertSame(404, $this->get('/cedric-taldu/fr/oeuvre/brouillon')->status);
     }
 
+    public function test_la_technique_se_lit_dans_la_langue_de_la_page(): void
+    {
+        // Retours Search Console du 2026-10-26 : « Oil on canvas » sur la page
+        // française. Ancienne saisie en anglais, affichage dans la langue lue.
+        $this->oeuvre()->usingTechnique('Oil on canvas')
+            ->translated('fr', 'autoportrait', 'Autoportrait')->translated('en', 'self-portrait', 'Self-portrait')
+            ->create($this->rubrique);
+
+        $this->assertStringContainsString('Huile sur toile ·', $this->get('/cedric-taldu/fr/oeuvre/autoportrait')->body);
+        $this->assertStringContainsString('Oil on canvas ·', $this->get('/cedric-taldu/en/artwork/self-portrait')->body);
+        $this->assertStringNotContainsString('Oil on canvas', $this->get('/cedric-taldu/fr/oeuvre/autoportrait')->body);
+    }
+
+    public function test_une_technique_hors_liste_s_affiche_telle_que_saisie(): void
+    {
+        $this->oeuvre()->usingTechnique('Graphite sur papier')
+            ->translated('fr', 'etude', 'Étude')->create($this->rubrique);
+
+        $this->assertStringContainsString('Graphite sur papier ·', $this->get('/cedric-taldu/fr/oeuvre/etude')->body);
+    }
+
     public function test_les_caracteristiques_tiennent_sur_une_ligne(): void
     {
         $this->oeuvre()

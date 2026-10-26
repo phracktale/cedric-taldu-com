@@ -111,6 +111,27 @@ final class ArtworkTest extends TestCase
         );
     }
 
+    public function test_la_technique_se_lit_dans_la_langue_demandee(): void
+    {
+        // Retours Search Console du 2026-10-26 : une ancienne saisie en
+        // français se lit en anglais sur la page anglaise, et inversement.
+        $this->assertSame('India ink on paper', $this->oeuvre()->techniqueLabel(Locale::En));
+        $this->assertSame('Encre de Chine sur papier', $this->oeuvre()->techniqueLabel(Locale::Fr));
+        $this->assertStringStartsWith('India ink on paper · ', $this->oeuvre()->specifications(Locale::En));
+    }
+
+    public function test_la_description_de_produit_resume_l_oeuvre(): void
+    {
+        $this->assertSame(
+            'Articulation, encre de Chine sur papier de Cédric Taldu, 2026. Œuvre originale, pièce unique, signée, avec certificat d’authenticité.',
+            $this->oeuvre()->productDescription(Locale::Fr, 'Cédric Taldu'),
+        );
+        $this->assertSame(
+            'Articulation, India ink on paper by Cédric Taldu, 2026. Original artwork, one of a kind, signed, with certificate of authenticity.',
+            $this->oeuvre(traduiteEnAnglais: true)->productDescription(Locale::En, 'Cédric Taldu'),
+        );
+    }
+
     public function test_les_caracteristiques_omettent_ce_qui_manque(): void
     {
         $oeuvre = new Artwork(
