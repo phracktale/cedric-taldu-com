@@ -887,6 +887,10 @@ a.oeuvre:hover .cadre, a.oeuvre:focus-visible .cadre {
 .article-adresse { font-size: .92rem; color: var(--encre-70); margin: .2rem 0 0; }
 .article-expo-description { max-width: var(--mesure); margin: .9rem 0 0; }
 .article-expo-lien { margin: .9rem 0 0; font-size: .92rem; }
+/* Statut, organisateur, entrée, date de publication à part (2026-10-26). */
+.article-statut { font-size: .8rem; letter-spacing: .16em; text-transform: uppercase; color: var(--encre); font-weight: 500; margin: 0 0 .5rem; }
+.article-organisateur, .article-entree { font-size: .92rem; color: var(--encre-70); margin: .2rem 0 0; }
+.article-publie { font-size: .82rem; color: var(--encre-70); margin: 1.1rem 0 0; }
 .actu-date { font-size: .8rem; letter-spacing: .16em; text-transform: uppercase; color: var(--encre-70); margin-bottom: .5rem; }
 .actu-titre { font-family: 'Marcellus', Georgia, serif; font-weight: 400; font-size: clamp(1.3rem, 2.4vw, 1.7rem); margin-bottom: .5rem; }
 .actu-lien:hover .actu-titre, .actu-lien:focus-visible .actu-titre { text-decoration: underline; text-underline-offset: .2em; }

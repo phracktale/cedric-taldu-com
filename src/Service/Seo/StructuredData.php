@@ -142,57 +142,105 @@ final class StructuredData
     /**
      * Article : Event si une date d'événement est présente, sinon BlogPosting.
      *
-     * @param array{name: string, url: string, datePublished?: string|null,
-     *              eventDate?: string|null, eventEndDate?: string|null, eventPlace?: string|null,
-     *              eventAddress?: string|null, eventDescription?: string|null, image?: string|null} $p
+     * Retours Search Console du 2026-10-26 : l'Event ne porte que les dates de
+     * l'événement (jamais celle de publication), un lieu en Place +
+     * PostalAddress, son statut, le mode « sur place », l'artiste en
+     * performer, et l'organisateur, l'entrée, la description et l'image quand
+     * ils sont connus.
+     *
+     * @param array{name: string, url: string, datePublished?: string|null, image?: string|null,
+     *              description?: string|null, eventDate?: string|null, eventEndDate?: string|null,
+     *              eventPlace?: string|null, eventStreet?: string|null, eventPostalCode?: string|null,
+     *              eventCity?: string|null, eventCountry?: string|null, eventStatus?: string|null,
+     *              eventDescription?: string|null, performerUrl?: string|null, organizerName?: string|null,
+     *              organizerUrl?: string|null, eventPriceDecimal?: string|null, eventUrl?: string|null} $p
      * @return array<string, mixed>
      */
     public function article(array $p): array
     {
-        if (($p['eventDate'] ?? null) !== null) {
-            $data = [
-                '@context' => 'https://schema.org',
-                '@type' => 'Event',
-                'name' => $p['name'],
-                'url' => $p['url'],
-                'startDate' => $p['eventDate'],
-            ];
-
-            if (($p['eventEndDate'] ?? null) !== null) {
-                $data['endDate'] = $p['eventEndDate'];
-            }
-
-            if (($p['eventPlace'] ?? null) !== null || ($p['eventAddress'] ?? null) !== null) {
-                $data['location'] = array_filter([
-                    '@type' => 'Place',
-                    'name' => $p['eventPlace'] ?? $p['eventAddress'] ?? null,
-                    'address' => $p['eventAddress'] ?? null,
-                ], static fn (?string $v): bool => $v !== null);
-            }
-
-            if (($p['eventDescription'] ?? null) !== null) {
-                $data['description'] = $p['eventDescription'];
-            }
-        } else {
-            $data = [
+        if (($p['eventDate'] ?? null) === null) {
+            return self::withoutNulls([
                 '@context' => 'https://schema.org',
                 '@type' => 'BlogPosting',
                 'headline' => $p['name'],
                 'name' => $p['name'],
                 'url' => $p['url'],
                 'author' => ['@type' => 'Person', 'name' => $this->identity()->name],
-            ];
-
-            if (($p['datePublished'] ?? null) !== null) {
-                $data['datePublished'] = $p['datePublished'];
-            }
+                'datePublished' => $p['datePublished'] ?? null,
+                'description' => $p['description'] ?? null,
+                'image' => $p['image'] ?? null,
+            ]);
         }
 
-        if (($p['image'] ?? null) !== null) {
-            $data['image'] = $p['image'];
+        return self::withoutNulls([
+            '@context' => 'https://schema.org',
+            '@type' => 'Event',
+            'name' => $p['name'],
+            'url' => $p['url'],
+            'startDate' => $p['eventDate'],
+            'endDate' => $p['eventEndDate'] ?? null,
+            'eventStatus' => $p['eventStatus'] ?? 'https://schema.org/EventScheduled',
+            'eventAttendanceMode' => 'https://schema.org/OfflineEventAttendanceMode',
+            'location' => self::place($p),
+            'description' => $p['eventDescription'] ?? $p['description'] ?? null,
+            'image' => $p['image'] ?? null,
+            'performer' => self::withoutNulls([
+                '@type' => 'Person',
+                'name' => $this->identity()->name,
+                'url' => $p['performerUrl'] ?? null,
+            ]),
+            'organizer' => ($p['organizerName'] ?? null) === null ? null : self::withoutNulls([
+                '@type' => 'Organization',
+                'name' => $p['organizerName'],
+                'url' => $p['organizerUrl'] ?? null,
+            ]),
+            'offers' => ($p['eventPriceDecimal'] ?? null) === null ? null : self::withoutNulls([
+                '@type' => 'Offer',
+                'price' => $p['eventPriceDecimal'],
+                'priceCurrency' => 'EUR',
+                'availability' => 'https://schema.org/InStock',
+                'url' => $p['eventUrl'] ?? $p['url'],
+                'validFrom' => $p['datePublished'] ?? null,
+            ]),
+        ]);
+    }
+
+    /**
+     * Lieu d'un événement : son nom, et son adresse postale quand un champ au
+     * moins est renseigné.
+     *
+     * @param array<string, mixed> $p
+     * @return array<string, mixed>|null
+     */
+    private static function place(array $p): ?array
+    {
+        $address = self::withoutNulls([
+            '@type' => 'PostalAddress',
+            'streetAddress' => $p['eventStreet'] ?? null,
+            'postalCode' => $p['eventPostalCode'] ?? null,
+            'addressLocality' => $p['eventCity'] ?? null,
+            'addressCountry' => $p['eventCountry'] ?? null,
+        ]);
+        $hasAddress = array_diff_key($address, ['@type' => true, 'addressCountry' => true]) !== [];
+
+        if (($p['eventPlace'] ?? null) === null && !$hasAddress) {
+            return null;
         }
 
-        return $data;
+        return self::withoutNulls([
+            '@type' => 'Place',
+            'name' => $p['eventPlace'] ?? $p['eventCity'] ?? null,
+            'address' => $hasAddress ? $address : null,
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    private static function withoutNulls(array $data): array
+    {
+        return array_filter($data, static fn (mixed $v): bool => $v !== null);
     }
 
     /**

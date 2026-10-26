@@ -66,6 +66,22 @@ final class JsonLdTest extends FunctionalTestCase
         $this->assertStringContainsString('"@type":"Event"', $corps);
     }
 
+    public function test_l_evenement_porte_son_adresse_postale_son_image_et_l_artiste(): void
+    {
+        // Retours Search Console du 2026-10-26.
+        $media = (new MediaFactory($this->pdo))->sized(2400, 1600)->translated('fr', 'Affiche')->create();
+        (new PostFactory($this->pdo))->publishedAt('2026-09-25 09:00:00')
+            ->event('2026-11-01', 'Galerie de l’AAC')->adresse('10 allée des Tennis', '80000', 'Amiens')
+            ->withCover($media)->translated('fr', 'expo-aac', 'Exposition à Amiens')->create();
+
+        $corps = $this->get('/cedric-taldu/fr/actus/expo-aac')->body;
+
+        $this->assertStringContainsString('"@type":"PostalAddress","streetAddress":"10 allée des Tennis","postalCode":"80000","addressLocality":"Amiens","addressCountry":"FR"', $corps);
+        $this->assertMatchesRegularExpression('#"image":"https?://[^"]+/media/#', $corps);
+        $this->assertStringContainsString('"performer":{"@type":"Person","name":"Cédric Taldu"', $corps);
+        $this->assertStringContainsString('"startDate":"2026-11-01"', $corps);
+    }
+
     public function test_la_rubrique_porte_une_collectionpage(): void
     {
         $categorie = (new CategoryFactory($this->pdo))->published()->translated('fr', 'encres', 'Encres')->create();

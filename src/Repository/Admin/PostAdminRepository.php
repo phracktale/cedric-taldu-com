@@ -8,6 +8,7 @@ use App\Domain\Locale;
 use App\Domain\Exception\InvalidSlug;
 use App\Domain\Slug;
 use Closure;
+use App\Domain\Editorial\EventStatus;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
@@ -19,12 +20,17 @@ use PDO;
  * articles programmés compris. Deux classes plutôt qu'un drapeau, pour la même
  * raison que les rubriques : un régime mêlé finirait par laisser fuir un
  * brouillon sur le site public.
+ *
+ * @phpstan-type EventFields array{date: ?string, end: ?string, place: ?string, street: ?string,
+ *     postal_code: ?string, city: ?string, country: ?string, status: ?string, organizer: ?string,
+ *     organizer_url: ?string, price_cents: ?int, url: ?string}
  */
 final class PostAdminRepository
 {
     private const SELECT = <<<'SQL'
         SELECT p.id, p.cover_media_id, p.author_id, p.event_date, p.event_place,
-               p.event_end_date, p.event_address, p.event_url,
+               p.event_end_date, p.event_url, p.event_street, p.event_postal_code, p.event_city,
+               p.event_country, p.event_status, p.event_organizer, p.event_organizer_url, p.event_price_cents,
                p.is_published, p.published_at,
                t.locale, t.slug, t.title, t.excerpt, t.body, t.blocks, t.meta_title, t.meta_description,
                t.event_description
@@ -110,7 +116,7 @@ final class PostAdminRepository
 
     /**
      * @param array<string, array<string, string|null>> $translations
-     * @param array{date: ?string, end: ?string, place: ?string, address: ?string, url: ?string} $event
+     * @param EventFields $event
      */
     public function insert(
         array $translations,
@@ -123,9 +129,11 @@ final class PostAdminRepository
         // dans les actus sans que l'artiste l'ait décidé.
         $statement = $this->pdo->prepare(
             'INSERT INTO posts
-                (cover_media_id, author_id, event_date, event_end_date, event_place, event_address, event_url,
+                (cover_media_id, author_id, event_date, event_end_date, event_place, event_street, event_postal_code, event_city, event_country, event_url,
+                 event_status, event_organizer, event_organizer_url, event_price_cents,
                  is_published, published_at, created_at, updated_at)
-             VALUES (:cover, :author, :eventDate, :eventEnd, :eventPlace, :eventAddress, :eventUrl,
+             VALUES (:cover, :author, :eventDate, :eventEnd, :eventPlace, :eventStreet, :eventPostal, :eventCity, :eventCountry, :eventUrl,
+                     :eventStatus, :eventOrganizer, :eventOrganizerUrl, :eventPrice,
                      0, NULL, :now, :now2)'
         );
         $statement->execute([
@@ -145,7 +153,7 @@ final class PostAdminRepository
 
     /**
      * @param array<string, array<string, string|null>> $translations
-     * @param array{date: ?string, end: ?string, place: ?string, address: ?string, url: ?string} $event
+     * @param EventFields $event
      */
     public function update(
         int $id,
@@ -163,14 +171,17 @@ final class PostAdminRepository
 
     /**
      * @param array<string, array<string, string|null>> $translations
-     * @param array{date: ?string, end: ?string, place: ?string, address: ?string, url: ?string} $event
+     * @param EventFields $event
      */
     private function write(int $id, array $translations, ?int $coverMediaId, array $event, DateTimeImmutable $now): void
     {
         $statement = $this->pdo->prepare(
             'UPDATE posts
              SET cover_media_id = :cover, event_date = :eventDate, event_end_date = :eventEnd,
-                 event_place = :eventPlace, event_address = :eventAddress, event_url = :eventUrl, updated_at = :now
+                 event_place = :eventPlace, event_street = :eventStreet, event_postal_code = :eventPostal,
+                 event_city = :eventCity, event_country = :eventCountry, event_url = :eventUrl,
+                 event_status = :eventStatus, event_organizer = :eventOrganizer,
+                 event_organizer_url = :eventOrganizerUrl, event_price_cents = :eventPrice, updated_at = :now
              WHERE id = :id'
         );
         $statement->execute([
@@ -283,7 +294,15 @@ final class PostAdminRepository
             'date' => self::stringOrNull($state['event_date'] ?? null),
             'end' => self::stringOrNull($state['event_end_date'] ?? null),
             'place' => self::stringOrNull($state['event_place'] ?? null),
-            'address' => self::stringOrNull($state['event_address'] ?? null),
+            // Version d'avant le 2026-10-26 : l'adresse tenait en un champ, rendu à la rue.
+            'street' => self::stringOrNull($state['event_street'] ?? $state['event_address'] ?? null),
+            'postal_code' => self::stringOrNull($state['event_postal_code'] ?? null),
+            'city' => self::stringOrNull($state['event_city'] ?? null),
+            'country' => self::stringOrNull($state['event_country'] ?? null),
+            'status' => self::stringOrNull($state['event_status'] ?? null),
+            'organizer' => self::stringOrNull($state['event_organizer'] ?? null),
+            'organizer_url' => self::stringOrNull($state['event_organizer_url'] ?? null),
+            'price_cents' => is_int($state['event_price_cents'] ?? null) ? $state['event_price_cents'] : null,
             'url' => self::stringOrNull($state['event_url'] ?? null),
         ];
         $cover = is_int($state['cover_media_id'] ?? null) ? $state['cover_media_id'] : null;
@@ -291,9 +310,11 @@ final class PostAdminRepository
         if ($before === null) {
             $statement = $this->pdo->prepare(
                 'INSERT INTO posts
-                    (id, cover_media_id, author_id, event_date, event_end_date, event_place, event_address, event_url,
+                    (id, cover_media_id, author_id, event_date, event_end_date, event_place, event_street, event_postal_code, event_city, event_country, event_url,
+                 event_status, event_organizer, event_organizer_url, event_price_cents,
                      is_published, published_at, created_at, updated_at)
-                 VALUES (:id, :cover, NULL, :eventDate, :eventEnd, :eventPlace, :eventAddress, :eventUrl,
+                 VALUES (:id, :cover, NULL, :eventDate, :eventEnd, :eventPlace, :eventStreet, :eventPostal, :eventCity, :eventCountry, :eventUrl,
+                     :eventStatus, :eventOrganizer, :eventOrganizerUrl, :eventPrice,
                          :published, :publishedAt, :now, :now2)'
             );
             $statement->execute([
@@ -441,8 +462,15 @@ final class PostAdminRepository
                 'event_date' => self::nullableString($row['event_date']),
                 'event_place' => self::nullableString($row['event_place']),
                 'event_end_date' => self::nullableString($row['event_end_date']),
-                'event_address' => self::nullableString($row['event_address']),
                 'event_url' => self::nullableString($row['event_url']),
+                'event_street' => self::nullableString($row['event_street']),
+                'event_postal_code' => self::nullableString($row['event_postal_code']),
+                'event_city' => self::nullableString($row['event_city']),
+                'event_country' => (string) $row['event_country'],
+                'event_status' => (string) $row['event_status'],
+                'event_organizer' => self::nullableString($row['event_organizer']),
+                'event_organizer_url' => self::nullableString($row['event_organizer_url']),
+                'event_price_cents' => $row['event_price_cents'] === null ? null : (int) $row['event_price_cents'],
                 'is_published' => (bool) $row['is_published'],
                 'published_at' => self::nullableString($row['published_at']),
                 'translations' => [],
@@ -475,8 +503,8 @@ final class PostAdminRepository
     }
 
     /**
-     * @param  array{date: ?string, end: ?string, place: ?string, address: ?string, url: ?string} $event
-     * @return array<string, string|null>
+     * @param  EventFields $event
+     * @return array<string, int|string|null>
      */
     private static function eventParameters(array $event): array
     {
@@ -484,8 +512,15 @@ final class PostAdminRepository
             'eventDate' => self::nullableDate($event['date']),
             'eventEnd' => self::nullableDate($event['end']),
             'eventPlace' => self::blankToNull($event['place']),
-            'eventAddress' => self::blankToNull($event['address']),
+            'eventStreet' => self::blankToNull($event['street']),
+            'eventPostal' => self::blankToNull($event['postal_code']),
+            'eventCity' => self::blankToNull($event['city']),
+            'eventCountry' => strtoupper(self::blankToNull($event['country']) ?? 'FR'),
             'eventUrl' => self::blankToNull($event['url']),
+            'eventStatus' => (EventStatus::tryFrom((string) $event['status']) ?? EventStatus::Scheduled)->value,
+            'eventOrganizer' => self::blankToNull($event['organizer']),
+            'eventOrganizerUrl' => self::blankToNull($event['organizer_url']),
+            'eventPrice' => $event['price_cents'],
         ];
     }
 

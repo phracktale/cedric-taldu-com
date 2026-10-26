@@ -66,7 +66,8 @@ final class BlogTest extends FunctionalTestCase
     {
         (new PostFactory($this->pdo))->publishedAt('2026-06-01 09:00:00')
             ->event('2026-10-12', 'Galerie du Beffroi')
-            ->exposition('2026-11-20', '3 rue des Sergents, 80000 Amiens', 'https://galerie.example/traits')
+            ->exposition('2026-11-20', 'https://galerie.example/traits')
+            ->adresse('3 rue des Sergents', '80000', 'Amiens')
             ->translated('fr', 'traits', 'Traits')
             ->eventDescription('fr', 'Encres récentes.')
             ->create();
@@ -79,6 +80,59 @@ final class BlogTest extends FunctionalTestCase
         $this->assertStringContainsString('href="https://galerie.example/traits"', $corps);
         $this->assertStringContainsString('rel="noopener', $corps);
         $this->assertStringContainsString('Encres récentes.', $corps);
+    }
+
+    public function test_la_date_de_publication_s_affiche_a_part_des_dates_de_l_evenement(): void
+    {
+        // Retours Search Console du 2026-10-26 : « Publié le » pour l'article,
+        // la période pour l'événement — deux dates qui ne se confondent plus.
+        (new PostFactory($this->pdo))->publishedAt('2026-06-01 09:00:00')
+            ->event('2026-10-12', 'Galerie du Beffroi')->exposition('2026-11-20')
+            ->translated('fr', 'traits', 'Traits')->translated('en', 'lines', 'Lines')->create();
+
+        $fr = $this->get('/cedric-taldu/fr/actus/traits')->body;
+        $en = $this->get('/cedric-taldu/en/news/lines')->body;
+
+        $this->assertStringContainsString('Publié le 1 juin 2026', $fr);
+        $this->assertStringContainsString('du 12 octobre au 20 novembre 2026', $fr);
+        $this->assertStringContainsString('Published on June 1, 2026', $en);
+    }
+
+    public function test_un_billet_sans_evenement_affiche_sa_date_de_publication(): void
+    {
+        (new PostFactory($this->pdo))->publishedAt('2026-06-01 09:00:00')
+            ->translated('fr', 'note', 'Note d’atelier')->create();
+
+        $this->assertStringContainsString('Publié le 1 juin 2026', $this->get('/cedric-taldu/fr/actus/note')->body);
+    }
+
+    public function test_un_evenement_annule_l_annonce(): void
+    {
+        (new PostFactory($this->pdo))->event('2026-10-12', 'Amiens')->statut('cancelled')
+            ->translated('fr', 'traits', 'Traits')->translated('en', 'lines', 'Lines')->create();
+
+        $this->assertStringContainsString('Événement annulé', $this->get('/cedric-taldu/fr/actus/traits')->body);
+        $this->assertStringContainsString('Event cancelled', $this->get('/cedric-taldu/en/news/lines')->body);
+    }
+
+    public function test_l_organisateur_et_l_entree_s_affichent(): void
+    {
+        (new PostFactory($this->pdo))->event('2026-10-12', 'Verrière du parc André Citroën')
+            ->organisateur('DF Art Project', 'https://df-artproject.com/')->entree(0)
+            ->translated('fr', 'salon', 'Salon')->create();
+
+        $corps = $this->get('/cedric-taldu/fr/actus/salon')->body;
+
+        $this->assertStringContainsString('Organisé par <a href="https://df-artproject.com/" rel="noopener noreferrer" target="_blank">DF Art Project</a>', $corps);
+        $this->assertStringContainsString('Entrée libre', $corps);
+    }
+
+    public function test_une_entree_payante_affiche_son_prix(): void
+    {
+        (new PostFactory($this->pdo))->event('2026-10-12', 'Amiens')->entree(550)
+            ->translated('fr', 'salon', 'Salon')->create();
+
+        $this->assertMatchesRegularExpression('~Entrée : 5,50[\s\x{00A0}\x{202F}]€~u', $this->get('/cedric-taldu/fr/actus/salon')->body);
     }
 
     public function test_la_liste_montre_la_periode_d_une_exposition(): void

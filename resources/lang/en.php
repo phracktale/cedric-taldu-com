@@ -214,4 +214,9 @@ return [
     'blog.next' => 'Next',
     'blog.back_to_list' => '← All news',
     'blog.event_link' => 'Visitor information ↗',
+    // Search Console feedback, 2026-10-26.
+    'blog.published_on' => 'Published on :date',
+    'blog.organized_by' => 'Organised by',
+    'blog.entry_free' => 'Free entry',
+    'blog.entry_price' => 'Admission: :price',
 ];

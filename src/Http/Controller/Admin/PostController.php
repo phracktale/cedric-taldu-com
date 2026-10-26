@@ -7,6 +7,8 @@ namespace App\Http\Controller\Admin;
 use App\Core\Exception\NotFoundException;
 use App\Core\RedirectResponse;
 use App\Core\Request;
+use App\Domain\Editorial\EventStatus;
+use App\Domain\EuroAmount;
 use App\Core\Response;
 use App\Domain\Exception\InvalidSlug;
 use App\Domain\Locale;
@@ -28,6 +30,8 @@ use App\Service\View\AdminChrome;
  *
  * Le slug suit la même règle que les rubriques : engendré du titre s'il est
  * vide, respecté s'il est saisi, dédoublonné dans tous les cas.
+ *
+ * @phpstan-import-type EventFields from PostAdminRepository
  */
 final class PostController
 {
@@ -215,17 +219,28 @@ final class PostController
     }
 
     /**
-     * Champs d'exposition du formulaire (demande du 2026-09-30).
+     * Champs d'exposition du formulaire (demande du 2026-09-30), complétés le
+     * 2026-10-26 pour le balisage Event : adresse en champs séparés, statut,
+     * organisateur, entrée (vide = non précisée, 0 = libre).
      *
-     * @return array{date: ?string, end: ?string, place: ?string, address: ?string, url: ?string}
+     * @return EventFields
      */
     private function event(Request $request): array
     {
+        $entree = trim($request->input('entree_evenement') ?? '');
+
         return [
             'date' => $request->input('date_evenement'),
             'end' => $request->input('date_fin'),
             'place' => $request->input('lieu_evenement'),
-            'address' => $request->input('adresse_evenement'),
+            'street' => $request->input('rue_evenement'),
+            'postal_code' => $request->input('code_postal_evenement'),
+            'city' => $request->input('ville_evenement'),
+            'country' => $request->input('pays_evenement'),
+            'status' => $request->input('statut_evenement'),
+            'organizer' => $request->input('organisateur_evenement'),
+            'organizer_url' => $request->input('site_organisateur_evenement'),
+            'price_cents' => $entree === '' ? null : EuroAmount::toCents($entree),
             'url' => $request->input('lien_evenement'),
         ];
     }
@@ -253,8 +268,31 @@ final class PostController
             return 'Le lien doit être une adresse web commençant par http:// ou https://.';
         }
 
-        if (mb_strlen(trim($request->input('adresse_evenement') ?? '')) > 300) {
-            return 'L’adresse ne peut pas dépasser 300 caractères.';
+        // Affiché en lien sur le site public, comme le lien de l'exposition.
+        $site = trim($request->input('site_organisateur_evenement') ?? '');
+        if ($site !== '' && (preg_match('#^https?://[^\s/]+#i', $site) !== 1 || strlen($site) > 500)) {
+            return 'Le site de l’organisateur doit être une adresse web commençant par http:// ou https://.';
+        }
+
+        $entree = trim($request->input('entree_evenement') ?? '');
+        if ($entree !== '' && EuroAmount::toCents($entree) === null) {
+            return 'L’entrée s’indique en euros, par exemple 5 ou 5,50 — 0 pour une entrée libre.';
+        }
+
+        $statut = trim($request->input('statut_evenement') ?? '');
+        if ($statut !== '' && EventStatus::tryFrom($statut) === null) {
+            return 'Ce statut d’événement n’existe pas.';
+        }
+
+        $pays = trim($request->input('pays_evenement') ?? '');
+        if ($pays !== '' && preg_match('/^[A-Za-z]{2}$/D', $pays) !== 1) {
+            return 'Le pays s’indique en deux lettres, par exemple FR pour la France.';
+        }
+
+        foreach (['rue_evenement' => 200, 'code_postal_evenement' => 16, 'ville_evenement' => 120, 'organisateur_evenement' => 200] as $champ => $max) {
+            if (mb_strlen(trim($request->input($champ) ?? '')) > $max) {
+                return sprintf('Un champ de l’adresse ou de l’organisateur dépasse %d caractères.', $max);
+            }
         }
 
         return null;

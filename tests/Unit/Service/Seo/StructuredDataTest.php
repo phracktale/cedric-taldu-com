@@ -79,21 +79,114 @@ final class StructuredDataTest extends TestCase
         $this->assertSame('2026-06-01', $data['startDate']);
     }
 
-    public function test_une_exposition_porte_sa_fin_son_adresse_et_sa_description(): void
+    public function test_une_exposition_porte_sa_fin_son_lieu_en_adresse_postale_et_sa_description(): void
     {
+        // Retours Search Console du 2026-10-26 : location en Place +
+        // PostalAddress, à partir de champs d'adresse séparés.
         $data = $this->seo->article([
             'name' => 'Traits',
             'url' => 'https://x.test/fr/actus/traits',
             'eventDate' => '2026-10-12',
             'eventEndDate' => '2026-11-20',
             'eventPlace' => 'Galerie du Beffroi',
-            'eventAddress' => '3 rue des Sergents, 80000 Amiens',
+            'eventStreet' => '3 rue des Sergents',
+            'eventPostalCode' => '80000',
+            'eventCity' => 'Amiens',
+            'eventCountry' => 'FR',
             'eventDescription' => 'Encres récentes.',
         ]);
 
         $this->assertSame('2026-11-20', $data['endDate']);
-        $this->assertSame('3 rue des Sergents, 80000 Amiens', $data['location']['address']);
+        $this->assertSame([
+            '@type' => 'Place',
+            'name' => 'Galerie du Beffroi',
+            'address' => [
+                '@type' => 'PostalAddress',
+                'streetAddress' => '3 rue des Sergents',
+                'postalCode' => '80000',
+                'addressLocality' => 'Amiens',
+                'addressCountry' => 'FR',
+            ],
+        ], $data['location']);
         $this->assertSame('Encres récentes.', $data['description']);
+    }
+
+    public function test_un_evenement_porte_statut_mode_artiste_organisateur_entree_et_image(): void
+    {
+        $data = $this->seo->article([
+            'name' => 'Traits',
+            'url' => 'https://x.test/fr/actus/traits',
+            'datePublished' => '2026-09-25',
+            'eventDate' => '2026-10-12',
+            'eventPlace' => 'Galerie du Beffroi',
+            'eventStatus' => 'https://schema.org/EventPostponed',
+            'performerUrl' => 'https://x.test/fr/a-propos',
+            'organizerName' => 'Association DF Art Project',
+            'organizerUrl' => 'https://df-artproject.com/',
+            'eventPriceDecimal' => '0.00',
+            'eventUrl' => 'https://galerie.example/traits',
+            'image' => 'https://x.test/media/traits-1024.jpg',
+        ]);
+
+        $this->assertSame('https://schema.org/EventPostponed', $data['eventStatus']);
+        $this->assertSame('https://schema.org/OfflineEventAttendanceMode', $data['eventAttendanceMode']);
+        $this->assertSame(['@type' => 'Person', 'name' => 'Cédric Taldu', 'url' => 'https://x.test/fr/a-propos'], $data['performer']);
+        $this->assertSame(['@type' => 'Organization', 'name' => 'Association DF Art Project', 'url' => 'https://df-artproject.com/'], $data['organizer']);
+        $this->assertSame([
+            '@type' => 'Offer',
+            'price' => '0.00',
+            'priceCurrency' => 'EUR',
+            'availability' => 'https://schema.org/InStock',
+            'url' => 'https://galerie.example/traits',
+            'validFrom' => '2026-09-25',
+        ], $data['offers']);
+        $this->assertSame('https://x.test/media/traits-1024.jpg', $data['image']);
+    }
+
+    public function test_un_evenement_n_emprunte_jamais_la_date_de_publication(): void
+    {
+        // La date de publication est celle de l'article, pas de l'événement :
+        // startDate et endDate viennent des seuls champs de l'événement.
+        $data = $this->seo->article([
+            'name' => 'Traits',
+            'url' => 'https://x.test/fr/actus/traits',
+            'datePublished' => '2026-09-25',
+            'eventDate' => '2026-10-12',
+        ]);
+
+        $this->assertSame('2026-10-12', $data['startDate']);
+        $this->assertArrayNotHasKey('endDate', $data);
+        $this->assertArrayNotHasKey('datePublished', $data);
+    }
+
+    public function test_un_evenement_sans_organisateur_ni_entree_les_omet_et_reste_prevu(): void
+    {
+        $data = $this->seo->article([
+            'name' => 'Traits',
+            'url' => 'https://x.test/fr/actus/traits',
+            'eventDate' => '2026-10-12',
+            'eventPlace' => 'Amiens',
+        ]);
+
+        $this->assertSame('https://schema.org/EventScheduled', $data['eventStatus']);
+        $this->assertArrayNotHasKey('organizer', $data);
+        $this->assertArrayNotHasKey('offers', $data);
+        $this->assertSame(['@type' => 'Place', 'name' => 'Amiens'], $data['location']);
+    }
+
+    public function test_un_billet_porte_son_image_et_son_extrait(): void
+    {
+        $data = $this->seo->article([
+            'name' => 'Note',
+            'url' => 'https://x.test/fr/actus/n',
+            'datePublished' => '2026-05-01',
+            'description' => 'Une note d’atelier.',
+            'image' => 'https://x.test/media/note.jpg',
+        ]);
+
+        $this->assertSame('BlogPosting', $data['@type']);
+        $this->assertSame('Une note d’atelier.', $data['description']);
+        $this->assertSame('https://x.test/media/note.jpg', $data['image']);
     }
 
     public function test_un_article_sans_date_est_un_blogposting(): void
