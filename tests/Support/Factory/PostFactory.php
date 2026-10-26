@@ -17,7 +17,7 @@ final class PostFactory extends Factory
     private ?string $eventDate = null;
     private ?string $eventPlace = null;
     private ?int $coverMediaId = null;
-    /** @var array<string, string|null> colonnes d'exposition ajoutées le 2026-09-30 */
+    /** @var array<string, string|int|null> colonnes d'exposition (2026-09-30, puis 2026-10-26) */
     private array $exposition = [];
     /** @var array<string, string> description d'exposition par langue */
     private array $descriptions = [];
@@ -56,10 +56,46 @@ final class PostFactory extends Factory
         return $this;
     }
 
-    /** Exposition du 2026-09-30 : date de fin, adresse et lien. */
-    public function exposition(?string $endDate, ?string $address = null, ?string $url = null): self
+    /** Exposition du 2026-09-30 : date de fin et lien. */
+    public function exposition(?string $endDate, ?string $url = null): self
     {
-        $this->exposition = ['event_end_date' => $endDate, 'event_address' => $address, 'event_url' => $url];
+        $this->exposition['event_end_date'] = $endDate;
+        $this->exposition['event_url'] = $url;
+
+        return $this;
+    }
+
+    /** Adresse du lieu en champs séparés (2026-10-26). */
+    public function adresse(?string $street, ?string $postalCode, ?string $city, string $country = 'FR'): self
+    {
+        $this->exposition['event_street'] = $street;
+        $this->exposition['event_postal_code'] = $postalCode;
+        $this->exposition['event_city'] = $city;
+        $this->exposition['event_country'] = $country;
+
+        return $this;
+    }
+
+    /** Statut de l'événement : scheduled, cancelled, postponed, rescheduled. */
+    public function statut(string $status): self
+    {
+        $this->exposition['event_status'] = $status;
+
+        return $this;
+    }
+
+    public function organisateur(string $name, ?string $url = null): self
+    {
+        $this->exposition['event_organizer'] = $name;
+        $this->exposition['event_organizer_url'] = $url;
+
+        return $this;
+    }
+
+    /** Prix d'entrée en centimes ; 0 = entrée libre. */
+    public function entree(?int $cents): self
+    {
+        $this->exposition['event_price_cents'] = $cents;
 
         return $this;
     }
@@ -133,16 +169,9 @@ final class PostFactory extends Factory
             );
         }
 
-        if ($this->exposition !== []) {
-            $this->insert(
-                'UPDATE posts SET event_end_date = :fin, event_address = :adresse, event_url = :lien WHERE id = :id',
-                [
-                    'fin' => $this->exposition['event_end_date'],
-                    'adresse' => $this->exposition['event_address'],
-                    'lien' => $this->exposition['event_url'],
-                    'id' => $id,
-                ],
-            );
+        // Noms de colonnes fixés par les méthodes ci-dessus, jamais par l'appelant.
+        foreach ($this->exposition as $colonne => $valeur) {
+            $this->insert('UPDATE posts SET ' . $colonne . ' = :v WHERE id = :id', ['v' => $valeur, 'id' => $id]);
         }
 
         foreach ($this->descriptions as $locale => $texte) {

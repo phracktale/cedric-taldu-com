@@ -58,6 +58,38 @@ final class HistoriqueContenusTest extends AdminTestCase
         $this->assertSame('Galerie du Beffroi', $this->valeur("SELECT event_place FROM posts WHERE id = {$id}"));
     }
 
+    public function test_une_actu_se_restaure_avec_son_adresse_en_champs_separes(): void
+    {
+        $this->postAvecJeton('/cedric-taldu/admin/actus', [
+            'titre_fr' => 'Vernissage', 'date_evenement' => '2026-10-12', 'lieu_evenement' => 'Galerie',
+            'rue_evenement' => '3 rue des Sergents', 'code_postal_evenement' => '80000', 'ville_evenement' => 'Amiens',
+        ]);
+        $id = (int) $this->valeur('SELECT MAX(id) FROM posts');
+        $this->postAvecJeton('/cedric-taldu/admin/actus/' . $id, ['titre_fr' => 'Vernissage', 'date_evenement' => '2026-10-12']);
+
+        $this->postAvecJeton(self::HISTORIQUE . '/' . $this->derniereVersion('post', (string) $id) . '/restaurer');
+
+        $this->assertSame('Amiens', $this->valeur("SELECT event_city FROM posts WHERE id = {$id}"));
+        $this->assertSame('3 rue des Sergents', $this->valeur("SELECT event_street FROM posts WHERE id = {$id}"));
+    }
+
+    public function test_une_version_d_avant_les_champs_separes_rend_son_adresse_a_la_rue(): void
+    {
+        // Avant le 2026-10-26, l'adresse tenait en un seul champ, `event_address` :
+        // les versions gardées dans l'historique la portent encore.
+        $this->postAvecJeton('/cedric-taldu/admin/actus', ['titre_fr' => 'Vernissage', 'date_evenement' => '2026-10-12']);
+        $id = (int) $this->valeur('SELECT MAX(id) FROM posts');
+        $this->postAvecJeton('/cedric-taldu/admin/actus/' . $id, ['titre_fr' => 'Vernissage revu', 'date_evenement' => '2026-10-12']);
+        $version = $this->derniereVersion('post', (string) $id);
+        $this->pdo->prepare(
+            "UPDATE revisions SET snapshot = JSON_SET(JSON_REMOVE(snapshot, '$.event_street'), '$.event_address', :adresse) WHERE id = :id"
+        )->execute(['adresse' => '3 rue des Sergents, 80000 Amiens', 'id' => $version]);
+
+        $this->postAvecJeton(self::HISTORIQUE . '/' . $version . '/restaurer');
+
+        $this->assertSame('3 rue des Sergents, 80000 Amiens', $this->valeur("SELECT event_street FROM posts WHERE id = {$id}"));
+    }
+
     public function test_une_actu_supprimee_se_restaure_publiee_comme_avant(): void
     {
         $id = (new PostFactory($this->pdo))->publishedAt('2026-06-01 09:00:00')

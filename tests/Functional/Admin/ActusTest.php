@@ -40,13 +40,62 @@ final class ActusTest extends AdminTestCase
         // Demande du 2026-09-30 : début, fin, lieu, adresse, lien, description.
         $corps = $this->get(self::ACTUS . '/nouvel-article')->body;
 
-        $champs = ['date_evenement', 'date_fin', 'lieu_evenement', 'adresse_evenement', 'lien_evenement',
+        // 2026-10-26 : l'adresse se saisit en champs séparés ; statut,
+        // organisateur et entrée alimentent les données structurées.
+        $champs = ['date_evenement', 'date_fin', 'lieu_evenement', 'rue_evenement', 'code_postal_evenement',
+            'ville_evenement', 'pays_evenement', 'statut_evenement', 'organisateur_evenement',
+            'site_organisateur_evenement', 'entree_evenement', 'lien_evenement',
             'description_evenement_fr', 'description_evenement_en'];
         foreach ($champs as $champ) {
             $this->assertStringContainsString('name="' . $champ . '"', $corps, $champ);
         }
         $this->assertStringContainsString('Date de début', $corps);
         $this->assertStringContainsString('Date de fin', $corps);
+        $this->assertStringContainsString('Nom du lieu', $corps);
+        $this->assertStringNotContainsString('name="adresse_evenement"', $corps);
+    }
+
+    public function test_l_entree_libre_vaut_zero_et_une_entree_vide_reste_inconnue(): void
+    {
+        $this->postAvecJeton(self::ACTUS, ['titre_fr' => 'Libre', 'date_evenement' => '2026-10-12', 'entree_evenement' => '0']);
+        $this->postAvecJeton(self::ACTUS, ['titre_fr' => 'Inconnue', 'date_evenement' => '2026-10-12', 'entree_evenement' => '']);
+
+        $this->assertSame('0', $this->valeur("SELECT p.event_price_cents FROM posts p JOIN post_translations t ON t.post_id = p.id WHERE t.title = 'Libre'"));
+        $this->assertNull($this->valeur("SELECT p.event_price_cents FROM posts p JOIN post_translations t ON t.post_id = p.id WHERE t.title = 'Inconnue'"));
+    }
+
+    public function test_le_pays_vaut_france_et_le_statut_prevu_par_defaut(): void
+    {
+        $this->postAvecJeton(self::ACTUS, ['titre_fr' => 'Vernissage', 'date_evenement' => '2026-10-12']);
+
+        $this->assertSame('FR', $this->valeur('SELECT event_country FROM posts'));
+        $this->assertSame('scheduled', $this->valeur('SELECT event_status FROM posts'));
+    }
+
+    public function test_un_site_d_organisateur_qui_n_est_pas_une_adresse_web_est_refuse(): void
+    {
+        // Affiché en lien sur le site public : un « javascript: » serait une XSS.
+        $reponse = $this->postAvecJeton(self::ACTUS, [
+            'titre_fr' => 'Vernissage', 'date_evenement' => '2026-10-12',
+            'organisateur_evenement' => 'Galerie', 'site_organisateur_evenement' => 'javascript:alert(1)',
+        ]);
+
+        $this->assertSame(422, $reponse->status);
+        $this->assertSame('0', $this->valeur('SELECT COUNT(*) FROM posts'));
+    }
+
+    public function test_une_entree_ou_un_statut_illisible_est_refuse(): void
+    {
+        $this->assertSame(422, $this->postAvecJeton(self::ACTUS, [
+            'titre_fr' => 'Vernissage', 'date_evenement' => '2026-10-12', 'entree_evenement' => 'gratuit',
+        ])->status);
+        $this->assertSame(422, $this->postAvecJeton(self::ACTUS, [
+            'titre_fr' => 'Vernissage', 'date_evenement' => '2026-10-12', 'statut_evenement' => 'termine',
+        ])->status);
+        $this->assertSame(422, $this->postAvecJeton(self::ACTUS, [
+            'titre_fr' => 'Vernissage', 'date_evenement' => '2026-10-12', 'pays_evenement' => 'France',
+        ])->status);
+        $this->assertSame('0', $this->valeur('SELECT COUNT(*) FROM posts'));
     }
 
     public function test_une_exposition_s_enregistre_avec_tous_ses_champs(): void
@@ -56,7 +105,14 @@ final class ActusTest extends AdminTestCase
             'date_evenement' => '2026-10-12',
             'date_fin' => '2026-11-20',
             'lieu_evenement' => 'Galerie du Beffroi',
-            'adresse_evenement' => '3 rue des Sergents, 80000 Amiens',
+            'rue_evenement' => '3 rue des Sergents',
+            'code_postal_evenement' => '80000',
+            'ville_evenement' => 'Amiens',
+            'pays_evenement' => 'FR',
+            'statut_evenement' => 'postponed',
+            'organisateur_evenement' => 'Galerie du Beffroi',
+            'site_organisateur_evenement' => 'https://beffroi.example/',
+            'entree_evenement' => '5,50',
             'lien_evenement' => 'https://galerie.example/traits',
             'description_evenement_fr' => 'Encres récentes, vernissage le 12 à 18 h.',
             'description_evenement_en' => 'Recent inks.',
@@ -64,14 +120,23 @@ final class ActusTest extends AdminTestCase
 
         $this->assertSame(302, $reponse->status);
         $requete = $this->pdo->query(
-            'SELECT event_date, event_end_date, event_place, event_address, event_url FROM posts'
+            'SELECT event_date, event_end_date, event_place, event_street, event_postal_code, event_city,
+                    event_country, event_status, event_organizer, event_organizer_url, event_price_cents, event_url
+               FROM posts'
         );
         $this->assertNotFalse($requete);
         $this->assertSame([
             'event_date' => '2026-10-12',
             'event_end_date' => '2026-11-20',
             'event_place' => 'Galerie du Beffroi',
-            'event_address' => '3 rue des Sergents, 80000 Amiens',
+            'event_street' => '3 rue des Sergents',
+            'event_postal_code' => '80000',
+            'event_city' => 'Amiens',
+            'event_country' => 'FR',
+            'event_status' => 'postponed',
+            'event_organizer' => 'Galerie du Beffroi',
+            'event_organizer_url' => 'https://beffroi.example/',
+            'event_price_cents' => 550,
             'event_url' => 'https://galerie.example/traits',
         ], $requete->fetch(\PDO::FETCH_ASSOC));
         $this->assertSame(
