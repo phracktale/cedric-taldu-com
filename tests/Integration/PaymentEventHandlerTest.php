@@ -103,6 +103,29 @@ final class PaymentEventHandlerTest extends DatabaseTestCase
         $this->assertNull($this->valeur("SELECT reserved_until FROM artworks WHERE id = {$this->artwork}"));
     }
 
+    public function test_une_vente_perime_le_site_statique(): void
+    {
+        // Retours Search Console du 2026-10-26 : une œuvre vendue doit passer
+        // à SoldOut. Sa page statique disait encore « disponible » jusqu'à la
+        // génération suivante ; la vente la périme désormais.
+        $invalidateur = $this->invalidateurEspion();
+        $commande = $this->creerCommande();
+
+        $this->traiter($commande->reference, $commande->id);
+
+        $this->assertSame(1, $invalidateur->appels);
+    }
+
+    public function test_un_paiement_non_abouti_ne_perime_rien(): void
+    {
+        $invalidateur = $this->invalidateurEspion();
+        $commande = $this->creerCommande();
+
+        $this->traiter($commande->reference, $commande->id, paymentStatus: 'unpaid');
+
+        $this->assertSame(0, $invalidateur->appels);
+    }
+
     public function test_un_paiement_confirme_decremente_le_stock(): void
     {
         $commande = $this->creerCommande();
@@ -555,6 +578,32 @@ final class PaymentEventHandlerTest extends DatabaseTestCase
         $evenement = $this->gateway->verifyWebhook($corps, $this->gateway->signPayload($corps, 1_700_000_000));
 
         return $this->handler->handle($evenement, new DateTimeImmutable(self::MAINTENANT));
+    }
+
+    /**
+     * Remplace le handler par un handler qui porte un invalidateur espion.
+     */
+    private function invalidateurEspion(): object
+    {
+        $espion = new class implements \App\Service\StaticSite\Invalidator {
+            public int $appels = 0;
+
+            public function invalidate(): void
+            {
+                $this->appels++;
+            }
+        };
+
+        $this->handler = new PaymentEventHandler(
+            $this->pdo,
+            new StripeEventRepository($this->pdo),
+            $this->orders,
+            new StockRepository($this->pdo),
+            $this->logger,
+            staticSite: $espion,
+        );
+
+        return $espion;
     }
 
     private function creerCommande(): \App\Repository\PersistedOrder

@@ -37,7 +37,7 @@ final class StructuredDataTest extends TestCase
         $data = $this->seo->artwork([
             'name' => 'Articulation',
             'url' => 'https://x.test/fr/oeuvre/articulation',
-            'technique' => 'Encre de Chine sur papier',
+            'material' => 'Encre de Chine sur papier',
             'widthMm' => 300,
             'heightMm' => 400,
             'priceDecimal' => '450.00',
@@ -51,6 +51,79 @@ final class StructuredDataTest extends TestCase
         $this->assertSame('450.00', $data['offers']['price']);
         $this->assertSame('EUR', $data['offers']['priceCurrency']);
         $this->assertSame('https://schema.org/InStock', $data['offers']['availability']);
+    }
+
+    public function test_l_etat_de_l_objet_est_porte_par_l_offre(): void
+    {
+        // Retours Search Console du 2026-10-26 : Google attend itemCondition
+        // dans l'offre, pas sur le produit.
+        $data = $this->seo->artwork([
+            'name' => 'Autoportrait', 'url' => 'https://x.test/fr/oeuvre/autoportrait',
+            'priceDecimal' => '800.00', 'availability' => 'https://schema.org/InStock',
+        ]);
+
+        $this->assertArrayNotHasKey('itemCondition', $data);
+        $this->assertSame('https://schema.org/NewCondition', $data['offers']['itemCondition']);
+        $this->assertSame('https://x.test/fr/oeuvre/autoportrait', $data['offers']['url']);
+    }
+
+    public function test_l_offre_porte_la_politique_de_retour_des_cgv(): void
+    {
+        // CGV : 14 jours à compter de la réception, retour à la charge du client.
+        $data = $this->seo->artwork([
+            'name' => 'Autoportrait', 'url' => 'https://x.test/fr/oeuvre/autoportrait',
+            'priceDecimal' => '800.00', 'availability' => 'https://schema.org/InStock',
+        ]);
+
+        $this->assertSame([
+            '@type' => 'MerchantReturnPolicy',
+            'applicableCountry' => 'FR',
+            'returnPolicyCategory' => 'https://schema.org/MerchantReturnFiniteReturnWindow',
+            'merchantReturnDays' => 14,
+            'returnMethod' => 'https://schema.org/ReturnByMail',
+            'returnFees' => 'https://schema.org/ReturnFeesCustomerResponsibility',
+        ], $data['offers']['hasMerchantReturnPolicy']);
+    }
+
+    public function test_l_oeuvre_d_art_porte_titre_auteur_annee_et_technique_decomposee(): void
+    {
+        $data = $this->seo->artwork([
+            'name' => 'Autoportrait',
+            'url' => 'https://x.test/fr/oeuvre/autoportrait',
+            'description' => 'Autoportrait, huile sur toile de Cédric Taldu, 1998.',
+            'material' => 'Huile sur toile',
+            'artform' => 'Peinture',
+            'artMedium' => 'Huile',
+            'artworkSurface' => 'Toile',
+            'year' => 1998,
+            'creatorUrl' => 'https://x.test/fr/a-propos',
+            'widthMm' => 450,
+            'heightMm' => 550,
+        ]);
+
+        $this->assertSame('Autoportrait, huile sur toile de Cédric Taldu, 1998.', $data['description']);
+        $this->assertSame([
+            '@type' => 'VisualArtwork',
+            'name' => 'Autoportrait',
+            'creator' => ['@type' => 'Person', 'name' => 'Cédric Taldu', 'url' => 'https://x.test/fr/a-propos'],
+            'dateCreated' => '1998',
+            'artform' => 'Peinture',
+            'artMedium' => 'Huile',
+            'artworkSurface' => 'Toile',
+            'width' => ['@type' => 'QuantitativeValue', 'value' => 450, 'unitCode' => 'MMT'],
+            'height' => ['@type' => 'QuantitativeValue', 'value' => 550, 'unitCode' => 'MMT'],
+        ], $data['subjectOf']);
+    }
+
+    public function test_une_technique_hors_liste_ne_donne_que_la_matiere(): void
+    {
+        $data = $this->seo->artwork([
+            'name' => 'Étude', 'url' => 'https://x.test/fr/oeuvre/etude', 'material' => 'Graphite sur papier',
+        ]);
+
+        $this->assertSame('Graphite sur papier', $data['material']);
+        $this->assertArrayNotHasKey('artform', $data['subjectOf']);
+        $this->assertArrayNotHasKey('artMedium', $data['subjectOf']);
     }
 
     public function test_une_oeuvre_sans_prix_n_a_pas_d_offre(): void

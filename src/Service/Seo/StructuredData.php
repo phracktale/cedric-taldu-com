@@ -25,6 +25,12 @@ final class StructuredData
     {
     }
 
+    /** Nom de l'artiste, tel que le réglage d'identité le donne. */
+    public function artistName(): string
+    {
+        return $this->identity()->name;
+    }
+
     private function identity(): SiteIdentity
     {
         return $this->site?->get() ?? SiteIdentity::fromStored([]);
@@ -66,54 +72,74 @@ final class StructuredData
     }
 
     /**
+     * Politique de retour des CGV : 14 jours à compter de la réception, retour
+     * par courrier à la charge du client (retours Search Console du 2026-10-26).
+     */
+    private const RETURN_POLICY = [
+        '@type' => 'MerchantReturnPolicy',
+        'applicableCountry' => 'FR',
+        'returnPolicyCategory' => 'https://schema.org/MerchantReturnFiniteReturnWindow',
+        'merchantReturnDays' => 14,
+        'returnMethod' => 'https://schema.org/ReturnByMail',
+        'returnFees' => 'https://schema.org/ReturnFeesCustomerResponsibility',
+    ];
+
+    /**
      * Œuvre : Product enrichi de VisualArtwork. Offre présente seulement si un
      * prix est fourni (une œuvre non vendable n'a pas d'offre).
      *
-     * @param array{name: string, url: string, technique?: string|null, widthMm?: int|null,
-     *              heightMm?: int|null, priceDecimal?: string|null, availability?: string|null,
-     *              image?: string|null} $p
+     * Retours Search Console du 2026-10-26 : tout dans la langue de la page ;
+     * la technique décomposée en forme, médium et support ; titre, auteur et
+     * année sur l'œuvre ; l'état de l'objet et la politique de retour dans
+     * l'offre ; une description.
+     *
+     * @param array{name: string, url: string, description?: string|null, image?: string|null,
+     *              material?: string|null, artform?: string|null, artMedium?: string|null,
+     *              artworkSurface?: string|null, year?: int|null, creatorUrl?: string|null,
+     *              widthMm?: int|null, heightMm?: int|null, priceDecimal?: string|null,
+     *              availability?: string|null} $p
      * @return array<string, mixed>
      */
     public function artwork(array $p): array
     {
-        $data = [
+        $dimensions = ($p['widthMm'] ?? null) !== null && ($p['heightMm'] ?? null) !== null;
+
+        $visual = self::withoutNulls([
+            '@type' => 'VisualArtwork',
+            'name' => $p['name'],
+            'creator' => self::withoutNulls([
+                '@type' => 'Person',
+                'name' => $this->identity()->name,
+                'url' => $p['creatorUrl'] ?? null,
+            ]),
+            'dateCreated' => ($p['year'] ?? null) === null ? null : (string) $p['year'],
+            'artform' => $p['artform'] ?? null,
+            'artMedium' => $p['artMedium'] ?? null,
+            'artworkSurface' => $p['artworkSurface'] ?? null,
+            'width' => $dimensions ? ['@type' => 'QuantitativeValue', 'value' => $p['widthMm'], 'unitCode' => 'MMT'] : null,
+            'height' => $dimensions ? ['@type' => 'QuantitativeValue', 'value' => $p['heightMm'], 'unitCode' => 'MMT'] : null,
+        ]);
+
+        return self::withoutNulls([
             '@context' => 'https://schema.org',
             '@type' => 'Product',
             'name' => $p['name'],
+            'description' => $p['description'] ?? null,
             'url' => $p['url'],
+            'image' => $p['image'] ?? null,
             'brand' => ['@type' => 'Person', 'name' => $this->identity()->name],
-            'itemCondition' => 'https://schema.org/NewCondition',
-        ];
-
-        if (($p['image'] ?? null) !== null) {
-            $data['image'] = $p['image'];
-        }
-
-        if (($p['technique'] ?? null) !== null) {
-            $data['material'] = $p['technique'];
-        }
-
-        // VisualArtwork décrit l'œuvre bien mieux que Product seul (05-i18n §5).
-        $visual = ['@type' => 'VisualArtwork', 'artform' => $p['technique'] ?? null];
-
-        if (($p['widthMm'] ?? null) !== null && ($p['heightMm'] ?? null) !== null) {
-            $visual['width'] = ['@type' => 'QuantitativeValue', 'unitCode' => 'MMT', 'value' => $p['widthMm']];
-            $visual['height'] = ['@type' => 'QuantitativeValue', 'unitCode' => 'MMT', 'value' => $p['heightMm']];
-        }
-
-        $data['subjectOf'] = array_filter($visual, static fn (mixed $v): bool => $v !== null);
-
-        if (($p['priceDecimal'] ?? null) !== null) {
-            $data['offers'] = [
+            'material' => $p['material'] ?? null,
+            'subjectOf' => $visual,
+            'offers' => ($p['priceDecimal'] ?? null) === null ? null : [
                 '@type' => 'Offer',
                 'price' => $p['priceDecimal'],
                 'priceCurrency' => 'EUR',
                 'availability' => $p['availability'] ?? 'https://schema.org/InStock',
+                'itemCondition' => 'https://schema.org/NewCondition',
                 'url' => $p['url'],
-            ];
-        }
-
-        return $data;
+                'hasMerchantReturnPolicy' => self::RETURN_POLICY,
+            ],
+        ]);
     }
 
     /**

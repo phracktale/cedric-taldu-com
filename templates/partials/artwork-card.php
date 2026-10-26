@@ -28,7 +28,8 @@ $prioritaire = ($data['priority'] ?? false) === true;
 $contexte = is_string($data['context'] ?? null) ? $data['context'] : 'grille';
 
 $caracteristiques = array_filter([
-    $artwork->technique,
+    // Dans la langue de la page (2026-10-26).
+    $artwork->techniqueLabel($locale),
     $artwork->dimensions?->format($locale),
 ]);
 

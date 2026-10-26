@@ -81,13 +81,43 @@ final class Artwork
     }
 
     /**
+     * Technique dans la langue demandée (2026-10-26) : une technique de la liste
+     * de l'atelier — ou un ancien libellé qui la désigne — est traduite ; un
+     * texte libre s'affiche tel que saisi.
+     */
+    public function techniqueLabel(Locale $locale): ?string
+    {
+        return Technique::resolve($this->technique)?->label($locale) ?? $this->technique;
+    }
+
+    /**
+     * Description de produit pour Google (retours Search Console du
+     * 2026-10-26) : « Autoportrait, huile sur toile de Cédric Taldu, 1998.
+     * Œuvre originale, pièce unique, signée, avec certificat d’authenticité. »
+     */
+    public function productDescription(Locale $locale, string $artist): string
+    {
+        $fr = $locale === Locale::Fr;
+        $matiere = Technique::resolve($this->technique)?->inline($locale) ?? $this->technique;
+        $auteur = $matiere === null || $matiere === ''
+            ? ($fr ? 'œuvre de ' : 'artwork by ') . $artist
+            : $matiere . ($fr ? ' de ' : ' by ') . $artist;
+
+        return $this->title($locale) . ', ' . $auteur
+            . ($this->year === null ? '' : ', ' . $this->year) . '. '
+            . ($fr ? 'Œuvre originale, pièce unique' : 'Original artwork, one of a kind')
+            . ($this->isSigned ? ($fr ? ', signée' : ', signed') : '')
+            . ($fr ? ', avec certificat d’authenticité.' : ', with certificate of authenticity.');
+    }
+
+    /**
      * Caracteristiques sur une ligne : technique · dimensions · année · signée.
      * Ce qui manque est omis, sans separateur orphelin.
      */
     public function specifications(Locale $locale): string
     {
         $parts = array_filter([
-            $this->technique,
+            $this->techniqueLabel($locale),
             $this->dimensions?->format($locale),
             $this->year === null ? null : (string) $this->year,
             $this->isSigned ? ($locale === Locale::Fr ? 'Signée' : 'Signed') : null,

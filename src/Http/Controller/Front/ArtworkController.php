@@ -9,6 +9,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\View;
 use App\Domain\Catalog\Artwork;
+use App\Domain\Catalog\Technique;
 use App\Domain\Exception\InvalidSlug;
 use App\Domain\Locale;
 use App\Domain\Slug;
@@ -136,10 +137,20 @@ final class ArtworkController
             'slug' => $artwork->slug($locale)->value,
         ]);
 
+        // Retours Search Console du 2026-10-26 : dans la langue de la page,
+        // technique décomposée, titre, auteur et année sur l'œuvre.
+        $technique = Technique::resolve($artwork->technique)?->schema($locale) ?? [];
+
         $product = $this->seo->artwork([
             'name' => $artwork->title($locale),
             'url' => $url,
-            'technique' => $artwork->technique,
+            'description' => $artwork->productDescription($locale, $this->seo->artistName()),
+            'material' => $artwork->techniqueLabel($locale),
+            'artform' => $technique['artform'] ?? null,
+            'artMedium' => $technique['artMedium'] ?? null,
+            'artworkSurface' => $technique['artworkSurface'] ?? null,
+            'year' => $artwork->year,
+            'creatorUrl' => $this->url->absolute('page.about', ['locale' => $locale->value]),
             'widthMm' => $artwork->dimensions?->widthMm,
             'heightMm' => $artwork->dimensions?->heightMm,
             'priceDecimal' => $artwork->price?->decimal(),

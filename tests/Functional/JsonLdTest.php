@@ -55,6 +55,47 @@ final class JsonLdTest extends FunctionalTestCase
         $this->assertMatchesRegularExpression('#"image":"https?://[^"]+/media/#', $corps);
     }
 
+    public function test_la_fiche_decrit_l_oeuvre_dans_la_langue_de_la_page(): void
+    {
+        // Retours Search Console du 2026-10-26 : le balisage corrigé de
+        // « Autoportrait », en français et en anglais.
+        $categorie = (new CategoryFactory($this->pdo))->published()->translated('fr', 'peintures', 'Peintures')->create();
+        (new ArtworkFactory($this->pdo))->available()->priced(80000)->madeIn(1998)->measuring(450, 550)
+            ->usingTechnique('Oil on canvas')->signed()
+            ->translated('fr', 'autoportrait', 'Autoportrait')->translated('en', 'self-portrait', 'Self-portrait')
+            ->create($categorie);
+
+        $fr = $this->get('/cedric-taldu/fr/oeuvre/autoportrait')->body;
+        $en = $this->get('/cedric-taldu/en/artwork/self-portrait')->body;
+
+        $this->assertStringContainsString('"material":"Huile sur toile"', $fr);
+        $this->assertStringContainsString(
+            '"description":"Autoportrait, huile sur toile de Cédric Taldu, 1998. Œuvre originale, pièce unique, signée, avec certificat d’authenticité."',
+            $fr,
+        );
+        $this->assertStringContainsString('"name":"Autoportrait","creator":{"@type":"Person","name":"Cédric Taldu","url":"https://customer.phracktale.com/cedric-taldu/fr/a-propos"},"dateCreated":"1998","artform":"Peinture","artMedium":"Huile","artworkSurface":"Toile"', $fr);
+        $this->assertStringContainsString('"merchantReturnDays":14', $fr);
+
+        $this->assertStringContainsString('"material":"Oil on canvas"', $en);
+        $this->assertStringContainsString('"artform":"Painting","artMedium":"Oil","artworkSurface":"Canvas"', $en);
+        $this->assertStringContainsString(
+            '"description":"Self-portrait, oil on canvas by Cédric Taldu, 1998. Original artwork, one of a kind, signed, with certificate of authenticity."',
+            $en,
+        );
+    }
+
+    public function test_une_oeuvre_vendue_est_annoncee_epuisee(): void
+    {
+        $categorie = (new CategoryFactory($this->pdo))->published()->translated('fr', 'encres', 'Encres')->create();
+        (new ArtworkFactory($this->pdo))->sold()->priced(45000)
+            ->translated('fr', 'venus', 'Vénus')->create($categorie);
+
+        $this->assertStringContainsString(
+            '"availability":"https://schema.org/SoldOut"',
+            $this->get('/cedric-taldu/fr/oeuvre/venus')->body,
+        );
+    }
+
     public function test_l_article_date_porte_un_evenement(): void
     {
         (new PostFactory($this->pdo))->publishedAt('2026-06-01 09:00:00')
