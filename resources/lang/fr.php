@@ -216,4 +216,9 @@ return [
     'blog.next' => 'Suivant',
     'blog.back_to_list' => '← Toutes les actus',
     'blog.event_link' => 'Informations pratiques ↗',
+    // Retours Search Console du 2026-10-26.
+    'blog.published_on' => 'Publié le :date',
+    'blog.organized_by' => 'Organisé par',
+    'blog.entry_free' => 'Entrée libre',
+    'blog.entry_price' => 'Entrée : :price',
 ];

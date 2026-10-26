@@ -54,6 +54,19 @@ $champNeutre = static function (string $champ, string $colonne) use ($saisie, $a
 
 $langues = ['fr' => 'Français', 'en' => 'English'];
 
+// Événement (2026-10-26) : statut, pays et entrée, que $champNeutre ne lit pas
+// (valeur par défaut, nombre en centimes).
+$statutEvenement = is_string($saisie['statut_evenement'] ?? null)
+    ? $saisie['statut_evenement']
+    : (is_string($article['event_status'] ?? null) ? $article['event_status'] : 'scheduled');
+$paysEvenement = $champNeutre('pays_evenement', 'event_country');
+$paysEvenement = $paysEvenement === '' ? 'FR' : $paysEvenement;
+$entreeEvenement = is_string($saisie['entree_evenement'] ?? null)
+    ? $saisie['entree_evenement']
+    : (is_int($article['event_price_cents'] ?? null)
+        ? str_replace('.', ',', rtrim(rtrim(number_format($article['event_price_cents'] / 100, 2, '.', ''), '0'), '.'))
+        : '');
+
 ?>
 <div class="admin-page admin-page--etroite">
     <h1><?= e($data['titre'] ?? '') ?></h1>
@@ -151,15 +164,57 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
                     <span class="champ-aide">Vide pour un événement d’un seul jour.</span>
                 </p>
                 <p class="champ">
-                    <label for="lieu_evenement">Lieu</label>
+                    <label for="lieu_evenement">Nom du lieu</label>
                     <input type="text" id="lieu_evenement" name="lieu_evenement" maxlength="200"
                            value="<?= attr($champNeutre('lieu_evenement', 'event_place')) ?>">
-                    <span class="champ-aide">Nom de la galerie, du musée, du salon…</span>
+                    <span class="champ-aide">Nom de la galerie, du musée, du salon… sans l’adresse.</span>
+                </p>
+                <?php // 2026-10-26 : adresse en champs séparés, pour le balisage Event (PostalAddress). ?>
+                <p class="champ">
+                    <label for="rue_evenement">Rue</label>
+                    <input type="text" id="rue_evenement" name="rue_evenement" maxlength="200"
+                           value="<?= attr($champNeutre('rue_evenement', 'event_street')) ?>">
                 </p>
                 <p class="champ">
-                    <label for="adresse_evenement">Adresse</label>
-                    <input type="text" id="adresse_evenement" name="adresse_evenement" maxlength="300"
-                           value="<?= attr($champNeutre('adresse_evenement', 'event_address')) ?>">
+                    <label for="code_postal_evenement">Code postal</label>
+                    <input type="text" id="code_postal_evenement" name="code_postal_evenement" maxlength="16"
+                           value="<?= attr($champNeutre('code_postal_evenement', 'event_postal_code')) ?>">
+                </p>
+                <p class="champ">
+                    <label for="ville_evenement">Ville</label>
+                    <input type="text" id="ville_evenement" name="ville_evenement" maxlength="120"
+                           value="<?= attr($champNeutre('ville_evenement', 'event_city')) ?>">
+                </p>
+                <p class="champ">
+                    <label for="pays_evenement">Pays</label>
+                    <input type="text" id="pays_evenement" name="pays_evenement" maxlength="2"
+                           value="<?= attr($paysEvenement) ?>">
+                    <span class="champ-aide">Deux lettres : FR pour la France, BE pour la Belgique…</span>
+                </p>
+                <p class="champ">
+                    <label for="statut_evenement">Statut</label>
+                    <select id="statut_evenement" name="statut_evenement">
+                        <?php foreach (App\Domain\Editorial\EventStatus::cases() as $statut) : ?>
+                        <option value="<?= attr($statut->value) ?>"<?php if ($statut->value === $statutEvenement) : ?> selected<?php endif; ?>><?= e($statut->adminLabel()) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </p>
+                <p class="champ">
+                    <label for="organisateur_evenement">Organisateur</label>
+                    <input type="text" id="organisateur_evenement" name="organisateur_evenement" maxlength="200"
+                           value="<?= attr($champNeutre('organisateur_evenement', 'event_organizer')) ?>">
+                </p>
+                <p class="champ">
+                    <label for="site_organisateur_evenement">Site de l’organisateur</label>
+                    <input type="url" id="site_organisateur_evenement" name="site_organisateur_evenement" maxlength="500"
+                           placeholder="https://"
+                           value="<?= attr($champNeutre('site_organisateur_evenement', 'event_organizer_url')) ?>">
+                </p>
+                <p class="champ">
+                    <label for="entree_evenement">Entrée (€)</label>
+                    <input type="text" id="entree_evenement" name="entree_evenement" inputmode="decimal" maxlength="12"
+                           value="<?= attr($entreeEvenement) ?>">
+                    <span class="champ-aide">0 pour une entrée libre ; vide si vous ne savez pas.</span>
                 </p>
                 <p class="champ">
                     <label for="lien_evenement">Lien (site du lieu, billetterie…)</label>

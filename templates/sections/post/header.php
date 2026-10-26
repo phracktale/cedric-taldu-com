@@ -29,29 +29,50 @@ $listUrl = $data['listUrl'];
 $dateAffichee = $post->eventDate ?? $post->publishedAt;
 ?>
 <?php
-// Exposition : sa période (demande du 2026-09-30) ; sinon la date de publication.
-$dateTexte = $post->eventDate === null ? dateLong($dateAffichee, $locale)
-    : datePeriode($post->eventDate, $post->eventEndDate, $locale);
+// Exposition : sa période (demande du 2026-09-30). La date de publication de
+// l'article s'affiche à part, « Publié le » (retours Search Console du
+// 2026-10-26) : les deux dates ne se confondent plus.
+$periode = $post->eventDate === null ? null : datePeriode($post->eventDate, $post->eventEndDate, $locale);
 $description = $post->isEvent() ? $post->eventDescription($locale) : null;
+$annonce = $post->isEvent() ? $post->eventStatus->notice($locale) : null;
+$adresse = $post->isEvent() ? $post->eventAddressLine() : null;
+$organisateur = $post->isEvent() ? $post->eventOrganizer : null;
+$entree = $post->isEvent() ? $post->eventPriceCents : null;
 ?>
 <header class="article-tete">
-  <?php if ($dateAffichee !== null) : ?>
-    <p class="article-date"><?= e($dateTexte) ?></p>
+  <?php if ($periode !== null) : ?>
+    <p class="article-date"><?= e($periode) ?></p>
+  <?php endif; ?>
+  <?php if ($annonce !== null) : ?>
+    <p class="article-statut"><?= e($annonce) ?></p>
   <?php endif; ?>
   <h1><?= e($post->title($locale)) ?></h1>
   <?php if ($post->isEvent() && $post->eventPlace !== null) : ?>
     <p class="article-lieu"><?= e($post->eventPlace) ?></p>
   <?php endif; ?>
-  <?php if ($post->isEvent() && $post->eventAddress !== null) : ?>
-    <p class="article-adresse"><?= e($post->eventAddress) ?></p>
+  <?php if ($adresse !== null) : ?>
+    <p class="article-adresse"><?= e($adresse) ?></p>
   <?php endif; ?>
-  <?php if ($post->isEvent() && $description !== null) : ?>
+  <?php if ($description !== null) : ?>
     <p class="article-expo-description"><?= e($description) ?></p>
+  <?php endif; ?>
+  <?php if ($organisateur !== null) : ?>
+    <p class="article-organisateur"><?= $t('blog.organized_by') ?> <?php if ($post->eventOrganizerUrl !== null) : ?><a href="<?= attr($post->eventOrganizerUrl) ?>" rel="noopener noreferrer" target="_blank"><?= e($organisateur) ?></a><?php else : ?><?= e($organisateur) ?><?php endif; ?></p>
+  <?php endif; ?>
+  <?php if ($entree !== null) : ?>
+    <?php if ($entree === 0) : ?>
+    <p class="article-entree"><?= $t('blog.entry_free') ?></p>
+    <?php else : ?>
+    <p class="article-entree"><?= $t('blog.entry_price', ['price' => money(App\Domain\Money::fromCents($entree), $locale)]) ?></p>
+    <?php endif; ?>
   <?php endif; ?>
   <?php if ($post->isEvent() && $post->eventUrl !== null) : ?>
     <p class="article-expo-lien">
       <a href="<?= attr($post->eventUrl) ?>" rel="noopener noreferrer" target="_blank"><?= $t('blog.event_link') ?></a>
     </p>
+  <?php endif; ?>
+  <?php if ($post->publishedAt !== null) : ?>
+    <p class="article-publie"><?= $t('blog.published_on', ['date' => dateLong($post->publishedAt, $locale)]) ?></p>
   <?php endif; ?>
 </header>
 

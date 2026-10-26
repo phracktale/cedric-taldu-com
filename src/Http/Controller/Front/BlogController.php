@@ -126,7 +126,7 @@ final class BlogController
                 Locale::Fr->value => ['slug' => $post->slug(Locale::Fr)->value],
                 Locale::En->value => ['slug' => $post->slug(Locale::En)->value],
             ]),
-            'jsonLd' => $this->articleGraph($post, $locale),
+            'jsonLd' => $this->articleGraph($post, $locale, $cover instanceof \App\Domain\Catalog\Media ? $cover : null),
         ], layout: 'layouts/public'));
     }
 
@@ -154,22 +154,36 @@ final class BlogController
      *
      * @return list<array<string, mixed>>
      */
-    private function articleGraph(\App\Domain\Editorial\Post $post, Locale $locale): array
+    private function articleGraph(\App\Domain\Editorial\Post $post, Locale $locale, ?\App\Domain\Catalog\Media $cover): array
     {
         $url = $this->url->absolute('blog.show', ['locale' => $locale->value, 'slug' => $post->slug($locale)->value]);
         $home = $locale === Locale::Fr ? 'Accueil' : 'Home';
         $news = $locale === Locale::Fr ? 'Actus' : 'News';
 
+        // Retours Search Console du 2026-10-26 : l'événement décrit en entier,
+        // dans la langue de la page.
         $article = $this->seo->article([
             'name' => $post->title($locale),
             'url' => $url,
             'datePublished' => $post->publishedAt?->format('Y-m-d'),
+            'image' => $this->imageUrl($cover),
+            'description' => $post->excerpt($locale),
             'eventDate' => $post->eventDate?->format('Y-m-d'),
             'eventEndDate' => $post->eventEndDate?->format('Y-m-d'),
             'eventPlace' => $post->eventPlace,
-            'eventAddress' => $post->eventAddress,
+            'eventStreet' => $post->eventStreet,
+            'eventPostalCode' => $post->eventPostalCode,
+            'eventCity' => $post->eventCity,
+            'eventCountry' => $post->eventCountry,
+            'eventStatus' => $post->eventStatus->schemaUrl(),
             'eventDescription' => $post->eventDescription($locale),
-            'image' => null,
+            'performerUrl' => $this->url->absolute('page.about', ['locale' => $locale->value]),
+            'organizerName' => $post->eventOrganizer,
+            'organizerUrl' => $post->eventOrganizerUrl,
+            'eventPriceDecimal' => $post->eventPriceCents === null
+                ? null
+                : \App\Domain\Money::fromCents($post->eventPriceCents)->decimal(),
+            'eventUrl' => $post->eventUrl,
         ]);
 
         return [$article, $this->seo->breadcrumb([
@@ -177,6 +191,23 @@ final class BlogController
             ['name' => $news, 'url' => $this->url->absolute('blog.index', ['locale' => $locale->value])],
             ['name' => $post->title($locale), 'url' => $url],
         ])];
+    }
+
+    /**
+     * Image d'une actu pour Google : la couverture, en URL absolue, à sa plus
+     * grande largeur produite en JPEG (même règle que la fiche d'œuvre).
+     */
+    private function imageUrl(?\App\Domain\Catalog\Media $media): ?string
+    {
+        if ($media === null) {
+            return null;
+        }
+
+        $widths = $media->availableWidths();
+
+        return $widths === []
+            ? null
+            : $this->url->absoluteMedia($media->derivativeFilename($widths[count($widths) - 1], 'jpg'));
     }
 
     /**

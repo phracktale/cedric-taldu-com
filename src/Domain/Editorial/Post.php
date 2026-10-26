@@ -30,11 +30,29 @@ final class Post
         public readonly ?string $eventPlace,
         public readonly ?DateTimeImmutable $publishedAt,
         public readonly Translations $translations,
-        // Exposition (demande du 2026-09-30) : fin, adresse, lien http(s).
+        // Exposition (demande du 2026-09-30) : fin, lien http(s).
         public readonly ?DateTimeImmutable $eventEndDate = null,
-        public readonly ?string $eventAddress = null,
         public readonly ?string $eventUrl = null,
+        // Retours Search Console du 2026-10-26 : adresse en champs séparés,
+        // statut, organisateur, entrée (null = non précisée, 0 = libre).
+        public readonly ?string $eventStreet = null,
+        public readonly ?string $eventPostalCode = null,
+        public readonly ?string $eventCity = null,
+        public readonly string $eventCountry = 'FR',
+        public readonly EventStatus $eventStatus = EventStatus::Scheduled,
+        public readonly ?string $eventOrganizer = null,
+        public readonly ?string $eventOrganizerUrl = null,
+        public readonly ?int $eventPriceCents = null,
     ) {
+    }
+
+    /** Adresse du lieu sur une ligne : « 10 allée des Tennis, 80000 Amiens ». */
+    public function eventAddressLine(): ?string
+    {
+        $ville = trim(($this->eventPostalCode ?? '') . ' ' . ($this->eventCity ?? ''));
+        $ligne = implode(', ', array_filter([$this->eventStreet, $ville], static fn (?string $v): bool => $v !== null && $v !== ''));
+
+        return $ligne === '' ? null : $ligne;
     }
 
     public function title(Locale $locale): string

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Domain\Editorial\EventStatus;
 use App\Domain\Editorial\Post;
 use App\Domain\Editorial\PostTranslation;
 use App\Domain\Locale;
@@ -31,7 +32,8 @@ final class PostRepository
 
     private const SELECT = <<<'SQL'
         SELECT p.id, p.cover_media_id, p.author_id, p.event_date, p.event_place, p.published_at,
-               p.event_end_date, p.event_address, p.event_url,
+               p.event_end_date, p.event_url, p.event_street, p.event_postal_code, p.event_city,
+               p.event_country, p.event_status, p.event_organizer, p.event_organizer_url, p.event_price_cents,
                t.locale, t.slug, t.title, t.excerpt, t.body, t.blocks, t.meta_title, t.meta_description,
                t.event_description
         FROM posts p
@@ -128,7 +130,10 @@ final class PostRepository
     {
         /** @var array<int, array{id: int, cover: int|null, author: int|null, eventDate: string|null,
          *                         eventPlace: string|null, publishedAt: string|null,
-         *                         eventEnd: string|null, eventAddress: string|null, eventUrl: string|null,
+         *                         eventEnd: string|null, eventUrl: string|null,
+         *                         eventStreet: string|null, eventPostalCode: string|null, eventCity: string|null,
+         *                         eventCountry: string, eventStatus: EventStatus, eventOrganizer: string|null,
+         *                         eventOrganizerUrl: string|null, eventPriceCents: int|null,
          *                         translations: array<string, PostTranslation>}> $grouped */
         $grouped = [];
 
@@ -143,8 +148,15 @@ final class PostRepository
                 'eventPlace' => self::nullableString($row['event_place']),
                 'publishedAt' => self::nullableString($row['published_at']),
                 'eventEnd' => self::nullableString($row['event_end_date']),
-                'eventAddress' => self::nullableString($row['event_address']),
                 'eventUrl' => self::nullableString($row['event_url']),
+                'eventStreet' => self::nullableString($row['event_street']),
+                'eventPostalCode' => self::nullableString($row['event_postal_code']),
+                'eventCity' => self::nullableString($row['event_city']),
+                'eventCountry' => (string) $row['event_country'],
+                'eventStatus' => EventStatus::tryFrom((string) $row['event_status']) ?? EventStatus::Scheduled,
+                'eventOrganizer' => self::nullableString($row['event_organizer']),
+                'eventOrganizerUrl' => self::nullableString($row['event_organizer_url']),
+                'eventPriceCents' => $row['event_price_cents'] === null ? null : (int) $row['event_price_cents'],
                 'translations' => [],
             ];
 
@@ -177,8 +189,15 @@ final class PostRepository
                 publishedAt: self::toDate($data['publishedAt']),
                 translations: new Translations($data['translations']),
                 eventEndDate: self::toDate($data['eventEnd']),
-                eventAddress: $data['eventAddress'],
                 eventUrl: $data['eventUrl'],
+                eventStreet: $data['eventStreet'],
+                eventPostalCode: $data['eventPostalCode'],
+                eventCity: $data['eventCity'],
+                eventCountry: $data['eventCountry'],
+                eventStatus: $data['eventStatus'],
+                eventOrganizer: $data['eventOrganizer'],
+                eventOrganizerUrl: $data['eventOrganizerUrl'],
+                eventPriceCents: $data['eventPriceCents'],
             ),
             $grouped,
         ));
