@@ -972,6 +972,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(SettingRepository::class),
         $c->get(CarrierRegistry::class),
         $c->get(Newsletter::class),
+        $c->get(ArtworkRepository::class),
     ));
 
     // Géocodage de la remise en main propre (Base Adresse Nationale, côté serveur).

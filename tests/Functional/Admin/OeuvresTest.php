@@ -109,6 +109,77 @@ final class OeuvresTest extends AdminTestCase
         $this->assertSame('45', $this->valeur('SELECT depth_mm FROM artworks'));
     }
 
+    // ------------------------------------------- port sur devis (2026-10-26)
+
+    public function test_le_formulaire_propose_le_port_sur_devis_qui_masque_le_poids(): void
+    {
+        // Case cochée : le poids disparaît (admin.js) ; décochée : il revient.
+        $formulaire = $this->requete('GET', self::OEUVRES . '/nouvelle')->body;
+
+        $this->assertMatchesRegularExpression('~<input type="checkbox" id="port_sur_devis" name="port_sur_devis" value="1"[^>]*data-port-sur-devis~', $formulaire);
+        $this->assertMatchesRegularExpression('~<p class="champ" data-poids>\s*<label for="poids">~', $formulaire);
+    }
+
+    public function test_une_oeuvre_en_vente_sans_poids_est_refusee_sur_le_champ_poids(): void
+    {
+        // Sans poids, le port ne se calcule pas : l'œuvre serait en vente sans
+        // pouvoir être payée (constaté en production le 2026-10-20).
+        $reponse = $this->creer([
+            'reference' => 'CT-ENC-001',
+            'titre_fr' => 'Articulation',
+            'statut' => 'available',
+            'prix' => '450',
+            'poids' => '',
+        ]);
+
+        $this->assertSame(422, $reponse->status);
+        $this->assertMatchesRegularExpression(
+            '~name="poids"[^>]*aria-invalid="true"[^>]*>\s*<span class="champ-erreur" role="alert">Indiquez le poids emballé, ou cochez « Port sur devis ».</span>~',
+            $reponse->body,
+        );
+        $this->assertSame(0, $this->compter('artworks'));
+    }
+
+    public function test_une_oeuvre_en_vente_au_port_sur_devis_se_passe_de_poids(): void
+    {
+        $reponse = $this->creer([
+            'reference' => 'CT-ENC-001',
+            'titre_fr' => 'Articulation',
+            'statut' => 'available',
+            'prix' => '450',
+            'port_sur_devis' => '1',
+        ]);
+
+        $this->assertSame(302, $reponse->status);
+        $this->assertSame('1', $this->valeur('SELECT shipping_on_quote FROM artworks'));
+    }
+
+    public function test_le_port_sur_devis_se_decoche(): void
+    {
+        $id = $this->creerEtLire([
+            'reference' => 'CT-ENC-001', 'titre_fr' => 'Articulation',
+            'statut' => 'available', 'prix' => '450', 'port_sur_devis' => '1',
+        ]);
+
+        $this->modifier($id, [
+            'reference' => 'CT-ENC-001', 'titre_fr' => 'Articulation', 'slug_fr' => 'articulation',
+            'statut' => 'available', 'prix' => '450', 'poids' => '300',
+        ]);
+
+        $this->assertSame('0', $this->valeur('SELECT shipping_on_quote FROM artworks'));
+        $this->assertSame('300', $this->valeur('SELECT weight_grams FROM artworks'));
+    }
+
+    public function test_une_oeuvre_hors_vente_peut_attendre_son_poids(): void
+    {
+        // Le poids ne sert qu'à l'expédition : un brouillon ou une œuvre non
+        // destinée à la vente n'en a pas besoin.
+        $this->assertSame(302, $this->creer(['reference' => 'CT-ENC-001', 'titre_fr' => 'Brouillon'])->status);
+        $this->assertSame(302, $this->creer([
+            'reference' => 'CT-ENC-002', 'titre_fr' => 'Collection', 'statut' => 'not_for_sale',
+        ])->status);
+    }
+
     public function test_une_oeuvre_nait_en_brouillon_et_non_publiee(): void
     {
         // Rien ne se publie par accident : la fiche est invisible tant que
@@ -213,6 +284,7 @@ final class OeuvresTest extends AdminTestCase
             'image_principale' => (string) $media,
             'statut' => 'available',
             'prix' => '450',
+            'poids' => '300',
         ]);
 
         $reponse = $this->postAvecJeton(self::OEUVRES . '/' . $id . '/publication');
@@ -258,6 +330,7 @@ final class OeuvresTest extends AdminTestCase
             'titre_fr' => 'Articulation',
             'statut' => 'available',
             'prix' => '450',
+            'poids' => '300',
         ]);
 
         $this->modifier($id, [

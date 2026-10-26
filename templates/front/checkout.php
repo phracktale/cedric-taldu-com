@@ -32,6 +32,11 @@ $honeypot = $data['honeypot'];
 $csrfToken = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
 /** @var string|null $error */
 $error = is_string($data['error'] ?? null) ? $data['error'] : null;
+// Port sur devis (2026-10-26) : envoi refusé, et œuvres concernées.
+$quoteRejected = ($data['quoteRejected'] ?? false) === true;
+/** @var list<string> $quoteItems */
+$quoteItems = is_array($data['quoteItems'] ?? null) ? $data['quoteItems'] : [];
+$quoteContactUrl = is_string($data['quoteContactUrl'] ?? null) ? $data['quoteContactUrl'] : '';
 
 /** @var Money|null $shippingPrice */
 $shippingPrice = $data['shippingPrice'] ?? null;
@@ -81,6 +86,9 @@ $jour = static function (DateTimeImmutable $d) use ($mois, $estFr): string {
   <div class="wrap">
     <h1><?= $t('checkout.title') ?></h1>
 
+    <?php if ($quoteRejected) : ?>
+      <p class="commande-erreur" role="alert"><?= $t('checkout.quote_rejected') ?></p>
+    <?php endif; ?>
     <?php if ($error !== null) : ?>
       <p class="commande-erreur" role="alert"><?= e($error) ?></p>
     <?php endif; ?>
@@ -232,9 +240,17 @@ $jour = static function (DateTimeImmutable $d) use ($mois, $estFr): string {
 
         <p class="commande-paiement"><?= $t('checkout.payment_secure') ?> Visa · Mastercard · CB.</p>
 
+        <?php // Port sur devis : pas de paiement en ligne, un message à l'atelier. ?>
+        <?php if ($quoteItems !== [] && !$horsGabarit) : ?>
+        <div class="commande-devis" role="status">
+          <p><?= $t('checkout.quote_required', ['oeuvre' => implode(', ', $quoteItems)]) ?></p>
+          <p><a class="btn btn-plein" href="<?= attr($quoteContactUrl) ?>"><?= $t('checkout.quote_contact') ?></a></p>
+        </div>
+        <?php else : ?>
         <button type="submit" class="btn btn-plein commande-payer">
           <?= $t('checkout.pay') ?><span data-recap-bouton> — <?= e($totalShippingText) ?></span>
         </button>
+        <?php endif; ?>
       </section>
     </form>
   </div>

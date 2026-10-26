@@ -38,6 +38,7 @@ final class DashboardController
         return $this->chrome->page($request, 'admin/tableau-de-bord', [
             'titre' => 'Tableau de bord',
             'compteurs' => $this->catalogue->counts(),
+            'sansPoids' => $this->catalogue->weightlessForSale(),
             'actions' => $this->audit->findRecent(self::DERNIERES_ACTIONS),
         ]);
     }

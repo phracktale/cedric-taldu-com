@@ -26,6 +26,8 @@ final class ArtworkFactory extends Factory
     private ?int $heightMm = 165;
     private bool $signed = true;
     private bool $oversized = false;
+    private ?int $weightGrams = 120;
+    private bool $shippingOnQuote = false;
     private int $position = 0;
     private ?int $worksPosition = null;
     private ?int $seriesId = null;
@@ -193,6 +195,22 @@ final class ArtworkFactory extends Factory
         return $this;
     }
 
+    /** Poids emballable, en grammes ; null = non renseigné (2026-10-26). */
+    public function weighing(?int $grams): self
+    {
+        $this->weightGrams = $grams;
+
+        return $this;
+    }
+
+    /** Port établi sur devis : pas de paiement en ligne (2026-10-26). */
+    public function shippingOnQuote(): self
+    {
+        $this->shippingOnQuote = true;
+
+        return $this;
+    }
+
     public function create(int $categoryId): int
     {
         $n = self::next();
@@ -208,7 +226,7 @@ final class ArtworkFactory extends Factory
                  created_at, updated_at)
              VALUES
                 (:category, :series, :reference, :year, :technique, :width, :height, :signed,
-                 :price, :status, 120, :media, :position, :published, :published_at, NOW(), NOW())',
+                 :price, :status, :weight, :media, :position, :published, :published_at, NOW(), NOW())',
             [
                 'category' => $categoryId,
                 'series' => $this->seriesId,
@@ -220,6 +238,7 @@ final class ArtworkFactory extends Factory
                 'signed' => $this->signed ? 1 : 0,
                 'price' => $this->priceCents,
                 'status' => $this->status->value,
+                'weight' => $this->weightGrams,
                 'media' => $this->primaryMediaId,
                 'position' => $this->position,
                 'published' => $this->published ? 1 : 0,
@@ -231,6 +250,10 @@ final class ArtworkFactory extends Factory
 
         if ($this->oversized) {
             $this->insert('UPDATE artworks SET is_oversized = 1 WHERE id = :id', ['id' => $id]);
+        }
+
+        if ($this->shippingOnQuote) {
+            $this->insert('UPDATE artworks SET shipping_on_quote = 1 WHERE id = :id', ['id' => $id]);
         }
 
         if ($this->worksPosition !== null) {

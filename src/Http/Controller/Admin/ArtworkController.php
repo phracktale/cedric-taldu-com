@@ -45,6 +45,9 @@ use App\Service\View\AdminChrome;
  */
 final class ArtworkController
 {
+    /** Message en tête de formulaire quand un champ porte une erreur. */
+    private const FIELD_ERRORS = 'Le formulaire contient une erreur : voyez le champ signalé.';
+
     private const FIELDS = [
         'eyebrow' => 'surtitre',
         'title' => 'titre',
@@ -204,6 +207,11 @@ final class ArtworkController
             return $this->form($request, null, $erreur, 422);
         }
 
+        $erreurs = $this->fieldErrors($request);
+        if ($erreurs !== []) {
+            return $this->form($request, null, self::FIELD_ERRORS, 422, $erreurs);
+        }
+
         $translations = $this->collect($request);
 
         if ($translations === []) {
@@ -250,6 +258,11 @@ final class ArtworkController
 
         if ($erreur !== null) {
             return $this->form($request, $existing, $erreur, 422);
+        }
+
+        $erreurs = $this->fieldErrors($request);
+        if ($erreurs !== []) {
+            return $this->form($request, $existing, self::FIELD_ERRORS, 422, $erreurs);
         }
 
         $translations = $this->collect($request);
@@ -420,6 +433,33 @@ final class ArtworkController
     }
 
     /**
+     * Erreurs rattachées à un champ, affichées sous lui.
+     *
+     * Le poids (2026-10-26) : sans lui le port ne se calcule pas, et une œuvre
+     * en vente ne pourrait pas être payée — constaté en production le
+     * 2026-10-20. Il n'est pas demandé si le port est établi sur devis (case
+     * cochée), ni pour une œuvre qui n'est pas en vente.
+     *
+     * @return array<string, string>
+     */
+    private function fieldErrors(Request $request): array
+    {
+        $status = ArtworkStatus::tryFrom($request->input('statut') ?? '') ?? ArtworkStatus::Draft;
+        $enVente = in_array($status, [ArtworkStatus::Available, ArtworkStatus::Reserved], true);
+
+        if (
+            $enVente
+            && $request->input('port_sur_devis') === null
+            && $request->input('hors_gabarit') === null
+            && self::positiveInt($request->input('poids')) === null
+        ) {
+            return ['poids' => 'Indiquez le poids emballé, ou cochez « Port sur devis ».'];
+        }
+
+        return [];
+    }
+
+    /**
      * @return array<string, mixed>
      *
      * @throws UploadRejected si un fichier de couverture joint est refuse
@@ -439,6 +479,7 @@ final class ArtworkController
             'height_mm' => self::positiveInt($request->input('hauteur')),
             'depth_mm' => self::positiveInt($request->input('profondeur')),
             'is_oversized' => $request->input('hors_gabarit') !== null,
+            'shipping_on_quote' => $request->input('port_sur_devis') !== null,
             'is_signed' => $request->input('signee') !== null,
             'price_cents' => self::priceInCents($request->input('prix') ?? ''),
             // Liste close : la valeur finit dans un ENUM, et un ENUM refuse ce
@@ -452,9 +493,15 @@ final class ArtworkController
 
     /**
      * @param array<string, mixed>|null $artwork
+     * @param array<string, string>     $erreurs erreurs par champ
      */
-    private function form(Request $request, ?array $artwork, ?string $erreur = null, int $status = 200): Response
-    {
+    private function form(
+        Request $request,
+        ?array $artwork,
+        ?string $erreur = null,
+        int $status = 200,
+        array $erreurs = [],
+    ): Response {
         return $this->chrome->page($request, 'admin/oeuvres/formulaire', [
             'titre' => $artwork === null ? 'Nouvelle œuvre' : 'Modifier l’œuvre',
             'oeuvre' => $artwork,
@@ -463,6 +510,7 @@ final class ArtworkController
             'series' => $this->series->findAll(),
             'statuts' => ArtworkStatus::cases(),
             'erreur' => $erreur,
+            'erreurs' => $erreurs,
             'saisie' => $request->post,
             'apercu' => $artwork === null ? null : $this->previewUrl($artwork),
         ], $status);

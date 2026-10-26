@@ -94,6 +94,12 @@ final class ShippingPricer
         // franco reste apprécié sur le sous-total complet, comme aujourd'hui.
         $artist = Money::zero();
 
+        // Port sur devis choisi pour une œuvre (2026-10-26) : aucun barème ne
+        // s'applique, la commande passe par un message.
+        if (array_filter($studio, static fn (ValuedLine $line): bool => $line->item->isShippingOnQuote) !== []) {
+            return ShippingQuote::onRequest(null);
+        }
+
         if ($studio !== []) {
             $quote = $this->shipping->calculator()->quote(
                 ShippingMethod::Shipping,

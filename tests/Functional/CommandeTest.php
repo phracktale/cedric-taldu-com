@@ -346,6 +346,49 @@ final class CommandeTest extends FunctionalTestCase
         $this->assertSame(0, (int) $this->valeur('SELECT COUNT(*) FROM orders'));
     }
 
+    // ------------------------------------------- port sur devis (2026-10-26)
+
+    public function test_une_oeuvre_au_port_sur_devis_ne_se_paie_pas_en_ligne(): void
+    {
+        // Constaté en production le 2026-10-20 : le bouton de paiement
+        // renvoyait au panier sans un mot. Le tunnel dit désormais pourquoi, et
+        // mène au formulaire de contact, pré-rempli avec l'œuvre.
+        $cookie = $this->ajouter('original', (new ArtworkFactory($this->pdo))->published()->available()->priced(45000)
+            ->translated('fr', 'grand-format', 'Grand format')->shippingOnQuote()->create($this->categoryId));
+
+        $reponse = $this->requete('GET', '/cedric-taldu/fr/commande', cookies: [self::COOKIE => $cookie]);
+
+        $this->assertSame(200, $reponse->status);
+        $this->assertStringContainsString('Les frais de port de « Grand format » sont établis sur devis', $reponse->body);
+        $this->assertStringContainsString('href="/cedric-taldu/fr/contact?oeuvre=grand-format"', $reponse->body);
+        $this->assertStringNotContainsString('commande-payer', $reponse->body);
+    }
+
+    public function test_une_oeuvre_sans_poids_ne_se_paie_pas_en_ligne(): void
+    {
+        $cookie = $this->ajouter('original', (new ArtworkFactory($this->pdo))->published()->available()->priced(40000)
+            ->translated('fr', 'paysage-2', 'Paysage 2')->weighing(null)->create($this->categoryId));
+
+        $reponse = $this->requete('GET', '/cedric-taldu/fr/commande', cookies: [self::COOKIE => $cookie]);
+
+        $this->assertStringContainsString('Les frais de port de « Paysage 2 » sont établis sur devis', $reponse->body);
+        $this->assertStringNotContainsString('commande-payer', $reponse->body);
+    }
+
+    public function test_une_commande_au_port_sur_devis_est_refusee_avec_une_explication(): void
+    {
+        // Le formulaire envoyé malgré tout (page ancienne, double onglet) : plus
+        // de renvoi muet au panier, une explication, et aucune commande.
+        $cookie = $this->ajouter('original', (new ArtworkFactory($this->pdo))->published()->available()->priced(45000)
+            ->translated('fr', 'grand-format', 'Grand format')->shippingOnQuote()->create($this->categoryId));
+
+        $reponse = $this->commander($cookie);
+
+        $this->assertSame(422, $reponse->status);
+        $this->assertStringContainsString('Les frais de port de cette commande sont établis sur devis', $reponse->body);
+        $this->assertSame(0, (int) $this->valeur('SELECT COUNT(*) FROM orders'));
+    }
+
     public function test_un_honeypot_rempli_est_rejete_sans_creer_de_commande(): void
     {
         // 06-securite §6.1 : champ masqué rempli → rejet, sans informer le robot.

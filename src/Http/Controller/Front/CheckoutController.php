@@ -22,6 +22,7 @@ use App\Domain\Shipping\ShippingMethod;
 use App\Domain\Shop\Cart;
 use App\Domain\Shop\CartValuation;
 use App\Domain\Shop\PricingPolicy;
+use App\Repository\ArtworkRepository;
 use App\Repository\CartRepository;
 use App\Repository\OrderRepository;
 use App\Repository\SettingRepository;
@@ -71,6 +72,7 @@ final class CheckoutController
         private readonly SettingRepository $settings,
         private readonly CarrierRegistry $carriers,
         private readonly Newsletter $newsletter,
+        private readonly ArtworkRepository $artworks,
     ) {
     }
 
@@ -186,8 +188,10 @@ final class CheckoutController
             // Le panier a change ou ne couvre pas l'expedition : on y renvoie,
             // les messages seront affiches a l'arrivee.
             CheckoutOutcome::CartChanged,
-            CheckoutOutcome::EmptyCart,
-            CheckoutOutcome::ShippingOnRequest => $this->toCart($locale),
+            CheckoutOutcome::EmptyCart => $this->toCart($locale),
+            // Port sur devis (constaté en production le 2026-10-20) : plus de
+            // renvoi muet au panier — le tunnel dit pourquoi, et où écrire.
+            CheckoutOutcome::ShippingOnRequest => $this->rejectForm($request, $locale, null, ['quoteRejected' => true]),
         };
     }
 
@@ -255,14 +259,17 @@ final class CheckoutController
         );
     }
 
-    private function rejectForm(Request $request, Locale $locale, string $message): Response
+    /**
+     * @param array<string, mixed> $extra
+     */
+    private function rejectForm(Request $request, Locale $locale, ?string $message, array $extra = []): Response
     {
         $cart = $this->cart($request, $locale);
         $valuation = PricingPolicy::value($cart, $this->carts->catalogueFor($cart, new DateTimeImmutable()));
 
         return Response::html($this->view->render(
             'front/checkout',
-            [...$this->viewData($request, $locale, $valuation), 'error' => $message],
+            [...$this->viewData($request, $locale, $valuation), 'error' => $message, ...$extra],
             layout: 'layouts/public',
         ), 422);
     }
@@ -324,6 +331,30 @@ final class CheckoutController
                 $valuation->lines,
                 static fn ($line): bool => $line->item->isOversized,
             ) !== [],
+            ...$this->shippingQuote($valuation, $locale),
+        ];
+    }
+
+    /**
+     * Œuvres dont le port est établi sur devis (2026-10-26) : leur titre, et le
+     * formulaire de contact pré-rempli avec la première. Le tunnel le dit au
+     * lieu d'offrir un paiement qui ne pourrait pas aboutir.
+     *
+     * @return array{quoteItems: list<string>, quoteContactUrl: string}
+     */
+    private function shippingQuote(CartValuation $valuation, Locale $locale): array
+    {
+        $lines = array_values(array_filter(
+            $valuation->lines,
+            static fn ($line): bool => $line->item->needsShippingQuote(),
+        ));
+
+        $contact = $this->url->route('contact.form', ['locale' => $locale->value]);
+        $first = $lines === [] ? null : $this->artworks->findById($lines[0]->item->targetId);
+
+        return [
+            'quoteItems' => array_map(static fn ($line): string => $line->item->label, $lines),
+            'quoteContactUrl' => $first === null ? $contact : $contact . '?oeuvre=' . rawurlencode($first->slug($locale)->value),
         ];
     }
 
