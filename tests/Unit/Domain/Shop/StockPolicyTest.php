@@ -43,6 +43,25 @@ final class StockPolicyTest extends TestCase
         $this->assertSame(0, StockPolicy::allowedQuantity($this->original(sellable: false), 1));
     }
 
+    // ------------------------------- œuvres en plusieurs exemplaires (2026-10-27)
+
+    public function test_une_oeuvre_en_quantite_s_achete_dans_la_limite_du_stock(): void
+    {
+        $this->assertSame(3, StockPolicy::allowedQuantity($this->exemplaires(stock: 5), 3));
+        $this->assertSame(2, StockPolicy::allowedQuantity($this->exemplaires(stock: 2), 4));
+    }
+
+    public function test_une_oeuvre_en_quantite_epuisee_n_est_plus_achetable(): void
+    {
+        $this->assertSame(0, StockPolicy::allowedQuantity($this->exemplaires(stock: 0), 1));
+    }
+
+    public function test_une_oeuvre_illimitee_n_est_bornee_que_par_la_borne_de_ligne(): void
+    {
+        $this->assertSame(12, StockPolicy::allowedQuantity($this->exemplaires(stock: null), 12));
+        $this->assertSame(99, StockPolicy::allowedQuantity($this->exemplaires(stock: null), 500));
+    }
+
     // ---------------------------------------------------------- reproductions
 
     public function test_un_stock_suffisant_laisse_la_quantite_demandee(): void
@@ -143,6 +162,24 @@ final class StockPolicyTest extends TestCase
             isSellable: $sellable,
             stockQty: null,
             editionsRemaining: null,
+        );
+    }
+
+    /** Œuvre vendue en plusieurs exemplaires : stock compté, ou null = illimité. */
+    private function exemplaires(?int $stock): PurchasableItem
+    {
+        return new PurchasableItem(
+            kind: LineKind::Original,
+            targetId: 53,
+            label: 'Livre d’artiste',
+            sku: null,
+            unitPrice: Money::fromCents(3500),
+            vatCategory: VatCategory::OriginalArtwork,
+            weightGrams: 400,
+            isSellable: true,
+            stockQty: $stock,
+            editionsRemaining: null,
+            isUniquePiece: false,
         );
     }
 

@@ -6,6 +6,7 @@ namespace App\Repository;
 
 use App\Domain\Catalog\Artwork;
 use App\Domain\Catalog\ArtworkStatus;
+use App\Domain\Catalog\StockMode;
 use App\Domain\Catalog\ArtworkTranslation;
 use App\Domain\Catalog\Dimensions;
 use App\Domain\Catalog\TitleOrder;
@@ -33,7 +34,7 @@ final class ArtworkRepository
 {
     private const SELECT = <<<'SQL'
         SELECT a.id, a.category_id, a.series_id, a.reference, a.year, a.technique,
-               a.width_mm, a.height_mm, a.is_signed, a.price_cents, a.status,
+               a.width_mm, a.height_mm, a.is_signed, a.price_cents, a.status, a.stock_mode, a.stock_qty,
                a.weight_grams, a.is_oversized, a.primary_media_id, a.position,
                t.locale, t.slug, t.eyebrow, t.title, t.description, t.detail,
                t.meta_title, t.meta_description
@@ -462,6 +463,8 @@ final class ArtworkRepository
                     position: (int) $row['position'],
                     translations: new Translations($data['translations']),
                     isOversized: (int) $row['is_oversized'] === 1,
+                    stockMode: StockMode::tryFrom((string) $row['stock_mode']) ?? StockMode::Original,
+                    stockQty: self::nullableInt($row['stock_qty']),
                 );
             },
             $grouped,

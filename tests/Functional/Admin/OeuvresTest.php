@@ -226,6 +226,64 @@ final class OeuvresTest extends AdminTestCase
         $this->assertMatchesRegularExpression('~name="technique_autre"[^>]*value="Graphite sur papier"~', $formulaire);
     }
 
+    // ----------------------------------------------- stock (2026-10-27)
+
+    public function test_le_stock_se_regle_piece_originale_quantite_ou_illimite(): void
+    {
+        $formulaire = $this->requete('GET', self::OEUVRES . '/nouvelle')->body;
+
+        $this->assertStringContainsString('<select id="stock_mode" name="stock_mode">', $formulaire);
+        $this->assertStringContainsString('<option value="original" selected>Pièce originale</option>', $formulaire);
+        $this->assertStringContainsString('<option value="quantity">Quantité en stock</option>', $formulaire);
+        $this->assertStringContainsString('<option value="unlimited">Illimité</option>', $formulaire);
+        $this->assertMatchesRegularExpression('~<p class="champ" data-stock-quantite>\s*<label for="stock_qty">~', $formulaire);
+    }
+
+    public function test_une_oeuvre_nait_piece_originale(): void
+    {
+        $this->creer(['reference' => 'CT-ENC-001', 'titre_fr' => 'Articulation']);
+
+        $this->assertSame('original', $this->valeur('SELECT stock_mode FROM artworks'));
+        $this->assertNull($this->valeur('SELECT stock_qty FROM artworks'));
+    }
+
+    public function test_une_oeuvre_en_quantite_enregistre_ses_exemplaires(): void
+    {
+        $this->creer([
+            'reference' => 'CT-LIV-001', 'titre_fr' => 'Livre d’artiste',
+            'stock_mode' => 'quantity', 'stock_qty' => '12',
+        ]);
+
+        $this->assertSame('quantity', $this->valeur('SELECT stock_mode FROM artworks'));
+        $this->assertSame('12', $this->valeur('SELECT stock_qty FROM artworks'));
+    }
+
+    public function test_une_quantite_sans_nombre_est_refusee_sur_le_champ(): void
+    {
+        $reponse = $this->creer([
+            'reference' => 'CT-LIV-001', 'titre_fr' => 'Livre d’artiste',
+            'stock_mode' => 'quantity', 'stock_qty' => '',
+        ]);
+
+        $this->assertSame(422, $reponse->status);
+        $this->assertMatchesRegularExpression(
+            '~name="stock_qty"[^>]*aria-invalid="true"[^>]*>\s*<span class="champ-erreur" role="alert">Indiquez le nombre d’exemplaires en stock \(0 ou plus\).</span>~',
+            $reponse->body,
+        );
+        $this->assertSame(0, $this->compter('artworks'));
+    }
+
+    public function test_une_oeuvre_illimitee_n_a_pas_de_quantite(): void
+    {
+        $this->creer([
+            'reference' => 'CT-LIV-001', 'titre_fr' => 'Livre d’artiste',
+            'stock_mode' => 'unlimited', 'stock_qty' => '7',
+        ]);
+
+        $this->assertSame('unlimited', $this->valeur('SELECT stock_mode FROM artworks'));
+        $this->assertNull($this->valeur('SELECT stock_qty FROM artworks'));
+    }
+
     public function test_une_oeuvre_nait_en_brouillon_et_non_publiee(): void
     {
         // Rien ne se publie par accident : la fiche est invisible tant que

@@ -86,24 +86,27 @@ final class CartTest extends TestCase
         $this->assertSame(5, $panier->lines[0]->quantity);
     }
 
-    public function test_la_quantite_d_un_original_est_bornee_a_un(): void
+    public function test_la_quantite_d_une_ligne_d_oeuvre_a_une_borne_technique(): void
     {
-        // Une piece unique : 03-boutique §2 et l'invariant 01-modele §7.1.
-        $panier = Cart::empty('jeton', Locale::Fr)->add(LineKind::Original, 7, 4);
+        // Depuis le 2026-10-27, une œuvre peut se vendre en plusieurs
+        // exemplaires : le panier ne sait pas laquelle est une pièce unique.
+        // L'unicité se règle sur l'article, à la revalidation (StockPolicy) ;
+        // le panier ne garde qu'une borne technique.
+        $panier = Cart::empty('jeton', Locale::Fr)->add(LineKind::Original, 7, 500);
 
-        $this->assertSame(1, $panier->lines[0]->quantity);
+        $this->assertSame(99, $panier->lines[0]->quantity);
     }
 
-    public function test_une_oeuvre_originale_ne_figure_qu_une_fois(): void
+    public function test_une_oeuvre_ne_figure_qu_une_fois(): void
     {
-        // Contrainte d'unicite en base (03-boutique §2) : deux ajouts du meme
-        // original restent une seule ligne a la quantite 1.
+        // Contrainte d'unicite en base (03-boutique §2) : deux ajouts de la
+        // meme œuvre restent une seule ligne, dont la quantite s'additionne.
         $panier = Cart::empty('jeton', Locale::Fr)
             ->add(LineKind::Original, 7, 1)
             ->add(LineKind::Original, 7, 1);
 
         $this->assertCount(1, $panier->lines);
-        $this->assertSame(1, $panier->lines[0]->quantity);
+        $this->assertSame(2, $panier->lines[0]->quantity);
     }
 
     public function test_une_quantite_nulle_a_l_ajout_est_refusee(): void
@@ -228,7 +231,7 @@ final class CartTest extends TestCase
 
     public function test_chaque_genre_porte_sa_propre_borne(): void
     {
-        $this->assertSame(1, LineKind::Original->maxQuantityPerLine());
+        $this->assertSame(99, LineKind::Original->maxQuantityPerLine());
         $this->assertSame(5, LineKind::Reproduction->maxQuantityPerLine());
     }
 }

@@ -54,6 +54,30 @@ final class PricingPolicyTest extends TestCase
         $this->assertSame(45000, $valorisation->lines[0]->total->cents);
     }
 
+    public function test_une_piece_unique_ajoutee_deux_fois_revient_a_un_sans_avertissement(): void
+    {
+        // Le panier ne borne plus les œuvres à un (2026-10-27) : la pièce
+        // unique l'est ici, en silence, comme avant — rien n'a « changé ».
+        $panier = Cart::empty('jeton', Locale::Fr)->add(LineKind::Original, 7, 1)->add(LineKind::Original, 7, 1);
+
+        $valorisation = PricingPolicy::value($panier, new ItemCatalogue($this->original()));
+
+        $this->assertSame(1, $valorisation->lines[0]->quantity);
+        $this->assertSame(1, $valorisation->cart->lines[0]->quantity);
+        $this->assertSame([], $valorisation->notices);
+    }
+
+    public function test_une_oeuvre_en_quantite_se_valorise_au_nombre_d_exemplaires(): void
+    {
+        $panier = Cart::empty('jeton', Locale::Fr)->add(LineKind::Original, 53, 3);
+
+        $valorisation = PricingPolicy::value($panier, new ItemCatalogue($this->exemplaires(stock: 2)));
+
+        $this->assertSame(2, $valorisation->lines[0]->quantity);
+        $this->assertSame(7000, $valorisation->subtotal->cents);
+        $this->assertSame(\App\Domain\Shop\CartNoticeReason::Reduced, $valorisation->notices[0]->reason);
+    }
+
     public function test_le_total_d_une_ligne_est_le_prix_unitaire_fois_la_quantite(): void
     {
         $panier = Cart::empty('jeton', Locale::Fr)->add(LineKind::Reproduction, 12, 3);
@@ -259,6 +283,24 @@ final class PricingPolicyTest extends TestCase
             isSellable: $vendable,
             stockQty: null,
             editionsRemaining: null,
+        );
+    }
+
+    /** Œuvre vendue en plusieurs exemplaires (2026-10-27). */
+    private function exemplaires(?int $stock): PurchasableItem
+    {
+        return new PurchasableItem(
+            kind: LineKind::Original,
+            targetId: 53,
+            label: 'Livre d’artiste',
+            sku: null,
+            unitPrice: Money::fromCents(3500),
+            vatCategory: VatCategory::OriginalArtwork,
+            weightGrams: 400,
+            isSellable: true,
+            stockQty: $stock,
+            editionsRemaining: null,
+            isUniquePiece: false,
         );
     }
 

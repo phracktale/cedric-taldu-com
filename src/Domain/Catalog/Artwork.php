@@ -40,6 +40,10 @@ final class Artwork
         public readonly Translations $translations,
         /** Hors gabarit (revue du 2026-09-24) : livraison sur rendez-vous. */
         public readonly bool $isOversized = false,
+        /** Stock (2026-10-27) : pièce originale, quantité ou illimité. */
+        public readonly StockMode $stockMode = StockMode::Original,
+        /** Exemplaires restants, en quantité seulement. */
+        public readonly ?int $stockQty = null,
     ) {
     }
 
@@ -53,7 +57,54 @@ final class Artwork
      */
     public function isPurchasable(): bool
     {
-        return $this->status->isPurchasable() && $this->price !== null;
+        return $this->isInStock() && $this->price !== null;
+    }
+
+    /**
+     * Disponible et pas épuisée : une œuvre en quantité sans exemplaire
+     * restant ne se vend plus, quel que soit son statut (2026-10-27).
+     */
+    public function isInStock(): bool
+    {
+        return $this->status->isPurchasable()
+            && ($this->stockMode !== StockMode::Quantity || ($this->stockQty ?? 0) > 0);
+    }
+
+    /** Disponibilité annoncée à Google (schema.org), stock compris. */
+    public function schemaAvailability(): string
+    {
+        return $this->isInStock() ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut';
+    }
+
+    /** « 3 exemplaires disponibles » — seulement pour une œuvre en quantité. */
+    public function copiesLeft(Locale $locale): ?string
+    {
+        if ($this->stockMode !== StockMode::Quantity || ($this->stockQty ?? 0) <= 0) {
+            return null;
+        }
+
+        $n = (int) $this->stockQty;
+
+        return $locale === Locale::Fr
+            ? $n . ($n === 1 ? ' exemplaire disponible' : ' exemplaires disponibles')
+            : $n . ($n === 1 ? ' copy available' : ' copies available');
+    }
+
+    /**
+     * Statut affiché : des exemplaires qui manquent sont « épuisés », pas
+     * « vendus » — ce mot reste aux pièces originales.
+     */
+    public function statusLabel(Locale $locale): string
+    {
+        $epuisee = !$this->stockMode->isUnique()
+            && ($this->status === ArtworkStatus::Sold
+                || ($this->stockMode === StockMode::Quantity && ($this->stockQty ?? 0) <= 0));
+
+        if ($epuisee) {
+            return $locale === Locale::Fr ? 'Épuisé' : 'Sold out';
+        }
+
+        return $this->status->label($locale);
     }
 
     public function hasPrice(): bool
@@ -103,8 +154,15 @@ final class Artwork
             ? ($fr ? 'œuvre de ' : 'artwork by ') . $artist
             : $matiere . ($fr ? ' de ' : ' by ') . $artist;
 
-        return $this->title($locale) . ', ' . $auteur
-            . ($this->year === null ? '' : ', ' . $this->year) . '. '
+        $phrase = $this->title($locale) . ', ' . $auteur
+            . ($this->year === null ? '' : ', ' . $this->year) . '.';
+
+        // Des exemplaires ne sont ni une œuvre originale ni une pièce unique.
+        if (!$this->stockMode->isUnique()) {
+            return $phrase;
+        }
+
+        return $phrase . ' '
             . ($fr ? 'Œuvre originale, pièce unique' : 'Original artwork, one of a kind')
             . ($this->isSigned ? ($fr ? ', signée' : ', signed') : '')
             . ($fr ? ', avec certificat d’authenticité.' : ', with certificate of authenticity.');

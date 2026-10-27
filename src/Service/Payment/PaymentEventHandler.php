@@ -13,6 +13,7 @@ use App\Repository\OrderRepository;
 use App\Repository\PersistedOrder;
 use App\Repository\StockRepository;
 use App\Repository\StripeEventRepository;
+use App\Domain\Catalog\StockMode;
 use App\Service\Fulfillment\FulfillmentService;
 use App\Service\StaticSite\Invalidator;
 use App\Service\Mail\OrderMailer;
@@ -292,7 +293,7 @@ final class PaymentEventHandler
 
         foreach ($order->lines as $line) {
             if ($line->kind === LineKind::Original) {
-                $this->fulfilOriginal($order, $line->id, $line->artworkId);
+                $this->fulfilOriginal($order, $line->id, $line->artworkId, $line->quantity);
 
                 continue;
             }
@@ -303,9 +304,25 @@ final class PaymentEventHandler
         return WebhookOutcome::Processed;
     }
 
-    private function fulfilOriginal(PersistedOrder $order, int $lineId, ?int $artworkId): void
+    private function fulfilOriginal(PersistedOrder $order, int $lineId, ?int $artworkId, int $quantity): void
     {
         if ($artworkId === null) {
+            return;
+        }
+
+        // Stock de l'œuvre (2026-10-27) : une pièce originale se vend une fois,
+        // des exemplaires se décomptent, l'illimité ne bouge pas.
+        $mode = $this->stock->stockModeOf($artworkId) ?? StockMode::Original;
+
+        if ($mode === StockMode::Unlimited) {
+            return;
+        }
+
+        if ($mode === StockMode::Quantity) {
+            if (!$this->stock->decrementArtworkStock($artworkId, $quantity)) {
+                $this->flag($order, $lineId, 'stock_missing', 'stock insuffisant au moment du paiement');
+            }
+
             return;
         }
 

@@ -28,6 +28,8 @@ final class ArtworkFactory extends Factory
     private bool $oversized = false;
     private ?int $weightGrams = 120;
     private bool $shippingOnQuote = false;
+    /** @var array{0: string, 1: int|null}|null mode de stock et quantité (2026-10-27) */
+    private ?array $stock = null;
     private int $position = 0;
     private ?int $worksPosition = null;
     private ?int $seriesId = null;
@@ -211,6 +213,14 @@ final class ArtworkFactory extends Factory
         return $this;
     }
 
+    /** Stock : 'original' (défaut), 'quantity' avec un nombre d'exemplaires, 'unlimited'. */
+    public function stock(string $mode, ?int $quantity = null): self
+    {
+        $this->stock = [$mode, $quantity];
+
+        return $this;
+    }
+
     public function create(int $categoryId): int
     {
         $n = self::next();
@@ -254,6 +264,13 @@ final class ArtworkFactory extends Factory
 
         if ($this->shippingOnQuote) {
             $this->insert('UPDATE artworks SET shipping_on_quote = 1 WHERE id = :id', ['id' => $id]);
+        }
+
+        if ($this->stock !== null) {
+            $this->insert(
+                'UPDATE artworks SET stock_mode = :mode, stock_qty = :qty WHERE id = :id',
+                ['mode' => $this->stock[0], 'qty' => $this->stock[1], 'id' => $id],
+            );
         }
 
         if ($this->worksPosition !== null) {

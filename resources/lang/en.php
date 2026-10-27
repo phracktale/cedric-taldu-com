@@ -145,6 +145,9 @@ return [
     'artwork.original_available' => 'Original available',
     'artwork.original_heading' => 'Original artwork — unique piece',
     'artwork.acquire_original' => 'Acquire the original',
+    // Copies sold in quantity (2026-10-27).
+    'artwork.copies_heading' => 'For sale',
+    'artwork.add_to_cart' => 'Add to cart',
     'artwork.prints_heading' => 'Prints of this work',
     'artwork.fine_art_heading' => 'Fine art print',
     'artwork.fine_art_desc' => 'Fine art print on demand — choose the size.',
