@@ -209,6 +209,57 @@ final class PaymentEventHandlerTest extends DatabaseTestCase
         $this->assertSame('paid', $this->valeur("SELECT status FROM orders WHERE id = {$commande->id}"));
     }
 
+    // ------------------------- œuvres en plusieurs exemplaires (2026-10-27)
+
+    public function test_une_vente_en_quantite_decompte_le_stock_sans_vendre_l_oeuvre(): void
+    {
+        $commande = $this->commandeExemplaires('quantity', stock: 5, quantite: 2);
+
+        $this->traiter($commande->reference, $commande->id);
+
+        $this->assertSame('3', $this->valeur("SELECT stock_qty FROM artworks WHERE id = {$this->artwork}"));
+        $this->assertSame('available', $this->valeur("SELECT status FROM artworks WHERE id = {$this->artwork}"));
+    }
+
+    public function test_le_dernier_exemplaire_vendu_epuise_l_oeuvre(): void
+    {
+        $commande = $this->commandeExemplaires('quantity', stock: 2, quantite: 2);
+
+        $this->traiter($commande->reference, $commande->id);
+
+        $this->assertSame('0', $this->valeur("SELECT stock_qty FROM artworks WHERE id = {$this->artwork}"));
+        $this->assertSame('sold', $this->valeur("SELECT status FROM artworks WHERE id = {$this->artwork}"));
+    }
+
+    public function test_un_stock_d_exemplaires_insuffisant_met_la_commande_en_anomalie(): void
+    {
+        // Deux acheteurs ont payé le même dernier exemplaire : le second garde
+        // sa commande payée, signalée pour remboursement, comme une reproduction.
+        $commande = $this->commandeExemplaires('quantity', stock: 3, quantite: 3);
+        $this->pdo->exec("UPDATE artworks SET stock_qty = 1 WHERE id = {$this->artwork}");
+
+        $this->traiter($commande->reference, $commande->id);
+
+        $this->assertSame('paid', $this->valeur("SELECT status FROM orders WHERE id = {$commande->id}"));
+        $this->assertSame('stock_missing', $this->valeur(
+            "SELECT anomaly FROM order_items WHERE order_id = {$commande->id} AND kind = 'original'"
+        ));
+        $this->assertSame('1', $this->valeur("SELECT stock_qty FROM artworks WHERE id = {$this->artwork}"));
+    }
+
+    public function test_une_vente_illimitee_ne_touche_ni_au_stock_ni_au_statut(): void
+    {
+        $commande = $this->commandeExemplaires('unlimited', stock: null, quantite: 4);
+
+        $this->traiter($commande->reference, $commande->id);
+
+        $this->assertNull($this->valeur("SELECT stock_qty FROM artworks WHERE id = {$this->artwork}"));
+        $this->assertSame('available', $this->valeur("SELECT status FROM artworks WHERE id = {$this->artwork}"));
+        $this->assertNull($this->valeur(
+            "SELECT anomaly FROM order_items WHERE order_id = {$commande->id} AND kind = 'original'"
+        ));
+    }
+
     // --------------------------------------------------------------- anomalies
 
     public function test_une_oeuvre_deja_vendue_marque_la_commande_payee_et_en_anomalie(): void
@@ -645,6 +696,58 @@ final class PaymentEventHandlerTest extends DatabaseTestCase
         (new StockRepository($this->pdo))->reserve(
             $this->artwork,
             new DateTimeImmutable('2026-07-22 10:30:00'),
+            new DateTimeImmutable(self::MAINTENANT),
+        );
+        $this->orders->attachCheckoutSession($commande->id, 'cs_test_' . $commande->id, '2026-07-22 10:30:00');
+
+        return $commande;
+    }
+
+    /**
+     * Commande payable d'une œuvre vendue en exemplaires : pas de réservation,
+     * le stock se décompte au paiement.
+     */
+    private function commandeExemplaires(string $mode, ?int $stock, int $quantite): \App\Repository\PersistedOrder
+    {
+        $this->pdo->prepare('UPDATE artworks SET stock_mode = :m, stock_qty = :q WHERE id = :id')
+            ->execute(['m' => $mode, 'q' => $stock, 'id' => $this->artwork]);
+
+        $valorisation = PricingPolicy::value(
+            Cart::empty('jeton', Locale::Fr)->add(LineKind::Original, $this->artwork, $quantite),
+            new ItemCatalogue(new PurchasableItem(
+                kind: LineKind::Original,
+                targetId: $this->artwork,
+                label: 'Livre d’artiste',
+                sku: null,
+                unitPrice: Money::fromCents(3500),
+                vatCategory: VatCategory::OriginalArtwork,
+                weightGrams: 400,
+                isSellable: true,
+                stockQty: $stock,
+                editionsRemaining: null,
+                isUniquePiece: false,
+            )),
+        );
+
+        $commande = $this->orders->create(
+            OrderDraft::fromValuation(
+                valuation: $valorisation,
+                vat: VatPolicy::apply(
+                    VatMode::Exempt293b,
+                    new VatRateTable(new VatRate(VatCategory::OriginalArtwork, 550, new DateTimeImmutable('2025-01-01'), null)),
+                    new DateTimeImmutable(self::MAINTENANT),
+                    $valorisation->taxableLines(),
+                    Money::zero(),
+                ),
+                locale: Locale::Fr,
+                customerName: 'Acheteur',
+                customerEmail: 'acheteur@example.test',
+                customerPhone: null,
+                shippingMethod: ShippingMethod::Pickup,
+                shippingAddress: null,
+                billingAddress: null,
+                customerNote: null,
+            ),
             new DateTimeImmutable(self::MAINTENANT),
         );
         $this->orders->attachCheckoutSession($commande->id, 'cs_test_' . $commande->id, '2026-07-22 10:30:00');

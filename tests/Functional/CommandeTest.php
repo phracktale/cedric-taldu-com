@@ -346,6 +346,25 @@ final class CommandeTest extends FunctionalTestCase
         $this->assertSame(0, (int) $this->valeur('SELECT COUNT(*) FROM orders'));
     }
 
+    // ------------------------- œuvres en plusieurs exemplaires (2026-10-27)
+
+    public function test_une_oeuvre_en_exemplaires_se_commande_sans_reservation(): void
+    {
+        // Seule une pièce unique se réserve pendant le paiement ; des
+        // exemplaires se décomptent au paiement, comme les reproductions.
+        $livre = (new ArtworkFactory($this->pdo))->published()->available()->priced(3500)->stock('quantity', 5)
+            ->translated('fr', 'livre', 'Livre d’artiste')->create($this->categoryId);
+        $cookie = $this->ajouter('original', $livre);
+        $this->pdo->exec('UPDATE cart_items SET qty = 2');
+
+        $reponse = $this->commander($cookie);
+
+        $this->assertSame(303, $reponse->status);
+        $this->assertSame('2', (string) $this->valeur("SELECT qty FROM order_items WHERE kind = 'original'"));
+        $this->assertSame('available', $this->valeur("SELECT status FROM artworks WHERE id = {$livre}"));
+        $this->assertNull($this->valeur("SELECT reserved_until FROM artworks WHERE id = {$livre}"));
+    }
+
     // ------------------------------------------- port sur devis (2026-10-26)
 
     public function test_une_oeuvre_au_port_sur_devis_ne_se_paie_pas_en_ligne(): void

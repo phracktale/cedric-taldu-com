@@ -8,6 +8,7 @@ use App\Domain\Catalog\Artwork;
 use App\Domain\Catalog\ArtworkStatus;
 use App\Domain\Catalog\ArtworkTranslation;
 use App\Domain\Catalog\Dimensions;
+use App\Domain\Catalog\StockMode;
 use App\Domain\Locale;
 use App\Domain\Money;
 use App\Domain\Slug;
@@ -23,6 +24,8 @@ final class ArtworkTest extends TestCase
         ArtworkStatus $statut = ArtworkStatus::Available,
         ?int $prixCentimes = 45000,
         bool $traduiteEnAnglais = false,
+        StockMode $stock = StockMode::Original,
+        ?int $exemplaires = null,
     ): Artwork {
         $traductions = [
             'fr' => new ArtworkTranslation(
@@ -65,6 +68,48 @@ final class ArtworkTest extends TestCase
             primaryMediaId: 3,
             position: 0,
             translations: new Translations($traductions),
+            stockMode: $stock,
+            stockQty: $exemplaires,
+        );
+    }
+
+    // ------------------------------------- stock (demande du 2026-10-27)
+
+    public function test_une_oeuvre_en_quantite_epuisee_n_est_plus_acquerable(): void
+    {
+        $this->assertTrue($this->oeuvre(stock: StockMode::Quantity, exemplaires: 3)->isPurchasable());
+        $this->assertFalse($this->oeuvre(stock: StockMode::Quantity, exemplaires: 0)->isPurchasable());
+        $this->assertTrue($this->oeuvre(stock: StockMode::Unlimited)->isPurchasable());
+    }
+
+    public function test_la_disponibilite_annoncee_a_google_suit_le_stock(): void
+    {
+        $this->assertSame('https://schema.org/InStock', $this->oeuvre(stock: StockMode::Quantity, exemplaires: 3)->schemaAvailability());
+        $this->assertSame('https://schema.org/SoldOut', $this->oeuvre(stock: StockMode::Quantity, exemplaires: 0)->schemaAvailability());
+        $this->assertSame('https://schema.org/SoldOut', $this->oeuvre(statut: ArtworkStatus::Sold)->schemaAvailability());
+    }
+
+    public function test_les_exemplaires_restants_s_annoncent(): void
+    {
+        $this->assertSame('3 exemplaires disponibles', $this->oeuvre(stock: StockMode::Quantity, exemplaires: 3)->copiesLeft(\App\Domain\Locale::Fr));
+        $this->assertSame('1 exemplaire disponible', $this->oeuvre(stock: StockMode::Quantity, exemplaires: 1)->copiesLeft(\App\Domain\Locale::Fr));
+        $this->assertSame('3 copies available', $this->oeuvre(stock: StockMode::Quantity, exemplaires: 3)->copiesLeft(\App\Domain\Locale::En));
+        $this->assertNull($this->oeuvre(stock: StockMode::Unlimited)->copiesLeft(\App\Domain\Locale::Fr));
+        $this->assertNull($this->oeuvre()->copiesLeft(\App\Domain\Locale::Fr));
+    }
+
+    public function test_une_oeuvre_en_exemplaires_vendue_est_epuisee_et_non_vendue(): void
+    {
+        $this->assertSame('Épuisé', $this->oeuvre(stock: StockMode::Quantity, exemplaires: 0)->statusLabel(\App\Domain\Locale::Fr));
+        $this->assertSame('Sold out', $this->oeuvre(statut: ArtworkStatus::Sold, stock: StockMode::Quantity, exemplaires: 0)->statusLabel(\App\Domain\Locale::En));
+        $this->assertSame(ArtworkStatus::Sold->label(\App\Domain\Locale::Fr), $this->oeuvre(statut: ArtworkStatus::Sold)->statusLabel(\App\Domain\Locale::Fr));
+    }
+
+    public function test_une_oeuvre_en_exemplaires_n_est_pas_decrite_comme_piece_unique(): void
+    {
+        $this->assertSame(
+            'Articulation, encre de Chine sur papier de Cédric Taldu, 2026.',
+            $this->oeuvre(stock: StockMode::Unlimited)->productDescription(\App\Domain\Locale::Fr, 'Cédric Taldu'),
         );
     }
 

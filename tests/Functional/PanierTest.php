@@ -123,6 +123,43 @@ final class PanierTest extends FunctionalTestCase
         $this->assertStringNotContainsString('Articulation', $panier->body ?: 'ok');
     }
 
+    // ------------------------- œuvres en plusieurs exemplaires (2026-10-27)
+
+    public function test_les_exemplaires_d_une_oeuvre_s_additionnent_au_panier(): void
+    {
+        $livre = (new ArtworkFactory($this->pdo))->published()->available()->priced(3500)->stock('quantity', 5)
+            ->translated('fr', 'livre', 'Livre d’artiste')->create($this->categoryId);
+
+        $cookie = $this->cookieApres($this->ajouter(['kind' => 'original', 'id' => (string) $livre]));
+        $this->postPanier('/cedric-taldu/fr/panier/ajout', ['kind' => 'original', 'id' => (string) $livre], $cookie);
+
+        $this->assertSame('2', $this->valeur('SELECT qty FROM cart_items'));
+        $panier = $this->requete('GET', '/cedric-taldu/fr/panier', cookies: [self::COOKIE => $cookie])->body;
+        $this->assertMatchesRegularExpression('~name="quantite"\s+min="0" max="5" value="2"~', $panier);
+    }
+
+    public function test_la_quantite_d_une_oeuvre_en_exemplaires_est_ramenee_au_stock(): void
+    {
+        $livre = (new ArtworkFactory($this->pdo))->published()->available()->priced(3500)->stock('quantity', 2)
+            ->translated('fr', 'livre', 'Livre d’artiste')->create($this->categoryId);
+        $cookie = $this->cookieApres($this->ajouter(['kind' => 'original', 'id' => (string) $livre]));
+
+        $this->postPanier('/cedric-taldu/fr/panier/quantite', ['kind' => 'original', 'id' => (string) $livre, 'quantite' => '4'], $cookie);
+
+        $this->assertSame('2', $this->valeur('SELECT qty FROM cart_items'));
+    }
+
+    public function test_une_piece_originale_reste_a_un_exemplaire_sans_champ_de_quantite(): void
+    {
+        $artwork = $this->oeuvre();
+        $cookie = $this->cookieApres($this->ajouter(['kind' => 'original', 'id' => (string) $artwork]));
+        $this->postPanier('/cedric-taldu/fr/panier/ajout', ['kind' => 'original', 'id' => (string) $artwork], $cookie);
+
+        $this->assertSame('1', $this->valeur('SELECT qty FROM cart_items'));
+        $panier = $this->requete('GET', '/cedric-taldu/fr/panier', cookies: [self::COOKIE => $cookie])->body;
+        $this->assertStringNotContainsString('name="quantite"', $panier);
+    }
+
     public function test_une_ligne_se_retire(): void
     {
         $variant = $this->reproduction();

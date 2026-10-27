@@ -95,6 +95,41 @@ final class FicheOeuvreTest extends FunctionalTestCase
         $this->assertSame(404, $this->get('/cedric-taldu/fr/oeuvre/brouillon')->status);
     }
 
+    // ------------------------- œuvres en plusieurs exemplaires (2026-10-27)
+
+    public function test_une_oeuvre_en_exemplaires_annonce_son_stock_et_s_ajoute_au_panier(): void
+    {
+        $this->oeuvre()->stock('quantity', 3)->translated('fr', 'livre', 'Livre d’artiste')->create($this->rubrique);
+
+        $corps = $this->get('/cedric-taldu/fr/oeuvre/livre')->body;
+
+        $this->assertStringContainsString('<h2>En vente</h2>', $corps);
+        $this->assertStringContainsString('3 exemplaires disponibles', $corps);
+        $this->assertStringContainsString('Ajouter au panier', $corps);
+        $this->assertStringNotContainsString('pièce unique', $corps);
+    }
+
+    public function test_une_oeuvre_en_exemplaires_epuisee_n_est_plus_en_vente(): void
+    {
+        $this->oeuvre()->stock('quantity', 0)->translated('fr', 'livre', 'Livre d’artiste')->create($this->rubrique);
+
+        $corps = $this->get('/cedric-taldu/fr/oeuvre/livre')->body;
+
+        $this->assertStringContainsString('Épuisé', $corps);
+        $this->assertStringNotContainsString('data-cart-add class="achat"', $corps);
+        $this->assertStringContainsString('"availability":"https://schema.org/SoldOut"', $corps);
+    }
+
+    public function test_une_oeuvre_illimitee_reste_en_vente_sans_compteur(): void
+    {
+        $this->oeuvre()->stock('unlimited')->translated('fr', 'livre', 'Livre d’artiste')->create($this->rubrique);
+
+        $corps = $this->get('/cedric-taldu/fr/oeuvre/livre')->body;
+
+        $this->assertStringContainsString('Ajouter au panier', $corps);
+        $this->assertStringNotContainsString('exemplaire', $corps);
+    }
+
     public function test_la_technique_se_lit_dans_la_langue_de_la_page(): void
     {
         // Retours Search Console du 2026-10-26 : « Oil on canvas » sur la page
