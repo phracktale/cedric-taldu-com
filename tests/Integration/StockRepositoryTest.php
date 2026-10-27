@@ -83,19 +83,20 @@ final class StockRepositoryTest extends DatabaseTestCase
         ));
     }
 
-    public function test_une_reservation_sans_echeance_ne_bloque_pas_l_oeuvre(): void
+    public function test_une_reservation_manuelle_ne_se_reprend_pas_au_paiement(): void
     {
-        // Une ligne reserved sans reserved_until est une incoherence de
-        // donnees : ArtworkStatus::effectiveAt() la traite deja comme expiree,
-        // et le depot doit s'aligner. La tenir pour eternelle retirerait la
-        // piece de la vente pour toujours, sans trace ni recours.
+        // 2026-10-27 : « Réservée » sans échéance, c'est l'artiste qui l'a
+        // posée en back-office (un acheteur au téléphone, une exposition).
+        // Le tunnel ne la lui prend pas : seule une réservation de PAIEMENT
+        // échue se reprend.
         $artwork = $this->creerOeuvre(statut: 'reserved');
 
-        $this->assertTrue($this->repository->reserve(
+        $this->assertFalse($this->repository->reserve(
             $artwork,
             new DateTimeImmutable('2026-07-21 15:00:00'),
             now: new DateTimeImmutable('2026-07-21 14:30:00'),
         ));
+        $this->assertSame('reserved', $this->statut($artwork));
     }
 
     public function test_une_oeuvre_vendue_ne_se_reserve_pas(): void

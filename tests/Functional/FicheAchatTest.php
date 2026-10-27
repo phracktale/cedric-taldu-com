@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Functional;
 
+use App\Core\ClockInterface;
 use App\Core\Csrf;
+use Tests\Support\Doubles\FrozenClock;
 use Tests\Support\Factory\ArtworkFactory;
 use Tests\Support\Factory\CategoryFactory;
 use Tests\Support\FunctionalTestCase;
@@ -60,6 +62,31 @@ final class FicheAchatTest extends FunctionalTestCase
 
         $this->assertStringNotContainsString('/panier/ajout', $reponse->body);
         $this->assertStringContainsStringIgnoringCase('vendue', $reponse->body);
+    }
+
+    public function test_une_oeuvre_dont_le_paiement_a_ete_abandonne_se_vend_de_nouveau(): void
+    {
+        // 2026-10-27 : les 30 minutes de réservation sont passées. Même si
+        // Stripe ne prévient pas, la fiche remet l'œuvre en vente.
+        $horloge = new FrozenClock('2026-07-21 09:30:00');
+        $this->withService(ClockInterface::class, static fn (): ClockInterface => $horloge);
+        (new ArtworkFactory($this->pdo))->published()->priced(45000)->reservedUntil('2026-07-21 09:00:00')
+            ->translated('fr', 'articulation', 'Articulation')->create($this->categoryId);
+
+        $reponse = $this->requete('GET', '/cedric-taldu/fr/oeuvre/articulation');
+
+        $this->assertStringContainsString('name="kind" value="original"', $reponse->body);
+    }
+
+    public function test_une_oeuvre_reservee_a_la_main_n_offre_aucun_bouton_d_achat(): void
+    {
+        (new ArtworkFactory($this->pdo))->published()->priced(45000)->reserved()
+            ->translated('fr', 'articulation', 'Articulation')->create($this->categoryId);
+
+        $reponse = $this->requete('GET', '/cedric-taldu/fr/oeuvre/articulation');
+
+        $this->assertStringNotContainsString('name="kind" value="original"', $reponse->body);
+        $this->assertStringContainsString('Réservée', $reponse->body);
     }
 
     public function test_une_oeuvre_sans_prix_n_offre_aucun_bouton_d_achat(): void

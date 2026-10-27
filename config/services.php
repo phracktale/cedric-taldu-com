@@ -331,7 +331,10 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
     );
     $container->set(
         ArtworkRepository::class,
-        static fn (Container $c): ArtworkRepository => new ArtworkRepository($c->get(PDO::class)),
+        static fn (Container $c): ArtworkRepository => new ArtworkRepository(
+            $c->get(PDO::class),
+            $c->get(ClockInterface::class),
+        ),
     );
     $container->set(
         MediaRepository::class,

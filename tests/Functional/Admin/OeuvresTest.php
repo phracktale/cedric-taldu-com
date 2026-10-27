@@ -599,6 +599,41 @@ final class OeuvresTest extends AdminTestCase
         $this->assertSame(404, $this->get('/cedric-taldu/fr/oeuvre/seconde?preview=' . $jeton)->status);
     }
 
+    // -------------------------------------------- réservation (2026-10-27)
+
+    public function test_remettre_en_vente_a_la_main_leve_l_echeance_de_paiement(): void
+    {
+        // L'échéance n'a de sens que pour une réservation de paiement. Laissée
+        // en place, une réservation posée plus tard à la main passerait pour
+        // échue, et l'œuvre se revendrait seule.
+        $id = (new ArtworkFactory($this->pdo))->withReference('CT-ENC-001')->reservedUntil('2026-07-21 10:00:00')
+            ->translated('fr', 'articulation', 'Articulation')->create($this->rubrique);
+
+        $this->modifier($id, [
+            'reference' => 'CT-ENC-001', 'titre_fr' => 'Articulation', 'slug_fr' => 'articulation',
+            'statut' => 'available', 'prix' => '450', 'poids' => '300',
+        ]);
+
+        $this->assertSame('available', $this->valeur('SELECT status FROM artworks'));
+        $this->assertNull($this->valeur('SELECT reserved_until FROM artworks'));
+    }
+
+    public function test_enregistrer_une_oeuvre_en_cours_de_paiement_garde_son_echeance(): void
+    {
+        // Corriger une coquille pendant qu'un client paie ne doit pas changer
+        // sa réservation en réservation manuelle, qui ne tomberait plus.
+        $id = (new ArtworkFactory($this->pdo))->withReference('CT-ENC-001')->reservedUntil('2026-07-21 10:00:00')
+            ->translated('fr', 'articulation', 'Articulation')->create($this->rubrique);
+
+        $this->modifier($id, [
+            'reference' => 'CT-ENC-001', 'titre_fr' => 'Articulation', 'slug_fr' => 'articulation',
+            'statut' => 'reserved', 'prix' => '450', 'poids' => '300',
+        ]);
+
+        $this->assertSame('reserved', $this->valeur('SELECT status FROM artworks'));
+        $this->assertSame('2026-07-21 10:00:00', $this->valeur('SELECT reserved_until FROM artworks'));
+    }
+
     // --------------------------------------------------------- suppression
 
     public function test_une_oeuvre_se_supprime(): void

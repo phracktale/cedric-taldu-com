@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Tests\Integration;
 
 use App\Domain\Catalog\Artwork;
+use App\Domain\Catalog\ArtworkStatus;
 use App\Domain\Catalog\WorksSort;
 use App\Domain\Locale;
 use App\Domain\Slug;
 use App\Repository\ArtworkRepository;
 use Tests\Support\DatabaseTestCase;
+use Tests\Support\Doubles\FrozenClock;
 use Tests\Support\Factory\ArtworkFactory;
 use Tests\Support\Factory\CategoryFactory;
 use Tests\Support\Factory\SeriesFactory;
@@ -23,7 +25,7 @@ final class ArtworkRepositoryTest extends DatabaseTestCase
     {
         parent::setUp();
 
-        $this->depot = new ArtworkRepository($this->pdo);
+        $this->depot = new ArtworkRepository($this->pdo, new FrozenClock('2026-07-21 09:30:00'));
         $this->rubriqueId = (new CategoryFactory($this->pdo))
             ->translated('fr', 'encres', 'Encres')
             ->create();
@@ -41,6 +43,41 @@ final class ArtworkRepositoryTest extends DatabaseTestCase
     private function titres(array $oeuvres): array
     {
         return array_map(static fn (Artwork $o): string => $o->title(Locale::Fr), $oeuvres);
+    }
+
+    // -------------------------------------------- réservations (2026-10-27)
+
+    public function test_une_reservation_de_paiement_echue_se_relit_disponible(): void
+    {
+        // 01-modele §7.3 : l'échéance passée remet l'œuvre en vente À LA
+        // LECTURE. Sans cela, un paiement abandonné dont Stripe ne prévient
+        // pas laissait la fiche en « Réservée », sans bouton, indéfiniment.
+        $this->oeuvre()->reservedUntil('2026-07-21 09:00:00')
+            ->translated('fr', 'articulation', 'Articulation')->create($this->rubriqueId);
+
+        $oeuvre = $this->depot->findBySlug(Locale::Fr, Slug::fromString('articulation'));
+
+        $this->assertSame(ArtworkStatus::Available, $oeuvre?->status);
+    }
+
+    public function test_une_reservation_de_paiement_en_cours_se_relit_reservee(): void
+    {
+        $this->oeuvre()->reservedUntil('2026-07-21 10:00:00')
+            ->translated('fr', 'articulation', 'Articulation')->create($this->rubriqueId);
+
+        $oeuvre = $this->depot->findBySlug(Locale::Fr, Slug::fromString('articulation'));
+
+        $this->assertSame(ArtworkStatus::Reserved, $oeuvre?->status);
+    }
+
+    public function test_une_reservation_manuelle_se_relit_reservee(): void
+    {
+        $this->oeuvre()->reserved()
+            ->translated('fr', 'articulation', 'Articulation')->create($this->rubriqueId);
+
+        $oeuvre = $this->depot->findBySlug(Locale::Fr, Slug::fromString('articulation'));
+
+        $this->assertSame(ArtworkStatus::Reserved, $oeuvre?->status);
     }
 
     // ------------------------------------------ toutes les œuvres (revue 2026-09)

@@ -36,6 +36,7 @@ final class ArtworkFactory extends Factory
     private ?int $primaryMediaId = null;
     private ?string $publishedAt = null;
     private ?string $reference = null;
+    private ?string $reservedUntil = null;
 
     /** @var array<string, array{slug: string, title: string, description: string|null, detail: string|null}> */
     private array $translations = [];
@@ -221,6 +222,18 @@ final class ArtworkFactory extends Factory
         return $this;
     }
 
+    /**
+     * Réservation de PAIEMENT (2026-10-27) : statut réservé avec échéance,
+     * comme la pose StockRepository::reserve. reserved() seul, sans
+     * échéance, est une réservation posée à la main en back-office.
+     */
+    public function reservedUntil(string $instant): self
+    {
+        $this->reservedUntil = $instant;
+
+        return $this->status(ArtworkStatus::Reserved);
+    }
+
     public function create(int $categoryId): int
     {
         $n = self::next();
@@ -270,6 +283,13 @@ final class ArtworkFactory extends Factory
             $this->insert(
                 'UPDATE artworks SET stock_mode = :mode, stock_qty = :qty WHERE id = :id',
                 ['mode' => $this->stock[0], 'qty' => $this->stock[1], 'id' => $id],
+            );
+        }
+
+        if ($this->reservedUntil !== null) {
+            $this->insert(
+                'UPDATE artworks SET reserved_until = :until WHERE id = :id',
+                ['until' => $this->reservedUntil, 'id' => $id],
             );
         }
 

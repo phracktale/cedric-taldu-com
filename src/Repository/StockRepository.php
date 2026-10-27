@@ -52,7 +52,6 @@ final class StockRepository
                 AND (
                     status = :available
                     OR (status = :reserved_now AND reserved_until IS NOT NULL AND reserved_until < :expiry)
-                    OR (status = :reserved_null AND reserved_until IS NULL)
                 )'
         );
 
@@ -62,7 +61,6 @@ final class StockRepository
             'id' => $artworkId,
             'reserved' => ArtworkStatus::Reserved->value,
             'reserved_now' => ArtworkStatus::Reserved->value,
-            'reserved_null' => ArtworkStatus::Reserved->value,
             'available' => ArtworkStatus::Available->value,
             'until' => $until->format('Y-m-d H:i:s'),
             'expiry' => $moment->format('Y-m-d H:i:s'),

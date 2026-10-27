@@ -113,9 +113,9 @@ enum ArtworkStatus: string
      * garanti sur un hebergement mutualise, et sans elle un paiement abandonne
      * bloquerait la piece indefiniment.
      *
-     * Une ligne reserved sans echeance est une incoherence de donnees, traitee
-     * comme expiree : la tenir pour eternelle retirerait la piece de la vente
-     * pour toujours, sans trace.
+     * Une reservation SANS echeance est posee a la main en back-office (2026-10-27) :
+     * le tunnel en pose toujours une. Elle tient jusqu'a ce que l'artiste remette
+     * l'œuvre en vente.
      */
     public function effectiveAt(?DateTimeImmutable $reservedUntil, DateTimeImmutable $now): self
     {
@@ -125,7 +125,7 @@ enum ArtworkStatus: string
 
         // A l'instant exact de l'echeance, la reservation court encore : c'est
         // la borne la plus favorable a l'acheteur en cours de paiement.
-        if ($reservedUntil !== null && $now <= $reservedUntil) {
+        if ($reservedUntil === null || $now <= $reservedUntil) {
             return self::Reserved;
         }
 

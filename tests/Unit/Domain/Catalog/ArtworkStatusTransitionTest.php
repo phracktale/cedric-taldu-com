@@ -157,14 +157,15 @@ final class ArtworkStatusTransitionTest extends TestCase
         $this->assertSame(ArtworkStatus::Reserved, $statut);
     }
 
-    public function test_une_reservation_sans_echeance_ne_bloque_pas_l_oeuvre(): void
+    public function test_une_reservation_sans_echeance_est_une_reservation_manuelle_qui_tient(): void
     {
-        // Une ligne reserved sans reserved_until est une incoherence de
-        // donnees. La traiter comme expiree libere la piece ; la traiter comme
-        // eternelle la retirerait de la vente pour toujours, sans trace.
+        // 2026-10-27 : une réservation de paiement porte toujours une échéance
+        // (StockRepository::reserve). Sans échéance, c'est l'artiste qui a mis
+        // l'œuvre en « Réservée » dans le back-office : elle le reste jusqu'à
+        // ce qu'il la remette en vente, quelle que soit l'heure.
         $statut = ArtworkStatus::Reserved->effectiveAt(null, new DateTimeImmutable('2026-07-21 14:00:00'));
 
-        $this->assertSame(ArtworkStatus::Available, $statut);
+        $this->assertSame(ArtworkStatus::Reserved, $statut);
     }
 
     #[DataProvider('statutsNonReserves')]
