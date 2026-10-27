@@ -65,7 +65,11 @@ final class PricingPolicy
                 continue;
             }
 
-            if ($allowed < $cartLine->quantity) {
+            // Une pièce unique ajoutée deux fois revient à un en silence : rien
+            // n'a changé pour l'acheteur, il n'y en a jamais eu qu'une.
+            $uniqueRamenee = $item->kind === LineKind::Original && $item->isUniquePiece && $allowed === 1;
+
+            if ($allowed < $cartLine->quantity && !$uniqueRamenee) {
                 $notices[] = new CartNotice(
                     $item->kind,
                     $item->targetId,

@@ -103,14 +103,22 @@ $media = $medias[$oeuvre->primaryMediaId] ?? null;
           // pas le même objet. ?>
 
     <section class="achat-oeuvre">
+      <?php // Pièce originale, ou exemplaires (livre, objet) vendus en quantité (2026-10-27). ?>
+      <?php if ($oeuvre->stockMode->isUnique()) : ?>
       <h2><?= $t('artwork.original_heading') ?></h2>
+      <?php else : ?>
+      <h2><?= $t('artwork.copies_heading') ?></h2>
+      <?php endif; ?>
 
       <?php if ($oeuvre->price instanceof Money) : ?>
       <p class="prix"><?= money($oeuvre->price, $locale) ?></p>
       <?php endif; ?>
 
       <?php if ($oeuvre->status->hasBadge()) : ?>
-      <p class="dispo<?= $oeuvre->isPurchasable() ? '' : ' vendue' ?>"><?= e($oeuvre->status->label($locale)) ?></p>
+      <p class="dispo<?= $oeuvre->isPurchasable() ? '' : ' vendue' ?>"><?= e($oeuvre->statusLabel($locale)) ?></p>
+      <?php endif; ?>
+      <?php if ($oeuvre->copiesLeft($locale) !== null) : ?>
+      <p class="exemplaires"><?= e($oeuvre->copiesLeft($locale)) ?></p>
       <?php endif; ?>
       <?php if ($oeuvre->isOversized && $oeuvre->isPurchasable()) : ?>
       <p class="hors-gabarit"><?= $t('artwork.oversized') ?></p>
@@ -124,7 +132,11 @@ $media = $medias[$oeuvre->primaryMediaId] ?? null;
         <input type="hidden" name="_token" value="<?= attr($csrfToken) ?>">
         <input type="hidden" name="kind" value="original">
         <input type="hidden" name="id" value="<?= attr($oeuvre->id) ?>">
+        <?php if ($oeuvre->stockMode->isUnique()) : ?>
         <button type="submit" class="btn btn-plein"><?= $t('artwork.acquire_original') ?></button>
+        <?php else : ?>
+        <button type="submit" class="btn btn-plein"><?= $t('artwork.add_to_cart') ?></button>
+        <?php endif; ?>
         <p class="achat-confirme" role="status" data-cart-confirm hidden>
           <?= $t('cart.added') ?>
           <a href="<?= attr($url->route('cart.show', ['locale' => $locale->value])) ?>"><?= $t('cart.view') ?></a>

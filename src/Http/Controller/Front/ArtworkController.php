@@ -154,7 +154,8 @@ final class ArtworkController
             'widthMm' => $artwork->dimensions?->widthMm,
             'heightMm' => $artwork->dimensions?->heightMm,
             'priceDecimal' => $artwork->price?->decimal(),
-            'availability' => $artwork->status->schemaAvailability(),
+            // Statut ET stock (2026-10-27) : des exemplaires épuisés sont SoldOut.
+            'availability' => $artwork->schemaAvailability(),
             'image' => $image,
         ]);
 

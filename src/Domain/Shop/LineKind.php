@@ -21,7 +21,9 @@ enum LineKind: string
     public function maxQuantityPerLine(): int
     {
         return match ($this) {
-            self::Original => 1,
+            // Borne technique d'une ligne d'œuvre (2026-10-27) : une pièce
+            // unique est ramenée à un par StockPolicy, qui connaît l'article.
+            self::Original => 99,
             self::Reproduction => 5,
         };
     }

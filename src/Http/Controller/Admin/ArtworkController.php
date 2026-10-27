@@ -9,6 +9,7 @@ use App\Core\RedirectResponse;
 use App\Core\Request;
 use App\Core\Response;
 use App\Domain\Catalog\ArtworkStatus;
+use App\Domain\Catalog\StockMode;
 use App\Domain\Catalog\Technique;
 use App\Domain\Catalog\TitleOrder;
 use App\Domain\Catalog\WorksSort;
@@ -433,6 +434,20 @@ final class ArtworkController
         return null;
     }
 
+    /** Mode de stock choisi ; une valeur inconnue retombe sur la pièce originale. */
+    private static function stockMode(Request $request): StockMode
+    {
+        return StockMode::tryFrom(trim($request->input('stock_mode') ?? '')) ?? StockMode::Original;
+    }
+
+    /** Exemplaires en stock : entier positif ou nul, null si absent ou illisible. */
+    private static function stockQuantity(Request $request): ?int
+    {
+        $valeur = trim($request->input('stock_qty') ?? '');
+
+        return preg_match('/^[0-9]{1,6}$/D', $valeur) === 1 ? (int) $valeur : null;
+    }
+
     /**
      * Technique (2026-10-26) : un code de la liste de l'atelier, ou le texte
      * libre de « Autre technique… ». Un ancien libellé envoyé tel quel devient
@@ -461,6 +476,13 @@ final class ArtworkController
      */
     private function fieldErrors(Request $request): array
     {
+        $erreurs = [];
+
+        // Stock (2026-10-27) : en quantité, le nombre d'exemplaires est requis.
+        if (self::stockMode($request) === StockMode::Quantity && self::stockQuantity($request) === null) {
+            $erreurs['stock_qty'] = 'Indiquez le nombre d’exemplaires en stock (0 ou plus).';
+        }
+
         $status = ArtworkStatus::tryFrom($request->input('statut') ?? '') ?? ArtworkStatus::Draft;
         $enVente = in_array($status, [ArtworkStatus::Available, ArtworkStatus::Reserved], true);
 
@@ -470,10 +492,10 @@ final class ArtworkController
             && $request->input('hors_gabarit') === null
             && self::positiveInt($request->input('poids')) === null
         ) {
-            return ['poids' => 'Indiquez le poids emballé, ou cochez « Port sur devis ».'];
+            $erreurs['poids'] = 'Indiquez le poids emballé, ou cochez « Port sur devis ».';
         }
 
-        return [];
+        return $erreurs;
     }
 
     /**
@@ -497,6 +519,9 @@ final class ArtworkController
             'depth_mm' => self::positiveInt($request->input('profondeur')),
             'is_oversized' => $request->input('hors_gabarit') !== null,
             'shipping_on_quote' => $request->input('port_sur_devis') !== null,
+            // Stock (2026-10-27) : la quantité n'a de sens qu'en « quantité en stock ».
+            'stock_mode' => self::stockMode($request)->value,
+            'stock_qty' => self::stockMode($request) === StockMode::Quantity ? self::stockQuantity($request) : null,
             'is_signed' => $request->input('signee') !== null,
             'price_cents' => self::priceInCents($request->input('prix') ?? ''),
             // Liste close : la valeur finit dans un ENUM, et un ENUM refuse ce

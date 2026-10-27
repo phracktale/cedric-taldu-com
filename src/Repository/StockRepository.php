@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Domain\Catalog\ArtworkStatus;
+use App\Domain\Catalog\StockMode;
 use DateTimeImmutable;
 use PDO;
 
@@ -133,6 +134,47 @@ final class StockRepository
      * et le decrement est tout ou rien. Un decrement partiel laisserait une
      * commande a moitie honoree sans que rien ne le dise.
      */
+    /** Mode de stock d'une œuvre (2026-10-27), ou null si elle n'existe plus. */
+    public function stockModeOf(int $artworkId): ?StockMode
+    {
+        $statement = $this->pdo->prepare('SELECT stock_mode FROM artworks WHERE id = :id');
+        $statement->execute(['id' => $artworkId]);
+        $mode = $statement->fetchColumn();
+
+        return $mode === false ? null : StockMode::tryFrom((string) $mode);
+    }
+
+    /**
+     * Décompte des exemplaires d'une œuvre en quantité, en une écriture
+     * conditionnelle comme pour les reproductions : faux si le stock ne suffit
+     * plus. Le dernier exemplaire vendu passe l'œuvre à « vendue » — MySQL
+     * évalue les affectations dans l'ordre, `status` voit le stock déjà réduit.
+     */
+    public function decrementArtworkStock(int $artworkId, int $quantity): bool
+    {
+        if ($quantity < 1) {
+            return false;
+        }
+
+        $statement = $this->pdo->prepare(
+            'UPDATE artworks
+                SET stock_qty = stock_qty - :qty,
+                    status = IF(stock_qty = 0, :sold, status),
+                    updated_at = NOW()
+              WHERE id = :id AND stock_mode = :quantity AND stock_qty >= :required'
+        );
+
+        $statement->execute([
+            'id' => $artworkId,
+            'qty' => $quantity,
+            'required' => $quantity,
+            'sold' => ArtworkStatus::Sold->value,
+            'quantity' => StockMode::Quantity->value,
+        ]);
+
+        return $statement->rowCount() === 1;
+    }
+
     public function decrementStock(int $variantId, int $quantity): bool
     {
         if ($quantity < 1) {

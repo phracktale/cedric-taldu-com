@@ -49,6 +49,12 @@ final class PurchasableItem
         public readonly bool $isOversized = false,
         /** Port établi sur devis (2026-10-26) : pas de paiement en ligne. */
         public readonly bool $isShippingOnQuote = false,
+        /**
+         * Pièce unique (2026-10-27) : une œuvre en « pièce originale » se vend à
+         * un exemplaire et se réserve pendant le paiement. Une œuvre en
+         * quantité ou illimitée, non : elle se compte comme une reproduction.
+         */
+        public readonly bool $isUniquePiece = true,
     ) {
     }
 

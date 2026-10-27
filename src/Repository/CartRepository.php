@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Domain\Catalog\ArtworkStatus;
+use App\Domain\Catalog\StockMode;
 use App\Domain\Locale;
 use App\Domain\Money;
 use App\Domain\Order\VatCategory;
@@ -40,6 +41,7 @@ final class CartRepository
 
     private const SELECT_ARTWORKS = <<<'SQL'
         SELECT a.id, a.price_cents, a.vat_category, a.weight_grams, a.is_oversized, a.shipping_on_quote, a.status,
+               a.stock_mode, a.stock_qty,
                a.reserved_until, a.is_published,
                COALESCE(t.title, r.title) AS title
         FROM artworks a
@@ -324,6 +326,9 @@ final class CartRepository
                 : new DateTimeImmutable((string) $row['reserved_until']);
 
             $price = $row['price_cents'];
+            // Stock (2026-10-27) : pièce originale, exemplaires comptés, ou sans limite.
+            $mode = StockMode::tryFrom((string) $row['stock_mode']) ?? StockMode::Original;
+            $exemplaires = $mode === StockMode::Quantity ? (int) ($row['stock_qty'] ?? 0) : null;
 
             $items[] = new PurchasableItem(
                 kind: LineKind::Original,
@@ -338,11 +343,13 @@ final class CartRepository
                 weightGrams: $row['weight_grams'] === null ? null : (int) $row['weight_grams'],
                 isSellable: (int) $row['is_published'] === 1
                     && $price !== null
-                    && $status->effectiveAt($reservedUntil, $now)->isPurchasable(),
-                stockQty: null,
+                    && $status->effectiveAt($reservedUntil, $now)->isPurchasable()
+                    && ($exemplaires === null || $exemplaires > 0),
+                stockQty: $exemplaires,
                 editionsRemaining: null,
                 isOversized: (int) $row['is_oversized'] === 1,
                 isShippingOnQuote: (int) $row['shipping_on_quote'] === 1,
+                isUniquePiece: $mode->isUnique(),
             );
         }
 

@@ -325,3 +325,23 @@ function montrerAutreTechnique(liste) {
 
 const listeTechniques = document.getElementById('technique');
 if (listeTechniques && listeTechniques.tagName === 'SELECT') montrerAutreTechnique(listeTechniques);
+
+/* ---------------------------------------------------------------- stock */
+
+/**
+ * Formulaire d'œuvre (2026-10-27) : le nombre d'exemplaires n'apparaît que pour
+ * « Quantité en stock ». Sans JavaScript, il reste visible ; le serveur ne le
+ * lit qu'en quantité.
+ */
+function montrerQuantiteEnStock(liste) {
+  const quantite = liste.form ? liste.form.querySelector('[data-stock-quantite]') : null;
+  if (!quantite) return;
+  const appliquer = () => {
+    quantite.hidden = liste.value !== 'quantity';
+  };
+  liste.addEventListener('change', appliquer);
+  appliquer();
+}
+
+const listeStock = document.getElementById('stock_mode');
+if (listeStock) montrerQuantiteEnStock(listeStock);

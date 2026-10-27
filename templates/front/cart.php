@@ -60,12 +60,16 @@ $removeUrl = $url->route('cart.remove', ['locale' => $locale->value]);
           <?php foreach ($valuation->lines as $line) : ?>
             <?php
             $item = $line->item;
+            // Quantité modifiable : reproductions, et œuvres en exemplaires
+            // (2026-10-27) — bornées par leur stock, ou par la borne de ligne.
             $isReproduction = $item->kind === LineKind::Reproduction;
+            $quantiteModifiable = $isReproduction || !$item->isUniquePiece;
+            $quantiteMax = $isReproduction ? 5 : ($item->stockQty ?? $item->kind->maxQuantityPerLine());
             ?>
             <tr>
               <td class="panier-article"><?= e($item->label) ?></td>
               <td class="panier-quantite">
-                <?php if ($isReproduction) : ?>
+                <?php if ($quantiteModifiable) : ?>
                   <form method="post" action="<?= attr($updateUrl) ?>" class="panier-form">
                     <input type="hidden" name="_token" value="<?= attr($csrfToken) ?>">
                     <input type="hidden" name="kind" value="<?= attr($item->kind->value) ?>">
@@ -74,7 +78,7 @@ $removeUrl = $url->route('cart.remove', ['locale' => $locale->value]);
                       <?= $t('cart.quantity') ?>
                     </label>
                     <input type="number" id="qte-<?= attr($item->targetId) ?>" name="quantite"
-                           min="0" max="5" value="<?= attr($line->quantity) ?>" inputmode="numeric">
+                           min="0" max="<?= attr($quantiteMax) ?>" value="<?= attr($line->quantity) ?>" inputmode="numeric">
                     <button type="submit"><?= $t('cart.update') ?></button>
                   </form>
                 <?php else : ?>

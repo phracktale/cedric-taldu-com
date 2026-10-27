@@ -26,7 +26,10 @@ final class StockPolicy
             return 0;
         }
 
-        $allowed = min($requested, $item->kind->maxQuantityPerLine());
+        // Une pièce unique se vend à un exemplaire ; des exemplaires d'œuvre ou
+        // des reproductions, jusqu'à la borne de leur ligne (2026-10-27).
+        $cap = $item->kind === LineKind::Original && $item->isUniquePiece ? 1 : $item->kind->maxQuantityPerLine();
+        $allowed = min($requested, $cap);
 
         // La plus contraignante des bornes gagne, toujours : promettre un
         // numero d'edition qu'on ne peut pas expedier est pire que refuser.

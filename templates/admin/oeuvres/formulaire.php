@@ -39,6 +39,13 @@ if (is_string($saisie['technique'] ?? null)) {
     $techniqueChoisie = $techniqueConnue?->value ?? ($techniqueEnregistree === '' ? '' : 'autre');
     $techniqueAutre = $techniqueConnue === null ? $techniqueEnregistree : '';
 }
+// Stock (2026-10-27) : la saisie renvoyée prime sur l'œuvre enregistrée.
+$stockMode = is_string($saisie['stock_mode'] ?? null)
+    ? $saisie['stock_mode']
+    : (is_string($oeuvre['stock_mode'] ?? null) ? $oeuvre['stock_mode'] : 'original');
+$stockQte = is_string($saisie['stock_qty'] ?? null)
+    ? $saisie['stock_qty']
+    : (is_int($oeuvre['stock_qty'] ?? null) ? (string) $oeuvre['stock_qty'] : '');
 // Port sur devis (2026-10-26) : la saisie renvoyée prime sur l'œuvre enregistrée.
 $surDevis = $saisie !== []
     ? isset($saisie['port_sur_devis'])
@@ -269,6 +276,28 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
                     <span class="champ-erreur" role="alert"><?= e($erreurs['poids']) ?></span>
                     <?php endif; ?>
                     <span class="champ-aide">Sert au calcul des frais de port.</span>
+                </p>
+            </div>
+
+            <?php // 2026-10-27 : stock — pièce originale (unique), exemplaires décomptés, ou illimité. ?>
+            <div class="grille-champs">
+                <p class="champ">
+                    <label for="stock_mode">Stock</label>
+                    <select id="stock_mode" name="stock_mode">
+                        <?php foreach (App\Domain\Catalog\StockMode::cases() as $mode) : ?>
+                        <option value="<?= attr($mode->value) ?>"<?php if ($mode->value === $stockMode) : ?> selected<?php endif; ?>><?= e($mode->adminLabel()) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <span class="champ-aide">Pièce originale : unique, vendue une fois. Quantité : exemplaires décomptés à chaque vente. Illimité : toujours en vente.</span>
+                </p>
+                <?php // Montré seulement pour « Quantité en stock » (admin.js). ?>
+                <p class="champ" data-stock-quantite>
+                    <label for="stock_qty">Exemplaires en stock</label>
+                    <input type="number" id="stock_qty" name="stock_qty" min="0"
+                           value="<?= attr($stockQte) ?>"<?php if (isset($erreurs['stock_qty'])) : ?> aria-invalid="true"<?php endif; ?>>
+                    <?php if (isset($erreurs['stock_qty'])) : ?>
+                    <span class="champ-erreur" role="alert"><?= e($erreurs['stock_qty']) ?></span>
+                    <?php endif; ?>
                 </p>
             </div>
 

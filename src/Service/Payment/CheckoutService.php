@@ -162,7 +162,9 @@ final class CheckoutService
         $reservedUntil = $now->modify('+' . self::RESERVATION_MINUTES . ' minutes');
 
         foreach ($valuation->lines as $line) {
-            if ($line->item->kind !== LineKind::Original) {
+            // Seule une pièce unique se réserve (2026-10-27) : des exemplaires
+            // d'œuvre se décomptent au paiement, comme les reproductions.
+            if ($line->item->kind !== LineKind::Original || !$line->item->isUniquePiece) {
                 continue;
             }
 

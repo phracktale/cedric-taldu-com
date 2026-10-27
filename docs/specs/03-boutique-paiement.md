@@ -4,8 +4,17 @@
 
 | Type de ligne | Source | Quantité | Stock |
 |---|---|---|---|
-| Œuvre originale | `artworks` avec `status = available` et `price_cents` non nul | toujours 1 | unique, par changement de statut |
+| Œuvre — pièce originale | `artworks` avec `status = available`, `price_cents` non nul, `stock_mode = original` | toujours 1 | unique : réservée au paiement, `sold` au webhook |
+| Œuvre — quantité | idem, `stock_mode = quantity` et `stock_qty > 0` | 1 à `stock_qty` | `stock_qty` décrémenté au paiement ; à zéro, `sold` (« Épuisé ») |
+| Œuvre — illimitée | idem, `stock_mode = unlimited` | 1 à 99 | aucun décompte |
 | Reproduction | `product_variants` active d'un `product` publié | 1 à 5 | `stock_qty`, décrémenté au paiement |
+
+Stock d'une œuvre (demande du 2026-10-27) : réglé dans sa fiche, pour vendre aussi un
+objet en plusieurs exemplaires (livre d'artiste…). Le panier ne borne une ligne d'œuvre
+qu'à 99 ; c'est `StockPolicy`, qui connaît l'article, qui ramène une pièce originale à
+un exemplaire. Seule une pièce originale se réserve pendant le paiement ; des
+exemplaires se décomptent au webhook, un stock devenu insuffisant met la ligne en
+anomalie `stock_missing`, comme une reproduction.
 
 Devise unique **EUR**. Les montants sont des entiers de centimes du début à la fin.
 

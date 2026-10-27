@@ -147,6 +147,9 @@ return [
     'artwork.original_available' => 'Original disponible',
     'artwork.original_heading' => 'Œuvre originale — pièce unique',
     'artwork.acquire_original' => 'Acquérir l’œuvre originale',
+    // Exemplaires vendus en quantité (2026-10-27).
+    'artwork.copies_heading' => 'En vente',
+    'artwork.add_to_cart' => 'Ajouter au panier',
     'artwork.prints_heading' => 'Tirages de cette œuvre',
     'artwork.fine_art_heading' => 'Tirage Fine Art',
     'artwork.fine_art_desc' => 'Impression d’art à la demande — choix du format.',
