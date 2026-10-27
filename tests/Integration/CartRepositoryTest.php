@@ -301,6 +301,18 @@ final class CartRepositoryTest extends DatabaseTestCase
         $this->assertTrue($item->isSellable);
     }
 
+    public function test_une_reservation_manuelle_rend_l_oeuvre_indisponible(): void
+    {
+        // 2026-10-27 : sans échéance, la réservation est celle de l'artiste.
+        $artwork = $this->creerOeuvre(statut: 'reserved');
+        $panier = $this->repository->open(null, Locale::Fr)->add(LineKind::Original, $artwork, 1);
+
+        $item = $this->catalogue($panier)->find(LineKind::Original, $artwork);
+
+        $this->assertNotNull($item);
+        $this->assertFalse($item->isSellable);
+    }
+
     public function test_une_reservation_en_cours_rend_l_oeuvre_indisponible(): void
     {
         $artwork = $this->creerOeuvre(statut: 'reserved', reserveJusquA: '2026-07-22 11:00:00');
