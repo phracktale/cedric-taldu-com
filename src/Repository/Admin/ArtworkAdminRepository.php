@@ -222,14 +222,21 @@ final class ArtworkAdminRepository
                 year = :year, technique = :technique, width_mm = :width, height_mm = :height,
                 depth_mm = :depth, is_oversized = :oversized, shipping_on_quote = :on_quote,
                 is_signed = :signed, price_cents = :price, vat_category = :vat,
+                reserved_until = IF(status = :status_kept, reserved_until, NULL),
                 status = :status, stock_mode = :stock_mode, stock_qty = :stock_qty,
                 weight_grams = :weight, primary_media_id = :media,
                 updated_at = :now
               WHERE id = :id'
         );
 
+        // Un statut change a la main leve l'echeance d'une reservation de
+        // paiement (2026-10-27) : sans cela, une reservation posee plus tard a
+        // la main passerait pour echue. MySQL evalue les affectations de
+        // gauche a droite : reserved_until lit donc le statut AVANT sa mise a
+        // jour, d'ou sa place avant status.
         $statement->execute([
             ...$this->bindable($fields),
+            'status_kept' => $fields['status'],
             'now' => self::toSql($now),
             'id' => $id,
         ]);

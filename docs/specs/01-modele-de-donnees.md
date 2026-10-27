@@ -435,7 +435,10 @@ CREATE TABLE contact_messages (
    `available|reserved → sold` s'effectue sous `SELECT ... FOR UPDATE` et échoue si le
    statut a changé entre-temps.
 3. `reserved_until` expiré remet automatiquement l'œuvre en `available` (à la lecture et
-   par la tâche cron), sauf si la commande liée est payée.
+   par la tâche cron), sauf si la commande liée est payée. Une œuvre `reserved` **sans**
+   `reserved_until` a été réservée à la main en back-office : elle reste réservée jusqu'à
+   ce que l'artiste change son statut, et le tunnel ne la reprend pas. Changer le statut
+   en back-office remet `reserved_until` à NULL.
 4. `products.editions_sold` ne peut jamais dépasser `edition_size`.
 5. `product_variants.stock_qty` ne peut jamais devenir négatif : contrainte applicative +
    `UPDATE ... SET stock_qty = stock_qty - :q WHERE id = :id AND stock_qty >= :q` avec

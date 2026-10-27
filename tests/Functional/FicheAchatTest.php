@@ -68,7 +68,8 @@ final class FicheAchatTest extends FunctionalTestCase
     {
         // 2026-10-27 : les 30 minutes de réservation sont passées. Même si
         // Stripe ne prévient pas, la fiche remet l'œuvre en vente.
-        $this->withService(ClockInterface::class, static fn (): ClockInterface => new FrozenClock('2026-07-21 09:30:00'));
+        $horloge = new FrozenClock('2026-07-21 09:30:00');
+        $this->withService(ClockInterface::class, static fn (): ClockInterface => $horloge);
         (new ArtworkFactory($this->pdo))->published()->priced(45000)->reservedUntil('2026-07-21 09:00:00')
             ->translated('fr', 'articulation', 'Articulation')->create($this->categoryId);
 

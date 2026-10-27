@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Core\ClockInterface;
 use App\Domain\Catalog\Artwork;
 use App\Domain\Catalog\ArtworkStatus;
 use App\Domain\Catalog\StockMode;
@@ -15,6 +16,8 @@ use App\Domain\Locale;
 use App\Domain\Money;
 use App\Domain\Slug;
 use App\Domain\Translations;
+use DateTimeImmutable;
+use DateTimeZone;
 use PDO;
 use PDOStatement;
 
@@ -34,7 +37,8 @@ final class ArtworkRepository
 {
     private const SELECT = <<<'SQL'
         SELECT a.id, a.category_id, a.series_id, a.reference, a.year, a.technique,
-               a.width_mm, a.height_mm, a.is_signed, a.price_cents, a.status, a.stock_mode, a.stock_qty,
+               a.width_mm, a.height_mm, a.is_signed, a.price_cents, a.status, a.reserved_until,
+               a.stock_mode, a.stock_qty,
                a.weight_grams, a.is_oversized, a.primary_media_id, a.position,
                t.locale, t.slug, t.eyebrow, t.title, t.description, t.detail,
                t.meta_title, t.meta_description
@@ -55,8 +59,10 @@ final class ArtworkRepository
         'recentes' => 'a.year IS NULL ASC, a.year DESC, a.id DESC',
     ];
 
-    public function __construct(private readonly PDO $pdo)
-    {
+    public function __construct(
+        private readonly PDO $pdo,
+        private readonly ClockInterface $clock,
+    ) {
     }
 
     /**
@@ -440,9 +446,16 @@ final class ArtworkRepository
             );
         }
 
+        // 01-modele §7.3 : une reservation de paiement echue remet l'œuvre en
+        // vente a la lecture, meme si Stripe ne signale pas l'abandon.
+        $now = $this->clock->now();
+
         return array_values(array_map(
-            static function (array $data): Artwork {
+            static function (array $data) use ($now): Artwork {
                 $row = $data['row'];
+                $reservedUntil = $row['reserved_until'] === null
+                    ? null
+                    : new DateTimeImmutable((string) $row['reserved_until'], new DateTimeZone('UTC'));
 
                 return new Artwork(
                     id: (int) $row['id'],
@@ -457,7 +470,7 @@ final class ArtworkRepository
                     ),
                     isSigned: (bool) $row['is_signed'],
                     price: $row['price_cents'] === null ? null : Money::fromCents((int) $row['price_cents']),
-                    status: ArtworkStatus::from((string) $row['status']),
+                    status: ArtworkStatus::from((string) $row['status'])->effectiveAt($reservedUntil, $now),
                     weightGrams: self::nullableInt($row['weight_grams']),
                     primaryMediaId: self::nullableInt($row['primary_media_id']),
                     position: (int) $row['position'],
