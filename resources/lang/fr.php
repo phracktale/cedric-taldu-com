@@ -104,6 +104,7 @@ return [
     'checkout.shipping_cost' => 'Frais de port',
     'checkout.total' => 'Total',
     'checkout.delivery_estimate' => 'Réception estimée entre le :from et le :to.',
+    'checkout.no_withdrawal' => 'Sans droit de rétractation (article L221-28 du Code de la consommation) : :items, imprimé à la demande pour vous.',
     'checkout.pickup_notice' => 'Remise en main propre sur rendez-vous, après confirmation du paiement, dans un rayon de :radius km autour de l’atelier (:place). Au-delà, choisissez l’expédition.',
     'checkout.shipping_note' => 'Tarif pour la France ; ajusté selon la destination.',
     'checkout.payment_secure' => 'Paiement sécurisé par carte bancaire via Stripe.',
@@ -153,6 +154,7 @@ return [
     'artwork.prints_heading' => 'Tirages de cette œuvre',
     'artwork.fine_art_heading' => 'Tirage Fine Art',
     'artwork.fine_art_desc' => 'Impression d’art à la demande — choix du format.',
+    'artwork.prints_no_withdrawal' => 'Ces tirages sont imprimés à la demande pour vous par notre prestataire : ils ne bénéficient pas du droit de rétractation (article L221-28 du Code de la consommation).',
     'artwork.limited_heading' => 'Édition limitée rehaussée à la main',
     'artwork.limited_desc' => 'Numérotée, signée et reprise à l’encre par l’artiste.',
 

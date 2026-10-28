@@ -38,7 +38,7 @@ final class ArtworkRepository
     private const SELECT = <<<'SQL'
         SELECT a.id, a.category_id, a.series_id, a.reference, a.year, a.technique,
                a.width_mm, a.height_mm, a.is_signed, a.price_cents, a.status, a.reserved_until,
-               a.stock_mode, a.stock_qty,
+               a.stock_mode, a.stock_qty, a.prints_no_withdrawal,
                a.weight_grams, a.is_oversized, a.primary_media_id, a.position,
                t.locale, t.slug, t.eyebrow, t.title, t.description, t.detail,
                t.meta_title, t.meta_description
@@ -478,6 +478,7 @@ final class ArtworkRepository
                     isOversized: (int) $row['is_oversized'] === 1,
                     stockMode: StockMode::tryFrom((string) $row['stock_mode']) ?? StockMode::Original,
                     stockQty: self::nullableInt($row['stock_qty']),
+                    printsNoWithdrawal: (int) $row['prints_no_withdrawal'] === 1,
                 );
             },
             $grouped,

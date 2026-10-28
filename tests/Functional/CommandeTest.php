@@ -143,6 +143,45 @@ final class CommandeTest extends FunctionalTestCase
         $this->assertSame(6790, (int) $this->valeur('SELECT total_cents FROM orders'));
     }
 
+    public function test_un_tirage_sans_retractation_est_annonce_avant_le_paiement(): void
+    {
+        // 2026-10-28 : le client l'apprend avant de payer, sur le récapitulatif.
+        $cookie = $this->panierAvecReproduction(sansRetractation: true);
+
+        $reponse = $this->requete('GET', '/cedric-taldu/fr/commande', cookies: [self::COOKIE => $cookie]);
+
+        $this->assertMatchesRegularExpression('~<p class="commande-retractation"[^>]*>[^<]*droit de rétractation~', $reponse->body);
+    }
+
+    public function test_sans_le_reglage_le_paiement_ne_parle_pas_de_retractation(): void
+    {
+        $cookie = $this->panierAvecReproduction();
+
+        $reponse = $this->requete('GET', '/cedric-taldu/fr/commande', cookies: [self::COOKIE => $cookie]);
+
+        $this->assertStringNotContainsString('commande-retractation', $reponse->body);
+    }
+
+    public function test_la_commande_fige_l_absence_de_retractation_du_tirage(): void
+    {
+        // Figée sur la ligne comme le prix : décocher plus tard le réglage
+        // ne change pas ce que le client a accepté.
+        $cookie = $this->panierAvecReproduction(sansRetractation: true);
+
+        $this->commander($cookie);
+
+        $this->assertSame('1', $this->valeur('SELECT no_withdrawal FROM order_items'));
+    }
+
+    public function test_une_edition_rehaussee_garde_son_droit_de_retractation(): void
+    {
+        $cookie = $this->panierAvecEditionRehaussee(sansRetractation: true);
+
+        $this->commander($cookie);
+
+        $this->assertSame('0', $this->valeur('SELECT no_withdrawal FROM order_items'));
+    }
+
     public function test_le_retrait_n_est_pas_propose_pour_une_reproduction(): void
     {
         // Une reproduction est expediee par Prodigi : la remise en main propre
@@ -538,11 +577,11 @@ final class CommandeTest extends FunctionalTestCase
     }
 
     /** Édition limitée rehaussée à l'atelier (circuit manuel). */
-    private function panierAvecEditionRehaussee(): string
+    private function panierAvecEditionRehaussee(bool $sansRetractation = false): string
     {
-        $artwork = (new ArtworkFactory($this->pdo))->published()->available()->priced(45000)
-            ->translated('fr', 'rehaut', 'Œuvre rehaussée')
-            ->create($this->categoryId);
+        $oeuvre = (new ArtworkFactory($this->pdo))->published()->available()->priced(45000)
+            ->translated('fr', 'rehaut', 'Œuvre rehaussée');
+        $artwork = ($sansRetractation ? $oeuvre->printsWithoutWithdrawal() : $oeuvre)->create($this->categoryId);
 
         $this->pdo->prepare(
             "INSERT INTO products (artwork_id, kind, processing_mode, edition_size, is_published, created_at, updated_at)
@@ -572,11 +611,11 @@ final class CommandeTest extends FunctionalTestCase
         return $this->ajouter('original', $artwork);
     }
 
-    private function panierAvecReproduction(): string
+    private function panierAvecReproduction(bool $sansRetractation = false): string
     {
-        $artwork = (new ArtworkFactory($this->pdo))->published()->available()->priced(45000)
-            ->translated('fr', 'tirage', 'Œuvre')
-            ->create($this->categoryId);
+        $oeuvre = (new ArtworkFactory($this->pdo))->published()->available()->priced(45000)
+            ->translated('fr', 'tirage', 'Œuvre');
+        $artwork = ($sansRetractation ? $oeuvre->printsWithoutWithdrawal() : $oeuvre)->create($this->categoryId);
 
         $this->pdo->prepare(
             'INSERT INTO products (artwork_id, kind, is_published, created_at, updated_at)

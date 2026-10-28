@@ -127,6 +127,29 @@ final class OrderMailerTest extends TestCase
         $this->assertStringContainsString('14 jours', $message->html);
     }
 
+    public function test_un_tirage_sans_retractation_est_signale_dans_la_confirmation(): void
+    {
+        // 2026-10-28 : la confirmation sur support durable reprend
+        // l'exception (L221-13 du Code de la consommation).
+        $this->orderMailer->sendConfirmation($this->commande(sansRetractation: true), 'https://example.test/x');
+
+        $message = $this->mailer->lastTo('acheteur@example.test');
+
+        $this->assertNotNull($message);
+        $this->assertStringContainsString('sans droit de rétractation', $message->html);
+        $this->assertStringContainsString('L221-28', $message->html);
+    }
+
+    public function test_sans_tirage_concerne_la_confirmation_ne_cite_pas_l_exception(): void
+    {
+        $this->orderMailer->sendConfirmation($this->commande(), 'https://example.test/x');
+
+        $message = $this->mailer->lastTo('acheteur@example.test');
+
+        $this->assertNotNull($message);
+        $this->assertStringNotContainsString('L221-28', $message->html);
+    }
+
     public function test_le_message_du_client_est_dans_la_langue_de_la_commande(): void
     {
         $this->orderMailer->sendConfirmation($this->commande(locale: Locale::En), 'https://example.test/x');
@@ -225,6 +248,7 @@ final class OrderMailerTest extends TestCase
         OrderStatus $statut = OrderStatus::Paid,
         ?string $transporteur = null,
         ?string $suivi = null,
+        bool $sansRetractation = false,
     ): PersistedOrder {
         return new PersistedOrder(
             id: 1,
@@ -283,6 +307,7 @@ final class OrderMailerTest extends TestCase
                     shippingShare: Money::zero(),
                     editionNumber: 3,
                     anomaly: null,
+                    noWithdrawal: $sansRetractation,
                 ),
             ],
         );

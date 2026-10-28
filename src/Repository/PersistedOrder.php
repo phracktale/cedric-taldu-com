@@ -52,6 +52,18 @@ final class PersistedOrder
     ) {
     }
 
+    /** Au moins un tirage de la commande est sans droit de rétractation (2026-10-28). */
+    public function hasLineWithoutWithdrawal(): bool
+    {
+        foreach ($this->lines as $line) {
+            if ($line->noWithdrawal) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function legalMention(): ?string
     {
         return $this->vatMode->legalMention($this->locale);

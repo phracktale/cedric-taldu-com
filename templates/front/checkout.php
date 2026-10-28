@@ -199,6 +199,19 @@ $jour = static function (DateTimeImmutable $d) use ($mois, $estFr): string {
           <?php endforeach; ?>
         </ul>
 
+        <?php // 2026-10-28 : tirages imprimés pour le client, annoncés avant le paiement. ?>
+        <?php
+        $sansRetractation = [];
+        foreach ($valuation->lines as $line) {
+            if ($line->item->noWithdrawal) {
+                $sansRetractation[] = $line->item->label;
+            }
+        }
+        ?>
+        <?php if ($sansRetractation !== []) : ?>
+        <p class="commande-retractation" role="note"><?= $t('checkout.no_withdrawal', ['items' => implode(', ', $sansRetractation)]) ?></p>
+        <?php endif; ?>
+
         <p class="commande-detail">
           <span><?= $t('cart.subtotal') ?></span>
           <span><?= e(money($valuation->subtotal, $locale)) ?></span>

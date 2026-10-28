@@ -102,6 +102,7 @@ return [
     'checkout.shipping_cost' => 'Shipping',
     'checkout.total' => 'Total',
     'checkout.delivery_estimate' => 'Estimated delivery between :from and :to.',
+    'checkout.no_withdrawal' => 'No right of withdrawal (article L221-28 of the French Consumer Code): :items, printed on demand for you.',
     'checkout.pickup_notice' => 'Hand delivery by appointment, after payment is confirmed, within :radius km of :place. Further away, please choose shipping.',
     'checkout.shipping_note' => 'Rate for France; adjusted to your destination.',
     'checkout.payment_secure' => 'Secure card payment via Stripe.',
@@ -151,6 +152,7 @@ return [
     'artwork.prints_heading' => 'Prints of this work',
     'artwork.fine_art_heading' => 'Fine art print',
     'artwork.fine_art_desc' => 'Fine art print on demand — choose the size.',
+    'artwork.prints_no_withdrawal' => 'These prints are made on demand for you by our printing partner: they are not eligible for the right of withdrawal (article L221-28 of the French Consumer Code).',
     'artwork.limited_heading' => 'Hand-finished limited edition',
     'artwork.limited_desc' => 'Numbered, signed and finished in ink by the artist.',
 

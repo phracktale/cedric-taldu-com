@@ -43,7 +43,8 @@ final class ArtworkAdminRepository
 
     private const SELECT = <<<'SQL'
         SELECT a.id, a.category_id, a.series_id, a.reference, a.year, a.technique,
-               a.width_mm, a.height_mm, a.depth_mm, a.is_oversized, a.shipping_on_quote, a.is_signed, a.price_cents, a.vat_category,
+               a.width_mm, a.height_mm, a.depth_mm, a.is_oversized, a.shipping_on_quote, a.prints_no_withdrawal,
+               a.is_signed, a.price_cents, a.vat_category,
                a.stock_mode, a.stock_qty,
                a.status, a.weight_grams, a.primary_media_id, a.position,
                a.print_asset_path, a.print_asset_mime,
@@ -186,10 +187,11 @@ final class ArtworkAdminRepository
         $statement = $this->pdo->prepare(
             'INSERT INTO artworks
                 (category_id, series_id, reference, year, technique, width_mm, height_mm, depth_mm, is_oversized,
-                 shipping_on_quote, is_signed, price_cents, vat_category, status, stock_mode, stock_qty, weight_grams,
+                 shipping_on_quote, prints_no_withdrawal, is_signed, price_cents, vat_category, status,
+                 stock_mode, stock_qty, weight_grams,
                  primary_media_id, position, works_position, is_published, created_at, updated_at)
              VALUES (:category, :series, :reference, :year, :technique, :width, :height, :depth, :oversized,
-                     :on_quote, :signed, :price, :vat, :status, :stock_mode, :stock_qty, :weight,
+                     :on_quote, :no_withdrawal, :signed, :price, :vat, :status, :stock_mode, :stock_qty, :weight,
                      :media, :position, :works, 0, :now, :now2)'
         );
 
@@ -221,6 +223,7 @@ final class ArtworkAdminRepository
                 category_id = :category, series_id = :series, reference = :reference,
                 year = :year, technique = :technique, width_mm = :width, height_mm = :height,
                 depth_mm = :depth, is_oversized = :oversized, shipping_on_quote = :on_quote,
+                prints_no_withdrawal = :no_withdrawal,
                 is_signed = :signed, price_cents = :price, vat_category = :vat,
                 reserved_until = IF(status = :status_kept, reserved_until, NULL),
                 status = :status, stock_mode = :stock_mode, stock_qty = :stock_qty,
@@ -399,6 +402,7 @@ final class ArtworkAdminRepository
             'depth' => $fields['depth_mm'] ?? null,
             'oversized' => ($fields['is_oversized'] ?? false) === true ? 1 : 0,
             'on_quote' => ($fields['shipping_on_quote'] ?? false) === true ? 1 : 0,
+            'no_withdrawal' => ($fields['prints_no_withdrawal'] ?? false) === true ? 1 : 0,
             'stock_mode' => $fields['stock_mode'] ?? 'original',
             'stock_qty' => $fields['stock_qty'] ?? null,
             'signed' => $fields['is_signed'] === true ? 1 : 0,
@@ -523,6 +527,7 @@ final class ArtworkAdminRepository
                 'depth_mm' => $row['depth_mm'] === null ? null : (int) $row['depth_mm'],
                 'is_oversized' => (bool) $row['is_oversized'],
                 'shipping_on_quote' => (bool) $row['shipping_on_quote'],
+                'prints_no_withdrawal' => (bool) $row['prints_no_withdrawal'],
                 'stock_mode' => (string) $row['stock_mode'],
                 'stock_qty' => $row['stock_qty'] === null ? null : (int) $row['stock_qty'],
                 'is_signed' => (bool) $row['is_signed'],

@@ -100,11 +100,11 @@ final class OrderRepository
             $line = $this->pdo->prepare(
                 'INSERT INTO order_items
                     (order_id, kind, artwork_id, variant_id, label, sku, qty,
-                     unit_price_cents, total_cents, vat_category, vat_rate_bps,
+                     unit_price_cents, total_cents, vat_category, no_withdrawal, vat_rate_bps,
                      ht_cents, vat_cents, shipping_share_cents, shipping_ht_cents, shipping_vat_cents)
                  VALUES
                     (:order, :kind, :artwork, :variant, :label, :sku, :qty,
-                     :unit, :total, :category, :rate,
+                     :unit, :total, :category, :no_withdrawal, :rate,
                      :ht, :vat, :share, :share_ht, :share_vat)'
             );
 
@@ -120,6 +120,7 @@ final class OrderRepository
                     'unit' => $draftLine->unitPrice->cents,
                     'total' => $draftLine->total->cents,
                     'category' => $draftLine->vatCategory->value,
+                    'no_withdrawal' => $draftLine->noWithdrawal ? 1 : 0,
                     'rate' => $draftLine->vatRateBps,
                     'ht' => $draftLine->excludingVat->cents,
                     'vat' => $draftLine->vat->cents,
@@ -409,6 +410,7 @@ final class OrderRepository
                 shippingShare: Money::fromCents((int) $row['shipping_share_cents']),
                 editionNumber: $row['edition_number'] === null ? null : (int) $row['edition_number'],
                 anomaly: $row['anomaly'] === null ? null : (string) $row['anomaly'],
+                noWithdrawal: (int) $row['no_withdrawal'] === 1,
             );
         }
 

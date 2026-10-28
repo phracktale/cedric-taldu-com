@@ -44,6 +44,11 @@ final class Artwork
         public readonly StockMode $stockMode = StockMode::Original,
         /** Exemplaires restants, en quantité seulement. */
         public readonly ?int $stockQty = null,
+        /**
+         * Tirages transmis par API au prestataire, imprimés pour le client :
+         * sans droit de rétractation (2026-10-28).
+         */
+        public readonly bool $printsNoWithdrawal = false,
     ) {
     }
 

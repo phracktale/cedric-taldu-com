@@ -50,6 +50,10 @@ $stockQte = is_string($saisie['stock_qty'] ?? null)
 $surDevis = $saisie !== []
     ? isset($saisie['port_sur_devis'])
     : ($oeuvre['shipping_on_quote'] ?? false) === true;
+// Tirages sans rétractation (2026-10-28) : même priorité de la saisie renvoyée.
+$sansRetractation = $saisie !== []
+    ? isset($saisie['tirages_sans_retractation'])
+    : ($oeuvre['prints_no_withdrawal'] ?? false) === true;
 
 /** @var list<array<string, mixed>> $rubriques */
 $rubriques = is_array($data['rubriques'] ?? null) ? $data['rubriques'] : [];
@@ -372,6 +376,19 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
                     </span>
                 </p>
             </div>
+
+            <?php // 2026-10-28 : tirages transmis par API au prestataire, imprimés pour le client. ?>
+            <p class="champ champ-inline">
+                <input type="checkbox" id="tirages_sans_retractation" name="tirages_sans_retractation" value="1"
+                    <?php if ($sansRetractation) : ?>checked<?php endif; ?>>
+                <label for="tirages_sans_retractation">Tirages imprimés à la demande par le prestataire :
+                    sans droit de rétractation</label>
+            </p>
+            <p class="champ-aide">
+                Concerne les tirages Fine Art transmis par API au prestataire, pas les éditions limitées
+                préparées à l’atelier. Le client en est averti sur la fiche de l’œuvre, avant le paiement
+                et dans la confirmation de commande.
+            </p>
         </fieldset>
 
         <fieldset>

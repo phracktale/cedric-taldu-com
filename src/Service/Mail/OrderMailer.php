@@ -158,6 +158,9 @@ final class OrderMailer
                 'consult' => 'Consulter ma commande',
                 'withdrawal' => 'Vous disposez de 14 jours à compter de la réception pour '
                     . 'exercer votre droit de rétractation. Les frais de retour restent à votre charge.',
+                'noWithdrawal' => 'Exception : les tirages imprimés à la demande pour vous, signalés ci-dessus, '
+                    . 'ne bénéficient pas du droit de rétractation (article L221-28 du Code de la consommation).',
+                'noWithdrawalLine' => 'Imprimé à la demande pour vous : sans droit de rétractation',
                 'shippedIntro' => 'Votre commande vient de partir.',
                 'carrier' => 'Transporteur',
                 'tracking' => 'Numéro de suivi',
@@ -179,6 +182,9 @@ final class OrderMailer
                 'consult' => 'View my order',
                 'withdrawal' => 'You have 14 days from delivery to exercise your right of '
                     . 'withdrawal. Return shipping is at your expense.',
+                'noWithdrawal' => 'Exception: the prints made on demand for you, marked above, are not '
+                    . 'eligible for the right of withdrawal (article L221-28 of the French Consumer Code).',
+                'noWithdrawalLine' => 'Printed on demand for you: no right of withdrawal',
                 'shippedIntro' => 'Your order is on its way.',
                 'carrier' => 'Carrier',
                 'tracking' => 'Tracking number',

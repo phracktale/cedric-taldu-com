@@ -99,6 +99,42 @@ final class FicheAchatTest extends FunctionalTestCase
         $this->assertStringNotContainsString('/panier/ajout', $reponse->body);
     }
 
+    public function test_un_tirage_imprime_a_la_demande_annonce_l_absence_de_retractation(): void
+    {
+        // 2026-10-28 : l'information doit précéder l'achat (L221-5 du Code de
+        // la consommation), au plus près du tirage concerné.
+        $artwork = (new ArtworkFactory($this->pdo))->published()->available()->priced(45000)
+            ->printsWithoutWithdrawal()->translated('fr', 'articulation', 'Articulation')->create($this->categoryId);
+        $this->reproduction($artwork);
+
+        $reponse = $this->requete('GET', '/cedric-taldu/fr/oeuvre/articulation');
+
+        $this->assertMatchesRegularExpression('~<p class="repro-retractation">[^<]*droit de rétractation~', $reponse->body);
+    }
+
+    public function test_sans_le_reglage_le_tirage_ne_parle_pas_de_retractation(): void
+    {
+        $this->reproduction($this->oeuvre());
+
+        $reponse = $this->requete('GET', '/cedric-taldu/fr/oeuvre/articulation');
+
+        $this->assertStringNotContainsString('repro-retractation', $reponse->body);
+    }
+
+    public function test_une_edition_limitee_rehaussee_a_l_atelier_n_est_pas_concernee(): void
+    {
+        // Seuls les tirages transmis au prestataire sont imprimés pour le
+        // client ; l'édition limitée, préparée à l'atelier, garde son droit.
+        $artwork = (new ArtworkFactory($this->pdo))->published()->available()->priced(45000)
+            ->printsWithoutWithdrawal()->translated('fr', 'articulation', 'Articulation')->create($this->categoryId);
+        $this->editionLimitee($artwork);
+
+        $reponse = $this->requete('GET', '/cedric-taldu/fr/oeuvre/articulation');
+
+        $this->assertStringContainsString('Édition limitée', $reponse->body);
+        $this->assertStringNotContainsString('repro-retractation', $reponse->body);
+    }
+
     public function test_les_reproductions_publiees_apparaissent_avec_leur_prix(): void
     {
         $artwork = $this->oeuvre();

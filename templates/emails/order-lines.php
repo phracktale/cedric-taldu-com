@@ -32,6 +32,9 @@ $strings = $data['strings'];
 <?php if ($line->editionNumber !== null) : ?>
 <br><span style="font-size:12px;color:#6b655c;"><?= e($strings['edition']) ?> <?= e($line->editionNumber) ?></span>
 <?php endif; ?>
+<?php if ($line->noWithdrawal) : ?>
+<br><span style="font-size:12px;color:#6b655c;"><?= e($strings['noWithdrawalLine']) ?></span>
+<?php endif; ?>
 </td>
 <td style="padding:8px 0;text-align:center;"><?= e($line->quantity) ?></td>
 <td style="padding:8px 0;text-align:right;"><?= e(money($line->total, $locale)) ?></td>
