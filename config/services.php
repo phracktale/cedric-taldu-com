@@ -1091,6 +1091,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(AdminChrome::class),
         $c->get(SettingsAdminRepository::class),
         $c->get(InvoiceDownload::class),
+        $c->get(VatRepository::class),
     ));
 
     $container->set(CustomerAccountController::class, static fn (Container $c): CustomerAccountController => new CustomerAccountController(

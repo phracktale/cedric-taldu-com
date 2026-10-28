@@ -27,7 +27,8 @@ use Throwable;
  */
 final class VatRepository
 {
-    private const SETTING = 'vat';
+    /** Clé du réglage, écrite par la rubrique Facturation du back-office. */
+    public const SETTING = 'vat';
 
     public function __construct(private readonly PDO $pdo)
     {

@@ -401,5 +401,6 @@ return [
     // Identité du vendeur sur les factures (revue du 2026-09-24).
     new Route('admin.billing.edit', 'GET', '/admin/facturation', [BillingController::class, 'edit']),
     new Route('admin.billing.update', 'POST', '/admin/facturation', [BillingController::class, 'update']),
+    new Route('admin.billing.vat', 'POST', '/admin/facturation/tva', [BillingController::class, 'updateVat']),
     new Route('admin.order.prodigi', 'POST', '/admin/commandes/{id}/prodigi', [AdminOrderController::class, 'submitProdigi'], requirements: $id),
 ];

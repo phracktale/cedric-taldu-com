@@ -26,6 +26,17 @@ final class VatRegime
     ) {
     }
 
+    /** Régime réglé, tel que le back-office l'affiche (2026-10-28). */
+    public function configuredMode(): VatMode
+    {
+        return $this->configured;
+    }
+
+    public function taxableFrom(): ?DateTimeImmutable
+    {
+        return $this->taxableFrom;
+    }
+
     public function modeAt(DateTimeImmutable $moment): VatMode
     {
         if ($this->configured === VatMode::Exempt293b) {
