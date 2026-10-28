@@ -22,6 +22,16 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(VatMode::class)]
 final class VatRegimeTest extends TestCase
 {
+    public function test_le_regime_restitue_son_reglage_pour_le_back_office(): void
+    {
+        // 2026-10-28 : le régime se règle dans « Facturation », qui doit
+        // pouvoir réafficher ce qui est enregistré.
+        $regime = new VatRegime(VatMode::Taxed, new DateTimeImmutable('2027-01-01'));
+
+        $this->assertSame(VatMode::Taxed, $regime->configuredMode());
+        $this->assertEquals(new DateTimeImmutable('2027-01-01'), $regime->taxableFrom());
+    }
+
     public function test_par_defaut_l_artiste_est_en_franchise_en_base(): void
     {
         // Decision du 2026-07-21 : le site demarre en franchise, et ce choix est

@@ -9,12 +9,21 @@
 
 declare(strict_types=1);
 
+use App\Domain\Locale;
 use App\Domain\Order\SellerIdentity;
+use App\Domain\Order\VatMode;
 
 $base = is_string($data['basePath'] ?? null) ? $data['basePath'] : '';
 $jeton = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
 /** @var SellerIdentity $vendeur */
 $vendeur = $data['vendeur'];
+/** @var array{mode: string|null, taxable_from: string|null} $tva */
+$tva = $data['tva'];
+$erreurs = is_array($data['erreurs'] ?? null) ? $data['erreurs'] : [];
+$saisie = is_array($data['saisie'] ?? null) ? $data['saisie'] : [];
+$regime = is_string($saisie['tva_regime'] ?? null) ? $saisie['tva_regime'] : (string) $tva['mode'];
+$depuis = is_string($saisie['tva_depuis'] ?? null) ? $saisie['tva_depuis'] : (string) ($tva['taxable_from'] ?? '');
+$mentionFranchise = (string) VatMode::Exempt293b->legalMention(Locale::Fr);
 ?>
 <div class="admin-page admin-page--etroite">
     <h1>Facturation</h1>
@@ -57,6 +66,64 @@ $vendeur = $data['vendeur'];
 
         <p class="actions">
             <button type="submit" class="bouton">Enregistrer</button>
+        </p>
+    </form>
+
+    <?php // Régime de TVA (2026-10-28) : 03-boutique §5.1, 04-back-office §11. ?>
+    <h2 id="tva">TVA</h2>
+
+    <p class="aide">
+        <?php if ($tva['mode'] === 'taxed') : ?>
+        Régime en vigueur : <strong>assujetti à la TVA</strong>, pour les commandes passées à partir du
+        <?= e((string) $tva['taxable_from']) ?>.
+        <?php else : ?>
+        Régime en vigueur : <strong>franchise en base</strong>, aucune TVA n’est facturée.
+        <?php endif; ?>
+        Le régime de chaque commande est figé à sa création : un changement ici ne recalcule jamais
+        une commande passée et ne modifie aucun prix affiché (les prix sont toutes taxes comprises).
+    </p>
+
+    <form method="post" action="<?= attr($base . '/admin/facturation/tva') ?>" class="formulaire">
+        <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
+
+        <fieldset>
+            <legend>Régime de TVA</legend>
+            <p class="champ champ-inline">
+                <input type="radio" id="tva_exempt_293b" name="tva_regime" value="exempt_293b"<?php if ($regime === 'exempt_293b') : ?> checked<?php endif; ?>>
+                <label for="tva_exempt_293b">Franchise en base : aucune TVA facturée, chaque facture porte
+                    la mention « <?= e($mentionFranchise) ?> ».</label>
+            </p>
+            <p class="champ champ-inline">
+                <input type="radio" id="tva_taxed" name="tva_regime" value="taxed"<?php if ($regime === 'taxed') : ?> checked<?php endif; ?>>
+                <label for="tva_taxed">Assujetti à la TVA : les commandes passées à partir de la date
+                    ci-dessous sont soumises à la TVA, au taux de la catégorie de TVA de chaque œuvre ou
+                    reproduction.</label>
+            </p>
+            <?php if (isset($erreurs['tva_regime'])) : ?>
+            <span class="champ-erreur" role="alert"><?= e($erreurs['tva_regime']) ?></span>
+            <?php endif; ?>
+        </fieldset>
+
+        <p class="champ">
+            <label for="tva_depuis">TVA appliquée à partir du</label>
+            <input type="date" id="tva_depuis" name="tva_depuis"
+                   value="<?= attr($depuis) ?>"<?php if (isset($erreurs['tva_depuis'])) : ?> aria-invalid="true"<?php endif; ?>>
+            <?php if (isset($erreurs['tva_depuis'])) : ?>
+            <span class="champ-erreur" role="alert"><?= e($erreurs['tva_depuis']) ?></span>
+            <?php endif; ?>
+            <span class="champ-aide">Seulement pour le régime assujetti : date de bascule fixée avec votre comptable.</span>
+        </p>
+
+        <p class="champ champ-inline">
+            <input type="checkbox" id="tva_confirmation" name="tva_confirmation" value="1"<?php if (isset($erreurs['tva_confirmation'])) : ?> aria-invalid="true"<?php endif; ?>>
+            <label for="tva_confirmation">Je confirme le changement de régime de TVA.</label>
+            <?php if (isset($erreurs['tva_confirmation'])) : ?>
+            <span class="champ-erreur" role="alert"><?= e($erreurs['tva_confirmation']) ?></span>
+            <?php endif; ?>
+        </p>
+
+        <p class="actions">
+            <button type="submit" class="bouton">Enregistrer le régime de TVA</button>
         </p>
     </form>
 </div>
