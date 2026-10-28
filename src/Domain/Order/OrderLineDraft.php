@@ -34,6 +34,8 @@ final class OrderLineDraft
         public readonly Money $shippingShare,
         public readonly Money $shippingExcludingVat,
         public readonly Money $shippingVat,
+        /** Sans droit de rétractation, figé comme le prix (2026-10-28). */
+        public readonly bool $noWithdrawal = false,
     ) {
     }
 
@@ -64,6 +66,7 @@ final class OrderLineDraft
             shippingShare: $vat->shippingShare,
             shippingExcludingVat: $vat->shippingExcludingVat,
             shippingVat: $vat->shippingVat,
+            noWithdrawal: $item->noWithdrawal,
         );
     }
 }

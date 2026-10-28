@@ -55,3 +55,6 @@ $strings = $data['strings'];
 <?php endif; ?>
 
 <p style="margin:16px 0 0;font-size:13px;color:#6b655c;"><?= e($strings['withdrawal']) ?></p>
+<?php if ($order->hasLineWithoutWithdrawal()) : ?>
+<p style="margin:8px 0 0;font-size:13px;color:#6b655c;"><?= e($strings['noWithdrawal']) ?></p>
+<?php endif; ?>

@@ -250,6 +250,12 @@ attribués sont `editions_sold_avant + 1 … + q`.
 
 - **E-mail client** (langue de la commande) : récapitulatif, numéro de commande, lien de
   consultation signé, délais, mentions de rétractation.
+- **Tirages sans rétractation** (2026-10-28) : une case de la fiche œuvre signale que ses
+  tirages transmis par API au prestataire (circuit `prodigi_auto`), imprimés pour le client,
+  ne bénéficient pas du droit de rétractation (art. L221-28 du Code de la consommation).
+  Le client en est averti sur la fiche (bloc Fine Art), au récapitulatif avant paiement et
+  dans les e-mails ; l'information est figée dans `order_items.no_withdrawal`. Les éditions
+  limitées, préparées à l'atelier, ne sont pas concernées.
 - **E-mail artiste** : détail de la commande, adresse, lien direct vers la fiche en
   back-office.
 - Envoi **SMTP authentifié** via `MailerInterface`, jamais `mail()`. En-têtes construits par

@@ -616,6 +616,10 @@ button.btn { font-family: inherit; cursor: pointer; }
   font-size: .9rem; color: var(--encre-70);
 }
 .commande-reception[hidden] { display: none; }
+.commande-retractation {
+  margin: 1rem 0 0; padding: .9rem 1.1rem; border-left: 2px solid var(--encre-40);
+  font-size: .9rem; color: var(--encre-70);
+}
 
 .commande-cgv {
   display: flex; align-items: flex-start; gap: .7rem; margin: 1.5rem 0 0;
@@ -1014,6 +1018,7 @@ section.contact p { max-width: var(--mesure); }
 .repro-groupe:last-child { margin-bottom: 0; }
 .repro-groupe h3 { font-family: 'Marcellus', Georgia, serif; font-size: 1.05rem; margin-bottom: .2rem; }
 .repro-desc { font-size: .9rem; color: var(--encre-40); margin-bottom: .9rem; }
+.repro-retractation { font-size: .85rem; color: var(--encre-70); margin: -.4rem 0 .9rem; }
 .edition { font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: var(--encre-70); margin-bottom: .6rem; }
 
 .variantes { list-style: none; }

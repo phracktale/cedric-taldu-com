@@ -55,6 +55,11 @@ final class PurchasableItem
          * quantité ou illimitée, non : elle se compte comme une reproduction.
          */
         public readonly bool $isUniquePiece = true,
+        /**
+         * Tirage transmis au prestataire et imprimé pour le client, d'une œuvre
+         * réglée « sans droit de rétractation » (2026-10-28).
+         */
+        public readonly bool $noWithdrawal = false,
     ) {
     }
 

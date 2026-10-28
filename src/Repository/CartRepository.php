@@ -54,6 +54,7 @@ final class CartRepository
         SELECT v.id, v.sku, v.size_label, v.price_cents, v.stock_qty, v.weight_grams,
                v.is_active, p.is_published AS product_published, p.kind, p.processing_mode,
                p.edition_size, p.editions_sold, p.vat_category, a.is_published AS artwork_published,
+               a.prints_no_withdrawal,
                COALESCE(t.title, r.title) AS title
         FROM product_variants v
         INNER JOIN products p ON p.id = v.product_id
@@ -379,6 +380,8 @@ final class CartRepository
         foreach ($statement->fetchAll() as $row) {
             $editionSize = $row['edition_size'];
 
+            $circuit = ProcessingMode::tryFrom((string) $row['processing_mode']) ?? ProcessingMode::ProdigiAuto;
+
             $items[] = new PurchasableItem(
                 kind: LineKind::Reproduction,
                 targetId: (int) $row['id'],
@@ -401,8 +404,10 @@ final class CartRepository
                     ? null
                     : max(0, (int) $editionSize - (int) $row['editions_sold']),
                 // Circuit : décide du mode d'expédition (Prodigi ou atelier).
-                processingMode: ProcessingMode::tryFrom((string) $row['processing_mode'])
-                    ?? ProcessingMode::ProdigiAuto,
+                processingMode: $circuit,
+                // Seul un tirage transmis au prestataire est imprimé pour le
+                // client ; l'édition rehaussée à l'atelier garde son droit.
+                noWithdrawal: (int) $row['prints_no_withdrawal'] === 1 && $circuit->isAutomated(),
             );
         }
 

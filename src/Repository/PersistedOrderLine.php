@@ -35,6 +35,8 @@ final class PersistedOrderLine
         public readonly Money $shippingShare,
         public readonly ?int $editionNumber,
         public readonly ?string $anomaly,
+        /** Tirage imprimé pour le client, sans droit de rétractation (2026-10-28). */
+        public readonly bool $noWithdrawal = false,
     ) {
     }
 }

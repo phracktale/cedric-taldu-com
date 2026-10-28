@@ -170,6 +170,10 @@ $media = $medias[$oeuvre->primaryMediaId] ?? null;
       <div class="repro-groupe">
         <h3><?= $t('artwork.fine_art_heading') ?></h3>
         <p class="repro-desc"><?= $t('artwork.fine_art_desc') ?></p>
+        <?php // 2026-10-28 : l'information précède l'achat (L221-5 du Code de la consommation). ?>
+        <?php if ($oeuvre->printsNoWithdrawal) : ?>
+        <p class="repro-retractation"><?= $t('artwork.prints_no_withdrawal') ?></p>
+        <?php endif; ?>
         <?php foreach ($tiragesFineArt as $product) : ?>
           <?= $partial('partials/reproduction-variantes', [
               'product' => $product,

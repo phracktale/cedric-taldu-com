@@ -519,6 +519,8 @@ final class ArtworkController
             'depth_mm' => self::positiveInt($request->input('profondeur')),
             'is_oversized' => $request->input('hors_gabarit') !== null,
             'shipping_on_quote' => $request->input('port_sur_devis') !== null,
+            // Tirages transmis au prestataire, sans droit de rétractation (2026-10-28).
+            'prints_no_withdrawal' => $request->input('tirages_sans_retractation') !== null,
             // Stock (2026-10-27) : la quantité n'a de sens qu'en « quantité en stock ».
             'stock_mode' => self::stockMode($request)->value,
             'stock_qty' => self::stockMode($request) === StockMode::Quantity ? self::stockQuantity($request) : null,
