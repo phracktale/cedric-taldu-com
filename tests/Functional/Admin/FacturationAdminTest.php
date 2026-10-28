@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Functional\Admin;
 
+use App\Domain\Order\VatMode;
+use App\Repository\VatRepository;
+use DateTimeImmutable;
 use Tests\Support\AdminTestCase;
 use Tests\Support\Factory\OrderFactory;
 use Tests\Support\Factory\UserFactory;
@@ -15,6 +18,8 @@ use Tests\Support\Factory\UserFactory;
 final class FacturationAdminTest extends AdminTestCase
 {
     private const ADMIN = '/cedric-taldu/admin/facturation';
+    private const TVA = '/cedric-taldu/admin/facturation/tva';
+    private const FRANCHISE = ['mode' => 'exempt_293b', 'taxable_from' => null];
 
     protected function setUp(): void
     {
@@ -46,6 +51,121 @@ final class FacturationAdminTest extends AdminTestCase
         $this->assertStringContainsString('495 376 436 00046', $pdf->body);
     }
 
+    // ------------------------------------------- régime de TVA (2026-10-28)
+
+    public function test_le_regime_de_tva_se_lit_dans_la_facturation(): void
+    {
+        // Demande du 2026-10-28 : le régime n'apparaissait nulle part en
+        // back-office. Par défaut, franchise en base (03-boutique §5.1).
+        $page = $this->requete('GET', self::ADMIN)->body;
+
+        $this->assertStringContainsString('<form method="post" action="' . self::TVA . '"', $page);
+        $this->assertStringContainsString('name="tva_regime" value="exempt_293b" checked', $page);
+        $this->assertStringContainsString('article 293 B du CGI', $page);
+    }
+
+    public function test_le_passage_au_regime_taxe_s_enregistre_a_sa_date(): void
+    {
+        $reponse = $this->postAvecJeton(self::TVA, [
+            'tva_regime' => 'taxed', 'tva_depuis' => '2027-01-01', 'tva_confirmation' => '1',
+        ]);
+
+        $this->assertSame(302, $reponse->status);
+        $this->assertSame(['mode' => 'taxed', 'taxable_from' => '2027-01-01'], $this->reglageTva());
+        // Le réglage écrit est celui que relit le tunnel de commande.
+        $regime = (new VatRepository($this->pdo))->regime();
+        $this->assertSame(VatMode::Exempt293b, $regime->modeAt(new DateTimeImmutable('2026-12-31 23:59:59')));
+        $this->assertSame(VatMode::Taxed, $regime->modeAt(new DateTimeImmutable('2027-01-01 00:00:00')));
+    }
+
+    public function test_le_regime_enregistre_se_relit_dans_le_formulaire(): void
+    {
+        $this->postAvecJeton(self::TVA, [
+            'tva_regime' => 'taxed', 'tva_depuis' => '2027-01-01', 'tva_confirmation' => '1',
+        ]);
+
+        $page = $this->requete('GET', self::ADMIN)->body;
+
+        $this->assertStringContainsString('name="tva_regime" value="taxed" checked', $page);
+        $this->assertMatchesRegularExpression('~name="tva_depuis"[^>]*value="2027-01-01"~', $page);
+    }
+
+    public function test_le_changement_de_regime_est_journalise_avec_l_ancienne_valeur(): void
+    {
+        // 04-back-office §11 : tout changement de réglage est journalisé
+        // avec l'ancienne et la nouvelle valeur.
+        $this->postAvecJeton(self::TVA, [
+            'tva_regime' => 'taxed', 'tva_depuis' => '2027-01-01', 'tva_confirmation' => '1',
+        ]);
+
+        $meta = json_decode((string) $this->pdo->query("SELECT meta FROM audit_log WHERE action = 'vat'")->fetchColumn(), true);
+
+        $this->assertIsArray($meta);
+        $this->assertSame(self::FRANCHISE, $meta['avant']);
+        $this->assertSame(['mode' => 'taxed', 'taxable_from' => '2027-01-01'], $meta['apres']);
+    }
+
+    public function test_un_changement_de_regime_non_confirme_est_refuse(): void
+    {
+        // Opération sensible (04-back-office §11) : le régime d'une commande
+        // est figé à sa création, une erreur ne se rattrape pas.
+        $reponse = $this->postAvecJeton(self::TVA, ['tva_regime' => 'taxed', 'tva_depuis' => '2027-01-01']);
+
+        $this->assertSame(422, $reponse->status);
+        $this->assertMatchesRegularExpression('~name="tva_confirmation"[^>]*aria-invalid="true"~', $reponse->body);
+        $this->assertSame(self::FRANCHISE, $this->reglageTva());
+    }
+
+    public function test_le_regime_taxe_exige_une_date_de_bascule(): void
+    {
+        $reponse = $this->postAvecJeton(self::TVA, [
+            'tva_regime' => 'taxed', 'tva_depuis' => '', 'tva_confirmation' => '1',
+        ]);
+
+        $this->assertSame(422, $reponse->status);
+        $this->assertMatchesRegularExpression('~name="tva_depuis"[^>]*aria-invalid="true"~', $reponse->body);
+        $this->assertSame(self::FRANCHISE, $this->reglageTva());
+    }
+
+    public function test_une_date_de_bascule_impossible_est_refusee(): void
+    {
+        $reponse = $this->postAvecJeton(self::TVA, [
+            'tva_regime' => 'taxed', 'tva_depuis' => '2027-02-30', 'tva_confirmation' => '1',
+        ]);
+
+        $this->assertSame(422, $reponse->status);
+        $this->assertSame(self::FRANCHISE, $this->reglageTva());
+    }
+
+    public function test_un_regime_inconnu_est_refuse(): void
+    {
+        $reponse = $this->postAvecJeton(self::TVA, ['tva_regime' => 'zero', 'tva_confirmation' => '1']);
+
+        $this->assertSame(422, $reponse->status);
+        $this->assertSame(self::FRANCHISE, $this->reglageTva());
+    }
+
+    public function test_revenir_en_franchise_efface_la_date_de_bascule(): void
+    {
+        $this->postAvecJeton(self::TVA, [
+            'tva_regime' => 'taxed', 'tva_depuis' => '2027-01-01', 'tva_confirmation' => '1',
+        ]);
+
+        $this->postAvecJeton(self::TVA, [
+            'tva_regime' => 'exempt_293b', 'tva_depuis' => '2027-01-01', 'tva_confirmation' => '1',
+        ]);
+
+        $this->assertSame(self::FRANCHISE, $this->reglageTva());
+    }
+
+    public function test_enregistrer_sans_changer_de_regime_ne_demande_pas_de_confirmation(): void
+    {
+        $reponse = $this->postAvecJeton(self::TVA, ['tva_regime' => 'exempt_293b']);
+
+        $this->assertSame(302, $reponse->status);
+        $this->assertSame(0, (int) $this->pdo->query("SELECT COUNT(*) FROM audit_log WHERE action = 'vat'")->fetchColumn());
+    }
+
     public function test_la_fiche_commande_propose_la_facture(): void
     {
         $id = (new OrderFactory($this->pdo))->reference('CT-2026-0043')->create();
@@ -53,5 +173,17 @@ final class FacturationAdminTest extends AdminTestCase
         $fiche = $this->requete('GET', '/cedric-taldu/admin/commandes/' . $id)->body;
 
         $this->assertStringContainsString('href="/cedric-taldu/admin/commandes/' . $id . '/facture"', $fiche);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function reglageTva(): array
+    {
+        $brut = $this->pdo->query("SELECT value FROM settings WHERE `key` = 'vat'")->fetchColumn();
+        $reglage = json_decode((string) $brut, true);
+        $this->assertIsArray($reglage);
+
+        return $reglage;
     }
 }
