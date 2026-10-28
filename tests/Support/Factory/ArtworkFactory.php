@@ -37,6 +37,7 @@ final class ArtworkFactory extends Factory
     private ?string $publishedAt = null;
     private ?string $reference = null;
     private ?string $reservedUntil = null;
+    private bool $printsNoWithdrawal = false;
 
     /** @var array<string, array{slug: string, title: string, description: string|null, detail: string|null}> */
     private array $translations = [];
@@ -234,6 +235,17 @@ final class ArtworkFactory extends Factory
         return $this->status(ArtworkStatus::Reserved);
     }
 
+    /**
+     * Tirages imprimés à la demande par le prestataire, sans droit de
+     * rétractation (2026-10-28).
+     */
+    public function printsWithoutWithdrawal(): self
+    {
+        $this->printsNoWithdrawal = true;
+
+        return $this;
+    }
+
     public function create(int $categoryId): int
     {
         $n = self::next();
@@ -284,6 +296,10 @@ final class ArtworkFactory extends Factory
                 'UPDATE artworks SET stock_mode = :mode, stock_qty = :qty WHERE id = :id',
                 ['mode' => $this->stock[0], 'qty' => $this->stock[1], 'id' => $id],
             );
+        }
+
+        if ($this->printsNoWithdrawal) {
+            $this->insert('UPDATE artworks SET prints_no_withdrawal = 1 WHERE id = :id', ['id' => $id]);
         }
 
         if ($this->reservedUntil !== null) {

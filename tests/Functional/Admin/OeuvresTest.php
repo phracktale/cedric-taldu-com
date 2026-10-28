@@ -239,6 +239,39 @@ final class OeuvresTest extends AdminTestCase
         $this->assertMatchesRegularExpression('~<p class="champ" data-stock-quantite>\s*<label for="stock_qty">~', $formulaire);
     }
 
+    // ------------------------------- tirages sans rétractation (2026-10-28)
+
+    public function test_l_absence_de_retractation_des_tirages_se_regle_dans_la_fiche(): void
+    {
+        // Tirages transmis par API au prestataire, imprimés pour le client :
+        // réglage par œuvre, demandé le 2026-10-28.
+        $id = $this->creerEtLire([
+            'reference' => 'CT-ENC-001', 'titre_fr' => 'Articulation', 'tirages_sans_retractation' => '1',
+        ]);
+
+        $formulaire = $this->requete('GET', self::OEUVRES . '/' . $id)->body;
+
+        $this->assertSame('1', $this->valeur('SELECT prints_no_withdrawal FROM artworks'));
+        $this->assertMatchesRegularExpression('~name="tirages_sans_retractation" value="1"\s+checked~', $formulaire);
+    }
+
+    public function test_une_oeuvre_nait_avec_le_droit_de_retractation_de_ses_tirages(): void
+    {
+        $this->creer(['reference' => 'CT-ENC-001', 'titre_fr' => 'Articulation']);
+
+        $this->assertSame('0', $this->valeur('SELECT prints_no_withdrawal FROM artworks'));
+    }
+
+    public function test_decocher_rend_le_droit_de_retractation_aux_tirages(): void
+    {
+        $id = (new ArtworkFactory($this->pdo))->withReference('CT-ENC-001')->printsWithoutWithdrawal()
+            ->translated('fr', 'articulation', 'Articulation')->create($this->rubrique);
+
+        $this->modifier($id, ['reference' => 'CT-ENC-001', 'titre_fr' => 'Articulation', 'slug_fr' => 'articulation']);
+
+        $this->assertSame('0', $this->valeur('SELECT prints_no_withdrawal FROM artworks'));
+    }
+
     public function test_une_oeuvre_nait_piece_originale(): void
     {
         $this->creer(['reference' => 'CT-ENC-001', 'titre_fr' => 'Articulation']);
