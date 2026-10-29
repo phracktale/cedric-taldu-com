@@ -17,6 +17,7 @@ declare(strict_types=1);
 
 use App\Domain\Catalog\ArtworkStatus;
 use App\Domain\Locale;
+use App\Domain\Money;
 
 $base = is_string($data['basePath'] ?? null) ? $data['basePath'] : '';
 $jeton = is_string($data['csrfToken'] ?? null) ? $data['csrfToken'] : '';
@@ -389,6 +390,43 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
                 préparées à l’atelier. Le client en est averti sur la fiche de l’œuvre, avant le paiement
                 et dans la confirmation de commande.
             </p>
+
+            <?php // 2026-10-29 : la case ne crée aucun tirage ; la fiche montre ceux qui existent. ?>
+            <?php if ($oeuvre !== null) : ?>
+                <?php
+                /** @var list<array<string, mixed>> $tirages */
+                $tirages = is_array($data['tirages'] ?? null) ? $data['tirages'] : [];
+                $fineArt = array_values(array_filter(
+                    $tirages,
+                    static fn (array $p): bool => ($p['processing_mode'] ?? '') === 'prodigi_auto',
+                ));
+                $tiragesUrl = $base . '/admin/oeuvres/' . $oeuvre['id'] . '/reproductions';
+                ?>
+                <?php if ($fineArt === []) : ?>
+            <p class="aide" data-tirages>
+                Aucun tirage n’est proposé pour cette œuvre : cette case ne s’affiche aux clients qu’une fois
+                des tirages créés et publiés.
+                <a href="<?= attr($tiragesUrl) ?>">Proposer des tirages →</a>
+            </p>
+                <?php endif; ?>
+                <?php foreach ($fineArt as $produit) : ?>
+                    <?php
+                    $formats = [];
+                    foreach ((array) $produit['variants'] as $variante) {
+                        if (($variante['is_active'] ?? false) === true) {
+                            $formats[] = $variante['size_label'] . ' ('
+                                . money(Money::fromCents((int) $variante['price_cents']), Locale::Fr) . ')';
+                        }
+                    }
+                    ?>
+            <p class="aide" data-tirages>Tirages proposés : <?= e($formats === [] ? 'aucun format' : implode(', ', $formats)) ?>
+                    <?php if (($produit['is_published'] ?? false) !== true) : ?>
+                — <strong>non publiés</strong>, ils n’apparaissent pas sur la page publique de l’œuvre.
+                    <?php endif; ?>
+                <a href="<?= attr($tiragesUrl) ?>">Gérer les tirages →</a>
+            </p>
+                <?php endforeach; ?>
+            <?php endif; ?>
         </fieldset>
 
         <fieldset>
