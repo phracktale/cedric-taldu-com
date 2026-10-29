@@ -378,6 +378,46 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
                 </p>
             </div>
 
+        </fieldset>
+
+        <?php // 2026-10-29 : les reproductions ont leur bloc ; le lien du bas de page passait inaperçu. ?>
+        <fieldset>
+            <legend>Reproductions</legend>
+
+            <?php if ($oeuvre === null) : ?>
+            <p class="aide">Enregistrez l’œuvre pour lui proposer des tirages.</p>
+            <?php else : ?>
+                <?php
+                /** @var list<array<string, mixed>> $tirages */
+                $tirages = is_array($data['tirages'] ?? null) ? $data['tirages'] : [];
+                $tiragesUrl = $base . '/admin/oeuvres/' . $oeuvre['id'] . '/reproductions';
+                ?>
+                <?php if ($tirages === []) : ?>
+            <p class="aide" data-tirages>
+                Aucun tirage n’est proposé pour cette œuvre : la case ci-dessous ne s’affiche aux clients
+                qu’une fois des tirages créés et publiés.
+            </p>
+                <?php endif; ?>
+                <?php foreach ($tirages as $produit) : ?>
+                    <?php
+                    $fineArt = ($produit['processing_mode'] ?? '') === 'prodigi_auto';
+                    $formats = [];
+                    foreach ((array) $produit['variants'] as $variante) {
+                        if (($variante['is_active'] ?? false) === true) {
+                            $formats[] = $variante['size_label'] . ' ('
+                                . money(Money::fromCents((int) $variante['price_cents']), Locale::Fr) . ')';
+                        }
+                    }
+                    ?>
+            <p class="aide" data-tirages><?= e($fineArt ? 'Tirages Fine Art' : 'Édition limitée') ?> :
+                <?= e($formats === [] ? 'aucun format' : implode(', ', $formats)) ?>
+                    <?php if (($produit['is_published'] ?? false) !== true) : ?>
+                — <strong><?= e($fineArt ? 'non publiés' : 'non publiée') ?></strong>, invisible sur la page publique de l’œuvre.
+                    <?php endif; ?>
+            </p>
+                <?php endforeach; ?>
+            <?php endif; ?>
+
             <?php // 2026-10-28 : tirages transmis par API au prestataire, imprimés pour le client. ?>
             <p class="champ champ-inline">
                 <input type="checkbox" id="tirages_sans_retractation" name="tirages_sans_retractation" value="1"
@@ -391,41 +431,11 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
                 et dans la confirmation de commande.
             </p>
 
-            <?php // 2026-10-29 : la case ne crée aucun tirage ; la fiche montre ceux qui existent. ?>
             <?php if ($oeuvre !== null) : ?>
-                <?php
-                /** @var list<array<string, mixed>> $tirages */
-                $tirages = is_array($data['tirages'] ?? null) ? $data['tirages'] : [];
-                $fineArt = array_values(array_filter(
-                    $tirages,
-                    static fn (array $p): bool => ($p['processing_mode'] ?? '') === 'prodigi_auto',
-                ));
-                $tiragesUrl = $base . '/admin/oeuvres/' . $oeuvre['id'] . '/reproductions';
-                ?>
-                <?php if ($fineArt === []) : ?>
-            <p class="aide" data-tirages>
-                Aucun tirage n’est proposé pour cette œuvre : cette case ne s’affiche aux clients qu’une fois
-                des tirages créés et publiés.
-                <a href="<?= attr($tiragesUrl) ?>">Proposer des tirages →</a>
+            <p class="actions">
+                <a class="bouton bouton--secondaire" href="<?= attr($base . '/admin/oeuvres/' . $oeuvre['id'] . '/reproductions') ?>">Gérer les reproductions de cette œuvre</a>
             </p>
-                <?php endif; ?>
-                <?php foreach ($fineArt as $produit) : ?>
-                    <?php
-                    $formats = [];
-                    foreach ((array) $produit['variants'] as $variante) {
-                        if (($variante['is_active'] ?? false) === true) {
-                            $formats[] = $variante['size_label'] . ' ('
-                                . money(Money::fromCents((int) $variante['price_cents']), Locale::Fr) . ')';
-                        }
-                    }
-                    ?>
-            <p class="aide" data-tirages>Tirages proposés : <?= e($formats === [] ? 'aucun format' : implode(', ', $formats)) ?>
-                    <?php if (($produit['is_published'] ?? false) !== true) : ?>
-                — <strong>non publiés</strong>, ils n’apparaissent pas sur la page publique de l’œuvre.
-                    <?php endif; ?>
-                <a href="<?= attr($tiragesUrl) ?>">Gérer les tirages →</a>
-            </p>
-                <?php endforeach; ?>
+            <p class="champ-aide">Formats, prix et publication. Enregistrez d’abord vos modifications de la fiche.</p>
             <?php endif; ?>
         </fieldset>
 
@@ -468,12 +478,6 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
     </form>
 
     <?php if ($oeuvre !== null) : ?>
-    <p class="admin-lien-reproductions">
-        <a href="<?= attr($base . '/admin/oeuvres/' . $oeuvre['id'] . '/reproductions') ?>">
-            Gérer les reproductions de cette œuvre →
-        </a>
-    </p>
-
     <div class="actions">
         <form method="post" action="<?= attr($base . '/admin/oeuvres/' . $oeuvre['id'] . '/publication') ?>">
             <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
