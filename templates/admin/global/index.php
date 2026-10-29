@@ -44,7 +44,7 @@ $v = static fn (string $nom, string $defaut): string => $saisie === [] ? $defaut
     </div>
     <?php endif; ?>
 
-    <form method="post" action="<?= attr($base . '/admin/global') ?>" class="formulaire">
+    <form method="post" action="<?= attr($base . '/admin/global') ?>" data-autosave class="formulaire">
         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
 
         <fieldset>

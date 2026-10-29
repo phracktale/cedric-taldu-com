@@ -197,7 +197,7 @@ $prixEuros = static fn (int $cents): string => sprintf('%d.%02d', intdiv($cents,
                             <td class="colonne-actions">
                                 <details>
                                     <summary class="lien-bouton">Modifier</summary>
-                                    <form method="post" action="<?= attr($base) ?>/admin/variantes/<?= attr($variant['id']) ?>"
+                                    <form method="post" action="<?= attr($base) ?>/admin/variantes/<?= attr($variant['id']) ?>" data-autosave
                                           class="formulaire admin-variante-edition">
                                         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
                                         <div class="grille-champs">

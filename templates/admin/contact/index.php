@@ -41,7 +41,7 @@ $erreurs = is_array($data['erreurs'] ?? null) ? $data['erreurs'] : [];
     </div>
     <?php endif; ?>
 
-    <form method="post" action="<?= attr($base . '/admin/contact') ?>" class="formulaire">
+    <form method="post" action="<?= attr($base . '/admin/contact') ?>" data-autosave class="formulaire">
         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
 
         <?php foreach (['fr' => 'Français', 'en' => 'Anglais'] as $langue => $libelle) : ?>

@@ -20,6 +20,7 @@ import { monterMenuAdmin } from './admin-menu.js?v=20261029';
 import { monterCompositeurs } from './composer.js?v=20261029';
 import { monterBarreGeneration } from './admin-generation.js?v=20261029';
 import { monterTris } from './admin-tri.js?v=20261029';
+import { monterEnregistrementAutomatique } from './autosave.js?v=20261029';
 
 /* ------------------------------------------------------------- onglets FR/EN */
 
@@ -249,7 +250,8 @@ function activerRecadrage(section) {
 /* --------------------------------------------------------------- amorçage */
 
 document.querySelectorAll('[data-onglets-langue]').forEach(activerOnglets);
-document.querySelectorAll('form[data-surveiller]').forEach(surveillerLesModifications);
+// Un formulaire qui s'enregistre de lui-même (2026-10-29) a sa propre garde.
+document.querySelectorAll('form[data-surveiller]:not([data-autosave])').forEach(surveillerLesModifications);
 confirmerLesSuppressions(document);
 document.querySelectorAll('[data-cropper]').forEach(activerRecadrage);
 monterEditeursDeBlocs(document);
@@ -347,3 +349,6 @@ function montrerQuantiteEnStock(liste) {
 
 const listeStock = document.getElementById('stock_mode');
 if (listeStock) montrerQuantiteEnStock(listeStock);
+
+// Enregistrement automatique (2026-10-29), une fois les éditeurs montés.
+monterEnregistrementAutomatique();

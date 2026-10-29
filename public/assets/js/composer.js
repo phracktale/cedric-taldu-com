@@ -31,10 +31,14 @@ function monter(racine) {
 
   const zoneCible = () => zones.find((z) => z.dataset.name === cible?.value) ?? zones[0];
 
+  // Enregistrement automatique (2026-10-29) : chaque changement de composition
+  // le prévient, sauf l'écriture initiale du montage.
+  let pret = false;
   const ecrire = (zone) => {
     const champ = racine.querySelector(`input[type="hidden"][name="${zone.dataset.name}"]`);
     const items = [...zone.querySelectorAll(':scope > [data-composer-entry]')].map((li) => JSON.parse(li.dataset.item));
     if (champ) champ.value = JSON.stringify(items);
+    if (champ && pret) champ.dispatchEvent(new Event('change', { bubbles: true }));
     zone.classList.toggle('composer-zone--vide', items.length === 0);
     majPalette();
   };
@@ -200,6 +204,7 @@ function monter(racine) {
   });
 
   zones.forEach(ecrire);
+  pret = true;
 }
 
 function cleDe(item) {

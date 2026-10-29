@@ -22,7 +22,7 @@ $couleur = is_string($data['couleur'] ?? null) ? $data['couleur'] : '';
 <div class="admin-page admin-page--etroite">
     <h1>Apparence</h1>
 
-    <form method="post" action="<?= attr($base . '/admin/apparence') ?>" class="formulaire" data-surveiller>
+    <form method="post" action="<?= attr($base . '/admin/apparence') ?>" data-autosave class="formulaire" data-surveiller>
         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
 
         <fieldset>

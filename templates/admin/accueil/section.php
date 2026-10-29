@@ -36,7 +36,7 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
     <p class="erreur" role="alert"><?= e($data['erreur']) ?></p>
     <?php endif; ?>
 
-    <form method="post" action="<?= attr($base . '/admin/accueil/' . $section) ?>" class="formulaire"
+    <form method="post" action="<?= attr($base . '/admin/accueil/' . $section) ?>" data-autosave class="formulaire"
           enctype="multipart/form-data" data-surveiller>
         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
 

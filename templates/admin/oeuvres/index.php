@@ -92,7 +92,7 @@ $portee = is_string($data['portee'] ?? null) ? $data['portee'] : null;
     </form>
 
     <?php // Classement de la page publique « Toutes les œuvres » (demande du 2026-10-12). ?>
-    <form method="post" action="<?= attr($base . '/admin/oeuvres/classement') ?>" class="formulaire classement-oeuvres">
+    <form method="post" action="<?= attr($base . '/admin/oeuvres/classement') ?>" data-autosave="recharger" class="formulaire classement-oeuvres">
         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
         <fieldset>
             <legend>Classement de la page « Toutes les œuvres »</legend>

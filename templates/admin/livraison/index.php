@@ -28,7 +28,7 @@ $transporteurs = is_array($data['transporteurs'] ?? null) ? $data['transporteurs
     <p class="erreur" role="alert"><?= e($data['erreur']) ?></p>
     <?php endif; ?>
 
-    <form method="post" action="<?= attr($base . '/admin/livraison') ?>" class="formulaire">
+    <form method="post" action="<?= attr($base . '/admin/livraison') ?>" data-autosave class="formulaire">
         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
 
         <fieldset>
