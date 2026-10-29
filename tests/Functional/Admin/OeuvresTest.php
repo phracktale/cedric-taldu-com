@@ -255,6 +255,47 @@ final class OeuvresTest extends AdminTestCase
         $this->assertMatchesRegularExpression('~name="tirages_sans_retractation" value="1"\s+checked~', $formulaire);
     }
 
+    public function test_les_reproductions_ont_leur_bloc_dans_la_fiche(): void
+    {
+        // Retour du 2026-10-29 : le lien du bas de page passait inaperçu. Un
+        // bloc comme les autres réunit l'état des tirages, la case « sans
+        // rétractation » et le bouton vers leur gestion.
+        $id = (new ArtworkFactory($this->pdo))->translated('fr', 'articulation', 'Articulation')
+            ->create($this->rubrique);
+
+        $fiche = $this->requete('GET', self::OEUVRES . '/' . $id)->body;
+
+        $this->assertMatchesRegularExpression(
+            '~<legend>Reproductions</legend>(?:(?!</fieldset>).)*name="tirages_sans_retractation"'
+            . '(?:(?!</fieldset>).)*<a class="bouton[^"]*" href="' . preg_quote(self::OEUVRES . '/' . $id . '/reproductions', '~')
+            . '">Gérer les reproductions de cette œuvre</a>~s',
+            $fiche,
+        );
+    }
+
+    public function test_la_case_sans_retractation_quitte_le_bloc_commerce(): void
+    {
+        $fiche = $this->requete('GET', self::OEUVRES . '/nouvelle')->body;
+
+        $this->assertDoesNotMatchRegularExpression(
+            '~<legend>Commerce</legend>(?:(?!</fieldset>).)*tirages_sans_retractation~s',
+            $fiche,
+        );
+    }
+
+    public function test_une_nouvelle_oeuvre_propose_ses_reproductions_apres_enregistrement(): void
+    {
+        // Pas encore d'identifiant : la case se règle, les tirages viendront
+        // une fois l'œuvre enregistrée.
+        $fiche = $this->requete('GET', self::OEUVRES . '/nouvelle')->body;
+
+        $this->assertMatchesRegularExpression(
+            '~<legend>Reproductions</legend>(?:(?!</fieldset>).)*Enregistrez l’œuvre pour lui proposer des tirages'
+            . '(?:(?!</fieldset>).)*name="tirages_sans_retractation"~s',
+            $fiche,
+        );
+    }
+
     public function test_sans_tirage_la_fiche_dit_ou_en_proposer(): void
     {
         // 2026-10-29 : cocher « sans rétractation » ne crée aucun tirage. La
