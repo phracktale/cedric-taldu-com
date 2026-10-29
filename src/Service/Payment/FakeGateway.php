@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Service\Payment;
 
 use App\Service\Payment\Exception\InvalidWebhookSignature;
+use App\Service\Payment\Exception\RefundFailed;
 use JsonException;
 
 /**
@@ -23,6 +24,11 @@ final class FakeGateway implements PaymentGateway
 
     /** @var array<string, mixed>|null */
     private ?array $lastCheckout = null;
+
+    /** @var list<array{payment_intent: string, idempotency_key: string}> */
+    private array $refunds = [];
+
+    private bool $refuseNextRefund = false;
 
     public function __construct(
         private readonly string $webhookSecret,
@@ -68,6 +74,33 @@ final class FakeGateway implements PaymentGateway
         $id = sprintf('cs_test_%s_%d', substr(hash('sha256', $reference), 0, 12), $this->counter);
 
         return new CheckoutSession($id, $this->baseUrl . '/' . $id, $expiresAt);
+    }
+
+    public function refund(string $paymentIntentId, string $idempotencyKey): string
+    {
+        if ($this->refuseNextRefund) {
+            $this->refuseNextRefund = false;
+
+            throw RefundFailed::because('refus simulé');
+        }
+
+        $this->refunds[] = ['payment_intent' => $paymentIntentId, 'idempotency_key' => $idempotencyKey];
+
+        return 're_test_' . count($this->refunds);
+    }
+
+    /** Le prochain remboursement sera refusé, comme Stripe peut le faire. */
+    public function failNextRefund(): void
+    {
+        $this->refuseNextRefund = true;
+    }
+
+    /**
+     * @return list<array{payment_intent: string, idempotency_key: string}>
+     */
+    public function refunds(): array
+    {
+        return $this->refunds;
     }
 
     public function verifyWebhook(string $rawBody, string $signatureHeader): WebhookEvent

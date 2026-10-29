@@ -229,7 +229,7 @@ Route **exemptée de CSRF et de localisation**, jamais mise en cache.
 | `checkout.session.completed` avec `payment_status = paid` | Commande `pending → paid`, `paid_at` ; œuvres `reserved → sold` ; `stock_qty` décrémenté ; numéros d'édition attribués ; `editions_sold` incrémenté ; e-mails envoyés |
 | `checkout.session.expired` | Commande `pending → cancelled` ; œuvres `reserved → available` |
 | `payment_intent.payment_failed` | Commande `pending → failed` ; libération des réservations |
-| `charge.refunded` | Commande `→ refunded` ; **aucune** réintégration automatique de stock (décision de l'artiste, faite en back-office) |
+| `charge.refunded` | Remboursement **intégral** seulement (`refunded = true`) : commande `→ refunded` et stock remis en place (décision du 2026-10-29, qui remplace « aucune réintégration »). Commande retrouvée par son paiement (`stripe_payment_intent_id`). Un remboursement partiel laisse la commande en l'état |
 
 5. `processed_at` renseigné, transaction validée, réponse **200**.
 6. Toute exception pendant le traitement → transaction annulée, `processed_at` laissé nul,
@@ -245,6 +245,24 @@ Si zéro ligne affectée → édition épuisée : la commande est marquée `paid
 client a payé), la ligne est signalée en anomalie dans le back-office et un e-mail
 d'alerte part vers l'artiste. **On ne perd jamais un paiement encaissé.** Les numéros
 attribués sont `editions_sold_avant + 1 … + q`.
+
+### Annuler et rembourser (2026-10-29)
+
+Bouton du back-office sur la liste et la fiche d'une commande payée ou expédiée, menant à
+une page de confirmation (case à cocher expresse, jeton CSRF). Le remboursement intégral
+part d'abord chez Stripe (clé d'idempotence `refund-<référence>`) ; s'il est refusé, rien
+ne change. Sinon la commande passe à `refunded` et le stock est remis en place :
+
+| Ligne | Remise en stock |
+|---|---|
+| Œuvre en pièce originale | `sold → available` (un autre statut choisi par l'artiste est respecté) |
+| Œuvre en quantité | `stock_qty + quantité`, et `sold → available` si l'épuisement l'avait vendue |
+| Œuvre en illimité | rien |
+| Tirage | `product_variants.stock_qty + quantité` ; les numéros d'édition attribués restent acquis |
+| Ligne en anomalie `already_sold` / `stock_missing` | rien : elle n'avait rien consommé |
+
+L'avis `charge.refunded` qui suit applique la même règle et ne refait rien : la
+transition `→ refunded` est conditionnelle.
 
 ## 7. Après la commande
 

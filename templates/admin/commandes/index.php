@@ -78,7 +78,13 @@ $accord = static fn (int $n, string $singulier, string $pluriel): string => $n .
             </td>
             <td><?= e($commande->createdAt) ?></td>
             <td><?= e($commande->customerName) ?> — <?= e($commande->customerEmail) ?></td>
-            <td><?= e($commande->status->label(Locale::Fr)) ?></td>
+            <td>
+              <?= e($commande->status->label(Locale::Fr)) ?>
+              <?php // 2026-10-29 : mène à la confirmation, jamais au remboursement direct. ?>
+              <?php if ($commande->status->isRefundable()) : ?>
+                <br><a href="<?= attr($base) ?>/admin/commandes/<?= attr($commande->id) ?>/remboursement">Annuler / rembourser</a>
+              <?php endif; ?>
+            </td>
             <td><?= e($commande->shippingLabel()) ?></td>
             <td>
               <?php if ($commande->trackingNumber !== null && $commande->trackingUrl !== null) : ?>

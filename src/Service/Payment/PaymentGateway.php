@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Service\Payment;
 
 use App\Service\Payment\Exception\InvalidWebhookSignature;
+use App\Service\Payment\Exception\RefundFailed;
 
 /**
  * Toute la couche de paiement passe par ici (03-boutique §6).
@@ -47,4 +48,14 @@ interface PaymentGateway
      *         ignorer une exception.
      */
     public function verifyWebhook(string $rawBody, string $signatureHeader): WebhookEvent;
+
+    /**
+     * Rembourse intégralement un paiement (2026-10-29).
+     *
+     * La clé d'idempotence fait d'un double envoi un seul remboursement.
+     *
+     * @return string identifiant du remboursement (re_…)
+     * @throws RefundFailed si Stripe refuse : rien n'a alors été rendu.
+     */
+    public function refund(string $paymentIntentId, string $idempotencyKey): string;
 }

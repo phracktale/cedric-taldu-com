@@ -103,6 +103,12 @@ final class PaymentEventHandler
             // 03-boutique §7 : « si l'envoi echoue, la commande RESTE PAYEE ;
             // l'echec est journalise et rejouable ». Envoyer dans la
             // transaction ferait annuler un encaissement pour une panne SMTP.
+            // Un remboursement remet des œuvres en vente : la page statique
+            // qui les dit vendues doit tomber (2026-10-29).
+            if ($outcome === WebhookOutcome::Processed && $event->type === 'charge.refunded') {
+                $this->refreshStaticSite();
+            }
+
             if ($outcome === WebhookOutcome::Processed && $event->type === 'checkout.session.completed') {
                 $this->notify($event);
                 // Soumission Prodigi APRÈS commit, comme les courriels : une panne
@@ -236,7 +242,7 @@ final class PaymentEventHandler
             // autre type, et un `default` rendrait le `match` non exhaustif au
             // sens de PHPStan — un type ajoute a la liste sans etre traite ici
             // partirait alors silencieusement en « ignore ».
-            'charge.refunded' => $this->refund($order, $now),
+            'charge.refunded' => $this->refund($event, $order, $now),
         };
     }
 
@@ -251,6 +257,16 @@ final class PaymentEventHandler
     {
         if ($event->sessionId !== null) {
             $order = $this->orders->findByStripeSession($event->sessionId);
+
+            if ($order !== null) {
+                return $order;
+            }
+        }
+
+        // charge.* ne porte ni session ni référence : le paiement (pi_…),
+        // enregistré à l'encaissement, mène à la commande (2026-10-29).
+        if ($event->paymentIntentId !== null) {
+            $order = $this->orders->findByPaymentIntent($event->paymentIntentId);
 
             if ($order !== null) {
                 return $order;
@@ -392,19 +408,89 @@ final class PaymentEventHandler
     }
 
     /**
-     * Remboursement : AUCUNE reintegration automatique de stock
-     * (03-boutique §6). L'artiste decide en back-office s'il remet la piece en
-     * vente — elle peut avoir ete expediee, ou abimee au retour.
+     * Avis Stripe de remboursement. Seul un remboursement INTÉGRAL annule la
+     * commande : rendre les frais de port, par exemple, laisse la vente tenir.
      */
-    private function refund(PersistedOrder $order, DateTimeImmutable $now): WebhookOutcome
+    private function refund(WebhookEvent $event, PersistedOrder $order, DateTimeImmutable $now): WebhookOutcome
     {
-        if (!$order->status->canTransitionTo(OrderStatus::Refunded)) {
-            return WebhookOutcome::AlreadyHandled;
+        if (($event->object['refunded'] ?? null) !== true) {
+            $this->logger->log(LogLevel::Info, 'Remboursement partiel : la commande est maintenue', [
+                'reference' => $order->reference,
+            ]);
+
+            return WebhookOutcome::Ignored;
         }
 
-        return $this->orders->transitionTo($order->id, $order->status, OrderStatus::Refunded, $now)
-            ? WebhookOutcome::Processed
-            : WebhookOutcome::AlreadyHandled;
+        return $this->restock($order, $now) ? WebhookOutcome::Processed : WebhookOutcome::AlreadyHandled;
+    }
+
+    /**
+     * Commande remboursée par le back-office (2026-10-29) : même règle que
+     * l'avis Stripe, qui suivra et ne refera rien.
+     *
+     * @return bool faux si la commande n'était plus remboursable
+     */
+    public function settleRefund(PersistedOrder $order, DateTimeImmutable $now): bool
+    {
+        $own = !$this->pdo->inTransaction();
+
+        if ($own) {
+            $this->pdo->beginTransaction();
+        }
+
+        try {
+            $settled = $this->restock($order, $now);
+
+            if ($own) {
+                $this->pdo->commit();
+            }
+        } catch (Throwable $e) {
+            if ($own && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $e;
+        }
+
+        if ($settled) {
+            $this->refreshStaticSite();
+        }
+
+        return $settled;
+    }
+
+    /**
+     * Annule la commande et remet son stock en place (décision du 2026-10-29,
+     * qui remplace « aucune réintégration automatique »).
+     *
+     * La transition `→ refunded` est conditionnelle : des deux chemins — le
+     * bouton du back-office et l'avis Stripe —, un seul remet le stock.
+     */
+    private function restock(PersistedOrder $order, DateTimeImmutable $now): bool
+    {
+        if (
+            !$order->status->isRefundable()
+            || !$this->orders->transitionTo($order->id, $order->status, OrderStatus::Refunded, $now)
+        ) {
+            return false;
+        }
+
+        foreach ($order->lines as $line) {
+            // Ligne qui n'a rien consommé : pièce vendue à un autre acheteur,
+            // stock déjà manquant au paiement. La remettre en stock rendrait
+            // ce qui n'avait pas été pris.
+            if (in_array($line->anomaly, ['already_sold', 'stock_missing'], true)) {
+                continue;
+            }
+
+            if ($line->kind === LineKind::Original && $line->artworkId !== null) {
+                $this->stock->restoreArtwork($line->artworkId, $line->quantity);
+            } elseif ($line->kind === LineKind::Reproduction && $line->variantId !== null) {
+                $this->stock->restoreVariantStock($line->variantId, $line->quantity);
+            }
+        }
+
+        return true;
     }
 
     private function flag(PersistedOrder $order, int $lineId, string $code, string $reason): void
