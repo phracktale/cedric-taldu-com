@@ -67,8 +67,26 @@ function initSousMenu(conteneur) {
 
   // Ouverture au survol, mais uniquement sur pointeur fin : sur un écran
   // tactile, « survol » signifie « premier appui » et volerait le clic.
+  //
+  // Et seulement pour un pointeur VENU DE L'EXTÉRIEUR. Juste après un clic sur
+  // « Galerie », la nouvelle page se charge sous un pointeur resté sur
+  // l'entrée : son premier mouvement déclenchait mouseenter, et le sous-menu
+  // s'ouvrait à chaque navigation (retour du 2026-10-29). Le survol n'est donc
+  // armé qu'après un mouvement hors du menu.
   if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
-    conteneur.addEventListener('mouseenter', () => ouvrir(true));
+    let survolArme = false;
+
+    document.addEventListener('pointermove', (evenement) => {
+      if (!conteneur.contains(evenement.target)) {
+        survolArme = true;
+      }
+    }, { passive: true });
+
+    conteneur.addEventListener('mouseenter', () => {
+      if (survolArme) {
+        ouvrir(true);
+      }
+    });
     conteneur.addEventListener('mouseleave', () => ouvrir(false));
   }
 
