@@ -454,7 +454,9 @@ legend {
 .admin-groupe > summary { cursor: pointer; font-size: .95rem; list-style: none; padding-bottom: .2rem; }
 .admin-groupe > summary::-webkit-details-marker { display: none; }
 .admin-groupe > summary::after { content: ' ▾'; font-size: .75rem; }
-.admin-groupe[open] > summary { border-bottom: 2px solid var(--encre); }
+/* Rubrique courante soulignée, menu fermé (retour du 2026-10-29). */
+.admin-groupe[open] > summary,
+.admin-groupe--courant > summary { border-bottom: 2px solid var(--encre); }
 .admin-groupe > ul {
   position: absolute; top: calc(100% + .4rem); left: 0; z-index: 20; min-width: 13rem;
   display: flex; flex-direction: column; gap: 0; list-style: none; margin: 0; padding: .4rem 0;

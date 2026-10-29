@@ -114,6 +114,13 @@ function initSousMenu(conteneur) {
     }
   });
 
+  // Un lien du sous-menu choisi, ou un retour arrière qui rendrait la page
+  // telle qu'on l'a quittée : le sous-menu se referme (retour du 2026-10-29).
+  liste.querySelectorAll('a').forEach((lien) => {
+    lien.addEventListener('click', () => ouvrir(false));
+  });
+  window.addEventListener('pageshow', () => ouvrir(false));
+
   // Fermeture au clic extérieur.
   document.addEventListener('click', (evenement) => {
     if (!conteneur.contains(evenement.target)) {

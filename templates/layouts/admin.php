@@ -63,8 +63,9 @@ $site = ($data['site'] ?? null) instanceof App\Domain\Editorial\SiteIdentity
         <ul class="admin-groupes">
         <?php foreach ($groupes as $groupe) : ?>
             <li>
-                <details class="admin-groupe"<?php if ($groupe['label'] === $groupeCourant) : ?> open<?php endif; ?>>
-                    <summary><?= e($groupe['label']) ?></summary>
+                <?php // Retour du 2026-10-29 : fermé par défaut ; la rubrique courante est signalée, pas ouverte. ?>
+                <details class="admin-groupe<?php if ($groupe['label'] === $groupeCourant) : ?> admin-groupe--courant<?php endif; ?>">
+                    <summary<?php if ($groupe['label'] === $groupeCourant) : ?> aria-current="true"<?php endif; ?>><?= e($groupe['label']) ?></summary>
                     <ul>
                     <?php foreach ($groupe['items'] as $entree) : ?>
                         <?php if ($entree === null) : ?>
