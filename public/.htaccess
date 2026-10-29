@@ -76,7 +76,20 @@ DirectoryIndex index.php
 
     # Les assets portent une empreinte de contenu dans leur URL : ils peuvent
     # etre mis en cache sans limite, un changement produit une nouvelle URL.
-    <FilesMatch "\.(css|js|woff2|avif|webp|jpg|jpeg|png|svg|ico)$">
+    <FilesMatch "\.(css|woff2|avif|webp|jpg|jpeg|png|svg|ico)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+
+    # Scripts (retour du 2026-10-29) : seuls les points d'entree charges par
+    # asset() portent l'empreinte. Les modules qu'ils importent
+    # (import './nav.js') ne la portent pas : immuables, un correctif
+    # n'atteignait jamais un visiteur deja venu. Ils sont donc revalides a
+    # chaque chargement (304 s'ils n'ont pas change). La seconde regle,
+    # appliquee apres, rend leur cache illimite aux seuls points d'entree.
+    <FilesMatch "\.js$">
+        Header set Cache-Control "no-cache"
+    </FilesMatch>
+    <FilesMatch "^(admin|analytics|app)\.js$">
         Header set Cache-Control "public, max-age=31536000, immutable"
     </FilesMatch>
 </IfModule>
