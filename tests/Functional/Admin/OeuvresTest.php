@@ -255,6 +255,45 @@ final class OeuvresTest extends AdminTestCase
         $this->assertMatchesRegularExpression('~name="tirages_sans_retractation" value="1"\s+checked~', $formulaire);
     }
 
+    public function test_sans_tirage_la_fiche_dit_ou_en_proposer(): void
+    {
+        // 2026-10-29 : cocher « sans rétractation » ne crée aucun tirage. La
+        // fiche le dit, sous la case, avec le lien vers les formats.
+        $id = (new ArtworkFactory($this->pdo))->translated('fr', 'articulation', 'Articulation')
+            ->create($this->rubrique);
+
+        $fiche = $this->requete('GET', self::OEUVRES . '/' . $id)->body;
+
+        $this->assertMatchesRegularExpression(
+            '~<p class="aide" data-tirages>\s*Aucun tirage n’est proposé pour cette œuvre~',
+            $fiche,
+        );
+    }
+
+    public function test_la_fiche_signale_des_tirages_non_publies(): void
+    {
+        $id = (new ArtworkFactory($this->pdo))->translated('fr', 'articulation', 'Articulation')
+            ->create($this->rubrique);
+        $this->tirage($id, publie: false);
+
+        $fiche = $this->requete('GET', self::OEUVRES . '/' . $id)->body;
+
+        $this->assertMatchesRegularExpression('~data-tirages>[^<]*30 × 40 cm \(30,00~', $fiche);
+        $this->assertStringContainsString('non publiés', $fiche);
+    }
+
+    public function test_des_tirages_publies_ne_sont_pas_signales(): void
+    {
+        $id = (new ArtworkFactory($this->pdo))->translated('fr', 'articulation', 'Articulation')
+            ->create($this->rubrique);
+        $this->tirage($id, publie: true);
+
+        $fiche = $this->requete('GET', self::OEUVRES . '/' . $id)->body;
+
+        $this->assertMatchesRegularExpression('~data-tirages>[^<]*30 × 40 cm \(30,00~', $fiche);
+        $this->assertStringNotContainsString('non publiés', $fiche);
+    }
+
     public function test_une_oeuvre_nait_avec_le_droit_de_retractation_de_ses_tirages(): void
     {
         $this->creer(['reference' => 'CT-ENC-001', 'titre_fr' => 'Articulation']);
@@ -744,6 +783,27 @@ final class OeuvresTest extends AdminTestCase
         $this->assertSame(1, preg_match('/preview=([0-9a-f-]+)/', $lien, $trouve));
 
         return $trouve[1];
+    }
+
+    /** Tirage Fine Art transmis au prestataire, un format à 30 €. */
+    private function tirage(int $oeuvre, bool $publie): void
+    {
+        $this->pdo->prepare(
+            "INSERT INTO products (artwork_id, kind, processing_mode, is_published, created_at, updated_at)
+             VALUES (:art, 'standard', 'prodigi_auto', :pub, NOW(), NOW())"
+        )->execute(['art' => $oeuvre, 'pub' => $publie ? 1 : 0]);
+        $produit = (int) $this->pdo->lastInsertId();
+
+        $this->pdo->prepare(
+            'INSERT INTO product_variants (product_id, sku, prodigi_sku, size_label, price_cents, stock_qty,
+                                           weight_grams, created_at, updated_at)
+             VALUES (:prod, :sku, :prodigi, :taille, 3000, 999, 300, NOW(), NOW())'
+        )->execute([
+            'prod' => $produit,
+            'sku' => 'CT' . $oeuvre . '-HGE-12X16',
+            'prodigi' => 'GLOBAL-HGE-12X16',
+            'taille' => '30 × 40 cm',
+        ]);
     }
 
     private function compter(string $table): int
