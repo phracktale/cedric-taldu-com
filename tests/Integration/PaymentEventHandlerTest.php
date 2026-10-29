@@ -360,21 +360,97 @@ final class PaymentEventHandlerTest extends DatabaseTestCase
         $this->assertSame('sold', $this->valeur("SELECT status FROM artworks WHERE id = {$this->artwork}"));
     }
 
-    public function test_un_remboursement_ne_reintegre_aucun_stock(): void
+    public function test_un_remboursement_integral_annule_la_commande_et_remet_le_stock(): void
     {
-        // 03-boutique §6 : « aucune reintegration automatique de stock,
-        // decision de l'artiste, faite en back-office ».
+        // Décision du 2026-10-29 (remplace « aucune réintégration ») : la
+        // pièce originale revient en vente, le tirage revient au stock.
         $commande = $this->creerCommande();
         $this->traiter($commande->reference, $commande->id, 'evt_1');
 
-        $this->traiter($commande->reference, $commande->id, 'evt_2', 'charge.refunded');
+        $this->assertSame(WebhookOutcome::Processed, $this->rembourser('evt_2'));
 
         $this->assertSame('refunded', $this->valeur("SELECT status FROM orders WHERE id = {$commande->id}"));
-        $this->assertSame('sold', $this->valeur("SELECT status FROM artworks WHERE id = {$this->artwork}"));
+        $this->assertSame('available', $this->valeur("SELECT status FROM artworks WHERE id = {$this->artwork}"));
         $this->assertSame(
-            8,
+            10,
             (int) $this->valeur("SELECT stock_qty FROM product_variants WHERE id = {$this->variant}"),
         );
+    }
+
+    public function test_un_remboursement_est_retrouve_par_son_paiement(): void
+    {
+        // L'objet d'un charge.refunded est le paiement (ch_…) : ni session,
+        // ni référence. Seul l'identifiant du paiement (pi_…), enregistré à
+        // l'encaissement, mène à la commande.
+        $commande = $this->creerCommande();
+        $this->traiter($commande->reference, $commande->id, 'evt_1');
+
+        $this->rembourser('evt_2');
+
+        $this->assertSame('refunded', $this->valeur("SELECT status FROM orders WHERE id = {$commande->id}"));
+    }
+
+    public function test_un_remboursement_partiel_n_annule_pas_la_commande(): void
+    {
+        // Rendre les frais de port, par exemple : la vente tient.
+        $commande = $this->creerCommande();
+        $this->traiter($commande->reference, $commande->id, 'evt_1');
+
+        $this->assertSame(WebhookOutcome::Ignored, $this->rembourser('evt_2', integral: false));
+
+        $this->assertSame('paid', $this->valeur("SELECT status FROM orders WHERE id = {$commande->id}"));
+        $this->assertSame('sold', $this->valeur("SELECT status FROM artworks WHERE id = {$this->artwork}"));
+    }
+
+    public function test_un_second_avis_de_remboursement_ne_remet_pas_deux_fois_en_stock(): void
+    {
+        // Le bouton du back-office rembourse et remet en stock ; Stripe
+        // envoie ensuite son propre avis, qui ne doit rien refaire.
+        $commande = $this->creerCommande();
+        $this->traiter($commande->reference, $commande->id, 'evt_1');
+        $this->rembourser('evt_2');
+
+        $this->assertSame(WebhookOutcome::AlreadyHandled, $this->rembourser('evt_3'));
+
+        $this->assertSame(
+            10,
+            (int) $this->valeur("SELECT stock_qty FROM product_variants WHERE id = {$this->variant}"),
+        );
+    }
+
+    public function test_une_piece_deja_vendue_a_un_autre_n_est_pas_remise_en_vente(): void
+    {
+        // Ligne en anomalie « already_sold » : cette commande n'a jamais eu
+        // la pièce, qui appartient à l'autre acheteur.
+        $commande = $this->creerCommande();
+        $this->pdo->exec("UPDATE artworks SET status = 'sold' WHERE id = {$this->artwork}");
+        $this->traiter($commande->reference, $commande->id, 'evt_1');
+
+        $this->rembourser('evt_2');
+
+        $this->assertSame('sold', $this->valeur("SELECT status FROM artworks WHERE id = {$this->artwork}"));
+    }
+
+    public function test_des_exemplaires_rembourses_reviennent_au_stock_de_l_oeuvre(): void
+    {
+        $commande = $this->commandeExemplaires('quantity', 2, 2);
+        $this->traiter($commande->reference, $commande->id, 'evt_1');
+
+        $this->rembourser('evt_2');
+
+        $this->assertSame('2', $this->valeur("SELECT stock_qty FROM artworks WHERE id = {$this->artwork}"));
+        $this->assertSame('available', $this->valeur("SELECT status FROM artworks WHERE id = {$this->artwork}"));
+    }
+
+    public function test_un_stock_illimite_n_est_pas_touche_par_un_remboursement(): void
+    {
+        $commande = $this->commandeExemplaires('unlimited', null, 2);
+        $this->traiter($commande->reference, $commande->id, 'evt_1');
+
+        $this->rembourser('evt_2');
+
+        $this->assertNull($this->valeur("SELECT stock_qty FROM artworks WHERE id = {$this->artwork}"));
+        $this->assertSame('available', $this->valeur("SELECT status FROM artworks WHERE id = {$this->artwork}"));
     }
 
     // ------------------------------------------------------------- cas limites
@@ -606,6 +682,28 @@ final class PaymentEventHandlerTest extends DatabaseTestCase
 
         $this->pdo->prepare("UPDATE orders SET shipping_method = 'shipping', shipping_address = :a WHERE id = :id")
             ->execute(['a' => $adresse, 'id' => $orderId]);
+    }
+
+    /**
+     * Avis Stripe de remboursement, tel qu'il arrive : l'objet est le
+     * paiement (ch_…), sans session ni référence de commande.
+     */
+    private function rembourser(string $eventId, bool $integral = true): WebhookOutcome
+    {
+        $corps = json_encode([
+            'id' => $eventId,
+            'type' => 'charge.refunded',
+            'data' => ['object' => [
+                'id' => 'ch_test_1',
+                'object' => 'charge',
+                'payment_intent' => 'pi_test_1',
+                'refunded' => $integral,
+            ]],
+        ], JSON_THROW_ON_ERROR);
+
+        $evenement = $this->gateway->verifyWebhook($corps, $this->gateway->signPayload($corps, 1_700_000_000));
+
+        return $this->handler->handle($evenement, new DateTimeImmutable(self::MAINTENANT));
     }
 
     private function traiter(

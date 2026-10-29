@@ -143,6 +143,20 @@ final class OrderStatusTest extends TestCase
         $this->assertFalse(OrderStatus::Refunded->isPaid());
     }
 
+    public function test_seules_les_commandes_encaissees_se_remboursent(): void
+    {
+        // 2026-10-29 : bouton « Annuler et rembourser » du back-office. Une
+        // commande non payée n'a rien à rendre ; une commande déjà remboursée
+        // ne doit pas l'être deux fois.
+        $this->assertTrue(OrderStatus::Paid->isRefundable());
+        $this->assertTrue(OrderStatus::Shipped->isRefundable());
+
+        $this->assertFalse(OrderStatus::Pending->isRefundable());
+        $this->assertFalse(OrderStatus::Failed->isRefundable());
+        $this->assertFalse(OrderStatus::Cancelled->isRefundable());
+        $this->assertFalse(OrderStatus::Refunded->isRefundable());
+    }
+
     public function test_seul_pending_libere_ses_reservations(): void
     {
         // 01-modele §7.3 : une reservation expiree remet l'œuvre en available,

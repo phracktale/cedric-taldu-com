@@ -475,6 +475,70 @@ final class StockRepositoryTest extends DatabaseTestCase
         $this->rubriquesHorsTransaction = [];
     }
 
+    // ------------------------------ remise en stock après remboursement (2026-10-29)
+
+    public function test_une_piece_originale_remboursee_est_remise_en_vente(): void
+    {
+        $artwork = $this->creerOeuvre(statut: 'sold');
+
+        $this->repository->restoreArtwork($artwork, 1);
+
+        $this->assertSame('available', $this->statut($artwork));
+    }
+
+    public function test_une_piece_retiree_de_la_vente_entre_temps_n_est_pas_remise_en_vente(): void
+    {
+        // L'artiste a pu la passer « non destinée à la vente » : son choix prime.
+        $artwork = $this->creerOeuvre(statut: 'not_for_sale');
+
+        $this->repository->restoreArtwork($artwork, 1);
+
+        $this->assertSame('not_for_sale', $this->statut($artwork));
+    }
+
+    public function test_des_exemplaires_rembourses_reviennent_au_stock(): void
+    {
+        $artwork = $this->creerOeuvre();
+        $this->pdo->exec("UPDATE artworks SET stock_mode = 'quantity', stock_qty = 3 WHERE id = {$artwork}");
+
+        $this->repository->restoreArtwork($artwork, 2);
+
+        $this->assertSame('5', $this->valeur("SELECT stock_qty FROM artworks WHERE id = {$artwork}"));
+        $this->assertSame('available', $this->statut($artwork));
+    }
+
+    public function test_une_quantite_epuisee_redevient_disponible(): void
+    {
+        // À zéro, la vente avait passé l'œuvre à « vendue » : elle revient.
+        $artwork = $this->creerOeuvre(statut: 'sold');
+        $this->pdo->exec("UPDATE artworks SET stock_mode = 'quantity', stock_qty = 0 WHERE id = {$artwork}");
+
+        $this->repository->restoreArtwork($artwork, 2);
+
+        $this->assertSame('2', $this->valeur("SELECT stock_qty FROM artworks WHERE id = {$artwork}"));
+        $this->assertSame('available', $this->statut($artwork));
+    }
+
+    public function test_un_stock_illimite_ne_change_pas(): void
+    {
+        $artwork = $this->creerOeuvre();
+        $this->pdo->exec("UPDATE artworks SET stock_mode = 'unlimited', stock_qty = NULL WHERE id = {$artwork}");
+
+        $this->repository->restoreArtwork($artwork, 2);
+
+        $this->assertNull($this->valeur("SELECT stock_qty FROM artworks WHERE id = {$artwork}"));
+        $this->assertSame('available', $this->statut($artwork));
+    }
+
+    public function test_un_tirage_rembourse_revient_au_stock_de_sa_variante(): void
+    {
+        $variant = $this->creerVariante(stock: 3);
+
+        $this->repository->restoreVariantStock($variant, 2);
+
+        $this->assertSame(5, $this->stock($variant));
+    }
+
     private function statut(int $artwork): ?string
     {
         return $this->valeur("SELECT status FROM artworks WHERE id = {$artwork}");
