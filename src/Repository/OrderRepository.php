@@ -227,6 +227,18 @@ final class OrderRepository
         return $this->hydrate($statement->fetch());
     }
 
+    /**
+     * Commande d'un paiement Stripe (pi_…), enregistré à l'encaissement :
+     * c'est ce que portent les avis charge.* (2026-10-29).
+     */
+    public function findByPaymentIntent(string $paymentIntentId): ?PersistedOrder
+    {
+        $statement = $this->pdo->prepare('SELECT * FROM orders WHERE stripe_payment_intent_id = :intent');
+        $statement->execute(['intent' => $paymentIntentId]);
+
+        return $this->hydrate($statement->fetch());
+    }
+
     public function findByStripeSession(string $sessionId): ?PersistedOrder
     {
         $statement = $this->pdo->prepare('SELECT * FROM orders WHERE stripe_session_id = :session');

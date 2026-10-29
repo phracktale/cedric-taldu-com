@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Service\Payment;
 
 use App\Service\Payment\Exception\InvalidWebhookSignature;
+use App\Service\Payment\Exception\RefundFailed;
 use JsonException;
+use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
 
 /**
@@ -104,6 +106,22 @@ final class StripeCheckoutGateway implements PaymentGateway
             (string) $session->url,
             $expiresAt,
         );
+    }
+
+    public function refund(string $paymentIntentId, string $idempotencyKey): string
+    {
+        try {
+            $refund = $this->stripe()->refunds->create(
+                ['payment_intent' => $paymentIntentId],
+                ['idempotency_key' => $idempotencyKey],
+            );
+        } catch (ApiErrorException $e) {
+            // Le code Stripe (charge_already_refunded…) suffit au journal ; le
+            // message complet peut citer des identifiants.
+            throw RefundFailed::because((string) ($e->getStripeCode() ?? $e->getHttpStatus() ?? 'erreur Stripe'));
+        }
+
+        return (string) $refund->id;
     }
 
     public function verifyWebhook(string $rawBody, string $signatureHeader): WebhookEvent

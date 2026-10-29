@@ -13,9 +13,12 @@ use App\Domain\Order\OrderStatus;
 use App\Repository\Admin\OrderAdminRepository;
 use App\Repository\FulfillmentRepository;
 use App\Repository\OrderRepository;
+use App\Repository\PersistedOrder;
 use App\Service\Export\CsvWriter;
 use App\Service\Fulfillment\FulfillmentService;
 use App\Service\Mail\OrderMailer;
+use App\Service\Payment\OrderRefund;
+use App\Service\Payment\RefundOutcome;
 use App\Service\View\AdminChrome;
 use App\Service\I18n\UrlGenerator;
 use App\Service\Fulfillment\TrackingRefresh;
@@ -27,8 +30,9 @@ use App\Service\Shipping\CarrierRegistry;
  *
  * L'artiste consulte, expedie et exporte. Il ne peut PAS fabriquer un paiement :
  * le statut « paid » n'est atteignable que par le webhook signe (03-boutique
- * §8.3). Ici, la seule transition offerte est « paid → shipped », sous la
- * machine a etats, qui refuse d'expedier une commande non payee.
+ * §8.3). Ici, les transitions offertes sont « paid → shipped », sous la
+ * machine a etats, qui refuse d'expedier une commande non payee, et, depuis
+ * le 2026-10-29, « annuler et rembourser », qui passe d'abord par Stripe.
  */
 final class OrderController
 {
@@ -48,6 +52,7 @@ final class OrderController
         private readonly CarrierRegistry $carriers,
         private readonly InvoiceDownload $invoices,
         private readonly TrackingRefresh $tracking,
+        private readonly OrderRefund $refunds,
     ) {
     }
 
@@ -99,6 +104,7 @@ final class OrderController
             // Transporteurs branchés (revue du 2026-09-24) et lien de suivi public.
             'transporteurs' => $this->carriers->names(),
             'facturable' => InvoiceDownload::isInvoiceable($order),
+            'rembourse' => $request->query('rembourse') !== null,
             'lienSuivi' => $order->trackingNumber === null
                 ? null
                 : $this->carriers->byName($order->trackingCarrier)?->trackingUrl($order->trackingNumber),
@@ -181,6 +187,84 @@ final class OrderController
         }
 
         return RedirectResponse::to($request->basePath . '/admin/commandes/' . $id);
+    }
+
+    /**
+     * « Annuler et rembourser » (2026-10-29) : page de confirmation, avec le
+     * montant rendu et ce que devient le stock.
+     */
+    public function confirmRefund(Request $request): Response
+    {
+        return $this->refundPage($request, $this->orderOrFail(self::id($request)));
+    }
+
+    /**
+     * Rembourse par Stripe puis annule la commande et remet son stock en
+     * place. Protégé par le jeton CSRF et une case de confirmation expresse :
+     * l'opération est définitive.
+     */
+    public function refund(Request $request): Response
+    {
+        $order = $this->orderOrFail(self::id($request));
+        $fiche = $request->basePath . '/admin/commandes/' . $order->id;
+
+        if (!$order->status->isRefundable()) {
+            return RedirectResponse::to($fiche, 303);
+        }
+
+        if ($request->input('confirmation') !== '1') {
+            return $this->refundPage(
+                $request,
+                $order,
+                'Cochez la case pour confirmer l’annulation et le remboursement.',
+                422,
+            );
+        }
+
+        $outcome = $this->refunds->refund($order, $this->chrome->now());
+
+        if ($outcome === RefundOutcome::GatewayFailed) {
+            return $this->refundPage(
+                $request,
+                $order,
+                'Stripe a refusé le remboursement : rien n’a été modifié. '
+                    . 'Vérifiez le paiement dans le tableau de bord Stripe.',
+                502,
+            );
+        }
+
+        if ($outcome !== RefundOutcome::Refunded) {
+            return RedirectResponse::to($fiche, 303);
+        }
+
+        $this->chrome->audit()->record(
+            $this->chrome->currentUserId(),
+            'order.refund',
+            $request,
+            'order',
+            $order->id,
+            ['total_cents' => $order->total->cents],
+        );
+
+        return RedirectResponse::to($fiche . '?rembourse=1', 303);
+    }
+
+    private function refundPage(
+        Request $request,
+        PersistedOrder $order,
+        ?string $erreur = null,
+        int $status = 200,
+    ): Response {
+        return $this->chrome->page($request, 'admin/commandes/remboursement', [
+            'titre' => 'Annuler et rembourser ' . $order->reference,
+            'order' => $order,
+            'erreur' => $erreur,
+        ], $status);
+    }
+
+    private function orderOrFail(int $id): PersistedOrder
+    {
+        return $this->orders->findById($id) ?? throw new NotFoundException('Commande introuvable.');
     }
 
     /**

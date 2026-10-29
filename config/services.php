@@ -150,6 +150,7 @@ use App\Service\Mail\OrderMailer;
 use App\Service\Mail\SmtpMailer;
 use App\Service\Fulfillment\ReproductionShipping;
 use App\Service\Payment\CheckoutService;
+use App\Service\Payment\OrderRefund;
 use App\Service\Payment\PaymentEventHandler;
 use App\Service\Payment\ShippingPricer;
 use App\Service\Payment\PaymentGateway;
@@ -1157,6 +1158,11 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(CarrierRegistry::class),
             $c->get(InvoiceDownload::class),
             $c->get(TrackingRefresh::class),
+            new OrderRefund(
+                $c->get(PaymentGateway::class),
+                $c->get(PaymentEventHandler::class),
+                $c->get(LoggerInterface::class),
+            ),
         ));
 
     $container->set(

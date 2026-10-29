@@ -397,6 +397,8 @@ return [
     new Route('admin.order.tracking', 'POST', '/admin/commandes/suivi', [AdminOrderController::class, 'refreshTracking']),
     new Route('admin.order.show', 'GET', '/admin/commandes/{id}', [AdminOrderController::class, 'show'], requirements: $id),
     new Route('admin.order.ship', 'POST', '/admin/commandes/{id}/expedition', [AdminOrderController::class, 'ship'], requirements: $id),
+    new Route('admin.order.refund.confirm', 'GET', '/admin/commandes/{id}/remboursement', [AdminOrderController::class, 'confirmRefund'], requirements: $id),
+    new Route('admin.order.refund', 'POST', '/admin/commandes/{id}/remboursement', [AdminOrderController::class, 'refund'], requirements: $id),
     new Route('admin.order.invoice', 'GET', '/admin/commandes/{id}/facture', [AdminOrderController::class, 'invoice'], requirements: $id),
     // Identité du vendeur sur les factures (revue du 2026-09-24).
     new Route('admin.billing.edit', 'GET', '/admin/facturation', [BillingController::class, 'edit']),

@@ -67,6 +67,15 @@ enum OrderStatus: string
     }
 
     /**
+     * « Annuler et rembourser » (2026-10-29) : seule une commande encaissée a
+     * quelque chose à rendre, et une seule fois.
+     */
+    public function isRefundable(): bool
+    {
+        return $this->isPaid();
+    }
+
+    /**
      * Cette commande immobilise-t-elle encore les œuvres qu'elle a reservees ?
      *
      * 01-modele §7.3 : une reservation expiree libere l'œuvre, « sauf si la

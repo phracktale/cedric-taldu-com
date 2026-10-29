@@ -132,6 +132,65 @@ final class StockRepository
      * et le decrement est tout ou rien. Un decrement partiel laisserait une
      * commande a moitie honoree sans que rien ne le dise.
      */
+    /**
+     * Remise en stock d'une œuvre après remboursement (2026-10-29) : la pièce
+     * originale revient en vente, les exemplaires reviennent au compte — et
+     * l'œuvre redevient disponible si leur épuisement l'avait passée à
+     * « vendue » —, l'illimité ne bouge pas.
+     *
+     * Seul « vendue » redevient « disponible » : si l'artiste a changé le
+     * statut entre-temps (non destinée à la vente…), son choix prime.
+     */
+    public function restoreArtwork(int $artworkId, int $quantity): void
+    {
+        $mode = $this->stockModeOf($artworkId);
+
+        if ($mode === null || $mode === StockMode::Unlimited || $quantity < 1) {
+            return;
+        }
+
+        if ($mode === StockMode::Quantity) {
+            $statement = $this->pdo->prepare(
+                'UPDATE artworks
+                    SET stock_qty = COALESCE(stock_qty, 0) + :qty,
+                        status = IF(status = :sold, :available, status),
+                        updated_at = NOW()
+                  WHERE id = :id AND stock_mode = :quantity'
+            );
+            $statement->execute([
+                'id' => $artworkId,
+                'qty' => $quantity,
+                'sold' => ArtworkStatus::Sold->value,
+                'available' => ArtworkStatus::Available->value,
+                'quantity' => StockMode::Quantity->value,
+            ]);
+
+            return;
+        }
+
+        $statement = $this->pdo->prepare(
+            'UPDATE artworks SET status = :available, updated_at = NOW() WHERE id = :id AND status = :sold'
+        );
+        $statement->execute([
+            'id' => $artworkId,
+            'available' => ArtworkStatus::Available->value,
+            'sold' => ArtworkStatus::Sold->value,
+        ]);
+    }
+
+    /** Un tirage remboursé revient au stock de sa variante (2026-10-29). */
+    public function restoreVariantStock(int $variantId, int $quantity): void
+    {
+        if ($quantity < 1) {
+            return;
+        }
+
+        $statement = $this->pdo->prepare(
+            'UPDATE product_variants SET stock_qty = stock_qty + :qty, updated_at = NOW() WHERE id = :id'
+        );
+        $statement->execute(['id' => $variantId, 'qty' => $quantity]);
+    }
+
     /** Mode de stock d'une œuvre (2026-10-27), ou null si elle n'existe plus. */
     public function stockModeOf(int $artworkId): ?StockMode
     {

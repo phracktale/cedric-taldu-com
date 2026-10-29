@@ -38,7 +38,17 @@ $transporteurs = is_array($data['transporteurs'] ?? null) ? $data['transporteurs
     <p><a class="bouton bouton--secondaire" href="<?= attr($base . '/admin/commandes/' . $order->id . '/facture') ?>">Facture (PDF)</a></p>
     <?php endif; ?>
     <p>Statut : <strong><?= e($order->status->label(Locale::Fr)) ?></strong></p>
+    <?php // 2026-10-29 : annulation et remboursement par Stripe, après confirmation. ?>
+    <?php if ($order->status->isRefundable()) : ?>
+    <p><a class="bouton bouton--danger" href="<?= attr($base . '/admin/commandes/' . $order->id . '/remboursement') ?>">Annuler et rembourser</a></p>
+    <?php endif; ?>
   </div>
+
+  <?php if (($data['rembourse'] ?? false) === true) : ?>
+    <p class="aide" role="status">
+      Commande remboursée par Stripe et stock remis en place. Le client recevra l’argent sous quelques jours.
+    </p>
+  <?php endif; ?>
 
   <?php if ($order->hasAnomaly()) : ?>
     <p class="aide aide--attention" role="alert">
