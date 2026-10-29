@@ -13,11 +13,13 @@
  * Module ES sans étape de construction, chargé avec le nonce de la CSP.
  */
 
-import { monterEditeursDeBlocs } from './block-editor.js';
-import { monterMenuAdmin } from './admin-menu.js';
-import { monterCompositeurs } from './composer.js';
-import { monterBarreGeneration } from './admin-generation.js';
-import { monterTris } from './admin-tri.js';
+// ?v= : renouvelle une fois les modules mis en cache « immutable » avant le
+// 2026-10-29 ; ils sont depuis revalidés à chaque chargement (public/.htaccess).
+import { monterEditeursDeBlocs } from './block-editor.js?v=20261029';
+import { monterMenuAdmin } from './admin-menu.js?v=20261029';
+import { monterCompositeurs } from './composer.js?v=20261029';
+import { monterBarreGeneration } from './admin-generation.js?v=20261029';
+import { monterTris } from './admin-tri.js?v=20261029';
 
 /* ------------------------------------------------------------- onglets FR/EN */
 

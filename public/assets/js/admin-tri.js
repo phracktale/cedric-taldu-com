@@ -17,7 +17,7 @@
  * le moyen qui marche partout.
  */
 
-import { deplacer } from './admin-tri-ordre.js';
+import { deplacer } from './admin-tri-ordre.js?v=20261029';
 
 export function monterTris(racine = document) {
   const formulaire = racine.querySelector('[data-tri-form]');

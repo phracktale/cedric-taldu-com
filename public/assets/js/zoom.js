@@ -20,7 +20,7 @@
 
 import {
   ajuster, echelleMax, initial, borner, zoomerVers, ecart, milieu,
-} from './zoom-geometrie.js';
+} from './zoom-geometrie.js?v=20261029';
 
 const LIBELLES = {
   fr: { fermer: 'Fermer', plus: 'Zoomer', moins: 'Dézoomer', ajuster: 'Ajuster' },
