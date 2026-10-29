@@ -19,6 +19,7 @@ use App\Domain\Slug;
 use App\Repository\Admin\ArtworkAdminRepository;
 use App\Repository\Admin\CategoryAdminRepository;
 use App\Repository\Admin\SeriesAdminRepository;
+use App\Repository\Admin\ProductAdminRepository;
 use App\Repository\Admin\SettingsAdminRepository;
 use App\Repository\SettingRepository;
 use App\Service\Content\PreviewToken;
@@ -79,6 +80,8 @@ final class ArtworkController
         // Classement de la page « Toutes les œuvres » (demande du 2026-10-12).
         private readonly SettingRepository $settings,
         private readonly SettingsAdminRepository $save,
+        // Tirages de l'œuvre, montrés sous la case « sans rétractation » (2026-10-29).
+        private readonly ProductAdminRepository $products,
     ) {
     }
 
@@ -557,6 +560,7 @@ final class ArtworkController
             'erreurs' => $erreurs,
             'saisie' => $request->post,
             'apercu' => $artwork === null ? null : $this->previewUrl($artwork),
+            'tirages' => $artwork === null ? [] : $this->products->findForArtwork((int) $artwork['id']),
         ], $status);
     }
 

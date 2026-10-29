@@ -846,6 +846,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(CoverUpload::class),
             $c->get(SettingRepository::class),
             $c->get(SettingsAdminRepository::class),
+            $c->get(ProductAdminRepository::class),
         ),
     );
 
