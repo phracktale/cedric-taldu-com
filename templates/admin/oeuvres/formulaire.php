@@ -117,7 +117,7 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
     </p>
     <?php endif; ?>
 
-    <form method="post" action="<?= attr($action) ?>" class="formulaire" data-surveiller
+    <form method="post" action="<?= attr($action) ?>" data-autosave<?php if ($oeuvre === null) : ?>="creation"<?php endif; ?> class="formulaire" data-surveiller
           enctype="multipart/form-data">
         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
 
@@ -435,7 +435,7 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
             <p class="actions">
                 <a class="bouton bouton--secondaire" href="<?= attr($base . '/admin/oeuvres/' . $oeuvre['id'] . '/reproductions') ?>">Gérer les reproductions de cette œuvre</a>
             </p>
-            <p class="champ-aide">Formats, prix et publication. Enregistrez d’abord vos modifications de la fiche.</p>
+            <p class="champ-aide">Formats, prix et publication des tirages de l’œuvre.</p>
             <?php endif; ?>
         </fieldset>
 

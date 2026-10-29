@@ -49,7 +49,7 @@ $lignes = min(MapSettings::MAX_MARKERS, count($carte->markers) + 3);
     </div>
     <?php endif; ?>
 
-    <form method="post" action="<?= attr($base . '/admin/carte') ?>" class="formulaire">
+    <form method="post" action="<?= attr($base . '/admin/carte') ?>" data-autosave class="formulaire">
         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
 
         <fieldset>

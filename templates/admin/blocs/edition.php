@@ -31,7 +31,7 @@ $langues = ['fr' => 'Français', 'en' => 'Anglais'];
         (clef <code><?= e($bloc->key()) ?></code>).
     </p>
 
-    <form method="post" action="<?= attr($base . '/admin/blocs/' . $bloc->id) ?>" class="formulaire">
+    <form method="post" action="<?= attr($base . '/admin/blocs/' . $bloc->id) ?>" data-autosave class="formulaire">
         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
 
         <p class="champ">

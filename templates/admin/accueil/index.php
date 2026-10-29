@@ -40,7 +40,7 @@ $valeur = array_map(static fn (array $e): array => $e['item'], $entrees);
     </p>
     <noscript><p class="erreur">Le glisser-déposer demande JavaScript.</p></noscript>
 
-    <form method="post" action="<?= attr($base) ?>/admin/accueil" class="formulaire">
+    <form method="post" action="<?= attr($base) ?>/admin/accueil" data-autosave class="formulaire">
         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
 
         <div class="composer" data-composer>

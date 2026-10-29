@@ -38,8 +38,13 @@ function monter(textarea) {
 
   // Écrit le JSON courant dans le textarea (la source de vérité postée).
   const ecrire = () => { textarea.value = JSON.stringify(blocs); };
+  // Changement de structure ou d'image : l'enregistrement automatique en est
+  // prévenu (2026-10-29). Les champs de texte, eux, préviennent en perdant le
+  // focus. Rien au montage : charger la page n'est pas une modification.
+  let pret = false;
+  const signaler = () => { if (pret) textarea.dispatchEvent(new Event('change', { bubbles: true })); };
   // Reconstruit toute l'UI (après un changement de STRUCTURE).
-  const redessiner = () => { racine.replaceChildren(vueListe(blocs)); ecrire(); };
+  const redessiner = () => { racine.replaceChildren(vueListe(blocs)); ecrire(); signaler(); };
 
   /** Vue d'une liste de blocs (racine ou enfants d'un conteneur). */
   function vueListe(liste) {
@@ -152,6 +157,7 @@ function monter(textarea) {
       entree.value = id;
       donnee.props[cle] = id;
       ecrire();
+      signaler();
       apercu.hidden = !vignette;
       if (vignette) apercu.src = vignette;
     };
@@ -268,6 +274,7 @@ function monter(textarea) {
   }
 
   redessiner();
+  pret = true;
 }
 
 /** Parse défensif du JSON du textarea. */

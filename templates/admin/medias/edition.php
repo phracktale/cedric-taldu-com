@@ -113,7 +113,7 @@ $valeur = static function (string $langue, string $colonne) use ($traductions): 
     </form>
     <?php endif; ?>
 
-    <form method="post" action="<?= attr($base . '/admin/medias/' . $id) ?>" class="formulaire" data-surveiller>
+    <form method="post" action="<?= attr($base . '/admin/medias/' . $id) ?>" data-autosave class="formulaire" data-surveiller>
         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
 
         <div data-onglets-langue>

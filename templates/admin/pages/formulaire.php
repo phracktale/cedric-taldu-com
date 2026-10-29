@@ -46,7 +46,7 @@ $langues = ['fr' => 'Français', 'en' => 'English'];
     <p class="erreur" role="alert"><?= e($data['erreur']) ?></p>
     <?php endif; ?>
 
-    <form method="post" action="<?= attr($action) ?>" class="formulaire" data-surveiller
+    <form method="post" action="<?= attr($action) ?>" data-autosave class="formulaire" data-surveiller
           enctype="multipart/form-data">
         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
 

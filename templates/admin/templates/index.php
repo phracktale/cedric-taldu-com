@@ -37,7 +37,7 @@ $presets = is_array($data['presets'] ?? null) ? $data['presets'] : [];
     </p>
     <noscript><p class="erreur">Le glisser-déposer demande JavaScript.</p></noscript>
 
-    <form method="post" action="<?= attr($base) ?>/admin/templates" class="formulaire">
+    <form method="post" action="<?= attr($base) ?>/admin/templates" data-autosave class="formulaire">
         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
 
         <?php foreach (ContentTemplate::TYPES as $type => [$libelleType, $definition]) : ?>

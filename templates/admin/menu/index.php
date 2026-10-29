@@ -33,7 +33,7 @@ $titres = ['menu_principal' => 'Menu principal', 'menu_pied' => 'Menu du pied de
     </p>
     <noscript><p class="erreur">Le glisser-déposer demande JavaScript.</p></noscript>
 
-    <form method="post" action="<?= attr($base) ?>/admin/menu" class="formulaire">
+    <form method="post" action="<?= attr($base) ?>/admin/menu" data-autosave class="formulaire">
         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
 
         <div class="composer" data-composer>

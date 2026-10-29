@@ -33,7 +33,7 @@ $page = $data['page'];
     <p class="succes" role="status">Le texte de la page Galerie a été enregistré.</p>
     <?php endif; ?>
 
-    <form method="post" action="<?= attr($base . '/admin/galeries/page') ?>" class="formulaire" data-surveiller>
+    <form method="post" action="<?= attr($base . '/admin/galeries/page') ?>" data-autosave class="formulaire" data-surveiller>
         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
 
         <?php foreach (['fr' => 'Français', 'en' => 'Anglais'] as $langue => $libelle) : ?>

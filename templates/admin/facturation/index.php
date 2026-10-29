@@ -37,7 +37,7 @@ $mentionFranchise = (string) VatMode::Exempt293b->legalMention(Locale::Fr);
         <?php endif; ?>
     </p>
 
-    <form method="post" action="<?= attr($base . '/admin/facturation') ?>" class="formulaire">
+    <form method="post" action="<?= attr($base . '/admin/facturation') ?>" data-autosave class="formulaire">
         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
 
         <p class="champ">

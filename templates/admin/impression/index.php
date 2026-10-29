@@ -48,7 +48,7 @@ $lignes = min(PrintSettings::MAX_FORMATS, count($reglage->formats) + 3);
     </div>
     <?php endif; ?>
 
-    <form method="post" action="<?= attr($base . '/admin/impression') ?>" class="formulaire">
+    <form method="post" action="<?= attr($base . '/admin/impression') ?>" data-autosave class="formulaire">
         <input type="hidden" name="_token" value="<?= attr($jeton) ?>">
 
         <fieldset>
