@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Repository;
+namespace APress\Core\Repository;
 
 use DateTimeImmutable;
 use DateTimeZone;

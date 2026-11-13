@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
-use App\Repository\AuditLogRepository;
+use APress\Core\Repository\AuditLogRepository;
 use DateTimeImmutable;
 use DateTimeZone;
 use Tests\Support\DatabaseTestCase;

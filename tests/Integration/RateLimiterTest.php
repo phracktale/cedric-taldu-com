@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
-use App\Repository\RateLimitRepository;
+use APress\Core\Repository\RateLimitRepository;
 use App\Service\Spam\RateLimiter;
 use Tests\Support\DatabaseTestCase;
 use Tests\Support\Doubles\FrozenClock;

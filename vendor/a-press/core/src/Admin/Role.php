@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Admin;
+namespace APress\Core\Admin;
 
 /**
  * Role d'un compte d'administration.

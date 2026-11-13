@@ -16,7 +16,7 @@ use PDO;
 final class CoreMigrations
 {
     public const SCOPE = 'core';
-    public const VERSION = '0.4.0';
+    public const VERSION = '0.5.0';
 
     public static function directory(): string
     {
@@ -26,5 +26,16 @@ final class CoreMigrations
     public static function migrator(PDO $pdo, ClockInterface $clock): Migrator
     {
         return new Migrator($pdo, self::directory(), $clock, self::SCOPE);
+    }
+
+    /**
+     * Tables du socle d'administration (comptes, audit, limitation de débit…),
+     * portée « core-admin ». OPTIONNEL : un site neuf les joue, avant les
+     * siennes ; un site qui possède déjà ces tables (cedrictaldu) ne les joue
+     * pas — ses propres migrations les ont créées au même schéma.
+     */
+    public static function adminMigrator(PDO $pdo, ClockInterface $clock): Migrator
+    {
+        return new Migrator($pdo, dirname(__DIR__) . '/migrations-admin', $clock, self::SCOPE . '-admin');
     }
 }

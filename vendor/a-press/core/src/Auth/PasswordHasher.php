@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Service\Auth;
+namespace APress\Core\Auth;
 
 /**
  * Hachage des mots de passe d'administration.

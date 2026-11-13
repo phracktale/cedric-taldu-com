@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Middleware;
+namespace APress\Core\Http\Middleware;
 
 use APress\Core\LoggerInterface;
 use APress\Core\LogLevel;
@@ -11,7 +11,7 @@ use APress\Core\RedirectResponse;
 use APress\Core\Request;
 use APress\Core\Response;
 use APress\Core\RouteMatch;
-use App\Service\Auth\AdminSession;
+use APress\Core\Auth\AdminSession;
 
 /**
  * Fermeture du back-office.

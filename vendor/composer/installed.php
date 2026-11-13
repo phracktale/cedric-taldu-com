@@ -3,7 +3,7 @@
         'name' => 'phracktale/cedric-taldu-com',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'd88d9568b86b3834e504b174eea99ed7a4f01198',
+        'reference' => 'e6db81fc770b73a5f345a469d2eac4c02c9568b9',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'a-press/core' => array(
-            'pretty_version' => '0.4.0',
-            'version' => '0.4.0.0',
-            'reference' => '45722bb908fff293c9459aec6221a785ff1ee347',
+            'pretty_version' => '0.5.0',
+            'version' => '0.5.0.0',
+            'reference' => '995eb08dd836a086ee9d37078e6efddacbed35ae',
             'type' => 'library',
             'install_path' => __DIR__ . '/../a-press/core',
             'aliases' => array(),
@@ -130,7 +130,7 @@
         'phracktale/cedric-taldu-com' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'd88d9568b86b3834e504b174eea99ed7a4f01198',
+            'reference' => 'e6db81fc770b73a5f345a469d2eac4c02c9568b9',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Service\Auth;
+namespace APress\Core\Auth;
 
 use APress\Core\ClockInterface;
 use APress\Core\Request;
-use App\Domain\Admin\AdminUser;
-use App\Repository\UserRepository;
+use APress\Core\Admin\AdminUser;
+use APress\Core\Repository\UserRepository;
 
 /**
  * Verification des identifiants d'administration.

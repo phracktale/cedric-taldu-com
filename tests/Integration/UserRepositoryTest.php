@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
-use App\Domain\Admin\Role;
-use App\Repository\UserRepository;
+use APress\Core\Admin\Role;
+use APress\Core\Repository\UserRepository;
 use DateTimeImmutable;
 use DateTimeZone;
 use Tests\Support\DatabaseTestCase;

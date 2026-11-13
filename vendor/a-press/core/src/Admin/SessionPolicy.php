@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Admin;
+namespace APress\Core\Admin;
 
 use DateTimeImmutable;
 

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Service\Auth;
+namespace APress\Core\Auth;
 
 use APress\Core\ClockInterface;
-use App\Repository\PasswordResetRepository;
+use APress\Core\Repository\PasswordResetRepository;
 
 /**
  * Jetons des liens « mot de passe oublié » (demande du 2026-10-19).

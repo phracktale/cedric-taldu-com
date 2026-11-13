@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Admin;
+namespace APress\Core\Admin;
 
 /**
  * Règle d'un nouveau mot de passe d'administration (demande du 2026-10-19).

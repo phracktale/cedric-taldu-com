@@ -7,7 +7,7 @@ namespace App\Http\Controller\Admin;
 use APress\Core\Request;
 use APress\Core\Response;
 use App\Repository\Admin\DashboardRepository;
-use App\Repository\AuditLogRepository;
+use APress\Core\Repository\AuditLogRepository;
 use App\Service\View\AdminChrome;
 
 /**
