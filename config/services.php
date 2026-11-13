@@ -27,6 +27,9 @@ use APress\Core\Extension\Manifest;
 use APress\Core\LogLevel;
 use APress\Core\Migrator;
 use APress\Core\Repository\PdoExtensionStateStore;
+use APress\Core\Theme\TemplatePaths;
+use APress\Core\Theme\ThemeRegistry;
+use APress\Core\Theme\ThemeType;
 use APress\Core\Csrf;
 use APress\Core\Database;
 use APress\Core\Env;
@@ -73,6 +76,7 @@ use App\Service\View\PlacedBlocks;
 use App\Http\Controller\Admin\EcoIndexController;
 use App\Http\Controller\Admin\TemplateController;
 use App\Http\Controller\Admin\ExtensionController;
+use App\Http\Controller\Admin\ThemeController;
 use App\Http\Controller\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controller\Front\NewsletterController;
 use App\Http\Controller\Front\AccountController as CustomerAccountController;
@@ -330,7 +334,19 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
     ));
 
     $container->set(View::class, static function (Container $c) use ($rootPath): View {
-        $view = new View($rootPath . '/templates', $c->get(UrlGenerator::class), $c->get(Translator::class));
+        // Gabarits en couches (A-Press, lot 4) : extensions actives, puis site.
+        // Le thème d'administration choisi passe devant, pour les seuls
+        // gabarits d'administration, et n'est lu qu'au premier d'entre eux.
+        $view = new View(
+            new TemplatePaths([...$c->get(Hooks::class)->templateDirectories(), $rootPath . '/templates']),
+            $c->get(UrlGenerator::class),
+            $c->get(Translator::class),
+            static function () use ($c): ?string {
+                $name = ThemeController::active($c->get(SettingRepository::class));
+
+                return $c->get(ThemeRegistry::class)->find(ThemeType::Admin, $name)?->templatesDirectory();
+            },
+        );
         // Identité du site (Paramètres › Global), commune à tous les gabarits.
         $view->share('site', static fn (): SiteIdentity => $c->get(SiteIdentityProvider::class)->get());
         // Vignettes nettes (2026-09-30) : le facteur de zoom entre dans le choix des fichiers.
@@ -1188,6 +1204,17 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(Chrome::class),
             $c->get(Newsletter::class),
             $c->get(UnsubscribeToken::class),
+        ));
+    $container->set(ThemeRegistry::class, static fn (): ThemeRegistry
+        => new ThemeRegistry($rootPath . '/themes', CoreMigrations::VERSION));
+    $container->set(ThemeController::class, static fn (Container $c): ThemeController
+        => new ThemeController(
+            $c->get(AdminChrome::class),
+            $c->get(AdminSession::class),
+            $c->get(ThemeRegistry::class),
+            $c->get(SettingRepository::class),
+            $c->get(SettingsAdminRepository::class),
+            $c->get(SessionInterface::class),
         ));
     $container->set(ExtensionController::class, static fn (Container $c): ExtensionController
         => new ExtensionController(

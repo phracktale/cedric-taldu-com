@@ -6,6 +6,8 @@ namespace App\Core;
 
 use APress\Core\Exception\TemplateNotFound;
 use APress\Core\Renderer;
+use APress\Core\Theme\TemplatePaths;
+use Closure;
 use App\Domain\Locale;
 use App\Service\I18n\Translator;
 use App\Service\I18n\UrlGenerator;
@@ -38,11 +40,26 @@ final class View implements Renderer
     /** @var array<string, mixed> */
     private array $shared = [];
 
+    private readonly TemplatePaths $paths;
+
+    /** Gabarits du thème d'administration actif, résolus au premier besoin. */
+    private ?TemplatePaths $adminPaths = null;
+
+    /**
+     * @param string|TemplatePaths $templates dossier unique, ou dossiers en couches
+     *        (extensions puis site, A-Press lot 4)
+     * @param (Closure(): ?string)|null $adminTheme dossier templates/ du thème
+     *        d'administration actif, ou null pour la mise en page classique. Appelé
+     *        seulement au premier rendu d'un gabarit d'administration : une page
+     *        publique ne lit jamais ce réglage.
+     */
     public function __construct(
-        private readonly string $templatesPath,
+        string|TemplatePaths $templates,
         private readonly UrlGenerator $url,
         private readonly Translator $translator,
+        private readonly ?Closure $adminTheme = null,
     ) {
+        $this->paths = is_string($templates) ? new TemplatePaths([$templates]) : $templates;
     }
 
     /**
@@ -150,23 +167,27 @@ final class View implements Renderer
             throw TemplateNotFound::forName($template);
         }
 
-        $root = realpath($this->templatesPath);
-        $file = realpath($this->templatesPath . '/' . $template . '.php');
+        // Nom valide, sous l'un des dossiers, casse exacte : TemplatePaths
+        // applique ces contrôles à chaque couche. Seuls les gabarits
+        // d'administration passent par le thème d'administration : il ne
+        // peut pas remplacer une page du site public.
+        $paths = self::isAdminTemplate($template) ? $this->adminPaths() : $this->paths;
 
-        if ($root === false || $file === false || !str_starts_with($file, $root . DIRECTORY_SEPARATOR)) {
-            throw TemplateNotFound::forName($template);
+        return $paths->find($template);
+    }
+
+    private static function isAdminTemplate(string $template): bool
+    {
+        return $template === 'layouts/admin' || str_starts_with($template, 'admin/');
+    }
+
+    private function adminPaths(): TemplatePaths
+    {
+        if ($this->adminPaths === null) {
+            $directory = $this->adminTheme !== null ? ($this->adminTheme)() : null;
+            $this->adminPaths = $directory !== null ? $this->paths->prepend($directory) : $this->paths;
         }
 
-        // realpath rend la casse reelle du systeme de fichiers. Sous Windows, un
-        // « Simple » resolu en « simple.php » passerait sans ce controle, puis
-        // echouerait sur Thor ou la casse est significative.
-        $expected = $root . DIRECTORY_SEPARATOR
-            . str_replace('/', DIRECTORY_SEPARATOR, $template) . '.php';
-
-        if ($file !== $expected) {
-            throw TemplateNotFound::forName($template);
-        }
-
-        return $file;
+        return $this->adminPaths;
     }
 }

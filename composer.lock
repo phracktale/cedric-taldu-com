@@ -4,15 +4,15 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "57379703de862eb22e2ccb1df1325d70",
+    "content-hash": "d688d1a839f8aa8cc0c583bc753688ea",
     "packages": [
         {
             "name": "a-press/core",
-            "version": "0.3.0",
+            "version": "0.4.0",
             "dist": {
                 "type": "path",
                 "url": "../a-press/packages/core",
-                "reference": "81ad91192f5d3140f6d7a690465a9da4a7c99901"
+                "reference": "45722bb908fff293c9459aec6221a785ff1ee347"
             },
             "require": {
                 "ext-json": "*",

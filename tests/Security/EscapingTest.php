@@ -127,6 +127,15 @@ final class EscapingTest extends TestCase
         $this->assertSame([], $fautes, 'URL interne écrite en dur dans un gabarit.');
     }
 
+    public function test_les_gabarits_des_themes_et_des_extensions_sont_controles(): void
+    {
+        // A-Press (lots 3 et 4) : un thème ou une extension peut remplacer
+        // n'importe quelle page. Ses gabarits suivent donc les mêmes règles.
+        $chemins = array_keys($this->templates());
+
+        $this->assertContains('themes/admin/wp-like/templates/layouts/admin.php', $chemins);
+    }
+
     // ------------------------------------------------------------------ outils
 
     /**
@@ -134,21 +143,29 @@ final class EscapingTest extends TestCase
      */
     private function templates(): array
     {
-        $racine = dirname(__DIR__, 2) . '/templates';
+        $projet = dirname(__DIR__, 2);
+        // Gabarits du site, des thèmes et des extensions (A-Press, lots 3-4).
+        $racines = [
+            $projet . '/templates',
+            ...(glob($projet . '/themes/*/*/templates', GLOB_ONLYDIR) ?: []),
+            ...(glob($projet . '/extensions/*/templates', GLOB_ONLYDIR) ?: []),
+        ];
         $sources = [];
 
-        $iterateur = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($racine, \FilesystemIterator::SKIP_DOTS)
-        );
+        foreach ($racines as $racine) {
+            $iterateur = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($racine, \FilesystemIterator::SKIP_DOTS)
+            );
 
-        /** @var SplFileInfo $fichier */
-        foreach ($iterateur as $fichier) {
-            if ($fichier->getExtension() !== 'php') {
-                continue;
+            /** @var SplFileInfo $fichier */
+            foreach ($iterateur as $fichier) {
+                if ($fichier->getExtension() !== 'php') {
+                    continue;
+                }
+
+                $chemin = str_replace('\\', '/', substr($fichier->getPathname(), strlen($projet) + 1));
+                $sources[$chemin] = (string) file_get_contents($fichier->getPathname());
             }
-
-            $chemin = str_replace('\\', '/', substr($fichier->getPathname(), strlen(dirname(__DIR__, 2)) + 1));
-            $sources[$chemin] = (string) file_get_contents($fichier->getPathname());
         }
 
         $this->assertNotSame([], $sources, 'Aucun gabarit trouvé : le test ne prouverait rien.');

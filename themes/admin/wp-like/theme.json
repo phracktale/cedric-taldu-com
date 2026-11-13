@@ -1,0 +1,9 @@
+{
+    "name": "wp-like",
+    "label": "Façon WordPress",
+    "description": "Barre d’administration en haut, menu latéral sombre avec sous-menus, contenu sur fond gris clair.",
+    "version": "1.0.0",
+    "type": "admin",
+    "requires": { "core": "^0.4" },
+    "stylesheet": "css/themes/wp-like.css"
+}

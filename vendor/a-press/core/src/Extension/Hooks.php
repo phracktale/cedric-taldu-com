@@ -29,6 +29,27 @@ final class Hooks
     /** @var list<string> */
     private array $booted = [];
 
+    /** @var list<string> */
+    private array $templateDirectories = [];
+
+    /**
+     * Dossier de gabarits d'une extension. ExtensionManager y inscrit le
+     * dossier templates/ de chaque extension démarrée qui en a un ; le site le
+     * place entre le thème actif et ses propres gabarits.
+     */
+    public function addTemplateDirectory(string $directory): void
+    {
+        $this->templateDirectories[] = $directory;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function templateDirectories(): array
+    {
+        return $this->templateDirectories;
+    }
+
     /**
      * Appelé par ExtensionManager une fois register() réussi. Le site s'en sert
      * pour masquer ce qui dépend d'une extension inactive (lien vers le panier…).

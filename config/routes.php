@@ -39,6 +39,7 @@ use App\Http\Controller\Admin\ContentBlockController;
 use App\Http\Controller\Admin\EcoIndexController;
 use App\Http\Controller\Admin\TemplateController;
 use App\Http\Controller\Admin\ExtensionController;
+use App\Http\Controller\Admin\ThemeController;
 use App\Http\Controller\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controller\Front\NewsletterController;
 use App\Http\Controller\Admin\PageController as AdminPageController;
@@ -212,6 +213,9 @@ return [
     new Route('admin.newsletter.export', 'GET', '/admin/newsletter/export', [AdminNewsletterController::class, 'export']),
     new Route('admin.newsletter.unsubscribe', 'POST', '/admin/newsletter/desinscription', [AdminNewsletterController::class, 'unsubscribe']),
     // Extensions A-Press (lot 2) : activer / désactiver, réservé aux réglages.
+    // Thèmes A-Press (lot 4) : habillage du back-office.
+    new Route('admin.themes.index', 'GET', '/admin/themes', [ThemeController::class, 'index']),
+    new Route('admin.themes.activate', 'POST', '/admin/themes/{name}/activer', [ThemeController::class, 'activate'], requirements: $nom),
     new Route('admin.extensions.index', 'GET', '/admin/extensions', [ExtensionController::class, 'index']),
     new Route('admin.extensions.activate', 'POST', '/admin/extensions/{name}/activer', [ExtensionController::class, 'activate'], requirements: $nom),
     new Route('admin.extensions.deactivate', 'POST', '/admin/extensions/{name}/desactiver', [ExtensionController::class, 'deactivate'], requirements: $nom),
