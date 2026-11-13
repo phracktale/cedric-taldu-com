@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Service\Auth;
 
-use App\Core\ClockInterface;
-use App\Core\Request;
+use APress\Core\ClockInterface;
+use APress\Core\Request;
 use App\Repository\AuditLogRepository;
 
 /**

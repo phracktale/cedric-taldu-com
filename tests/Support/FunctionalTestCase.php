@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Support;
 
-use App\Core\Config;
-use App\Core\Container;
-use App\Core\Env;
-use App\Core\Kernel;
-use App\Core\LoggerInterface;
-use App\Core\Request;
-use App\Core\Response;
-use App\Core\SessionInterface;
+use APress\Core\Config;
+use APress\Core\Container;
+use APress\Core\Env;
+use APress\Core\Kernel;
+use APress\Core\LoggerInterface;
+use APress\Core\Request;
+use APress\Core\Response;
+use APress\Core\SessionInterface;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\ArraySession;
 use Tests\Support\Doubles\RecordingLogger;
@@ -40,7 +40,7 @@ abstract class FunctionalTestCase extends TestCase
     /** @var array<string, string> */
     private array $env = [];
 
-    /** @var list<\App\Core\Route>|null table de routes de remplacement */
+    /** @var list<\APress\Core\Route>|null table de routes de remplacement */
     private ?array $routes = null;
 
     /** Géocodeur doublé : près d'Amiens par défaut (voir FakeGeocoder). */
@@ -109,7 +109,7 @@ abstract class FunctionalTestCase extends TestCase
      * Remplace la table de routes, pour eprouver un comportement du noyau qui
      * n'a pas encore de route reelle — une exception de controleur, par exemple.
      *
-     * @param list<\App\Core\Route> $routes
+     * @param list<\APress\Core\Route> $routes
      */
     protected function withRoutes(array $routes): void
     {
@@ -216,7 +216,7 @@ abstract class FunctionalTestCase extends TestCase
                 files: $files,
             );
         } catch (\Throwable $exception) {
-            return \App\Core\FailSafeResponse::for($exception, $config);
+            return \APress\Core\FailSafeResponse::for($exception, $config);
         }
 
         /** @var callable(Config, Request, string, Env): Container $build */
@@ -237,7 +237,7 @@ abstract class FunctionalTestCase extends TestCase
             $this->container->instance(\App\Service\Shipping\Geocoder::class, $this->geocodeur);
 
             if ($this->routes !== null) {
-                $this->container->instance(\App\Core\Router::class, new \App\Core\Router($this->routes));
+                $this->container->instance(\APress\Core\Router::class, new \APress\Core\Router($this->routes));
             }
 
             foreach ($this->services as $id => $factory) {
@@ -249,7 +249,7 @@ abstract class FunctionalTestCase extends TestCase
 
             return $kernel->handle($request);
         } catch (\Throwable $exception) {
-            return \App\Core\FailSafeResponse::for($exception, $config);
+            return \APress\Core\FailSafeResponse::for($exception, $config);
         }
     }
 

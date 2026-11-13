@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service\Newsletter;
 
-use App\Core\ClockInterface;
+use APress\Core\ClockInterface;
 use App\Domain\Locale;
 use App\Repository\NewsletterRepository;
 use App\Service\I18n\Translator;

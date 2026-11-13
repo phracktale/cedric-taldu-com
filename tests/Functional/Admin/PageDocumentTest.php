@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Functional\Admin;
 
-use App\Core\Csrf;
-use App\Core\Response;
+use APress\Core\Csrf;
+use APress\Core\Response;
 use Tests\Support\AdminTestCase;
 use Tests\Support\Factory\UserFactory;
 

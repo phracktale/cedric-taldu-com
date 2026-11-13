@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Security;
 
-use App\Core\Config;
-use App\Core\Env;
-use App\Core\Request;
+use APress\Core\Config;
+use APress\Core\Env;
+use APress\Core\Request;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\FunctionalTestCase;
 

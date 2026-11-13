@@ -19,9 +19,9 @@ use App\Domain\Shop\ItemCatalogue;
 use App\Domain\Shop\LineKind;
 use App\Domain\Shop\PricingPolicy;
 use App\Domain\Shop\PurchasableItem;
-use App\Core\Config;
-use App\Core\Env;
-use App\Core\Router;
+use APress\Core\Config;
+use APress\Core\Env;
+use APress\Core\Router;
 use App\Repository\FulfillmentRepository;
 use App\Repository\OrderRepository;
 use App\Repository\StockRepository;
@@ -619,7 +619,7 @@ final class PaymentEventHandlerTest extends DatabaseTestCase
     private function activerFulfillment(FakeProdigiClient $client, string $cle = 'sk-sandbox'): FulfillmentService
     {
         $racine = dirname(__DIR__, 2);
-        /** @var list<\App\Core\Route> $routes */
+        /** @var list<\APress\Core\Route> $routes */
         $routes = require $racine . '/config/routes.php';
 
         $url = new UrlGenerator(

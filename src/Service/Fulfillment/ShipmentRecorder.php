@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Service\Fulfillment;
 
-use App\Core\ClockInterface;
-use App\Core\LoggerInterface;
-use App\Core\LogLevel;
+use APress\Core\ClockInterface;
+use APress\Core\LoggerInterface;
+use APress\Core\LogLevel;
 use App\Repository\FulfillmentRepository;
 use App\Repository\OrderRepository;
 use App\Service\I18n\UrlGenerator;

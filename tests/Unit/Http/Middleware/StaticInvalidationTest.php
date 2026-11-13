@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Http\Middleware;
 
-use App\Core\Request;
-use App\Core\Response;
-use App\Core\Route;
-use App\Core\RouteMatch;
+use APress\Core\Request;
+use APress\Core\Response;
+use APress\Core\Route;
+use APress\Core\RouteMatch;
 use App\Http\Middleware\StaticInvalidation;
 use App\Service\StaticSite\Invalidator;
 use PHPUnit\Framework\Attributes\DataProvider;

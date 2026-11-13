@@ -26,8 +26,8 @@
 
 declare(strict_types=1);
 
-use App\Core\Database;
-use App\Core\Env;
+use APress\Core\Database;
+use APress\Core\Env;
 use App\Domain\Admin\Role;
 use App\Repository\UserRepository;
 use App\Service\Auth\PasswordHasher;

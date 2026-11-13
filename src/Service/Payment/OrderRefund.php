@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Service\Payment;
 
-use App\Core\LoggerInterface;
-use App\Core\LogLevel;
+use APress\Core\LoggerInterface;
+use APress\Core\LogLevel;
 use App\Repository\PersistedOrder;
 use App\Service\Payment\Exception\RefundFailed;
 use DateTimeImmutable;

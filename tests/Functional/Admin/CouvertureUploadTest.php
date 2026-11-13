@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Functional\Admin;
 
-use App\Core\Container;
-use App\Core\ClockInterface;
-use App\Core\Csrf;
-use App\Core\RandomInterface;
+use APress\Core\Container;
+use APress\Core\ClockInterface;
+use APress\Core\Csrf;
+use APress\Core\RandomInterface;
 use App\Repository\Admin\MediaAdminRepository;
 use App\Service\Media\ImageProcessor;
 use App\Service\Media\MediaStore;
@@ -139,7 +139,7 @@ final class CouvertureUploadTest extends AdminTestCase
     /**
      * @param array<string, string> $champs
      */
-    private function avecCouverture(string $uri, string $champFichier, array $champs): \App\Core\Response
+    private function avecCouverture(string $uri, string $champFichier, array $champs): \APress\Core\Response
     {
         return $this->avecCouvertureFichier($uri, $champFichier, $champs, $this->fixtures->jpeg(800, 600));
     }
@@ -152,7 +152,7 @@ final class CouvertureUploadTest extends AdminTestCase
         string $champFichier,
         array $champs,
         string $chemin,
-    ): \App\Core\Response {
+    ): \APress\Core\Response {
         return $this->requete('POST', $uri, post: [
             Csrf::FIELD => $this->jetonCsrf(),
             ...$champs,

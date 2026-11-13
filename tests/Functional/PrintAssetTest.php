@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Functional;
 
-use App\Core\UploadedFile;
+use APress\Core\UploadedFile;
 use App\Service\Fulfillment\PrintAssetStore;
 use App\Service\Fulfillment\PrintAssetUrl;
 use Tests\Support\Doubles\SequenceRandom;

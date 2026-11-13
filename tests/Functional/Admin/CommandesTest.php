@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Functional\Admin;
 
-use App\Core\Response;
+use APress\Core\Response;
 use App\Service\Fulfillment\FakeProdigiClient;
 use App\Service\Fulfillment\ProdigiClientInterface;
 use App\Service\Fulfillment\ProdigiConfig;

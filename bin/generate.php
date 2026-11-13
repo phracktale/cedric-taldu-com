@@ -18,10 +18,10 @@
 
 declare(strict_types=1);
 
-use App\Core\Config;
-use App\Core\Container;
-use App\Core\Env;
-use App\Core\Request;
+use APress\Core\Config;
+use APress\Core\Container;
+use APress\Core\Env;
+use APress\Core\Request;
 use App\Service\StaticSite\Generator;
 
 $root = dirname(__DIR__);

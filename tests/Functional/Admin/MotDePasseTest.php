@@ -236,7 +236,7 @@ final class MotDePasseTest extends AdminTestCase
 
     // ------------------------------------------------------ outils
 
-    private function changer(string $actuel, string $nouveau, string $confirmation): \App\Core\Response
+    private function changer(string $actuel, string $nouveau, string $confirmation): \APress\Core\Response
     {
         return $this->postAvecJeton(self::COMPTE, [
             'mot_de_passe_actuel' => $actuel,
@@ -245,12 +245,12 @@ final class MotDePasseTest extends AdminTestCase
         ]);
     }
 
-    private function demander(string $email): \App\Core\Response
+    private function demander(string $email): \APress\Core\Response
     {
         return $this->postAvecJeton(self::OUBLI, ['email' => $email]);
     }
 
-    private function reinitialiser(string $lien, string $nouveau, string $confirmation): \App\Core\Response
+    private function reinitialiser(string $lien, string $nouveau, string $confirmation): \APress\Core\Response
     {
         return $this->postAvecJeton($lien, ['nouveau' => $nouveau, 'confirmation' => $confirmation]);
     }

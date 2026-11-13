@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use App\Core\Config;
-use App\Core\CookieFactory;
-use App\Core\RedirectResponse;
-use App\Core\Request;
-use App\Core\Response;
-use App\Core\RouteMatch;
+use APress\Core\Config;
+use APress\Core\CookieFactory;
+use APress\Core\MiddlewareInterface;
+use APress\Core\RedirectResponse;
+use APress\Core\Request;
+use APress\Core\Response;
+use APress\Core\RouteMatch;
 
 /**
  * Negociation de langue a la racine du site.

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Http\Middleware;
 
-use App\Core\Config;
-use App\Core\CookieFactory;
-use App\Core\Env;
-use App\Core\Request;
-use App\Core\Response;
+use APress\Core\Config;
+use APress\Core\CookieFactory;
+use APress\Core\Env;
+use APress\Core\Request;
+use APress\Core\Response;
 use App\Http\Middleware\Locale;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;

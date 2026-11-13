@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controller\Front;
 
-use App\Core\CookieFactory;
-use App\Core\Exception\BadRequestException;
-use App\Core\Exception\RouteNotDeclared;
-use App\Core\Request;
-use App\Core\Response;
-use App\Core\RedirectResponse;
+use APress\Core\CookieFactory;
+use APress\Core\Exception\BadRequestException;
+use APress\Core\Exception\RouteNotDeclared;
+use APress\Core\Request;
+use APress\Core\Response;
+use APress\Core\RedirectResponse;
 use App\Core\View;
 use App\Domain\Locale;
 use App\Domain\Shop\Cart;

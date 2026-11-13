@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Functional;
 
-use App\Core\Exception\HttpException;
-use App\Core\Request;
-use App\Core\Router;
+use APress\Core\Exception\HttpException;
+use APress\Core\Request;
+use APress\Core\Router;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\FunctionalTestCase;
 
@@ -59,7 +59,7 @@ final class AnciennesAdressesTest extends FunctionalTestCase
     {
         // Une cible mal saisie ferait une redirection vers un 404 : chaque
         // cible doit correspondre à une route publique en lecture.
-        /** @var list<\App\Core\Route> $routes */
+        /** @var list<\APress\Core\Route> $routes */
         $routes = require $this->rootPath() . '/config/routes.php';
         $router = new Router($routes);
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Functional\Admin;
 
-use App\Core\Csrf;
+use APress\Core\Csrf;
 use PDO;
 use Tests\Support\AdminTestCase;
 use Tests\Support\Factory\ArtworkFactory;
@@ -776,7 +776,7 @@ final class OeuvresTest extends AdminTestCase
     /**
      * @param array<string, string> $champs
      */
-    private function creer(array $champs): \App\Core\Response
+    private function creer(array $champs): \APress\Core\Response
     {
         return $this->postAvecJeton(self::OEUVRES, [
             'rubrique' => (string) $this->rubrique,
@@ -797,7 +797,7 @@ final class OeuvresTest extends AdminTestCase
     /**
      * @param array<string, string> $champs
      */
-    private function modifier(int $id, array $champs): \App\Core\Response
+    private function modifier(int $id, array $champs): \APress\Core\Response
     {
         return $this->postAvecJeton(self::OEUVRES . '/' . $id, [
             'rubrique' => (string) $this->rubrique,

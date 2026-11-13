@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Functional;
 
-use App\Core\Csrf;
+use APress\Core\Csrf;
 use App\Service\Newsletter\UnsubscribeToken;
 use Tests\Support\FunctionalTestCase;
 

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controller\Admin;
 
-use App\Core\Exception\NotFoundException;
-use App\Core\RedirectResponse;
-use App\Core\Request;
-use App\Core\Response;
+use APress\Core\Exception\NotFoundException;
+use APress\Core\RedirectResponse;
+use APress\Core\Request;
+use APress\Core\Response;
 use App\Domain\Editorial\BlockCatalog;
 use App\Domain\Editorial\ContentBlock;
 use App\Domain\Editorial\HomeLayout;

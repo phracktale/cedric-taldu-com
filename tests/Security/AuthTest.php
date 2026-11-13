@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Security;
 
-use App\Core\Route;
-use App\Core\Router;
+use APress\Core\Route;
+use APress\Core\Router;
 use App\Domain\Admin\Role;
 use App\Service\Auth\AdminSession;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -62,7 +62,7 @@ final class AuthTest extends AdminTestCase
     public function test_aucune_route_d_administration_ne_s_ouvre_sans_session(string $methode, string $chemin): void
     {
         $reponse = $this->requete($methode, '/cedric-taldu' . $chemin, post: [
-            \App\Core\Csrf::FIELD => $this->jetonCsrf(),
+            \APress\Core\Csrf::FIELD => $this->jetonCsrf(),
         ]);
 
         $this->assertSame(302, $reponse->status, $methode . ' ' . $chemin . ' doit renvoyer à la connexion.');
@@ -191,7 +191,7 @@ final class AuthTest extends AdminTestCase
 
         $this->seConnecter('artiste@example.test');
 
-        $this->assertNotSame($avant, $this->session->get(\App\Core\Csrf::SESSION_KEY));
+        $this->assertNotSame($avant, $this->session->get(\APress\Core\Csrf::SESSION_KEY));
     }
 
     // --------------------------------------------------------------- roles

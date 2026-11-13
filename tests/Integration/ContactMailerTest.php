@@ -95,12 +95,12 @@ final class ContactMailerTest extends TestCase
 
     private static function url(string $racine): UrlGenerator
     {
-        /** @var list<\App\Core\Route> $routes */
+        /** @var list<\APress\Core\Route> $routes */
         $routes = require $racine . '/config/routes.php';
 
         return new UrlGenerator(
-            new \App\Core\Router($routes),
-            \App\Core\Config::fromEnv(\App\Core\Env::fromArray([
+            new \APress\Core\Router($routes),
+            \APress\Core\Config::fromEnv(\APress\Core\Env::fromArray([
                 'APP_ENV' => 'preprod',
                 'APP_DEBUG' => '0',
                 'APP_URL' => 'https://example.test',

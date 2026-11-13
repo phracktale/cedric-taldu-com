@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
-use App\Core\Database;
+use APress\Core\Database;
 use App\Domain\Catalog\ArtworkStatus;
 use App\Repository\StockRepository;
 use DateTimeImmutable;

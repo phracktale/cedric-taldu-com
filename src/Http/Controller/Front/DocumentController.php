@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controller\Front;
 
-use App\Core\Exception\NotFoundException;
-use App\Core\Request;
-use App\Core\Response;
+use APress\Core\Exception\NotFoundException;
+use APress\Core\Request;
+use APress\Core\Response;
 use App\Domain\Locale;
 use App\Repository\PageRepository;
 use App\Service\Media\DocumentStore;

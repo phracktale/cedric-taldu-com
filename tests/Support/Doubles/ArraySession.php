@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Support\Doubles;
 
-use App\Core\SessionInterface;
+use APress\Core\SessionInterface;
 
 /**
  * Session en memoire. Aucun test ne demarre de session PHP reelle : les tests

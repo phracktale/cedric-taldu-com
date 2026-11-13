@@ -201,7 +201,7 @@ final class StripeEventRepositoryTest extends DatabaseTestCase
 
     private static function secondeConnexion(): PDO
     {
-        $pdo = (new \App\Core\Database(
+        $pdo = (new \APress\Core\Database(
             host: getenv('DB_TEST_HOST') ?: (getenv('DB_HOST') ?: '127.0.0.1'),
             port: (int) (getenv('DB_TEST_PORT') ?: (getenv('DB_PORT') ?: '13306')),
             name: getenv('DB_TEST_NAME') ?: 'cedrictaldu_test',

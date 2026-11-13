@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controller\Admin;
 
-use App\Core\Exception\NotFoundException;
-use App\Core\RedirectResponse;
-use App\Core\Request;
+use APress\Core\Exception\NotFoundException;
+use APress\Core\RedirectResponse;
+use APress\Core\Request;
 use App\Domain\Editorial\EventStatus;
 use App\Domain\EuroAmount;
-use App\Core\Response;
+use APress\Core\Response;
 use App\Domain\Exception\InvalidSlug;
 use App\Domain\Locale;
 use App\Domain\Slug;

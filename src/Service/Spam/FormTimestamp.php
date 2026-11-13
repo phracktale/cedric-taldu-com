@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service\Spam;
 
-use App\Core\ClockInterface;
+use APress\Core\ClockInterface;
 
 /**
  * Horodatage signé d'un formulaire public (06-securite §6.2).

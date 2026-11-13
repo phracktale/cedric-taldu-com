@@ -221,7 +221,7 @@ final class ExposureTest extends FunctionalTestCase
     {
         yield '.env' => ['/cedric-taldu/.env'];
         yield 'dépôt Git' => ['/cedric-taldu/.git/config'];
-        yield 'sources' => ['/cedric-taldu/src/Core/Config.php'];
+        yield 'sources' => ['/cedric-taldu/src/Core/View.php'];
         yield 'stockage' => ['/cedric-taldu/storage/logs/app.log'];
         yield 'dépendances' => ['/cedric-taldu/vendor/autoload.php'];
         yield 'migrations' => ['/cedric-taldu/migrations/0001_init.sql'];

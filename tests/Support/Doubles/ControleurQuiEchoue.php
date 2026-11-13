@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Support\Doubles;
 
-use App\Core\Request;
-use App\Core\Response;
+use APress\Core\Request;
+use APress\Core\Response;
 use RuntimeException;
 
 /**

@@ -647,12 +647,12 @@ final class CheckoutServiceTest extends DatabaseTestCase
     private static function urlGenerator(): \App\Service\I18n\UrlGenerator
     {
         $racine = dirname(__DIR__, 2);
-        /** @var list<\App\Core\Route> $routes */
+        /** @var list<\APress\Core\Route> $routes */
         $routes = require $racine . '/config/routes.php';
 
         return new \App\Service\I18n\UrlGenerator(
-            new \App\Core\Router($routes),
-            \App\Core\Config::fromEnv(\App\Core\Env::fromArray([
+            new \APress\Core\Router($routes),
+            \APress\Core\Config::fromEnv(\APress\Core\Env::fromArray([
                 'APP_ENV' => 'preprod',
                 'APP_DEBUG' => '0',
                 'APP_URL' => 'https://example.test',
@@ -669,7 +669,7 @@ final class CheckoutServiceTest extends DatabaseTestCase
 
     private static function secondeConnexion(): \PDO
     {
-        $pdo = (new \App\Core\Database(
+        $pdo = (new \APress\Core\Database(
             host: getenv('DB_TEST_HOST') ?: (getenv('DB_HOST') ?: '127.0.0.1'),
             port: (int) (getenv('DB_TEST_PORT') ?: (getenv('DB_PORT') ?: '13306')),
             name: getenv('DB_TEST_NAME') ?: 'cedrictaldu_test',

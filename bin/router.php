@@ -53,7 +53,7 @@ require $root . '/vendor/autoload.php';
 /** @var array<string, string> $systemEnvironment */
 $systemEnvironment = getenv();
 $basePath = rtrim(trim(
-    App\Core\Env::load($root . '/.env', $systemEnvironment)->getOptional('APP_BASE_PATH', '') ?? ''
+    APress\Core\Env::load($root . '/.env', $systemEnvironment)->getOptional('APP_BASE_PATH', '') ?? ''
 ), '/');
 
 $requestUri = $_SERVER['REQUEST_URI'] ?? '/';

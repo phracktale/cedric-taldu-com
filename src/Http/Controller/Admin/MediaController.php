@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Controller\Admin;
 
-use App\Core\Exception\NotFoundException;
-use App\Core\RedirectResponse;
-use App\Core\Request;
+use APress\Core\Exception\NotFoundException;
+use APress\Core\RedirectResponse;
+use APress\Core\Request;
 use App\Domain\Catalog\ImageBreakpoints;
 use App\Domain\Catalog\PrintSettings;
 use App\Repository\SettingRepository;
-use App\Core\Response;
-use App\Core\Rule;
-use App\Core\Validator;
+use APress\Core\Response;
+use APress\Core\Rule;
+use APress\Core\Validator;
 use App\Domain\Locale;
 use App\Repository\Admin\MediaAdminRepository;
 use App\Repository\Admin\PageAdminRepository;

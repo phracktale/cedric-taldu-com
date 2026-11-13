@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service\Account;
 
-use App\Core\ClockInterface;
+use APress\Core\ClockInterface;
 use App\Repository\CustomerLoginRepository;
 use App\Repository\NewsletterRepository;
 

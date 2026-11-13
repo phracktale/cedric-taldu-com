@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service\StaticSite;
 
-use App\Core\ClockInterface;
+use APress\Core\ClockInterface;
 use App\Domain\Locale;
 use App\Repository\ArtworkRepository;
 use App\Repository\CategoryRepository;

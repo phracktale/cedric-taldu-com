@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controller\Admin;
 
-use App\Core\RedirectResponse;
-use App\Core\Request;
-use App\Core\Response;
+use APress\Core\RedirectResponse;
+use APress\Core\Request;
+use APress\Core\Response;
 use App\Domain\Order\SellerIdentity;
 use App\Domain\Order\VatMode;
 use App\Domain\Order\VatRegime;

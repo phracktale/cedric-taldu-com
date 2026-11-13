@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controller\Admin;
 
-use App\Core\Exception\ValidationFailed;
-use App\Core\RedirectResponse;
-use App\Core\Request;
-use App\Core\Response;
-use App\Core\Rule;
-use App\Core\Validator;
+use APress\Core\Exception\ValidationFailed;
+use APress\Core\RedirectResponse;
+use APress\Core\Request;
+use APress\Core\Response;
+use APress\Core\Rule;
+use APress\Core\Validator;
 use App\Domain\Admin\AdminUser;
 use App\Repository\UserRepository;
 use App\Service\Auth\AdminSession;

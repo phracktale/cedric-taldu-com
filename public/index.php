@@ -11,12 +11,12 @@
 
 declare(strict_types=1);
 
-use App\Core\Config;
-use App\Core\Container;
-use App\Core\Env;
-use App\Core\FailSafeResponse;
-use App\Core\Kernel;
-use App\Core\Request;
+use APress\Core\Config;
+use APress\Core\Container;
+use APress\Core\Env;
+use APress\Core\FailSafeResponse;
+use APress\Core\Kernel;
+use APress\Core\Request;
 
 $root = dirname(__DIR__);
 

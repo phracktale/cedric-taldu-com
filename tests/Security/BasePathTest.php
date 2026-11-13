@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Security;
 
-use App\Core\Route;
-use App\Core\Router;
+use APress\Core\Route;
+use APress\Core\Router;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\FunctionalTestCase;
 

@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use App\Core\Csrf;
-use App\Core\Exception\CsrfTokenMismatch;
-use App\Core\LoggerInterface;
-use App\Core\LogLevel;
-use App\Core\RedirectResponse;
-use App\Core\Request;
-use App\Core\Response;
-use App\Core\RouteMatch;
+use APress\Core\Csrf;
+use APress\Core\Exception\CsrfTokenMismatch;
+use APress\Core\LoggerInterface;
+use APress\Core\LogLevel;
+use APress\Core\MiddlewareInterface;
+use APress\Core\RedirectResponse;
+use APress\Core\Request;
+use APress\Core\Response;
+use APress\Core\RouteMatch;
 
 /**
  * Verification du jeton CSRF sur toutes les methodes non sures.

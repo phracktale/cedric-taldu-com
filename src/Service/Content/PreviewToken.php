@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service\Content;
 
-use App\Core\ClockInterface;
+use APress\Core\ClockInterface;
 
 /**
  * Jeton d'apercu d'un contenu non publie.

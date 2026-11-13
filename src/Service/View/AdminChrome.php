@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Service\View;
 
-use App\Core\ClockInterface;
-use App\Core\Config;
-use App\Core\Csrf;
-use App\Core\Request;
-use App\Core\Response;
+use APress\Core\ClockInterface;
+use APress\Core\Config;
+use APress\Core\Csrf;
+use APress\Core\Request;
+use APress\Core\Response;
 use App\Core\View;
 use App\Http\Middleware\SecurityHeaders;
 use App\Service\Auth\AdminSession;

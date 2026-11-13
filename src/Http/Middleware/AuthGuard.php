@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use App\Core\LoggerInterface;
-use App\Core\LogLevel;
-use App\Core\RedirectResponse;
-use App\Core\Request;
-use App\Core\Response;
-use App\Core\RouteMatch;
+use APress\Core\LoggerInterface;
+use APress\Core\LogLevel;
+use APress\Core\MiddlewareInterface;
+use APress\Core\RedirectResponse;
+use APress\Core\Request;
+use APress\Core\Response;
+use APress\Core\RouteMatch;
 use App\Service\Auth\AdminSession;
 
 /**

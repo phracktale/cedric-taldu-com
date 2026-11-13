@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service\StaticSite;
 
-use App\Core\ClockInterface;
+use APress\Core\ClockInterface;
 
 /**
  * Invalidation par suppression : sans fichier, Apache renvoie la requête à

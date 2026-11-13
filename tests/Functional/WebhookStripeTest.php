@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Functional;
 
-use App\Core\Response;
+use APress\Core\Response;
 use App\Service\Payment\FakeGateway;
 use App\Service\Payment\PaymentGateway;
 use Tests\Support\FunctionalTestCase;

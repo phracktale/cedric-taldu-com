@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
-use App\Core\Exception\MigrationFailed;
-use App\Core\Migrator;
+use APress\Core\Exception\MigrationFailed;
+use APress\Core\Migrator;
 use PDO;
 use PDOException;
 use Tests\Support\SchemaTestCase;
@@ -218,7 +218,7 @@ final class MigratorTest extends SchemaTestCase
         $user = getenv('DB_USER') ?: 'cedrictaldu';
         $password = getenv('DB_PASSWORD') ?: 'cedrictaldu';
 
-        return (new \App\Core\Database($host, (int) $port, $name, $user, $password))->connect();
+        return (new \APress\Core\Database($host, (int) $port, $name, $user, $password))->connect();
     }
 
     /**

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Functional;
 
-use App\Core\ClockInterface;
-use App\Core\Csrf;
+use APress\Core\ClockInterface;
+use APress\Core\Csrf;
 use App\Service\Mail\ArrayMailer;
 use App\Service\Mail\MailerInterface;
 use App\Service\Spam\FormTimestamp;
@@ -205,7 +205,7 @@ final class ContactTest extends FunctionalTestCase
     /**
      * @param array<string, string> $champs
      */
-    private function submit(array $champs): \App\Core\Response
+    private function submit(array $champs): \APress\Core\Response
     {
         return $this->requete('POST', '/cedric-taldu/fr/contact', post: array_filter([
             Csrf::FIELD => $this->jeton(),

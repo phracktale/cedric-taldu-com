@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Support\Doubles;
 
-use App\Core\ClockInterface;
+use APress\Core\ClockInterface;
 use DateTimeImmutable;
 use DateTimeZone;
 

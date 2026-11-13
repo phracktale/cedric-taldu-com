@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Service\Fulfillment;
 
-use App\Core\LoggerInterface;
-use App\Core\LogLevel;
+use APress\Core\LoggerInterface;
+use APress\Core\LogLevel;
 use App\Repository\FulfillmentRepository;
 use Throwable;
 

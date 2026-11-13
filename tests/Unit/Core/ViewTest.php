@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Core;
 
-use App\Core\Config;
-use App\Core\Env;
-use App\Core\Exception\TemplateNotFound;
-use App\Core\Route;
-use App\Core\Router;
+use APress\Core\Config;
+use APress\Core\Env;
+use APress\Core\Exception\TemplateNotFound;
+use APress\Core\Route;
+use APress\Core\Router;
 use App\Core\View;
 use App\Service\I18n\UrlGenerator;
 use PHPUnit\Framework\Attributes\CoversClass;

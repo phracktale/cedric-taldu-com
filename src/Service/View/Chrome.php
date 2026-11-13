@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Service\View;
 
-use App\Core\ClockInterface;
-use App\Core\Config;
-use App\Core\CookieFactory;
-use App\Core\Csrf;
-use App\Core\Request;
+use APress\Core\ClockInterface;
+use APress\Core\Config;
+use APress\Core\CookieFactory;
+use APress\Core\Csrf;
+use APress\Core\Request;
 use App\Domain\Editorial\ContactPage;
 use App\Domain\Editorial\ContentTemplate;
 use App\Domain\Catalog\ThumbnailLayout;
