@@ -25,6 +25,23 @@ final class AdminMenuTest extends TestCase
         $this->assertSame('Historique', array_slice($this->libelles($groupes[3]), -1)[0]);
     }
 
+    public function test_la_gestion_des_extensions_figure_dans_parametres_avant_historique(): void
+    {
+        $parametres = $this->libelles(AdminMenu::groups()[3]);
+
+        $this->assertSame(['Extensions', 'Historique'], array_slice($parametres, -2));
+    }
+
+    public function test_les_pages_des_extensions_actives_forment_une_rubrique_avant_parametres(): void
+    {
+        $extension = ['chemin' => '/admin/demo', 'libelle' => 'Démo'];
+
+        $groupes = AdminMenu::groups([$extension]);
+
+        $this->assertSame(['Contenus', 'Boutique', 'Modules', 'Extensions', 'Paramètres'], array_column($groupes, 'label'));
+        $this->assertSame('Extensions', AdminMenu::groupOf('/admin/demo/3', [$extension]));
+    }
+
     public function test_la_rubrique_de_la_page_courante_est_reperee(): void
     {
         $this->assertSame('Boutique', AdminMenu::groupOf('/admin/commandes/12'));
