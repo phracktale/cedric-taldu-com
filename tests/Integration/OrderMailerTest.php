@@ -221,7 +221,7 @@ final class OrderMailerTest extends TestCase
     private static function url(string $racine): \App\Service\I18n\UrlGenerator
     {
         /** @var list<\APress\Core\Route> $routes */
-        $routes = require $racine . '/config/routes.php';
+        $routes = \Tests\Support\Routes::all();
 
         return new \App\Service\I18n\UrlGenerator(
             new \APress\Core\Router($routes),

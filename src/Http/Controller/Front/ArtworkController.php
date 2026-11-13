@@ -43,6 +43,8 @@ final class ArtworkController
         private readonly \App\Service\Content\PreviewToken $preview,
         private readonly \App\Repository\ProductRepository $products,
         private readonly StructuredData $seo,
+        // Extension « boutique » active ? Sinon ni reproductions ni ajout au panier.
+        private readonly bool $boutique = true,
     ) {
     }
 
@@ -106,8 +108,9 @@ final class ArtworkController
             'isPreview' => $isPreview,
             // Reproductions publiees de cette œuvre. Un apercu de brouillon
             // n'en montre aucune : elles n'existent pas encore publiquement.
-            'products' => $isPreview ? [] : $this->products->findPublishedForArtwork($artwork->id, $locale),
-            'cartAddUrl' => $this->url->route('cart.add', ['locale' => $locale->value]),
+            'products' => $isPreview || !$this->boutique ? [] : $this->products->findPublishedForArtwork($artwork->id, $locale),
+            // Chaîne vide : boutique inactive, la route cart.add n'existe pas.
+            'cartAddUrl' => $this->boutique ? $this->url->route('cart.add', ['locale' => $locale->value]) : '',
         ];
 
         $response = Response::html($this->view->render('front/artwork', $data, layout: 'layouts/public'));

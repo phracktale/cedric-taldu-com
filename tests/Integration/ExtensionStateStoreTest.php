@@ -12,6 +12,15 @@ use Tests\Support\DatabaseTestCase;
 #[CoversClass(PdoExtensionStateStore::class)]
 final class ExtensionStateStoreTest extends DatabaseTestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Table vide pour ces tests : la migration 0032 y inscrit la boutique,
+        // et la suppression est annulée avec la transaction du test.
+        $this->pdo->exec('DELETE FROM core_extensions');
+    }
+
     public function test_un_etat_enregistre_est_relu_a_l_identique(): void
     {
         $store = new PdoExtensionStateStore($this->pdo);

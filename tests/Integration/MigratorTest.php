@@ -17,6 +17,12 @@ final class MigratorTest extends SchemaTestCase
 
     private function migrateur(?string $repertoire = null): Migrator
     {
+        if ($repertoire === null) {
+            // Comme bin/migrate.php : le cœur d'abord. 0032 inscrit la boutique
+            // dans core_extensions, table livrée par les migrations du cœur.
+            \APress\Core\CoreMigrations::migrator($this->pdo, new FrozenClock('2026-07-21 09:30:00'))->migrate();
+        }
+
         return new Migrator(
             $this->pdo,
             $repertoire ?? self::MIGRATIONS,

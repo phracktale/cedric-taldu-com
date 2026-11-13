@@ -26,6 +26,31 @@ final class Hooks
     /** @var array<string, callable> */
     private array $services = [];
 
+    /** @var list<string> */
+    private array $booted = [];
+
+    /**
+     * Appelé par ExtensionManager une fois register() réussi. Le site s'en sert
+     * pour masquer ce qui dépend d'une extension inactive (lien vers le panier…).
+     */
+    public function markBooted(string $name): void
+    {
+        $this->booted[] = $name;
+    }
+
+    public function isBooted(string $name): bool
+    {
+        return in_array($name, $this->booted, true);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function booted(): array
+    {
+        return $this->booted;
+    }
+
     public function addRoute(Route $route): void
     {
         $this->routes[] = $route;

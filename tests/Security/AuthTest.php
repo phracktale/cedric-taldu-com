@@ -250,7 +250,7 @@ final class AuthTest extends AdminTestCase
     private static function routes(): array
     {
         /** @var list<Route> $routes */
-        $routes = require dirname(__DIR__, 2) . '/config/routes.php';
+        $routes = \Tests\Support\Routes::all();
 
         return (new Router($routes))->routes();
     }

@@ -26,10 +26,18 @@ final class ExtensionManager
     /** @var callable(Manifest): void */
     private $migrate;
 
-    /** @var array<string, string> préfixe de namespace => dossier, pour l'autoloader */
-    private array $autoload = [];
+    /**
+     * Préfixe de namespace => dossier, pour l'autoloader. STATIQUE : un seul
+     * autoloader par processus, qui ne retient aucune instance. Un autoloader
+     * par gestionnaire retiendrait chaque conteneur construit, et un processus
+     * qui sert de nombreuses requêtes (suite de tests, worker) épuiserait sa
+     * mémoire.
+     *
+     * @var array<string, string>
+     */
+    private static array $autoload = [];
 
-    private bool $autoloaderRegistered = false;
+    private static bool $autoloaderRegistered = false;
 
     /**
      * @param callable(Manifest): void $migrate applique les migrations en attente de l'extension
@@ -181,6 +189,7 @@ final class ExtensionManager
                 $own = new Hooks();
                 (new $entry())->register($own);
                 $this->merge($own, $hooks);
+                $hooks->markBooted($name);
                 $booted[] = $name;
             } catch (Throwable $exception) {
                 $this->skip($name, $exception->getMessage());
@@ -254,15 +263,15 @@ final class ExtensionManager
     private function registerAutoload(Manifest $manifest): void
     {
         foreach ($manifest->autoload as $prefix => $directory) {
-            $this->autoload[$prefix] = $directory;
+            self::$autoload[$prefix] = $directory;
         }
 
-        if ($this->autoloaderRegistered) {
+        if (self::$autoloaderRegistered) {
             return;
         }
 
-        spl_autoload_register(function (string $class): void {
-            foreach ($this->autoload as $prefix => $directory) {
+        spl_autoload_register(static function (string $class): void {
+            foreach (self::$autoload as $prefix => $directory) {
                 if (!str_starts_with($class, $prefix)) {
                     continue;
                 }
@@ -274,7 +283,7 @@ final class ExtensionManager
                 }
             }
         });
-        $this->autoloaderRegistered = true;
+        self::$autoloaderRegistered = true;
     }
 
     private function merge(Hooks $from, Hooks $into): void

@@ -30,6 +30,9 @@ $rubriqueCourante = is_int($data['currentCategoryId'] ?? null) ? $data['currentC
 /** @var array<string, string> $localeSwitch URL équivalente par code de langue */
 $localeSwitch = is_array($data['localeSwitch'] ?? null) ? $data['localeSwitch'] : [];
 
+// Extension « boutique » (A-Press, lot 3) : sans elle, ni compte ni panier.
+$boutique = ($data['boutique'] ?? true) === true;
+
 // Pastille du panier : fournie par Chrome, lue sans jamais créer de panier.
 $cartCount = is_int($data['cartCount'] ?? null) ? $data['cartCount'] : 0;
 
@@ -58,11 +61,13 @@ $site = ($data['site'] ?? null) instanceof App\Domain\Editorial\SiteIdentity
     <?php // Accès au panier, présent sur tout le site. La pastille montre le
           // nombre d'articles ; admin.js la met à jour après un ajout en fetch. ?>
     <?php // Espace client (revue du 2026-09-24) : commandes, factures, newsletter. ?>
+    <?php if ($boutique) : ?>
     <a class="panier-lien compte-lien" href="<?= attr($url->route('account.index', ['locale' => $locale->value])) ?>"><?= $t('nav.account') ?></a>
     <a class="panier-lien" href="<?= attr($url->route('cart.show', ['locale' => $locale->value])) ?>">
       <?= $t('nav.cart') ?>
       <span class="pastille-panier" data-cart-count<?php if ($cartCount === 0) : ?> hidden<?php endif; ?>><?= e($cartCount) ?></span>
     </a>
+    <?php endif; ?>
 
     <?php // Sélecteur de langue : vers l'URL équivalente dans l'autre langue,
           // fournie par le contrôleur (05-i18n §2). Muet si l'équivalent manque. ?>
@@ -117,9 +122,11 @@ $site = ($data['site'] ?? null) instanceof App\Domain\Editorial\SiteIdentity
         <?php /* Reprises du menu mobile (demande du 2026-10-13), masquées sur grand
                  écran où la barre du haut les porte déjà. Ordre d'usage : les pages,
                  puis le compte, les langues, et les coordonnées pour finir. */ ?>
+        <?php if ($boutique) : ?>
         <li class="menu-mobile menu-mobile-compte">
           <a href="<?= attr($url->route('account.index', ['locale' => $locale->value])) ?>"><?= $t('nav.account') ?></a>
         </li>
+        <?php endif; ?>
         <?php if ($localeSwitch !== []) : ?>
         <li class="menu-mobile menu-mobile-langues">
           <?php foreach (Locale::cases() as $autre) : ?>

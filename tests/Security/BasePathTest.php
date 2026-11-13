@@ -34,7 +34,7 @@ final class BasePathTest extends FunctionalTestCase
     public static function routesPubliquesEnLecture(): iterable
     {
         /** @var list<Route> $routes */
-        $routes = require dirname(__DIR__, 2) . '/config/routes.php';
+        $routes = \Tests\Support\Routes::all();
 
         foreach ((new Router($routes))->routes() as $route) {
             if ($route->method !== 'GET') {

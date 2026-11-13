@@ -113,7 +113,7 @@ final class ExtensionsAdminTest extends AdminTestCase
 
         $this->assertSame(302, $reponse->status);
         $this->assertStringContainsString('Extension inconnue', $this->requete('GET', self::PAGE)->body);
-        $this->assertSame('0', $this->scalaire('SELECT COUNT(*) FROM core_extensions'));
+        $this->assertSame('0', $this->scalaire("SELECT COUNT(*) FROM core_extensions WHERE name IN ('demo', 'inconnue')"));
     }
 
     public function test_un_compte_redaction_n_accede_pas_a_la_gestion_des_extensions(): void
@@ -122,7 +122,7 @@ final class ExtensionsAdminTest extends AdminTestCase
 
         $this->assertSame(404, $this->requete('GET', self::PAGE)->status);
         $this->assertSame(404, $this->postAvecJeton(self::PAGE . '/demo/activer')->status);
-        $this->assertSame('0', $this->scalaire('SELECT COUNT(*) FROM core_extensions'));
+        $this->assertSame('0', $this->scalaire("SELECT COUNT(*) FROM core_extensions WHERE name IN ('demo', 'inconnue')"));
     }
 
     public function test_l_activation_exige_le_jeton_csrf(): void
@@ -131,7 +131,7 @@ final class ExtensionsAdminTest extends AdminTestCase
 
         $this->requete('POST', self::PAGE . '/demo/activer');
 
-        $this->assertSame('0', $this->scalaire('SELECT COUNT(*) FROM core_extensions'));
+        $this->assertSame('0', $this->scalaire("SELECT COUNT(*) FROM core_extensions WHERE name IN ('demo', 'inconnue')"));
     }
 
     private function scalaire(string $sql): string
