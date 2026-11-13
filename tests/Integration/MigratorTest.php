@@ -221,6 +221,68 @@ final class MigratorTest extends SchemaTestCase
         return (new \APress\Core\Database($host, (int) $port, $name, $user, $password))->connect();
     }
 
+    // ------------------------------------------------- portée (extensions A-Press)
+
+    public function test_une_portee_prefixe_les_migrations_enregistrees(): void
+    {
+        // Deux extensions peuvent livrer chacune un 0001_init.sql : la portée
+        // les distingue dans la table, sans renommer leurs fichiers.
+        $repertoire = $this->repertoireTemporaire([
+            '0001_init.sql' => 'CREATE TABLE agenda_evenements (id INT PRIMARY KEY);',
+        ]);
+
+        $appliquees = (new Migrator($this->pdo, $repertoire, new FrozenClock(), 'agenda'))->migrate();
+
+        $this->assertSame(['agenda/0001_init.sql'], $appliquees);
+        $enregistrees = $this->pdo->query('SELECT filename FROM migrations')?->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        $this->assertSame(['agenda/0001_init.sql'], $enregistrees);
+
+        $this->nettoyer($repertoire);
+    }
+
+    public function test_une_migration_de_meme_nom_dans_une_autre_portee_reste_en_attente(): void
+    {
+        $repertoire = $this->repertoireTemporaire([
+            '0001_init.sql' => 'CREATE TABLE IF NOT EXISTS portee_commune (id INT PRIMARY KEY);',
+        ]);
+        (new Migrator($this->pdo, $repertoire, new FrozenClock(), 'agenda'))->migrate();
+
+        $rappels = new Migrator($this->pdo, $repertoire, new FrozenClock(), 'rappels');
+
+        $this->assertSame(['rappels/0001_init.sql'], $rappels->pending());
+        $this->assertSame(['rappels/0001_init.sql' => null], $rappels->status());
+
+        $this->nettoyer($repertoire);
+    }
+
+    public function test_une_migration_de_donnees_s_execute_dans_la_transaction_deja_ouverte(): void
+    {
+        // Activation d'une extension depuis une requête : l'appelant peut avoir
+        // ouvert sa transaction. Le migrateur s'y joint au lieu d'échouer sur
+        // « There is already an active transaction », et ne la valide pas.
+        $this->migrateur()->migrate();
+        $repertoire = $this->repertoireTemporaire([
+            '0001_donnees.sql' => "INSERT INTO settings (`key`, value, updated_at) VALUES ('portee.test', '1', NOW());",
+        ]);
+        $this->pdo->beginTransaction();
+
+        (new Migrator($this->pdo, $repertoire, new FrozenClock(), 'donnees'))->migrate();
+
+        $this->assertTrue($this->pdo->inTransaction());
+        $this->pdo->rollBack();
+        $restant = $this->pdo->query("SELECT COUNT(*) FROM settings WHERE `key` = 'portee.test'")?->fetchColumn();
+        $this->assertSame(0, (int) $restant);
+
+        $this->nettoyer($repertoire);
+    }
+
+    public function test_une_portee_sans_dossier_de_migrations_n_a_rien_a_appliquer(): void
+    {
+        $migrateur = new Migrator($this->pdo, sys_get_temp_dir() . '/absent-' . bin2hex(random_bytes(4)), new FrozenClock(), 'vide');
+
+        $this->assertSame([], $migrateur->migrate());
+    }
+
     /**
      * @param array<string, string> $fichiers
      */

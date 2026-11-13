@@ -19,6 +19,14 @@ use APress\Core\ClockInterface;
 use APress\Core\Config;
 use APress\Core\Container;
 use APress\Core\CookieFactory;
+use APress\Core\CoreMigrations;
+use APress\Core\Extension\ExtensionManager;
+use APress\Core\Extension\ExtensionStateStore;
+use APress\Core\Extension\Hooks;
+use APress\Core\Extension\Manifest;
+use APress\Core\LogLevel;
+use APress\Core\Migrator;
+use APress\Core\Repository\PdoExtensionStateStore;
 use APress\Core\Csrf;
 use APress\Core\Database;
 use APress\Core\Env;
@@ -64,6 +72,7 @@ use App\Service\Content\BlockPlacement;
 use App\Service\View\PlacedBlocks;
 use App\Http\Controller\Admin\EcoIndexController;
 use App\Http\Controller\Admin\TemplateController;
+use App\Http\Controller\Admin\ExtensionController;
 use App\Http\Controller\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controller\Front\NewsletterController;
 use App\Http\Controller\Front\AccountController as CustomerAccountController;
@@ -253,11 +262,52 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(RandomInterface::class),
     ));
 
-    $container->set(Router::class, static function () use ($rootPath): Router {
+    // --- Extensions A-Press (lot 2) ------------------------------------------
+    //
+    // Dossier extensions/ à la racine, hors webroot. APP_EXTENSIONS_DIR ne sert
+    // qu'aux tests, qui pointent sur leurs extensions de démonstration.
+    $container->set(ExtensionStateStore::class, static fn (Container $c): ExtensionStateStore
+        => new PdoExtensionStateStore($c->get(PDO::class)));
+
+    $container->set(ExtensionManager::class, static fn (Container $c): ExtensionManager => new ExtensionManager(
+        $env->getOptional('APP_EXTENSIONS_DIR', $rootPath . '/extensions') ?? $rootPath . '/extensions',
+        $c->get(ExtensionStateStore::class),
+        static function (Manifest $manifest) use ($c): void {
+            (new Migrator(
+                $c->get(PDO::class),
+                $manifest->migrationsDirectory(),
+                $c->get(ClockInterface::class),
+                $manifest->name,
+            ))->migrate();
+        },
+        CoreMigrations::VERSION,
+        $c->get(ClockInterface::class),
+        $c->get(LoggerInterface::class),
+    ));
+
+    // Démarrage des extensions actives : leurs routes rejoignent la table, leurs
+    // services le conteneur. Un service d'extension ne remplace jamais un
+    // service du site : la collision est journalisée et l'entrée ignorée.
+    $container->set(Hooks::class, static function (Container $c): Hooks {
+        $hooks = new Hooks();
+        $c->get(ExtensionManager::class)->boot($hooks);
+
+        foreach ($hooks->services() as $id => $factory) {
+            if ($c->has($id)) {
+                $c->get(LoggerInterface::class)->log(LogLevel::Error, 'Service d\'extension ignoré : identifiant déjà pris.', ['service' => $id]);
+                continue;
+            }
+            $c->set($id, $factory);
+        }
+
+        return $hooks;
+    });
+
+    $container->set(Router::class, static function (Container $c) use ($rootPath): Router {
         /** @var list<APress\Core\Route> $routes */
         $routes = require $rootPath . '/config/routes.php';
 
-        return new Router($routes);
+        return new Router([...$routes, ...$c->get(Hooks::class)->routes()]);
     });
 
     $container->set(UrlGenerator::class, static fn (Container $c): UrlGenerator => new UrlGenerator(
@@ -647,6 +697,19 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(AuditTrail::class),
         $c->get(ClockInterface::class),
         $c->get(GenerationStore::class),
+        static function () use ($c): array {
+            $router = $c->get(Router::class);
+            $items = [];
+            foreach ($c->get(Hooks::class)->adminMenu() as $item) {
+                try {
+                    $items[] = ['chemin' => $router->findByName($item->routeName, null)->path, 'libelle' => $item->label];
+                } catch (APress\Core\Exception\RouteNotDeclared) {
+                    // Entrée vers une route que l'extension n'a pas déclarée : ignorée.
+                }
+            }
+
+            return $items;
+        },
     ));
 
     // --- Paiement ---------------------------------------------------------
@@ -1117,6 +1180,14 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $c->get(Chrome::class),
             $c->get(Newsletter::class),
             $c->get(UnsubscribeToken::class),
+        ));
+    $container->set(ExtensionController::class, static fn (Container $c): ExtensionController
+        => new ExtensionController(
+            $c->get(AdminChrome::class),
+            $c->get(AdminSession::class),
+            $c->get(ExtensionManager::class),
+            $c->get(SessionInterface::class),
+            $c->get(PDO::class),
         ));
     $container->set(AdminNewsletterController::class, static fn (Container $c): AdminNewsletterController
         => new AdminNewsletterController(

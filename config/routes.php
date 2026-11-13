@@ -42,6 +42,7 @@ use App\Http\Controller\Admin\GlobalController;
 use App\Http\Controller\Admin\ContentBlockController;
 use App\Http\Controller\Admin\EcoIndexController;
 use App\Http\Controller\Admin\TemplateController;
+use App\Http\Controller\Admin\ExtensionController;
 use App\Http\Controller\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controller\Front\NewsletterController;
 use App\Http\Controller\Front\AccountController as CustomerAccountController;
@@ -66,6 +67,7 @@ use App\Http\Controller\Front\StripeWebhookController;
 
 $slug = ['slug' => Route::SLUG];
 $id = ['id' => Route::ID];
+$nom = ['name' => Route::SLUG];
 // Clef de section : validée sur liste blanche par le contrôleur (404 sinon).
 $section = ['section' => '[a-z0-9]{1,20}'];
 // Jeton des liens « mot de passe oublié » : 32 octets en hexadécimal.
@@ -326,6 +328,10 @@ return [
     new Route('admin.newsletter.index', 'GET', '/admin/newsletter', [AdminNewsletterController::class, 'index']),
     new Route('admin.newsletter.export', 'GET', '/admin/newsletter/export', [AdminNewsletterController::class, 'export']),
     new Route('admin.newsletter.unsubscribe', 'POST', '/admin/newsletter/desinscription', [AdminNewsletterController::class, 'unsubscribe']),
+    // Extensions A-Press (lot 2) : activer / désactiver, réservé aux réglages.
+    new Route('admin.extensions.index', 'GET', '/admin/extensions', [ExtensionController::class, 'index']),
+    new Route('admin.extensions.activate', 'POST', '/admin/extensions/{name}/activer', [ExtensionController::class, 'activate'], requirements: $nom),
+    new Route('admin.extensions.deactivate', 'POST', '/admin/extensions/{name}/desactiver', [ExtensionController::class, 'deactivate'], requirements: $nom),
     new Route('admin.menu.edit', 'GET', '/admin/menu', [MenuController::class, 'edit']),
     new Route('admin.menu.update', 'POST', '/admin/menu', [MenuController::class, 'update']),
     // Paramètres › Global : identité du site (retours du 2026-09-25).

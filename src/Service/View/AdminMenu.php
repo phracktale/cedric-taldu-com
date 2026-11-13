@@ -14,11 +14,13 @@ namespace App\Service\View;
 final class AdminMenu
 {
     /**
+     * @param list<array{chemin: string, libelle: string}> $extensions entrées déclarées
+     *        par les extensions actives (A-Press, lot 2) ; rubrique omise si vide
      * @return list<array{label: string, items: list<array{chemin: string, libelle: string}|null>}>
      */
-    public static function groups(): array
+    public static function groups(array $extensions = []): array
     {
-        return [
+        $groupes = [
             ['label' => 'Contenus', 'items' => [
                 ['chemin' => '/admin/medias', 'libelle' => 'Médiathèque'],
                 ['chemin' => '/admin/accueil', 'libelle' => 'Accueil'],
@@ -49,16 +51,27 @@ final class AdminMenu
                 ['chemin' => '/admin/ecoindex', 'libelle' => 'EcoIndex'],
                 // Historique des versions (demande du 2026-09-30).
                 ['chemin' => '/admin/historique', 'libelle' => 'Historique'],
+                ['chemin' => '/admin/extensions', 'libelle' => 'Extensions'],
             ]],
         ];
+
+        if ($extensions !== []) {
+            // Avant « Paramètres », qui reste la dernière rubrique.
+            array_splice($groupes, count($groupes) - 1, 0, [['label' => 'Extensions', 'items' => $extensions]]);
+        }
+
+        return $groupes;
     }
 
     /**
      * Rubrique contenant le chemin demandé (écran ou sous-écran), ou null.
      */
-    public static function groupOf(string $path): ?string
+    /**
+     * @param list<array{chemin: string, libelle: string}> $extensions
+     */
+    public static function groupOf(string $path, array $extensions = []): ?string
     {
-        foreach (self::groups() as $groupe) {
+        foreach (self::groups($extensions) as $groupe) {
             foreach ($groupe['items'] as $item) {
                 if ($item !== null && ($path === $item['chemin'] || str_starts_with($path, $item['chemin'] . '/'))) {
                     return $groupe['label'];
