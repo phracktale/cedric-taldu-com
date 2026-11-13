@@ -9,7 +9,7 @@
 declare(strict_types=1);
 
 $lien = is_string($data['link'] ?? null) ? $data['link'] : '';
-$minutes = App\Service\Auth\PasswordReset::LIFETIME_MINUTES;
+$minutes = APress\Core\Auth\PasswordReset::LIFETIME_MINUTES;
 ?>
 <h1 style="margin:0 0 16px;font-size:22px;"><?= e('Réinitialisation de votre mot de passe') ?></h1>
 <p style="margin:0 0 16px;">

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Service\Auth;
+namespace APress\Core\Auth;
 
 use APress\Core\ClockInterface;
 use APress\Core\Request;
-use App\Repository\AuditLogRepository;
+use APress\Core\Repository\AuditLogRepository;
 
 /**
  * Ecriture du journal d'audit.

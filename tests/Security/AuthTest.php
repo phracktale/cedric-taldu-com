@@ -6,8 +6,8 @@ namespace Tests\Security;
 
 use APress\Core\Route;
 use APress\Core\Router;
-use App\Domain\Admin\Role;
-use App\Service\Auth\AdminSession;
+use APress\Core\Admin\Role;
+use APress\Core\Auth\AdminSession;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\AdminTestCase;
 use Tests\Support\Factory\UserFactory;

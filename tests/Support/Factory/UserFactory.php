@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Support\Factory;
 
-use App\Domain\Admin\Role;
-use App\Service\Auth\PasswordHasher;
+use APress\Core\Admin\Role;
+use APress\Core\Auth\PasswordHasher;
 
 /**
  * Compte d'administration de test.

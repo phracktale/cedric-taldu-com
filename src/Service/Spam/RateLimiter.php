@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Service\Spam;
 
 use APress\Core\ClockInterface;
-use App\Repository\RateLimitRepository;
+use APress\Core\Repository\RateLimitRepository;
 
 /**
  * Limitation de debit a fenetre glissante.

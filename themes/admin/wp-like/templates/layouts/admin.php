@@ -24,7 +24,7 @@
 
 declare(strict_types=1);
 
-use App\Domain\Admin\AdminUser;
+use APress\Core\Admin\AdminUser;
 use App\Service\View\AdminMenu;
 
 $titre = is_string($data['titre'] ?? null) ? $data['titre'] : 'Administration';

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Repository;
+namespace APress\Core\Repository;
 
-use App\Domain\Admin\AdminUser;
-use App\Domain\Admin\Role;
+use APress\Core\Admin\AdminUser;
+use APress\Core\Admin\Role;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;

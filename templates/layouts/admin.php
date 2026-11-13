@@ -19,7 +19,7 @@
 
 declare(strict_types=1);
 
-use App\Domain\Admin\AdminUser;
+use APress\Core\Admin\AdminUser;
 
 $titre = is_string($data['titre'] ?? null) ? $data['titre'] : 'Administration';
 $nonce = is_string($data['nonce'] ?? null) ? $data['nonce'] : '';

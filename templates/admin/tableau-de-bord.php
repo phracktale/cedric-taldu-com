@@ -15,7 +15,7 @@
 
 declare(strict_types=1);
 
-use App\Domain\Admin\AdminUser;
+use APress\Core\Admin\AdminUser;
 
 $base = is_string($data['basePath'] ?? null) ? $data['basePath'] : '';
 $utilisateur = ($data['utilisateur'] ?? null) instanceof AdminUser ? $data['utilisateur'] : null;

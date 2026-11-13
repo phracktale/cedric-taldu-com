@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Middleware;
+namespace APress\Core\Http\Middleware;
 
 use APress\Core\Csrf;
 use APress\Core\Exception\CsrfTokenMismatch;

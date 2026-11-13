@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Functional\Admin;
 
-use App\Service\Auth\AdminSession;
+use APress\Core\Auth\AdminSession;
 use Tests\Support\AdminTestCase;
 use Tests\Support\Factory\UserFactory;
 

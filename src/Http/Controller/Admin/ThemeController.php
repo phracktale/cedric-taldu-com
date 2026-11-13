@@ -13,7 +13,7 @@ use APress\Core\Theme\ThemeRegistry;
 use APress\Core\Theme\ThemeType;
 use App\Repository\Admin\SettingsAdminRepository;
 use App\Repository\SettingRepository;
-use App\Service\Auth\AdminSession;
+use APress\Core\Auth\AdminSession;
 use App\Service\View\AdminChrome;
 
 /**

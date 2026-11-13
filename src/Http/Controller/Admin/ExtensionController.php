@@ -11,7 +11,7 @@ use APress\Core\RedirectResponse;
 use APress\Core\Request;
 use APress\Core\Response;
 use APress\Core\SessionInterface;
-use App\Service\Auth\AdminSession;
+use APress\Core\Auth\AdminSession;
 use App\Service\View\AdminChrome;
 use PDO;
 use Throwable;

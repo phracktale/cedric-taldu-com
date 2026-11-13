@@ -10,12 +10,12 @@ use APress\Core\Request;
 use APress\Core\Response;
 use APress\Core\Rule;
 use APress\Core\Validator;
-use App\Domain\Admin\AdminUser;
-use App\Repository\UserRepository;
-use App\Service\Auth\AdminSession;
-use App\Service\Auth\Authenticator;
-use App\Service\Auth\BackupCodes;
-use App\Service\Auth\Totp;
+use APress\Core\Admin\AdminUser;
+use APress\Core\Repository\UserRepository;
+use APress\Core\Auth\AdminSession;
+use APress\Core\Auth\Authenticator;
+use APress\Core\Auth\BackupCodes;
+use APress\Core\Auth\Totp;
 use App\Service\Spam\RateLimiter;
 use App\Service\View\AdminChrome;
 

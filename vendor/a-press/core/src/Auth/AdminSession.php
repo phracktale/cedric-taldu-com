@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace App\Service\Auth;
+namespace APress\Core\Auth;
 
 use APress\Core\ClockInterface;
 use APress\Core\Csrf;
 use APress\Core\Request;
 use APress\Core\SessionInterface;
-use App\Domain\Admin\AdminUser;
-use App\Domain\Admin\SessionPolicy;
-use App\Domain\Admin\SessionStatus;
-use App\Repository\UserRepository;
+use APress\Core\Admin\AdminUser;
+use APress\Core\Admin\SessionPolicy;
+use APress\Core\Admin\SessionStatus;
+use APress\Core\Repository\UserRepository;
 use DateTimeImmutable;
 use DateTimeZone;
 

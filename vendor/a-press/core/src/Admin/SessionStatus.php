@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Admin;
+namespace APress\Core\Admin;
 
 /**
  * Verdict rendu sur une session d'administration.

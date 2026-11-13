@@ -9,10 +9,10 @@ use APress\Core\Exception\NotFoundException;
 use APress\Core\RandomInterface;
 use APress\Core\Request;
 use APress\Core\Response;
-use App\Repository\UserRepository;
-use App\Service\Auth\AdminSession;
-use App\Service\Auth\BackupCodes;
-use App\Service\Auth\Totp;
+use APress\Core\Repository\UserRepository;
+use APress\Core\Auth\AdminSession;
+use APress\Core\Auth\BackupCodes;
+use APress\Core\Auth\Totp;
 use App\Service\View\AdminChrome;
 
 /**
@@ -130,7 +130,7 @@ final class AccountController
         return is_string($host) ? $host : 'cedrictaldu.com';
     }
 
-    private function currentUser(): \App\Domain\Admin\AdminUser
+    private function currentUser(): \APress\Core\Admin\AdminUser
     {
         // AuthGuard a deja resolu l'utilisateur : son absence ici serait un
         // defaut de cablage, pas une situation a rattraper en silence.

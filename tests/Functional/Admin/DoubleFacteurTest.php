@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Functional\Admin;
 
-use App\Service\Auth\AdminSession;
-use App\Service\Auth\Totp;
+use APress\Core\Auth\AdminSession;
+use APress\Core\Auth\Totp;
 use Tests\Support\AdminTestCase;
 use Tests\Support\Factory\UserFactory;
 
@@ -351,7 +351,7 @@ final class DoubleFacteurTest extends AdminTestCase
      */
     private function codesDeSecours(int $utilisateur, array $codes): void
     {
-        $service = new \App\Service\Auth\BackupCodes(str_repeat('a', 64));
+        $service = new \APress\Core\Auth\BackupCodes(str_repeat('a', 64));
 
         foreach ($codes as $code) {
             $this->pdo->prepare(
