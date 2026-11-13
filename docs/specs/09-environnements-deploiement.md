@@ -139,17 +139,21 @@ référence ; le `.htaccess` racine de repli n'existe que pour le mutualisé.
 **Preprod (Thor)** — code monté, comme ENERIA :
 ```bash
 ssh phracktale@thor
-cd /srv/customers/cedric-taldu && git pull
-docker compose exec app php bin/migrate.php
-docker compose exec app php bin/cache-clear.php
+cd ~/apps/cedric-taldu && git pull --ff-only
+docker compose exec -T app php bin/migrate.php                  # cœur A-Press, puis site
+docker compose exec -T -u www-data app php bin/generate.php     # site statique (gabarits changés)
 ```
 
 **Production (mutualisé)** :
 ```bash
-git pull                        # vendor/ est commité, aucun composer install requis
+git pull --ff-only              # vendor/ est commité, aucun composer install requis
 php bin/migrate.php
-php bin/cache-clear.php
+php bin/generate.php
 ```
+
+Avant les migrations, sauvegarder la base (`mysqldump --single-transaction`). Il n'y a
+pas de cache applicatif à vider : `bin/cache-clear.php`, cité dans des versions
+précédentes de ce document, n'a jamais existé.
 
 **Site statique** (retours du 2026-09-25, point 7) : les pages publiques sont générées
 dans `public/static/site/` (hors dépôt ; `public/static/` appartient au serveur web,

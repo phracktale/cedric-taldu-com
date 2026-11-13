@@ -85,7 +85,8 @@ final class AdminMenu
                 ['chemin' => '/admin/menu', 'libelle' => 'Menu'],
                 ['chemin' => '/admin/templates', 'libelle' => 'Templates'],
                 ['chemin' => '/admin/ecoindex', 'libelle' => 'EcoIndex'],
-                // Extensions A-Press (lot 2).
+                // Thèmes (lot 4) et extensions (lot 2) A-Press.
+                ['chemin' => '/admin/themes', 'libelle' => 'Thèmes'],
                 ['chemin' => '/admin/extensions', 'libelle' => 'Extensions'],
                 // Historique des versions (demande du 2026-09-30), toujours en dernier.
                 ['chemin' => '/admin/historique', 'libelle' => 'Historique'],

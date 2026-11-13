@@ -189,6 +189,9 @@ final class ExtensionManager
                 $own = new Hooks();
                 (new $entry())->register($own);
                 $this->merge($own, $hooks);
+                if (is_dir($manifest->templatesDirectory())) {
+                    $hooks->addTemplateDirectory($manifest->templatesDirectory());
+                }
                 $hooks->markBooted($name);
                 $booted[] = $name;
             } catch (Throwable $exception) {
