@@ -3,13 +3,22 @@
         'name' => 'phracktale/cedric-taldu-com',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '90f77d4ed46adc88d016ba1d59605bae9f73edbe',
+        'reference' => '717fd78699665ba5977dff0b81f458c6ad516c83',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
         'dev' => true,
     ),
     'versions' => array(
+        'a-press/core' => array(
+            'pretty_version' => '0.1.0',
+            'version' => '0.1.0.0',
+            'reference' => '2c84eb7ad674df92452e6bb4d9e102c0d2f265ce',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../a-press/core',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
         'myclabs/deep-copy' => array(
             'pretty_version' => '1.13.4',
             'version' => '1.13.4.0',
@@ -121,7 +130,7 @@
         'phracktale/cedric-taldu-com' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '90f77d4ed46adc88d016ba1d59605bae9f73edbe',
+            'reference' => '717fd78699665ba5977dff0b81f458c6ad516c83',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

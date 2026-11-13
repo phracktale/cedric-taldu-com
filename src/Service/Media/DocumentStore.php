@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Service\Media;
 
-use App\Core\RandomInterface;
-use App\Core\UploadedFile;
+use APress\Core\RandomInterface;
+use APress\Core\UploadedFile;
 use InvalidArgumentException;
 use RuntimeException;
 

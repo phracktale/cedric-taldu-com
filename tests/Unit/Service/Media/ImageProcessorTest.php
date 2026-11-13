@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Service\Media;
 
-use App\Core\UploadedFile;
+use APress\Core\UploadedFile;
 use App\Service\Media\Exception\UploadRejected;
 use App\Service\Media\ImageProcessor;
 use App\Service\Media\UploadRejection;

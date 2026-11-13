@@ -36,7 +36,7 @@ if (is_readable($envFile)) {
     $contents = file_get_contents($envFile);
 
     if ($contents !== false) {
-        foreach (App\Core\Env::parse($contents) as $key => $value) {
+        foreach (APress\Core\Env::parse($contents) as $key => $value) {
             if (getenv($key) === false) {
                 putenv($key . '=' . $value);
             }

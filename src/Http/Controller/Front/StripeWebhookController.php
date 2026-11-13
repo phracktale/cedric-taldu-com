@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controller\Front;
 
-use App\Core\LoggerInterface;
-use App\Core\LogLevel;
-use App\Core\Request;
-use App\Core\Response;
+use APress\Core\LoggerInterface;
+use APress\Core\LogLevel;
+use APress\Core\Request;
+use APress\Core\Response;
 use App\Service\Payment\Exception\InvalidWebhookSignature;
 use App\Service\Payment\PaymentEventHandler;
 use App\Service\Payment\PaymentGateway;

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Security;
 
-use App\Core\ClockInterface;
-use App\Core\Container;
-use App\Core\RandomInterface;
+use APress\Core\ClockInterface;
+use APress\Core\Container;
+use APress\Core\RandomInterface;
 use App\Repository\Admin\MediaAdminRepository;
 use App\Service\Media\ImageProcessor;
 use App\Service\Media\MediaStore;
@@ -151,7 +151,7 @@ final class UploadTest extends AdminTestCase
         // « aucun fichier reçu » enverrait l'artiste chercher un probleme qui
         // n'existe pas.
         $reponse = $this->requete('POST', self::MEDIAS, post: [
-            \App\Core\Csrf::FIELD => $this->jetonCsrf(),
+            \APress\Core\Csrf::FIELD => $this->jetonCsrf(),
         ], files: [
             'images' => [
                 'name' => ['enorme.jpg'],
@@ -348,12 +348,12 @@ final class UploadTest extends AdminTestCase
 
     // --------------------------------------------------------------- outils
 
-    private function televerse(string $chemin, ?string $nomClient = null): \App\Core\Response
+    private function televerse(string $chemin, ?string $nomClient = null): \APress\Core\Response
     {
         return $this->requete(
             'POST',
             self::MEDIAS,
-            post: [\App\Core\Csrf::FIELD => $this->jetonCsrf()],
+            post: [\APress\Core\Csrf::FIELD => $this->jetonCsrf()],
             files: $this->champ($chemin, $nomClient),
         );
     }

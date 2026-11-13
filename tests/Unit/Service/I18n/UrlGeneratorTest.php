@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Service\I18n;
 
-use App\Core\Config;
-use App\Core\Env;
-use App\Core\Exception\AssetNotFound;
-use App\Core\Exception\InvalidRouteParameter;
-use App\Core\Route;
-use App\Core\Router;
+use APress\Core\Config;
+use APress\Core\Env;
+use APress\Core\Exception\AssetNotFound;
+use APress\Core\Exception\InvalidRouteParameter;
+use APress\Core\Route;
+use APress\Core\Router;
 use App\Service\I18n\UrlGenerator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;

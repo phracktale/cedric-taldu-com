@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
-use App\Core\UploadedFile;
+use APress\Core\UploadedFile;
 use App\Service\Fulfillment\Exception\PrintAssetRejected;
 use App\Service\Fulfillment\PrintAssetStore;
 use PHPUnit\Framework\TestCase;

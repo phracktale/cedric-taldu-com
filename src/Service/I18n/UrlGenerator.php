@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Service\I18n;
 
-use App\Core\Config;
-use App\Core\Exception\AssetNotFound;
-use App\Core\Exception\InvalidRouteParameter;
-use App\Core\Router;
+use APress\Core\Config;
+use APress\Core\Exception\AssetNotFound;
+use APress\Core\Exception\InvalidRouteParameter;
+use APress\Core\Router;
 use App\Domain\Locale;
 
 /**

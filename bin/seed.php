@@ -18,9 +18,9 @@
 
 declare(strict_types=1);
 
-use App\Core\Config;
-use App\Core\Database;
-use App\Core\Env;
+use APress\Core\Config;
+use APress\Core\Database;
+use APress\Core\Env;
 use App\Domain\Catalog\ArtworkStatus;
 use App\Service\Media\PlaceholderGenerator;
 

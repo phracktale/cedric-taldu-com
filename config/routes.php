@@ -12,12 +12,12 @@
  * « /fr/galerie/encres » contre « /en/gallery/inks ». Une entree par langue,
  * sous le meme nom de route.
  *
- * @return list<App\Core\Route>
+ * @return list<APress\Core\Route>
  */
 
 declare(strict_types=1);
 
-use App\Core\Route;
+use APress\Core\Route;
 use App\Http\Controller\Admin\AccountController;
 use App\Http\Controller\Admin\ArtworkController as AdminArtworkController;
 use App\Http\Controller\Admin\AuthController;

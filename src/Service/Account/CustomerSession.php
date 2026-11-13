@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Service\Account;
 
-use App\Core\Csrf;
-use App\Core\SessionInterface;
+use APress\Core\Csrf;
+use APress\Core\SessionInterface;
 
 /**
  * Session de l'espace client (revue du 2026-09-24).

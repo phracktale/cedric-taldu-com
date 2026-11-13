@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
-use App\Core\UploadedFile;
+use APress\Core\UploadedFile;
 use App\Repository\Admin\MediaAdminRepository;
 use App\Service\Media\Exception\UploadRejected;
 use App\Service\Media\ImageProcessor;

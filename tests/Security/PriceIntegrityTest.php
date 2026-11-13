@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Security;
 
-use App\Core\Csrf;
+use APress\Core\Csrf;
 use App\Service\Payment\FakeGateway;
 use App\Service\Payment\PaymentGateway;
 use Tests\Support\Factory\ArtworkFactory;
@@ -134,7 +134,7 @@ final class PriceIntegrityTest extends FunctionalTestCase
         ]));
     }
 
-    private function cookieDe(\App\Core\Response $reponse): string
+    private function cookieDe(\APress\Core\Response $reponse): string
     {
         foreach ($reponse->cookies as $cookie) {
             if ($cookie->name === self::COOKIE) {

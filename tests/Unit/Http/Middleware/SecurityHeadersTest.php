@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Http\Middleware;
 
-use App\Core\Config;
-use App\Core\Env;
-use App\Core\Request;
-use App\Core\Response;
-use App\Core\SecureRandom;
+use APress\Core\Config;
+use APress\Core\Env;
+use APress\Core\Request;
+use APress\Core\Response;
+use APress\Core\SecureRandom;
 use App\Http\Middleware\SecurityHeaders;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;

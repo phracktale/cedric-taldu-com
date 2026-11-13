@@ -16,11 +16,11 @@
 
 declare(strict_types=1);
 
-use App\Core\Database;
-use App\Core\Env;
-use App\Core\Exception\MigrationFailed;
-use App\Core\Migrator;
-use App\Core\SystemClock;
+use APress\Core\Database;
+use APress\Core\Env;
+use APress\Core\Exception\MigrationFailed;
+use APress\Core\Migrator;
+use APress\Core\SystemClock;
 
 $root = dirname(__DIR__);
 

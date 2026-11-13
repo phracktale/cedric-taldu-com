@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Support\Doubles;
 
-use App\Core\RandomInterface;
+use APress\Core\RandomInterface;
 use RuntimeException;
 
 /**

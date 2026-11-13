@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Controller\Front;
 
-use App\Core\ClockInterface;
-use App\Core\Exception\ValidationFailed;
-use App\Core\LoggerInterface;
-use App\Core\LogLevel;
-use App\Core\RedirectResponse;
-use App\Core\Request;
-use App\Core\Response;
-use App\Core\Rule;
-use App\Core\Validator;
+use APress\Core\ClockInterface;
+use APress\Core\Exception\ValidationFailed;
+use APress\Core\LoggerInterface;
+use APress\Core\LogLevel;
+use APress\Core\RedirectResponse;
+use APress\Core\Request;
+use APress\Core\Response;
+use APress\Core\Rule;
+use APress\Core\Validator;
 use App\Core\View;
 use App\Domain\Contact\ContactMessage;
 use App\Domain\Contact\MessageStatus;

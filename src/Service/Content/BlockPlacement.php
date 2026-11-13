@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service\Content;
 
-use App\Core\ClockInterface;
+use APress\Core\ClockInterface;
 use App\Domain\Editorial\BlockCatalog;
 use App\Domain\Editorial\ContentBlock;
 use App\Repository\ContentBlockRepository;

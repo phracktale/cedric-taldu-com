@@ -19,13 +19,11 @@ final class SqlLocationTest extends TestCase
     /**
      * Fichiers autorises a contenir du SQL hors de src/Repository/.
      *
-     * Core/Migrator applique les fichiers de migrations/ et tient la table qui
+     * Le Migrator (desormais dans a-press/core, qui teste lui-meme cette regle) applique les fichiers de migrations/ et tient la table qui
      * les suit : il ne peut pas passer par un depot, puisqu'il construit le
      * schema dont les depots dependent. Il n'interpole aucune variable.
      */
-    private const ALLOWED_OUTSIDE_REPOSITORY = [
-        'src/Core/Migrator.php',
-    ];
+    private const ALLOWED_OUTSIDE_REPOSITORY = [];
 
     private const SQL_KEYWORDS = '/\b(SELECT\s|INSERT\s+INTO|UPDATE\s+\w|DELETE\s+FROM'
         . '|CREATE\s+TABLE|DROP\s+TABLE|ALTER\s+TABLE|TRUNCATE\s)/i';

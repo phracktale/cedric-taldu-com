@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Service\StaticSite;
 
-use App\Core\ClockInterface;
-use App\Core\Kernel;
-use App\Core\Request;
+use APress\Core\ClockInterface;
+use APress\Core\Kernel;
+use APress\Core\Request;
 use App\Http\Middleware\SecurityHeaders;
 use Closure;
 

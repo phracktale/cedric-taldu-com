@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Security;
 
-use App\Core\Csrf;
-use App\Core\Route;
-use App\Core\Router;
+use APress\Core\Csrf;
+use APress\Core\Route;
+use APress\Core\Router;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\AdminTestCase;
 use Tests\Support\Factory\UserFactory;
@@ -93,7 +93,7 @@ final class CsrfTest extends AdminTestCase
      * l'ajout au panier depuis une page statique) — renvoi 303 vers la page de
      * confirmation en GET, au même chemin : aucune écriture dans les deux cas.
      */
-    private function assertRefus(\App\Core\Response $reponse, string $methode, string $chemin, bool $confirmation): void
+    private function assertRefus(\APress\Core\Response $reponse, string $methode, string $chemin, bool $confirmation): void
     {
         if (!$confirmation) {
             $this->assertContains($reponse->status, self::STATUTS_DE_REFUS, $methode . ' ' . $chemin);

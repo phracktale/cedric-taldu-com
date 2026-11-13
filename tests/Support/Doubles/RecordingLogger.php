@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Support\Doubles;
 
-use App\Core\LoggerInterface;
-use App\Core\LogLevel;
+use APress\Core\LoggerInterface;
+use APress\Core\LogLevel;
 
 /**
  * Journal en memoire : permet d'affirmer qu'un evenement de securite a bien ete

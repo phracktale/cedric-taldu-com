@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Domain\Editorial;
 
-use App\Core\RandomInterface;
+use APress\Core\RandomInterface;
 use App\Domain\Editorial\Block;
 use App\Domain\Editorial\BlockCatalog;
 use App\Service\Content\BlockSanitizer;

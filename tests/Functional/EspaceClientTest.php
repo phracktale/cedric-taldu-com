@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Functional;
 
-use App\Core\ClockInterface;
-use App\Core\Csrf;
-use App\Core\Response;
+use APress\Core\ClockInterface;
+use APress\Core\Csrf;
+use APress\Core\Response;
 use App\Service\Mail\MailerInterface;
 use App\Service\Spam\Throttle;
 use App\Service\Mail\ArrayMailer;

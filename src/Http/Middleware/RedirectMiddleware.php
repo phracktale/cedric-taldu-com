@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use App\Core\RedirectResponse;
-use App\Core\Request;
-use App\Core\Response;
-use App\Core\RouteMatch;
+use APress\Core\MiddlewareInterface;
+use APress\Core\RedirectResponse;
+use APress\Core\Request;
+use APress\Core\Response;
+use APress\Core\RouteMatch;
 use App\Repository\RedirectRepository;
 
 /**

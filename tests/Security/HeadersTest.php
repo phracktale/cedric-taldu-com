@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Security;
 
-use App\Core\Response;
+use APress\Core\Response;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\FunctionalTestCase;
 

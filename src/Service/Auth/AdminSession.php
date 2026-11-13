@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Service\Auth;
 
-use App\Core\ClockInterface;
-use App\Core\Csrf;
-use App\Core\Request;
-use App\Core\SessionInterface;
+use APress\Core\ClockInterface;
+use APress\Core\Csrf;
+use APress\Core\Request;
+use APress\Core\SessionInterface;
 use App\Domain\Admin\AdminUser;
 use App\Domain\Admin\SessionPolicy;
 use App\Domain\Admin\SessionStatus;

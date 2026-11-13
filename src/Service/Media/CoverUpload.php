@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service\Media;
 
-use App\Core\Request;
+use APress\Core\Request;
 use App\Service\Media\Exception\UploadRejected;
 
 /**

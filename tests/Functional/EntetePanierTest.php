@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Functional;
 
-use App\Core\Csrf;
-use App\Core\Response;
+use APress\Core\Csrf;
+use APress\Core\Response;
 use Tests\Support\Factory\ArtworkFactory;
 use Tests\Support\Factory\CategoryFactory;
 use Tests\Support\FunctionalTestCase;

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Service\Invoice;
 
-use App\Core\Exception\NotFoundException;
-use App\Core\Response;
+use APress\Core\Exception\NotFoundException;
+use APress\Core\Response;
 use App\Domain\Order\OrderStatus;
 use App\Domain\Order\SellerIdentity;
 use App\Repository\PersistedOrder;

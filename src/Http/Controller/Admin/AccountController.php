@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controller\Admin;
 
-use App\Core\Config;
-use App\Core\Exception\NotFoundException;
-use App\Core\RandomInterface;
-use App\Core\Request;
-use App\Core\Response;
+use APress\Core\Config;
+use APress\Core\Exception\NotFoundException;
+use APress\Core\RandomInterface;
+use APress\Core\Request;
+use APress\Core\Response;
 use App\Repository\UserRepository;
 use App\Service\Auth\AdminSession;
 use App\Service\Auth\BackupCodes;

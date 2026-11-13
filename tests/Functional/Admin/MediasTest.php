@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Functional\Admin;
 
-use App\Core\Container;
-use App\Core\ClockInterface;
-use App\Core\Csrf;
-use App\Core\RandomInterface;
-use App\Core\Response;
+use APress\Core\Container;
+use APress\Core\ClockInterface;
+use APress\Core\Csrf;
+use APress\Core\RandomInterface;
+use APress\Core\Response;
 use App\Repository\Admin\MediaAdminRepository;
 use App\Service\Media\ImageProcessor;
 use App\Service\Media\MediaStore;

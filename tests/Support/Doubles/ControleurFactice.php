@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Support\Doubles;
 
-use App\Core\Request;
-use App\Core\Response;
+use APress\Core\Request;
+use APress\Core\Response;
 
 /**
  * Controleur sans effet, employe partout ou un test a besoin d'une cible de route

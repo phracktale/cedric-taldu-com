@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Service\View;
 
-use App\Core\Config;
-use App\Core\Env;
-use App\Core\Router;
+use APress\Core\Config;
+use APress\Core\Env;
+use APress\Core\Router;
 use App\Domain\Editorial\Cta;
 use App\Domain\Locale;
 use App\Service\I18n\UrlGenerator;
@@ -79,7 +79,7 @@ final class CtaLinkerTest extends TestCase
 
     private function linker(): CtaLinker
     {
-        /** @var list<\App\Core\Route> $routes */
+        /** @var list<\APress\Core\Route> $routes */
         $routes = require dirname(__DIR__, 4) . '/config/routes.php';
         $config = Config::fromEnv(Env::fromArray([
             'APP_ENV' => 'preprod',

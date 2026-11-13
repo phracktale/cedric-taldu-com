@@ -24,11 +24,11 @@ final class SuperglobalTest extends TestCase
 {
     private const FORBIDDEN = ['$_GET', '$_POST', '$_FILES', '$_SERVER', '$_COOKIE', '$_REQUEST', '$GLOBALS'];
 
-    /** Core\Request est le point de contact assume ; PhpSession porte $_SESSION. */
-    private const ALLOWED = [
-        'src/Core/Request.php' => self::FORBIDDEN,
-        'src/Core/PhpSession.php' => ['$_SESSION'],
-    ];
+    /**
+     * Request et PhpSession, seuls points de contact, vivent dans a-press/core,
+     * dont tests/Security/SourceRulesTest verifie la meme regle. Aucune exception ici.
+     */
+    private const ALLOWED = [];
 
     /**
      * @return array<string, string>

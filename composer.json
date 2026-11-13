@@ -3,8 +3,16 @@
     "description": "Site vitrine et boutique de l'artiste plasticien Cedric Taldu",
     "type": "project",
     "license": "proprietary",
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../a-press/packages/core",
+            "options": { "symlink": false }
+        }
+    ],
     "require": {
         "php": ">=8.2",
+        "a-press/core": "^0.1",
         "ext-fileinfo": "*",
         "ext-gd": "*",
         "ext-intl": "*",

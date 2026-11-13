@@ -4,8 +4,37 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f4044af75b70d46dfb91fa7e87190b33",
+    "content-hash": "6395ea799c61cec17bf07d4f29a3cd9e",
     "packages": [
+        {
+            "name": "a-press/core",
+            "version": "0.1.0",
+            "dist": {
+                "type": "path",
+                "url": "../a-press/packages/core",
+                "reference": "2c84eb7ad674df92452e6bb4d9e102c0d2f265ce"
+            },
+            "require": {
+                "ext-json": "*",
+                "ext-mbstring": "*",
+                "ext-pdo": "*",
+                "php": ">=8.2"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "APress\\Core\\": "src/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "A-Press : coeur du CMS (noyau HTTP, routage, conteneur, base, migrations, securite)",
+            "transport-options": {
+                "symlink": false,
+                "relative": true
+            }
+        },
         {
             "name": "phpmailer/phpmailer",
             "version": "v7.1.1",

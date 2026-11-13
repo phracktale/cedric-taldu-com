@@ -15,25 +15,25 @@
 
 declare(strict_types=1);
 
-use App\Core\ClockInterface;
-use App\Core\Config;
-use App\Core\Container;
-use App\Core\CookieFactory;
-use App\Core\Csrf;
-use App\Core\Database;
-use App\Core\Env;
-use App\Core\ErrorResponder;
-use App\Core\FileLogger;
-use App\Core\Kernel;
-use App\Core\LoggerInterface;
-use App\Core\PhpSession;
-use App\Core\RandomInterface;
-use App\Core\Request;
-use App\Core\Router;
-use App\Core\SecureRandom;
-use App\Core\SessionInterface;
-use App\Core\SystemClock;
-use App\Core\Validator;
+use APress\Core\ClockInterface;
+use APress\Core\Config;
+use APress\Core\Container;
+use APress\Core\CookieFactory;
+use APress\Core\Csrf;
+use APress\Core\Database;
+use APress\Core\Env;
+use APress\Core\ErrorResponder;
+use APress\Core\FileLogger;
+use APress\Core\Kernel;
+use APress\Core\LoggerInterface;
+use APress\Core\PhpSession;
+use APress\Core\RandomInterface;
+use APress\Core\Request;
+use APress\Core\Router;
+use APress\Core\SecureRandom;
+use APress\Core\SessionInterface;
+use APress\Core\SystemClock;
+use APress\Core\Validator;
 use App\Core\View;
 use App\Domain\Admin\SessionPolicy;
 use App\Http\Controller\Admin\AccountController;
@@ -254,7 +254,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
     ));
 
     $container->set(Router::class, static function () use ($rootPath): Router {
-        /** @var list<App\Core\Route> $routes */
+        /** @var list<APress\Core\Route> $routes */
         $routes = require $rootPath . '/config/routes.php';
 
         return new Router($routes);

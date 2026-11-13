@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Security;
 
-use App\Core\Route;
+use APress\Core\Route;
 use Tests\Support\Doubles\ControleurQuiEchoue;
 use Tests\Support\FunctionalTestCase;
 
@@ -31,7 +31,7 @@ final class ErrorLeakTest extends FunctionalTestCase
         );
     }
 
-    private function reponseEnProduction(): \App\Core\Response
+    private function reponseEnProduction(): \APress\Core\Response
     {
         $this->withEnv(['APP_ENV' => 'prod', 'APP_DEBUG' => '1']);
 

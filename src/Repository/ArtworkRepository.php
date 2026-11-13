@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
-use App\Core\ClockInterface;
+use APress\Core\ClockInterface;
 use App\Domain\Catalog\Artwork;
 use App\Domain\Catalog\ArtworkStatus;
 use App\Domain\Catalog\StockMode;

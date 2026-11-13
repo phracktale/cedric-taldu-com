@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service\Auth;
 
-use App\Core\RandomInterface;
+use APress\Core\RandomInterface;
 
 /**
  * Codes de secours a usage unique de la 2FA.

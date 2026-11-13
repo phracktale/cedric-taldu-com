@@ -53,7 +53,7 @@ final class ProdigiWebhookTest extends FunctionalTestCase
     /**
      * @param array<string, mixed> $order
      */
-    private function envoyerCallback(string $secret, array $order): \App\Core\Response
+    private function envoyerCallback(string $secret, array $order): \APress\Core\Response
     {
         $corps = json_encode([
             'specversion' => '1.0',

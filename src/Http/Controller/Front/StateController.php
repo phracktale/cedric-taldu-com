@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controller\Front;
 
-use App\Core\Csrf;
-use App\Core\CookieFactory;
-use App\Core\Request;
-use App\Core\Response;
+use APress\Core\Csrf;
+use APress\Core\CookieFactory;
+use APress\Core\Request;
+use APress\Core\Response;
 use App\Repository\CartRepository;
 
 /**

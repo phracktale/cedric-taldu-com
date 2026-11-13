@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Core;
 
-use App\Core\Exception\TemplateNotFound;
+use APress\Core\Exception\TemplateNotFound;
+use APress\Core\Renderer;
 use App\Domain\Locale;
 use App\Service\I18n\Translator;
 use App\Service\I18n\UrlGenerator;
@@ -26,7 +27,7 @@ use Throwable;
  * catalogue et la langue courante sont un etat, que le projet interdit de porter
  * en global (comme `$url`, qui depend du prefixe resolu par la requete).
  */
-final class View
+final class View implements Renderer
 {
     /** Un nom de gabarit : segments en minuscules, tirets, sans extension. */
     private const NAME_PATTERN = '/^[a-z0-9]+(?:-[a-z0-9]+)*(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)*$/D';

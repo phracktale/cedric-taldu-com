@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Support;
 
-use App\Core\Database;
-use App\Core\Migrator;
+use APress\Core\Database;
+use APress\Core\Migrator;
 use PDO;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FrozenClock;
