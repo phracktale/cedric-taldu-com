@@ -17,6 +17,7 @@
 declare(strict_types=1);
 
 use APress\Core\Database;
+use APress\Core\CoreMigrations;
 use APress\Core\Env;
 use APress\Core\Exception\MigrationFailed;
 use APress\Core\Migrator;
@@ -35,12 +36,14 @@ $useTestDatabase = in_array('--env=test', $arguments, true);
 $statusOnly = in_array('--status', $arguments, true);
 
 $database = Database::fromEnv($env, migration: true, useTestDatabase: $useTestDatabase);
-$migrator = new Migrator($database->connect(), $root . '/migrations', new SystemClock());
+$pdo = $database->connect();
+$migrator = new Migrator($pdo, $root . '/migrations', new SystemClock());
+$coreMigrator = CoreMigrations::migrator($pdo, new SystemClock());
 
 fwrite(STDOUT, sprintf('Base : %s@%s/%s%s', $database->user, $database->host, $database->name, PHP_EOL));
 
 if ($statusOnly) {
-    foreach ($migrator->status() as $filename => $appliedAt) {
+    foreach ([...$coreMigrator->status(), ...$migrator->status()] as $filename => $appliedAt) {
         fwrite(STDOUT, sprintf(
             '  [%s] %s%s',
             $appliedAt === null ? ' ' : 'x',
@@ -54,7 +57,8 @@ if ($statusOnly) {
 }
 
 try {
-    $applied = $migrator->migrate();
+    // Le cœur d'abord : ses tables (core_extensions…) ne dépendent pas du site.
+    $applied = [...$coreMigrator->migrate(), ...$migrator->migrate()];
 } catch (MigrationFailed $exception) {
     fwrite(STDERR, $exception->getMessage() . PHP_EOL);
     fwrite(STDERR, 'Cause : ' . ($exception->getPrevious()?->getMessage() ?? 'inconnue') . PHP_EOL);

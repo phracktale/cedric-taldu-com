@@ -30,8 +30,11 @@ $chemin = is_string($data['chemin'] ?? null) ? $data['chemin'] : '';
 $utilisateur = ($data['utilisateur'] ?? null) instanceof AdminUser ? $data['utilisateur'] : null;
 
 // Menu en rubriques (retours du 2026-09-25) : source unique dans AdminMenu.
-$groupes = $utilisateur === null ? [] : App\Service\View\AdminMenu::groups();
-$groupeCourant = App\Service\View\AdminMenu::groupOf($chemin);
+// Entrées déclarées par les extensions actives (A-Press, lot 2), via AdminChrome.
+/** @var list<array{chemin: string, libelle: string}> $menuExtensions */
+$menuExtensions = is_array($data['menuExtensions'] ?? null) ? $data['menuExtensions'] : [];
+$groupes = $utilisateur === null ? [] : App\Service\View\AdminMenu::groups($menuExtensions);
+$groupeCourant = App\Service\View\AdminMenu::groupOf($chemin, $menuExtensions);
 
 // Identité du site (Paramètres › Global), partagée par View::share.
 $site = ($data['site'] ?? null) instanceof App\Domain\Editorial\SiteIdentity

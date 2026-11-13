@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Support;
 
 use APress\Core\Database;
+use APress\Core\CoreMigrations;
 use APress\Core\Migrator;
 use PDO;
 use PHPUnit\Framework\TestCase;
@@ -111,6 +112,7 @@ abstract class DatabaseTestCase extends TestCase
             return;
         }
 
+        CoreMigrations::migrator($pdo, new FrozenClock())->migrate();
         (new Migrator($pdo, dirname(__DIR__, 2) . '/migrations', new FrozenClock()))->migrate();
 
         self::$migrated = true;

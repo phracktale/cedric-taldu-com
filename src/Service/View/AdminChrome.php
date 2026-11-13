@@ -14,6 +14,7 @@ use App\Http\Middleware\SecurityHeaders;
 use App\Service\Auth\AdminSession;
 use App\Service\Auth\AuditTrail;
 use App\Service\StaticSite\GenerationStore;
+use Closure;
 use DateTimeImmutable;
 
 /**
@@ -40,6 +41,9 @@ final class AdminChrome
         private readonly ClockInterface $clock,
         // Barre fixe de la génération statique (retours du 2026-09-25, point 7).
         private readonly ?GenerationStore $generation = null,
+        // Entrées de menu des extensions actives (A-Press, lot 2). Calculées à
+        // la demande : une page qui ne rend pas le menu ne démarre rien.
+        private readonly ?Closure $extensionMenu = null,
     ) {
     }
 
@@ -60,6 +64,7 @@ final class AdminChrome
             'titre' => 'Administration',
             'chemin' => $request->path,
             'generation' => $user === null ? null : $this->generation?->load(),
+            'menuExtensions' => $user === null || $this->extensionMenu === null ? [] : ($this->extensionMenu)(),
             ...$data,
         ], layout: 'layouts/admin');
 
