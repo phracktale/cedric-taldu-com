@@ -32,7 +32,7 @@ final class VendorTest extends TestCase
      *
      * @var list<string>
      */
-    private const WHITELIST = ['composer', 'stripe', 'phpmailer'];
+    private const WHITELIST = ['composer', 'stripe', 'phpmailer', 'a-press'];
 
     public function test_les_dependances_de_production_sont_commitees(): void
     {
@@ -42,6 +42,8 @@ final class VendorTest extends TestCase
 
         $this->assertNotSame([], preg_grep('#^vendor/stripe/#', $suivis), 'stripe/stripe-php doit être commité.');
         $this->assertNotSame([], preg_grep('#^vendor/phpmailer/#', $suivis), 'phpmailer doit être commité.');
+        // Le cœur A-Press porte le noyau HTTP : sans lui, aucune page ne répond.
+        $this->assertNotSame([], preg_grep('#^vendor/a-press/core/src/Kernel\.php$#', $suivis), 'a-press/core doit être commité.');
         $this->assertContains('vendor/autoload.php', $suivis);
     }
 

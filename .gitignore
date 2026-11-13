@@ -73,3 +73,6 @@ Thumbs.db
 !/vendor/stripe/stripe-php/VERSION
 !/vendor/stripe/stripe-php/LICENSE
 !/vendor/stripe/stripe-php/init.php
+# Cœur A-Press : le site ne démarre pas sans lui. Le paquet ne contient que
+# son composer.json, src/ et migrations/ (voir a-press/packages/core).
+!/vendor/a-press/
