@@ -648,7 +648,7 @@ final class CheckoutServiceTest extends DatabaseTestCase
     {
         $racine = dirname(__DIR__, 2);
         /** @var list<\APress\Core\Route> $routes */
-        $routes = require $racine . '/config/routes.php';
+        $routes = \Tests\Support\Routes::all();
 
         return new \App\Service\I18n\UrlGenerator(
             new \APress\Core\Router($routes),

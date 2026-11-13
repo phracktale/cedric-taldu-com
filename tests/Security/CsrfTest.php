@@ -29,7 +29,7 @@ final class CsrfTest extends AdminTestCase
     public static function routesModifiantes(): iterable
     {
         /** @var list<Route> $routes */
-        $routes = require dirname(__DIR__, 2) . '/config/routes.php';
+        $routes = \Tests\Support\Routes::all();
 
         foreach ((new Router($routes))->routes() as $route) {
             if (in_array($route->method, ['GET', 'HEAD'], true) || $route->csrfExempt) {
@@ -116,7 +116,7 @@ final class CsrfTest extends AdminTestCase
         // La liste est fermee et nommee : toute exemption ajoutee sans passer par
         // ce test est un defaut.
         /** @var list<Route> $routes */
-        $routes = require dirname(__DIR__, 2) . '/config/routes.php';
+        $routes = \Tests\Support\Routes::all();
 
         $exemptees = array_values(array_map(
             static fn (Route $route): string => $route->method . ' ' . $route->path,
@@ -133,7 +133,7 @@ final class CsrfTest extends AdminTestCase
         // back-office ; une route localisee exigerait de Stripe une langue
         // qu'il n'a pas.
         /** @var list<Route> $routes */
-        $routes = require dirname(__DIR__, 2) . '/config/routes.php';
+        $routes = \Tests\Support\Routes::all();
 
         foreach ($routes as $route) {
             if (!$route->csrfExempt) {

@@ -2,12 +2,12 @@
     "packages": [
         {
             "name": "a-press/core",
-            "version": "0.2.0",
-            "version_normalized": "0.2.0.0",
+            "version": "0.3.0",
+            "version_normalized": "0.3.0.0",
             "dist": {
                 "type": "path",
                 "url": "../a-press/packages/core",
-                "reference": "63ebe6fadc73f09742b7de0568b01734095bfcd0"
+                "reference": "81ad91192f5d3140f6d7a690465a9da4a7c99901"
             },
             "require": {
                 "ext-json": "*",

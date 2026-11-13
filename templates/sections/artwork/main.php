@@ -127,7 +127,7 @@ $media = $medias[$oeuvre->primaryMediaId] ?? null;
       <?php // Le bouton n'existe que si l'œuvre est disponible ET a un prix :
             // isPurchasable() porte les deux. Vendue, le bloc reste visible en
             // « Vendue » et l'action marchande passe aux tirages ci-dessous. ?>
-      <?php if ($oeuvre->isPurchasable()) : ?>
+      <?php if ($oeuvre->isPurchasable() && $cartAddUrl !== '') : ?>
       <form method="post" action="<?= attr($cartAddUrl) ?>" data-cart-add class="achat">
         <input type="hidden" name="_token" value="<?= attr($csrfToken) ?>">
         <input type="hidden" name="kind" value="original">

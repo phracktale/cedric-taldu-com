@@ -334,6 +334,9 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         // Identité du site (Paramètres › Global), commune à tous les gabarits.
         $view->share('site', static fn (): SiteIdentity => $c->get(SiteIdentityProvider::class)->get());
         // Vignettes nettes (2026-09-30) : le facteur de zoom entre dans le choix des fichiers.
+        // Boutique active (extension A-Press, lot 3) : sans elle, aucun lien
+        // vers le panier ou l'espace client, aucun formulaire d'achat.
+        $view->share('boutique', static fn (): bool => $c->get(Hooks::class)->isBooted('boutique'));
         $view->share('vignetteZoom', static fn (): int => Theme::zoom($c->get(SettingRepository::class)->json(Theme::IMAGES_SETTING)['zoom'] ?? null));
 
         return $view;
@@ -702,7 +705,11 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
             $items = [];
             foreach ($c->get(Hooks::class)->adminMenu() as $item) {
                 try {
-                    $items[] = ['chemin' => $router->findByName($item->routeName, null)->path, 'libelle' => $item->label];
+                    $items[] = [
+                        'chemin' => $router->findByName($item->routeName, null)->path,
+                        'libelle' => $item->label,
+                        'groupe' => $item->group,
+                    ];
                 } catch (APress\Core\Exception\RouteNotDeclared) {
                     // Entrée vers une route que l'extension n'a pas déclarée : ignorée.
                 }
@@ -856,6 +863,7 @@ return static function (Config $config, Request $request, string $rootPath, ?Env
         $c->get(PreviewToken::class),
         $c->get(ProductRepository::class),
         $c->get(StructuredData::class),
+        $c->get(Hooks::class)->isBooted('boutique'),
     ));
 
     // --- Controleurs d'administration --------------------------------------

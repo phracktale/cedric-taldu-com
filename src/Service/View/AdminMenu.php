@@ -14,13 +14,54 @@ namespace App\Service\View;
 final class AdminMenu
 {
     /**
-     * @param list<array{chemin: string, libelle: string}> $extensions entrées déclarées
-     *        par les extensions actives (A-Press, lot 2) ; rubrique omise si vide
+     * @param list<array{chemin: string, libelle: string, groupe?: string}> $extensions entrées
+     *        déclarées par les extensions actives (A-Press, lots 2 et 3). Une entrée
+     *        rejoint la rubrique qu'elle nomme (après un séparateur, ou avant
+     *        « Extensions » dans Paramètres) ; sans rubrique connue, elle va dans
+     *        une rubrique « Extensions », omise si vide.
      * @return list<array{label: string, items: list<array{chemin: string, libelle: string}|null>}>
      */
     public static function groups(array $extensions = []): array
     {
-        $groupes = [
+        $groupes = self::base();
+        $autres = [];
+        $separe = [];
+
+        foreach ($extensions as $entree) {
+            $item = ['chemin' => $entree['chemin'], 'libelle' => $entree['libelle']];
+            $index = array_search($entree['groupe'] ?? '', array_column($groupes, 'label'), true);
+
+            if ($index === false) {
+                $autres[] = $item;
+            } elseif ($groupes[$index]['label'] === 'Paramètres') {
+                // Avant « Extensions » et « Historique », qui ferment la rubrique.
+                array_splice($groupes[$index]['items'], count($groupes[$index]['items']) - 2, 0, [$item]);
+            } else {
+                if (!isset($separe[$index])) {
+                    $groupes[$index]['items'][] = null;
+                    $separe[$index] = true;
+                }
+                $groupes[$index]['items'][] = $item;
+            }
+        }
+
+        if ($autres !== []) {
+            // Avant « Paramètres », qui reste la dernière rubrique.
+            array_splice($groupes, count($groupes) - 1, 0, [['label' => 'Extensions', 'items' => $autres]]);
+        }
+
+        return $groupes;
+    }
+
+    /**
+     * Rubriques du site lui-même, sans extension. Les écrans de la boutique
+     * (facturation, commandes, livraisons, impression) viennent de l'extension.
+     *
+     * @return list<array{label: string, items: list<array{chemin: string, libelle: string}|null>}>
+     */
+    private static function base(): array
+    {
+        return [
             ['label' => 'Contenus', 'items' => [
                 ['chemin' => '/admin/medias', 'libelle' => 'Médiathèque'],
                 ['chemin' => '/admin/accueil', 'libelle' => 'Accueil'],
@@ -32,10 +73,6 @@ final class AdminMenu
             ['label' => 'Boutique', 'items' => [
                 ['chemin' => '/admin/galeries', 'libelle' => 'Galeries'],
                 ['chemin' => '/admin/oeuvres', 'libelle' => 'Œuvres'],
-                null,
-                ['chemin' => '/admin/facturation', 'libelle' => 'Facturation'],
-                ['chemin' => '/admin/commandes', 'libelle' => 'Commandes'],
-                ['chemin' => '/admin/livraison', 'libelle' => 'Livraisons'],
             ]],
             ['label' => 'Modules', 'items' => [
                 ['chemin' => '/admin/messages', 'libelle' => 'Messages'],
@@ -47,7 +84,6 @@ final class AdminMenu
                 ['chemin' => '/admin/apparence', 'libelle' => 'Apparence'],
                 ['chemin' => '/admin/menu', 'libelle' => 'Menu'],
                 ['chemin' => '/admin/templates', 'libelle' => 'Templates'],
-                ['chemin' => '/admin/impression', 'libelle' => 'Impression'],
                 ['chemin' => '/admin/ecoindex', 'libelle' => 'EcoIndex'],
                 // Extensions A-Press (lot 2).
                 ['chemin' => '/admin/extensions', 'libelle' => 'Extensions'],
@@ -55,20 +91,12 @@ final class AdminMenu
                 ['chemin' => '/admin/historique', 'libelle' => 'Historique'],
             ]],
         ];
-
-        if ($extensions !== []) {
-            // Avant « Paramètres », qui reste la dernière rubrique.
-            array_splice($groupes, count($groupes) - 1, 0, [['label' => 'Extensions', 'items' => $extensions]]);
-        }
-
-        return $groupes;
     }
 
     /**
      * Rubrique contenant le chemin demandé (écran ou sous-écran), ou null.
-     */
-    /**
-     * @param list<array{chemin: string, libelle: string}> $extensions
+     *
+     * @param list<array{chemin: string, libelle: string, groupe?: string}> $extensions
      */
     public static function groupOf(string $path, array $extensions = []): ?string
     {

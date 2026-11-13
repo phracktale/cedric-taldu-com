@@ -95,6 +95,8 @@ final class Migrator
             throw MigrationFailed::forFile($file, new \RuntimeException('Fichier illisible.'));
         }
 
+        $own = !$this->pdo->inTransaction();
+
         try {
             // MySQL valide IMPLICITEMENT toute instruction DDL : des le premier
             // CREATE TABLE, la transaction est close par le moteur. Elle est
@@ -109,7 +111,6 @@ final class Migrator
             // Si l'appelant a deja ouvert une transaction (activation d'une
             // extension), le migrateur s'y joint : il ne la valide pas et ne
             // l'annule pas, c'est l'appelant qui decide.
-            $own = !$this->pdo->inTransaction();
             if ($own) {
                 $this->pdo->beginTransaction();
             }

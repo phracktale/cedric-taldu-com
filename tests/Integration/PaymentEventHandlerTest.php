@@ -620,7 +620,7 @@ final class PaymentEventHandlerTest extends DatabaseTestCase
     {
         $racine = dirname(__DIR__, 2);
         /** @var list<\APress\Core\Route> $routes */
-        $routes = require $racine . '/config/routes.php';
+        $routes = \Tests\Support\Routes::all();
 
         $url = new UrlGenerator(
             new Router($routes),

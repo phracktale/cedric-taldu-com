@@ -96,7 +96,7 @@ final class ContactMailerTest extends TestCase
     private static function url(string $racine): UrlGenerator
     {
         /** @var list<\APress\Core\Route> $routes */
-        $routes = require $racine . '/config/routes.php';
+        $routes = \Tests\Support\Routes::all();
 
         return new UrlGenerator(
             new \APress\Core\Router($routes),

@@ -1,0 +1,9 @@
+{
+    "name": "boutique",
+    "label": "Boutique",
+    "description": "Panier, commande et paiement Stripe, espace client, tirages Prodigi, facturation et livraison.",
+    "version": "1.0.0",
+    "requires": { "core": "^0.3" },
+    "entry": "APress\\Boutique\\BoutiqueExtension",
+    "autoload": { "APress\\Boutique\\": "src/" }
+}

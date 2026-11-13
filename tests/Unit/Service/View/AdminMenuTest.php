@@ -12,9 +12,32 @@ use PHPUnit\Framework\TestCase;
  */
 final class AdminMenuTest extends TestCase
 {
-    public function test_les_rubriques_et_leurs_entrees_suivent_l_ordre_demande(): void
+    /** Ce que déclare l'extension « boutique » (extensions/boutique). */
+    private const BOUTIQUE = [
+        ['chemin' => '/admin/facturation', 'libelle' => 'Facturation', 'groupe' => 'Boutique'],
+        ['chemin' => '/admin/commandes', 'libelle' => 'Commandes', 'groupe' => 'Boutique'],
+        ['chemin' => '/admin/livraison', 'libelle' => 'Livraisons', 'groupe' => 'Boutique'],
+        ['chemin' => '/admin/impression', 'libelle' => 'Impression', 'groupe' => 'Paramètres'],
+    ];
+
+    public function test_sans_la_boutique_seul_le_catalogue_reste_dans_sa_rubrique(): void
     {
         $groupes = AdminMenu::groups();
+
+        $this->assertSame(['Galeries', 'Œuvres'], $this->libelles($groupes[1]));
+        $this->assertNotContains('Impression', $this->libelles($groupes[3]));
+    }
+
+    public function test_une_entree_d_extension_pour_une_rubrique_inconnue_va_dans_extensions(): void
+    {
+        $groupes = AdminMenu::groups([['chemin' => '/admin/demo', 'libelle' => 'Démo', 'groupe' => 'Inexistante']]);
+
+        $this->assertSame('Extensions', $groupes[3]['label']);
+    }
+
+    public function test_les_rubriques_et_leurs_entrees_suivent_l_ordre_demande(): void
+    {
+        $groupes = AdminMenu::groups(self::BOUTIQUE);
 
         $this->assertSame(['Contenus', 'Boutique', 'Modules', 'Paramètres'], array_column($groupes, 'label'));
         $this->assertSame(['Médiathèque', 'Accueil', 'Pages', 'Contact', 'Actus', 'Blocs'], $this->libelles($groupes[0]));
@@ -23,6 +46,8 @@ final class AdminMenuTest extends TestCase
         $this->assertSame(['Apparence', 'Menu'], array_values(array_intersect($this->libelles($groupes[3]), ['Apparence', 'Menu'])));
         // Historique des versions (demande du 2026-09-30), en fin de Paramètres.
         $this->assertSame('Historique', array_slice($this->libelles($groupes[3]), -1)[0]);
+        // L'impression (boutique) se range dans Paramètres, avant la gestion des extensions.
+        $this->assertSame(['Impression', 'Extensions', 'Historique'], array_slice($this->libelles($groupes[3]), -3));
     }
 
     public function test_la_gestion_des_extensions_figure_dans_parametres_avant_historique(): void
@@ -44,7 +69,7 @@ final class AdminMenuTest extends TestCase
 
     public function test_la_rubrique_de_la_page_courante_est_reperee(): void
     {
-        $this->assertSame('Boutique', AdminMenu::groupOf('/admin/commandes/12'));
+        $this->assertSame('Boutique', AdminMenu::groupOf('/admin/commandes/12', self::BOUTIQUE));
         $this->assertSame('Contenus', AdminMenu::groupOf('/admin/pages'));
         $this->assertNull(AdminMenu::groupOf('/admin'));
     }
