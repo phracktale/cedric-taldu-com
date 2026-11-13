@@ -24,6 +24,7 @@ final class Migrator
         private readonly PDO $pdo,
         private readonly string $directory,
         private readonly ClockInterface $clock,
+        private readonly string $scope = '',
     ) {
     }
 
@@ -39,8 +40,8 @@ final class Migrator
         $applied = $this->applied();
 
         return array_values(array_filter(
-            $this->files(),
-            static fn (string $file): bool => !array_key_exists($file, $applied),
+            array_map($this->key(...), $this->files()),
+            static fn (string $key): bool => !array_key_exists($key, $applied),
         ));
     }
 
@@ -51,9 +52,9 @@ final class Migrator
     {
         $applied = [];
 
-        foreach ($this->pending() as $file) {
-            $this->apply($file);
-            $applied[] = $file;
+        foreach ($this->pending() as $key) {
+            $this->apply($key);
+            $applied[] = $key;
         }
 
         return $applied;
@@ -69,16 +70,26 @@ final class Migrator
         $applied = $this->applied();
         $status = [];
 
-        foreach ($this->files() as $file) {
-            $status[$file] = $applied[$file] ?? null;
+        foreach (array_map($this->key(...), $this->files()) as $key) {
+            $status[$key] = $applied[$key] ?? null;
         }
 
         return $status;
     }
 
+    /**
+     * Nom enregistré dans la table : le fichier seul pour le site, préfixé de
+     * la portée pour une extension (« agenda/0001_init.sql »). Deux extensions
+     * peuvent ainsi livrer chacune leur 0001 sans collision.
+     */
+    private function key(string $file): string
+    {
+        return $this->scope === '' ? $file : $this->scope . '/' . $file;
+    }
+
     private function apply(string $file): void
     {
-        $sql = file_get_contents($this->directory . '/' . $file);
+        $sql = file_get_contents($this->directory . '/' . basename($file));
 
         if ($sql === false) {
             throw MigrationFailed::forFile($file, new \RuntimeException('Fichier illisible.'));
@@ -94,15 +105,22 @@ final class Migrator
             // Consequence assumee : une migration DDL n'est pas atomique. C'est
             // la raison pour laquelle 01-modele-de-donnees §8 impose un fichier
             // par changement, et non de gros fichiers cumulatifs.
-            $this->pdo->beginTransaction();
+            //
+            // Si l'appelant a deja ouvert une transaction (activation d'une
+            // extension), le migrateur s'y joint : il ne la valide pas et ne
+            // l'annule pas, c'est l'appelant qui decide.
+            $own = !$this->pdo->inTransaction();
+            if ($own) {
+                $this->pdo->beginTransaction();
+            }
             $this->pdo->exec($sql);
             $this->record($file);
 
-            if ($this->pdo->inTransaction()) {
+            if ($own && $this->pdo->inTransaction()) {
                 $this->pdo->commit();
             }
         } catch (Throwable $exception) {
-            if ($this->pdo->inTransaction()) {
+            if ($own && $this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
 
@@ -162,6 +180,15 @@ final class Migrator
      */
     private function ensureMigrationsTable(): void
     {
+        // CREATE TABLE, meme IF NOT EXISTS sur une table presente, valide
+        // implicitement la transaction en cours. On ne l'emet donc que si la
+        // table manque : sinon une activation d'extension en transaction
+        // perdrait son atomicite avant meme la premiere migration.
+        $existing = $this->pdo->query("SHOW TABLES LIKE 'migrations'");
+        if ($existing !== false && $existing->fetchColumn() !== false) {
+            return;
+        }
+
         $this->pdo->exec(
             'CREATE TABLE IF NOT EXISTS migrations (
                 id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
