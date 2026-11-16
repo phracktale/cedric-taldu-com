@@ -3,9 +3,10 @@
     "description": "A-Press : coeur du CMS (noyau HTTP, routage, conteneur, base, migrations, securite)",
     "type": "library",
     "license": "proprietary",
-    "version": "0.5.0",
+    "version": "0.16.0",
     "require": {
         "php": ">=8.2",
+        "ext-dom": "*",
         "ext-json": "*",
         "ext-mbstring": "*",
         "ext-pdo": "*"

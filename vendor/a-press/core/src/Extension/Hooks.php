@@ -32,6 +32,9 @@ final class Hooks
     /** @var list<string> */
     private array $templateDirectories = [];
 
+    /** @var list<string> */
+    private array $editorPanels = [];
+
     /**
      * Dossier de gabarits d'une extension. ExtensionManager y inscrit le
      * dossier templates/ de chaque extension démarrée qui en a un ; le site le
@@ -80,6 +83,23 @@ final class Hooks
     public function addAdminMenuItem(AdminMenuItem $item): void
     {
         $this->adminMenu[] = $item;
+    }
+
+    /**
+     * Panneau ajouté sous « Publier » dans l'éditeur d'une entrée : l'id d'un
+     * service (déclaré par addService) qui implémente EditorPanel.
+     */
+    public function addEditorPanel(string $serviceId): void
+    {
+        $this->editorPanels[] = $serviceId;
+    }
+
+    /**
+     * @return list<string> ids de services, dans l'ordre de déclaration
+     */
+    public function editorPanels(): array
+    {
+        return $this->editorPanels;
     }
 
     public function addService(string $id, callable $factory): void

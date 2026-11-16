@@ -300,6 +300,9 @@ final class ExtensionManager
         foreach ($from->services() as $id => $factory) {
             $into->addService($id, $factory);
         }
+        foreach ($from->editorPanels() as $panel) {
+            $into->addEditorPanel($panel);
+        }
     }
 
     private function skip(string $name, string $reason): void

@@ -3,7 +3,7 @@
     "label": "Démo",
     "description": "Extension de test : une page d'administration et une migration.",
     "version": "1.0.0",
-    "requires": { "core": "^0.5" },
+    "requires": { "core": "^0.16" },
     "entry": "ExtensionDemo\\DemoExtension",
     "autoload": { "ExtensionDemo\\": "src/" }
 }
