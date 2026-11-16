@@ -16,7 +16,7 @@ use PDO;
 final class CoreMigrations
 {
     public const SCOPE = 'core';
-    public const VERSION = '0.5.0';
+    public const VERSION = '0.16.0';
 
     public static function directory(): string
     {

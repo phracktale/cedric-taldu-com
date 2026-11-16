@@ -63,6 +63,33 @@ final class RedirectResponse
         return (new Response('', $status))->withHeader('Location', $location);
     }
 
+    /**
+     * Redirection vers une base fixée par la CONFIGURATION du site (jamais par
+     * la requête) : l'aperçu des brouillons, servi par le front sur une autre
+     * origine. La destination doit être la base elle-même, ou la base suivie
+     * de « ? », « # » ou « / » — « …/preview-pirate » n'est pas « …/preview ».
+     */
+    public static function toTrusted(string $location, string $trustedBase, int $status = 302): Response
+    {
+        if (!in_array($status, self::REDIRECT_STATUSES, true)) {
+            throw UnsafeRedirect::forStatus($status);
+        }
+
+        $base = rtrim($trustedBase, '/');
+        $follows = substr($location, strlen($base), 1);
+
+        if (
+            $base === ''
+            || preg_match('/[\r\n\0]/', $location) === 1
+            || !str_starts_with($location, $base)
+            || !in_array($follows, ['', '?', '#', '/'], true)
+        ) {
+            throw UnsafeRedirect::forLocation($location);
+        }
+
+        return (new Response('', $status))->withHeader('Location', $location);
+    }
+
     private static function isAllowedExternal(string $location): bool
     {
         if (preg_match('/[\r\n\0]/', $location) === 1) {
